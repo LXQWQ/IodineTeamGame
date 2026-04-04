@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>碘队 · 化学游戏工坊 | 登录留言玩化学</title>
     <style>
+        /* 样式与原版完全一致，未做任何改动 */
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--bg-primary:#f9fafc;--bg-card:#ffffff;--text-primary:#1e293b;--text-secondary:#475569;--border:#e2e8f0;--accent:#7c3aed;--accent-light:#a78bfa;--accent-bg:#ede9fe;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.05);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.05);--header-gradient:linear-gradient(135deg,#6d28d9 0%,#4c1d95 100%);--modal-bg:#ffffff}
         body.dark{--bg-primary:#0f172a;--bg-card:#1e293b;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--border:#334155;--accent:#a78bfa;--accent-light:#c4b5fd;--accent-bg:#312e81;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.3);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.4);--header-gradient:linear-gradient(135deg,#4c1d95 0%,#2e1065 100%);--modal-bg:#1e293b}
@@ -212,6 +213,8 @@
 
         async function logout() {
             if (supabase) await supabase.auth.signOut();
+            // 登出时清除 localStorage 中的用户名
+            localStorage.removeItem('iodine_current_user');
             updateAuthUI();
         }
 
@@ -254,6 +257,8 @@
             if (!authArea) return;
             const user = await getCurrentUserNickname();
             if (user) {
+                // 登录成功，将用户名写入 localStorage（供丹道化学游戏读取）
+                localStorage.setItem('iodine_current_user', user);
                 authArea.innerHTML = `
                     <div class="user-info">
                         <span class="user-name">🧪 ${escapeHtml(user)}</span>
@@ -270,6 +275,8 @@
                     });
                 }
             } else {
+                // 未登录时清除 localStorage 中的用户名
+                localStorage.removeItem('iodine_current_user');
                 authArea.innerHTML = `<button class="auth-btn" id="openAuthBtn">🔑 登录 / 注册</button>`;
                 const openBtn = document.getElementById('openAuthBtn');
                 if (openBtn) {
