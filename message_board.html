@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>碘化留言板 · 全服反馈</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg-primary:#f9fafc;--bg-card:#ffffff;--text-primary:#1e293b;--text-secondary:#475569;--border:#e2e8f0;--accent:#7c3aed;--accent-light:#a78bfa;--accent-bg:#ede9fe;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.05);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.05);--header-gradient:linear-gradient(135deg,#6d28d9 0%,#4c1d95 100%)}
+        body.dark{--bg-primary:#0f172a;--bg-card:#1e293b;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--border:#334155;--accent:#a78bfa;--accent-light:#c4b5fd;--accent-bg:#312e81;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.3);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.4);--header-gradient:linear-gradient(135deg,#4c1d95 0%,#2e1065 100%)}
+        body{background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,'Segoe UI','Poppins',sans-serif;transition:background .2s;line-height:1.5;padding:2rem}
+        .container{max-width:900px;margin:0 auto}
+        header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid var(--accent)}
+        h1{font-size:1.8rem;background:var(--header-gradient);background-clip:text;-webkit-background-clip:text;color:transparent}
+        .back-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;color:var(--accent);text-decoration:none;font-weight:500}
+        .back-btn:hover{background:var(--accent);color:white}
+        .user-info{background:var(--accent-bg);padding:.4rem 1rem;border-radius:40px;display:inline-block;margin-bottom:1rem}
+        .msg-list{background:var(--bg-card);border-radius:1.5rem;border:1px solid var(--border);padding:1.5rem;max-height:500px;overflow-y:auto;margin-bottom:1.5rem}
+        .feedback-item{background:var(--bg-primary);border-radius:1rem;padding:.8rem 1rem;border-left:3px solid var(--accent);margin-bottom:.8rem}
+        .fb-name{font-weight:700;font-size:.85rem;color:var(--accent)}
+        .fb-time{font-size:.7rem;color:var(--text-secondary);margin-left:.5rem}
+        .fb-text{margin-top:.3rem;word-break:break-word;font-size:.9rem}
+        .input-area{background:var(--bg-card);border-radius:1.5rem;border:1px solid var(--border);padding:1.5rem}
+        textarea{width:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:1rem;padding:.7rem 1rem;font-family:inherit;color:var(--text-primary);resize:vertical;margin-bottom:1rem}
+        button{background:var(--accent);color:white;border:none;border-radius:2rem;padding:.6rem 1.2rem;font-weight:600;cursor:pointer}
+        .login-prompt{background:var(--accent-bg);border-radius:1rem;padding:1rem;text-align:center;margin-bottom:1rem}
+        .login-prompt a{color:var(--accent);font-weight:bold}
+        footer{text-align:center;margin-top:2rem;font-size:.7rem;color:var(--text-secondary)}
+        @media (max-width:680px){body{padding:1rem}}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>💬 碘化留言板 · 全服反馈</h1>
+        <a href="index.html" class="back-btn">← 返回工坊</a>
+    </header>
+    <div id="userInfoArea" class="user-info">加载中...</div>
+    <div class="msg-list" id="msgList">加载留言中...</div>
+    <div class="input-area" id="inputArea"></div>
+    <footer>所有留言基于真实账号，请友善发言～</footer>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const SUPABASE_URL = 'https://ujinwsfueaifaoskapzs.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const MAX_FEEDBACK = 50;
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
+        }
+
+        // 获取当前真实用户昵称
+        async function getCurrentUserNickname() {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) return null;
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('username')
+                .eq('uid', user.id)
+                .maybeSingle();
+            if (error || !data) return null;
+            return data.username;
+        }
+
+        // 渲染留言列表
+        async function renderFeedbacks() {
+            const container = document.getElementById('msgList');
+            if (!container) return;
+            const { data, error } = await supabase
+                .from('feedbacks')
+                .select('*')
+                .order('time', { ascending: false })
+                .limit(MAX_FEEDBACK);
+            if (error) {
+                console.error(error);
+                container.innerHTML = '<div style="text-align:center; padding:1rem;">加载失败，请刷新页面重试</div>';
+                return;
+            }
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:1rem;">✨ 暂无留言，成为第一个留言的玩家吧～</div>';
+                return;
+            }
+            let html = '';
+            data.forEach(fb => {
+                html += `
+                    <div class="feedback-item">
+                        <div><span class="fb-name">🧪 ${escapeHtml(fb.nickname)}</span><span class="fb-time">${fb.time_fmt}</span></div>
+                        <div class="fb-text">${escapeHtml(fb.message)}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // 发布留言
+        async function publishFeedback(message) {
+            const user = await getCurrentUserNickname();
+            if (!user) return false;
+            const newFb = {
+                nickname: user,
+                message: message,
+                time: Date.now(),
+                time_fmt: new Date().toLocaleString('zh-CN', { hour12: false })
+            };
+            const { error } = await supabase.from('feedbacks').insert([newFb]);
+            if (error) {
+                console.error(error);
+                return false;
+            }
+            return true;
+        }
+
+        // 渲染输入区域
+        async function renderInputArea() {
+            const container = document.getElementById('inputArea');
+            if (!container) return;
+            const user = await getCurrentUserNickname();
+            if (user) {
+                container.innerHTML = `
+                    <div style="margin-bottom: 0.5rem;">👤 当前登录：<strong>${escapeHtml(user)}</strong></div>
+                    <textarea id="fbMessage" rows="3" placeholder="写下你对游戏的建议、捉虫或任何想法～" maxlength="200"></textarea>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button id="sendBtn">📢 提交反馈</button>
+                    </div>
+                `;
+                const sendBtn = document.getElementById('sendBtn');
+                if (sendBtn) sendBtn.onclick = () => sendFeedbackHandler();
+                const msgArea = document.getElementById('fbMessage');
+                if (msgArea) {
+                    msgArea.onkeypress = (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendFeedbackHandler();
+                        }
+                    };
+                }
+            } else {
+                container.innerHTML = `
+                    <div class="login-prompt">
+                        🔐 请先 <a href="index.html">登录/注册</a> 后再留言，你的昵称会自动显示。
+                    </div>
+                `;
+            }
+        }
+
+        async function sendFeedbackHandler() {
+            const msgInput = document.getElementById('fbMessage');
+            if (!msgInput) return;
+            const message = msgInput.value.trim();
+            if (!message) {
+                alert("反馈内容不能为空～");
+                return;
+            }
+            const success = await publishFeedback(message);
+            if (success) {
+                msgInput.value = '';
+                await renderFeedbacks();
+                alert("感谢反馈！AI-Yachiyo会认真阅读~");
+            } else {
+                alert("发送失败，请稍后重试");
+            }
+        }
+
+        // 更新用户信息显示
+        async function updateUserInfo() {
+            const container = document.getElementById('userInfoArea');
+            if (!container) return;
+            const user = await getCurrentUserNickname();
+            if (user) {
+                container.innerHTML = `🧪 当前登录：${escapeHtml(user)} <span style="font-size:0.7rem;">(不是本人？<a href="index.html" style="color: var(--accent);">重新登录</a>)</span>`;
+            } else {
+                container.innerHTML = `🔐 未登录 | <a href="index.html" style="color: var(--accent);">前往登录/注册</a>`;
+            }
+        }
+
+        // 深色主题（读取主页设置）
+        function initTheme() {
+            const isDark = localStorage.getItem('theme') === 'dark';
+            if (isDark) document.body.classList.add('dark');
+        }
+
+        // 初始化
+        initTheme();
+        await updateUserInfo();
+        await renderFeedbacks();
+        await renderInputArea();
+
+        // 监听登录状态变化（例如主页登录后）
+        supabase.auth.onAuthStateChange(async () => {
+            await updateUserInfo();
+            await renderInputArea();
+            await renderFeedbacks();
+        });
+    });
+</script>
+</body>
+</html>
