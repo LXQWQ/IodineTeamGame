@@ -5,415 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>碘队 · 化学游戏工坊 | 登录留言玩化学</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        /* 全局变量与主题 */
-        :root {
-            --bg-primary: #f9fafc;
-            --bg-card: #ffffff;
-            --text-primary: #1e293b;
-            --text-secondary: #475569;
-            --border: #e2e8f0;
-            --accent: #7c3aed;
-            --accent-light: #a78bfa;
-            --accent-bg: #ede9fe;
-            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-            --header-gradient: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
-            --modal-bg: #ffffff;
-        }
-
-        body.dark {
-            --bg-primary: #0f172a;
-            --bg-card: #1e293b;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --border: #334155;
-            --accent: #a78bfa;
-            --accent-light: #c4b5fd;
-            --accent-bg: #312e81;
-            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-            --header-gradient: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%);
-            --modal-bg: #1e293b;
-        }
-
-        body {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: system-ui, -apple-system, 'Segoe UI', 'Poppins', 'Roboto', sans-serif;
-            transition: background 0.2s, color 0.2s;
-            line-height: 1.5;
-        }
-
-        /* 容器 */
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-        }
-
-        /* 头部导航 */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 3rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: var(--header-gradient);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            letter-spacing: -0.5px;
-        }
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .theme-toggle, .auth-btn {
-            background: var(--accent-bg);
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 40px;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--accent);
-            transition: all 0.2s;
-        }
-        .theme-toggle:hover, .auth-btn:hover {
-            background: var(--accent);
-            color: white;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            background: var(--accent-bg);
-            padding: 0.4rem 1rem;
-            border-radius: 40px;
-        }
-        .user-name {
-            font-weight: 600;
-            color: var(--accent);
-        }
-        .logout-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-        .logout-btn:hover {
-            color: var(--accent);
-        }
-
-        /* 英雄区 */
-        .hero {
-            background: var(--header-gradient);
-            border-radius: 2rem;
-            padding: 2.5rem 2rem;
-            margin-bottom: 3rem;
-            color: white;
-            box-shadow: var(--shadow-md);
-        }
-        .hero h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-        .hero p {
-            font-size: 1.1rem;
-            opacity: 0.92;
-            max-width: 80%;
-            margin-bottom: 1.5rem;
-        }
-        .badge {
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(4px);
-            display: inline-block;
-            padding: 0.4rem 1rem;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        .feedback-btn {
-            background: white;
-            color: #6d28d9;
-            border: none;
-            padding: 0.7rem 1.5rem;
-            border-radius: 60px;
-            font-weight: 600;
-            margin-top: 0.5rem;
-            cursor: pointer;
-            transition: transform 0.1s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* 游戏网格 */
-        .section-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 2rem 0 1.5rem 0;
-            border-left: 5px solid var(--accent);
-            padding-left: 1rem;
-        }
-        .game-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-        .game-card {
-            background: var(--bg-card);
-            border-radius: 1.5rem;
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .game-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md);
-        }
-        .game-img {
-            background: linear-gradient(145deg, var(--accent-bg), var(--bg-primary));
-            height: 160px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
-            border-bottom: 1px solid var(--border);
-        }
-        .game-info {
-            padding: 1.5rem;
-        }
-        .game-info h3 {
-            font-size: 1.4rem;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .game-tag {
-            background: var(--accent-bg);
-            color: var(--accent);
-            font-size: 0.7rem;
-            padding: 0.2rem 0.7rem;
-            border-radius: 20px;
-            font-weight: 500;
-        }
-        .game-desc {
-            color: var(--text-secondary);
-            margin: 0.8rem 0 1rem 0;
-            font-size: 0.9rem;
-        }
-        .play-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 0.5rem 1.2rem;
-            border-radius: 40px;
-            font-weight: 500;
-            cursor: pointer;
-            width: 100%;
-        }
-        .play-btn:hover {
-            background: var(--accent-light);
-        }
-
-        /* 留言板区域 */
-        .feedback-section {
-            background: var(--bg-card);
-            border-radius: 1.5rem;
-            border: 1px solid var(--border);
-            margin: 2rem 0;
-            overflow: hidden;
-        }
-        .feedback-header {
-            background: var(--accent-bg);
-            padding: 1rem 1.5rem;
-            font-weight: 700;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-        .feedback-body {
-            padding: 1.5rem;
-        }
-        .msg-list {
-            max-height: 280px;
-            overflow-y: auto;
-            margin-bottom: 1.2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-        }
-        .feedback-item {
-            background: var(--bg-primary);
-            border-radius: 1rem;
-            padding: 0.8rem 1rem;
-            border-left: 3px solid var(--accent);
-        }
-        .fb-name {
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: var(--accent);
-        }
-        .fb-time {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            margin-left: 0.5rem;
-        }
-        .fb-text {
-            margin-top: 0.3rem;
-            word-break: break-word;
-            font-size: 0.9rem;
-        }
-        .feedback-input-area {
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-            margin-top: 0.5rem;
-        }
-        .feedback-input-area textarea {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 0.7rem 1rem;
-            font-family: inherit;
-            color: var(--text-primary);
-            resize: vertical;
-        }
-        .fb-send {
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 2rem;
-            padding: 0.6rem;
-            font-weight: 600;
-            cursor: pointer;
-            width: 120px;
-        }
-        .login-prompt {
-            background: var(--accent-bg);
-            border-radius: 1rem;
-            padding: 1rem;
-            text-align: center;
-            margin-bottom: 1rem;
-            color: var(--text-secondary);
-        }
-        .login-prompt button {
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 2rem;
-            padding: 0.4rem 1rem;
-            margin-left: 0.5rem;
-            cursor: pointer;
-        }
-        .footnote {
-            text-align: center;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
-        }
-
-        /* 模态框 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .modal.active {
-            display: flex;
-        }
-        .modal-content {
-            background: var(--modal-bg);
-            border-radius: 2rem;
-            padding: 2rem;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--border);
-        }
-        .modal-content h3 {
-            margin-bottom: 1.5rem;
-        }
-        .modal-content input {
-            width: 100%;
-            padding: 0.7rem;
-            margin-bottom: 1rem;
-            border-radius: 1rem;
-            border: 1px solid var(--border);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-        }
-        .modal-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
-        .modal-buttons button {
-            padding: 0.5rem 1.2rem;
-            border-radius: 2rem;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-        }
-        .btn-secondary {
-            background: var(--border);
-            color: var(--text-primary);
-        }
-        .error-msg {
-            color: #ef4444;
-            font-size: 0.8rem;
-            margin-top: -0.5rem;
-            margin-bottom: 0.8rem;
-        }
-
-        @media (max-width: 680px) {
-            .container { padding: 1.2rem; }
-            .hero h1 { font-size: 1.8rem; }
-            .hero p { max-width: 100%; }
-            .section-title { font-size: 1.4rem; }
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg-primary:#f9fafc;--bg-card:#ffffff;--text-primary:#1e293b;--text-secondary:#475569;--border:#e2e8f0;--accent:#7c3aed;--accent-light:#a78bfa;--accent-bg:#ede9fe;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.05);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.05);--header-gradient:linear-gradient(135deg,#6d28d9 0%,#4c1d95 100%);--modal-bg:#ffffff}
+        body.dark{--bg-primary:#0f172a;--bg-card:#1e293b;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--border:#334155;--accent:#a78bfa;--accent-light:#c4b5fd;--accent-bg:#312e81;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.3);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.4);--header-gradient:linear-gradient(135deg,#4c1d95 0%,#2e1065 100%);--modal-bg:#1e293b}
+        body{background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;transition:background .2s,color .2s;line-height:1.5}
+        .container{max-width:1280px;margin:0 auto;padding:2rem 1.5rem}
+        .navbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:3rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+        .logo{font-size:1.8rem;font-weight:800;background:var(--header-gradient);background-clip:text;-webkit-background-clip:text;color:transparent;letter-spacing:-0.5px}
+        .nav-right{display:flex;align-items:center;gap:1rem}
+        .theme-toggle,.auth-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;font-weight:500;color:var(--accent);transition:all .2s}
+        .theme-toggle:hover,.auth-btn:hover{background:var(--accent);color:#fff}
+        .user-info{display:flex;align-items:center;gap:.8rem;background:var(--accent-bg);padding:.4rem 1rem;border-radius:40px}
+        .user-name{font-weight:600;color:var(--accent)}
+        .logout-btn{background:0 0;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8rem}
+        .logout-btn:hover{color:var(--accent)}
+        .hero{background:var(--header-gradient);border-radius:2rem;padding:2.5rem 2rem;margin-bottom:3rem;color:#fff;box-shadow:var(--shadow-md)}
+        .hero h1{font-size:2.5rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+        .hero p{font-size:1.1rem;opacity:.92;max-width:80%;margin-bottom:1.5rem}
+        .badge{background:rgba(255,255,255,.2);backdrop-filter:blur(4px);display:inline-block;padding:.4rem 1rem;border-radius:40px;font-size:.8rem;font-weight:500}
+        .feedback-btn{background:#fff;color:#6d28d9;border:none;padding:.7rem 1.5rem;border-radius:60px;font-weight:600;margin-top:.5rem;cursor:pointer;transition:transform .1s;display:inline-flex;align-items:center;gap:.5rem}
+        .section-title{font-size:1.8rem;font-weight:700;margin:2rem 0 1.5rem;border-left:5px solid var(--accent);padding-left:1rem}
+        .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2rem;margin-bottom:3rem}
+        .game-card{background:var(--bg-card);border-radius:1.5rem;overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);transition:transform .2s,box-shadow .2s}
+        .game-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+        .game-img{background:linear-gradient(145deg,var(--accent-bg),var(--bg-primary));height:160px;display:flex;align-items:center;justify-content:center;font-size:4rem;border-bottom:1px solid var(--border)}
+        .game-info{padding:1.5rem}
+        .game-info h3{font-size:1.4rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+        .game-tag{background:var(--accent-bg);color:var(--accent);font-size:.7rem;padding:.2rem .7rem;border-radius:20px;font-weight:500}
+        .game-desc{color:var(--text-secondary);margin:.8rem 0 1rem;font-size:.9rem}
+        .play-btn{background:var(--accent);color:#fff;border:none;padding:.5rem 1.2rem;border-radius:40px;font-weight:500;cursor:pointer;width:100%}
+        .play-btn:hover{background:var(--accent-light)}
+        .footnote{text-align:center;font-size:.75rem;color:var(--text-secondary);margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:1000}
+        .modal.active{display:flex}
+        .modal-content{background:var(--modal-bg);border-radius:2rem;padding:2rem;width:90%;max-width:450px;box-shadow:var(--shadow-md);border:1px solid var(--border)}
+        .modal-content h3{margin-bottom:1.5rem}
+        .modal-content input{width:100%;padding:.7rem;margin-bottom:1rem;border-radius:1rem;border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary)}
+        .modal-buttons{display:flex;gap:1rem;justify-content:flex-end}
+        .modal-buttons button{padding:.5rem 1.2rem;border-radius:2rem;border:none;cursor:pointer}
+        .btn-primary{background:var(--accent);color:#fff}
+        .btn-secondary{background:var(--border);color:var(--text-primary)}
+        .error-msg{color:#ef4444;font-size:.8rem;margin-top:-.5rem;margin-bottom:.8rem}
+        @media (max-width:680px){.container{padding:1.2rem}.hero h1{font-size:1.8rem}.hero p{max-width:100%}.section-title{font-size:1.4rem}}
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="container">
-    <!-- 导航栏 -->
     <div class="navbar">
         <div class="logo">🧪 碘队 · 化学游戏工坊 <span>| Iodine Studio</span></div>
         <div class="nav-right">
@@ -422,39 +60,26 @@
         </div>
     </div>
 
-    <!-- 英雄区 -->
     <div class="hero">
         <h1><span>⚗️</span> 碘队 AI 化学游戏季</h1>
         <p>🎮 致第一批「碘化玩家」</p>
         <p>欢迎来到碘队化学游戏工坊！这里的每一个游戏，都是由站长_Tsukuyomi仅用 Deepseek网页版 辅助创作的化学主题小游戏。它们充满创意、略显稚嫩，遇到 bug 还请多多包涵～</p>
         <p>📱 目前仅上线“丹道化学Pro“一款游戏 </p>
         <div><span class="badge">🧪 炼丹模拟</span><span class="badge">🔬 个人开发</span><span class="badge">⚡ AI 辅助创作</span></div>
-        <button class="feedback-btn" id="scrollToFeedback">💬 玩家留言板 →</button>
+        <a href="message_board.html" class="feedback-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">💬 玩家留言板 →</a>
     </div>
 
-    <!-- 游戏展示区域 -->
     <h2 class="section-title">✨ 碘队精选游戏</h2>
     <div class="game-grid" id="gameGrid"></div>
 
-    <!-- 留言板区域 -->
-    <div id="feedbackPanel" class="feedback-section">
-        <div class="feedback-header">
-            <span>💬 碘化留言板 · 反馈与建议</span>
-            <span style="font-size:0.75rem;">后台开发AI-Yachiyo会亲自回复</span>
-        </div>
-        <div class="feedback-body">
-            <div class="msg-list" id="msgList">加载留言中...</div>
-            <div id="feedbackInputArea"></div>
-        </div>
-    </div>
-    <div class="footnote">⚛️ 碘队化学游戏工坊 · 所有游戏灵感来自化学世界 | 目前留言仅保存在你的浏览器中</div>
+    <div class="footnote">⚛️ 碘队化学游戏工坊 · 所有游戏灵感来自化学世界 | 留言已支持云端同步，全服可见</div>
 </div>
 
 <!-- 登录/注册模态框 -->
 <div id="authModal" class="modal">
     <div class="modal-content">
         <h3 id="modalTitle">登录</h3>
-        <input type="text" id="loginUsername" placeholder="用户名">
+        <input type="email" id="loginEmail" placeholder="电子邮箱" autocomplete="email">
         <input type="password" id="loginPassword" placeholder="密码">
         <div id="authError" class="error-msg"></div>
         <div class="modal-buttons">
@@ -466,374 +91,277 @@
 </div>
 
 <script>
-    // ======================= 用户系统 (localStorage) =======================
-    const USERS_KEY = 'iodine_users';
-    const CURRENT_USER_KEY = 'iodine_current_user';
+    document.addEventListener('DOMContentLoaded', () => {
+        const SUPABASE_URL = 'https://ujinwsfueaifaoskapzs.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
+        let supabase = null;
 
-    function initUsers() {
-        let users = localStorage.getItem(USERS_KEY);
-        if (!users) {
-            const defaultUsers = [
-                { username: "碘化学家", password: "123456" },
-                { username: "测试玩家", password: "test" }
-            ];
-            localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
+        // ======================= 辅助函数 =======================
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
         }
-    }
 
-    function getUsers() {
-        const raw = localStorage.getItem(USERS_KEY);
-        return raw ? JSON.parse(raw) : [];
-    }
-
-    function saveUsers(users) {
-        localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    }
-
-    function register(username, password) {
-        if (!username || !password) return "用户名和密码不能为空";
-        const users = getUsers();
-        if (users.find(u => u.username === username)) return "用户名已存在";
-        users.push({ username, password });
-        saveUsers(users);
-        return true;
-    }
-
-    function login(username, password) {
-        const users = getUsers();
-        const user = users.find(u => u.username === username && u.password === password);
-        if (user) {
-            localStorage.setItem(CURRENT_USER_KEY, username);
-            return true;
+        // 获取当前真实用户昵称（从 profiles 表）
+        async function getCurrentUserNickname() {
+            if (!supabase) return null;
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) return null;
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('username')
+                .eq('uid', user.id)
+                .maybeSingle();
+            if (error || !data) return null;
+            return data.username;
         }
-        return false;
-    }
 
-    function logout() {
-        localStorage.removeItem(CURRENT_USER_KEY);
-    }
+        // ======================= 认证UI =======================
+        let currentAuthMode = 'login';
+        const modal = document.getElementById('authModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const authError = document.getElementById('authError');
+        const switchBtn = document.getElementById('switchAuthBtn');
+        const submitBtn = document.getElementById('submitAuthBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        let nicknameInput = null;
 
-    function getCurrentUser() {
-        return localStorage.getItem(CURRENT_USER_KEY);
-    }
-
-    function isLoggedIn() {
-        return getCurrentUser() !== null;
-    }
-
-    // ======================= 留言板 =======================
-    const FEEDBACK_KEY = 'iodine_feedback_list';
-    const MAX_FEEDBACK = 50;
-
-    function getFeedbacks() {
-        const raw = localStorage.getItem(FEEDBACK_KEY);
-        if (!raw) return [];
-        try {
-            let arr = JSON.parse(raw);
-            return Array.isArray(arr) ? arr.slice(-MAX_FEEDBACK) : [];
-        } catch(e) { return []; }
-    }
-
-    function saveFeedbacks(feedbacks) {
-        localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedbacks.slice(-MAX_FEEDBACK)));
-    }
-
-    function addFeedback(message) {
-        const currentUser = getCurrentUser();
-        if (!currentUser) return false;
-        let msg = message.trim();
-        if (msg === "") return false;
-        if (msg.length > 200) msg = msg.slice(0,200);
-        const newFb = {
-            id: Date.now() + '-' + Math.random(),
-            nickname: escapeHtml(currentUser),
-            message: escapeHtml(msg),
-            time: Date.now(),
-            time_fmt: new Date().toLocaleString('zh-CN', { hour12: false })
-        };
-        const list = getFeedbacks();
-        list.push(newFb);
-        saveFeedbacks(list);
-        return true;
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    function renderFeedbacks() {
-        const container = document.getElementById('msgList');
-        if (!container) return;
-        const list = getFeedbacks();
-        if (list.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:1rem; color: var(--text-secondary);">✨ 暂无留言，登录后写下你对碘队游戏的想法吧～</div>';
-            return;
+        function updateModalForMode() {
+            if (currentAuthMode === 'login') {
+                modalTitle.innerText = '登录';
+                switchBtn.innerText = '去注册';
+                submitBtn.innerText = '登录';
+                if (nicknameInput) { nicknameInput.remove(); nicknameInput = null; }
+                loginEmail.placeholder = "电子邮箱";
+            } else {
+                modalTitle.innerText = '注册';
+                switchBtn.innerText = '去登录';
+                submitBtn.innerText = '注册';
+                if (!nicknameInput) {
+                    nicknameInput = document.createElement('input');
+                    nicknameInput.type = 'text';
+                    nicknameInput.id = 'regNickname';
+                    nicknameInput.placeholder = '游戏昵称（将显示在留言板和游戏中）';
+                    nicknameInput.autocomplete = 'off';
+                    loginEmail.insertAdjacentElement('afterend', nicknameInput);
+                }
+            }
         }
-        let html = '';
-        [...list].reverse().forEach(fb => {
-            html += `
-                <div class="feedback-item">
-                    <div><span class="fb-name">🧪 ${fb.nickname}</span><span class="fb-time">${fb.time_fmt}</span></div>
-                    <div class="fb-text">${fb.message}</div>
-                </div>
-            `;
-        });
-        container.innerHTML = html;
-    }
 
-    function renderFeedbackInput() {
-        const container = document.getElementById('feedbackInputArea');
-        if (!container) return;
-        const loggedIn = isLoggedIn();
-        if (loggedIn) {
-            const currentUser = getCurrentUser();
-            container.innerHTML = `
-                <div class="feedback-input-area">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <span>👤 当前登录：<strong>${escapeHtml(currentUser)}</strong></span>
+        function showAuthModal(mode = 'login') {
+            currentAuthMode = mode;
+            updateModalForMode();
+            loginEmail.value = '';
+            loginPassword.value = '';
+            if (nicknameInput) nicknameInput.value = '';
+            authError.innerText = '';
+            modal.classList.add('active');
+        }
+        function hideAuthModal() { modal.classList.remove('active'); }
+
+        // 注册
+        async function register(email, password, username) {
+            if (!email || !password || !username) return "请填写完整信息";
+            if (!supabase) return "系统初始化中，请稍后重试";
+            try {
+                const { data: existing, error: queryError } = await supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('username', username)
+                    .maybeSingle();
+                if (queryError) throw queryError;
+                if (existing) return "昵称已被使用，请换一个";
+
+                const { data: authData, error: signUpError } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: { data: { username: username } }
+                });
+                if (signUpError) {
+                    if (signUpError.message.includes('already registered')) return "该邮箱已被注册，请直接登录";
+                    throw signUpError;
+                }
+                if (!authData.user) throw new Error("注册失败");
+
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert({ uid: authData.user.id, username: username });
+                if (profileError) throw profileError;
+
+                return true;
+            } catch(err) {
+                console.error(err);
+                return err.message || "注册失败，请稍后重试";
+            }
+        }
+
+        // 登录
+        async function login(email, password) {
+            if (!email || !password) return "请填写邮箱和密码";
+            if (!supabase) return "系统初始化中";
+            try {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                return true;
+            } catch(err) {
+                return err.message || "邮箱或密码错误";
+            }
+        }
+
+        async function logout() {
+            if (supabase) await supabase.auth.signOut();
+            updateAuthUI();
+        }
+
+        async function handleAuthSubmit() {
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value;
+            if (!email || !password) {
+                authError.innerText = '请填写邮箱和密码';
+                return;
+            }
+            if (currentAuthMode === 'register') {
+                const nickname = nicknameInput ? nicknameInput.value.trim() : '';
+                if (!nickname) {
+                    authError.innerText = '请填写游戏昵称';
+                    return;
+                }
+                authError.innerText = '处理中...';
+                const result = await register(email, password, nickname);
+                if (result === true) {
+                    hideAuthModal();
+                    updateAuthUI();
+                } else {
+                    authError.innerText = result;
+                }
+            } else {
+                authError.innerText = '处理中...';
+                const result = await login(email, password);
+                if (result === true) {
+                    hideAuthModal();
+                    updateAuthUI();
+                } else {
+                    authError.innerText = result;
+                }
+            }
+        }
+
+        // 更新右上角用户区域（基于真实会话）
+        async function updateAuthUI() {
+            const authArea = document.getElementById('authArea');
+            if (!authArea) return;
+            const user = await getCurrentUserNickname();
+            if (user) {
+                authArea.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-name">🧪 ${escapeHtml(user)}</span>
+                        <button class="logout-btn" id="logoutBtn">登出</button>
                     </div>
-                    <textarea id="fbMessage" rows="2" placeholder="写下你对游戏的建议、捉虫或任何想法～" maxlength="200"></textarea>
-                    <div style="display: flex; justify-content: flex-end;">
-                        <button class="fb-send" id="sendFeedbackBtn">📢 提交反馈</button>
-                    </div>
-                </div>
-            `;
-            const sendBtn = document.getElementById('sendFeedbackBtn');
-            if (sendBtn) sendBtn.addEventListener('click', () => sendFeedbackHandler());
-            const msgArea = document.getElementById('fbMessage');
-            if (msgArea) {
-                msgArea.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                `;
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) {
+                    const newBtn = logoutBtn.cloneNode(true);
+                    logoutBtn.parentNode.replaceChild(newBtn, logoutBtn);
+                    newBtn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        sendFeedbackHandler();
+                        logout();
+                    });
+                }
+            } else {
+                authArea.innerHTML = `<button class="auth-btn" id="openAuthBtn">🔑 登录 / 注册</button>`;
+                const openBtn = document.getElementById('openAuthBtn');
+                if (openBtn) {
+                    const newBtn = openBtn.cloneNode(true);
+                    openBtn.parentNode.replaceChild(newBtn, openBtn);
+                    newBtn.addEventListener('click', () => showAuthModal('login'));
+                }
+            }
+        }
+
+        // ======================= 游戏展示 =======================
+        const games = [
+            { id:1, name:"丹道化学Pro", emoji:"🧪🔥", tag:"炼丹模拟", desc:"收集五金八石，翻阅典籍，炼制灵丹！探索地图，解锁配方，登上排行榜。", link:"dandao_chemistry.html", newWindow:true },
+            { id:2, name:"敬请期待", emoji:"  ", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
+            { id:3, name:"敬请期待", emoji:"  ", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
+            { id:4, name:"敬请期待", emoji:"  ", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
+            { id:5, name:"敬请期待", emoji:"  ", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
+            { id:6, name:"敬请期待", emoji:"  ", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false }
+        ];
+
+        function renderGames() {
+            const grid = document.getElementById('gameGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            games.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.innerHTML = `
+                    <div class="game-img">${game.emoji}</div>
+                    <div class="game-info">
+                        <h3>${game.name} <span class="game-tag">${game.tag}</span></h3>
+                        <div class="game-desc">${game.desc}</div>
+                        <button class="play-btn" data-link="${game.link || ''}" data-new="${game.newWindow}">🧪 立即试玩</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            document.querySelectorAll('.play-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const link = btn.dataset.link;
+                    const newWindow = btn.dataset.new === 'true';
+                    if (link) {
+                        if (newWindow) window.open(link, '_blank');
+                        else window.location.href = link;
+                    } else {
+                        alert('敬请期待！');
                     }
                 });
-            }
-        } else {
-            container.innerHTML = `
-                <div class="login-prompt">
-                    🔐 请先登录后再留言，你的用户名会自动显示～
-                    <button id="openLoginBtn">登录 / 注册</button>
-                </div>
-            `;
-            const openBtn = document.getElementById('openLoginBtn');
-            if (openBtn) openBtn.addEventListener('click', () => showAuthModal('login'));
-        }
-    }
-
-    function sendFeedbackHandler() {
-        const msgInput = document.getElementById('fbMessage');
-        if (!msgInput) return;
-        const message = msgInput.value.trim();
-        if (!message) {
-            alert("反馈内容不能为空～");
-            return;
-        }
-        if (addFeedback(message)) {
-            msgInput.value = '';
-            renderFeedbacks();
-            alert("感谢反馈！AI-Yachiyo会认真阅读~");
-        } else {
-            alert("发送失败，请确保已登录");
-        }
-    }
-
-    // ======================= 认证UI =======================
-    let currentAuthMode = 'login';
-    const modal = document.getElementById('authModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const usernameInput = document.getElementById('loginUsername');
-    const passwordInput = document.getElementById('loginPassword');
-    const authError = document.getElementById('authError');
-    const switchBtn = document.getElementById('switchAuthBtn');
-    const submitBtn = document.getElementById('submitAuthBtn');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-
-    function showAuthModal(mode = 'login') {
-        currentAuthMode = mode;
-        if (mode === 'login') {
-            modalTitle.innerText = '登录';
-            switchBtn.innerText = '去注册';
-            submitBtn.innerText = '登录';
-        } else {
-            modalTitle.innerText = '注册';
-            switchBtn.innerText = '去登录';
-            submitBtn.innerText = '注册';
-        }
-        usernameInput.value = '';
-        passwordInput.value = '';
-        authError.innerText = '';
-        modal.classList.add('active');
-    }
-
-    function hideAuthModal() {
-        modal.classList.remove('active');
-    }
-
-    function handleAuthSubmit() {
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-        if (!username || !password) {
-            authError.innerText = '请填写用户名和密码';
-            return;
-        }
-        if (currentAuthMode === 'login') {
-            const success = login(username, password);
-            if (success) {
-                hideAuthModal();
-                updateAuthUI();
-                renderFeedbackInput();
-                renderFeedbacks();
-            } else {
-                authError.innerText = '用户名或密码错误';
-            }
-        } else {
-            const result = register(username, password);
-            if (result === true) {
-                login(username, password);
-                hideAuthModal();
-                updateAuthUI();
-                renderFeedbackInput();
-                renderFeedbacks();
-            } else {
-                authError.innerText = result;
-            }
-        }
-    }
-
-    function updateAuthUI() {
-        const authArea = document.getElementById('authArea');
-        if (!authArea) return;
-        const loggedIn = isLoggedIn();
-        if (loggedIn) {
-            const user = getCurrentUser();
-            authArea.innerHTML = `
-                <div class="user-info">
-                    <span class="user-name">🧪 ${escapeHtml(user)}</span>
-                    <button class="logout-btn" id="logoutBtn">登出</button>
-                </div>
-            `;
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) logoutBtn.addEventListener('click', () => {
-                logout();
-                updateAuthUI();
-                renderFeedbackInput();
-                renderFeedbacks();
-            });
-        } else {
-            authArea.innerHTML = `<button class="auth-btn" id="openAuthBtn">🔑 登录 / 注册</button>`;
-            const openBtn = document.getElementById('openAuthBtn');
-            if (openBtn) openBtn.addEventListener('click', () => showAuthModal('login'));
-        }
-    }
-
-    // ======================= 游戏展示 (新增丹道化学卡片) =======================
-    const games = [
-
-        { id:1, name:"丹道化学", emoji:"🧪🔥", tag:"炼丹模拟", desc:"收集五金八石，翻阅典籍，炼制灵丹！探索地图，解锁配方，登上排行榜。", link:"dandao_chemistry.html", newWindow:true },
-        { id:2, name:"敬请期待", emoji:"⏲️🧪", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
-        { id:3, name:"敬请期待", emoji:"🔍⚛️", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
-        { id:4, name:"敬请期待", emoji:"🥔🔵", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
-        { id:5, name:"敬请期待", emoji:"🌫️💜", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
-        { id:6, name:"敬请期待", emoji:"🏆⚡", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false }
- ];
-
-    function renderGames() {
-        const grid = document.getElementById('gameGrid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        games.forEach(game => {
-            const card = document.createElement('div');
-            card.className = 'game-card';
-            card.innerHTML = `
-                <div class="game-img">${game.emoji}</div>
-                <div class="game-info">
-                    <h3>${game.name} <span class="game-tag">${game.tag}</span></h3>
-                    <div class="game-desc">${game.desc}</div>
-                    <button class="play-btn" data-link="${game.link || ''}" data-new="${game.newWindow}">🧪 立即试玩</button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-        document.querySelectorAll('.play-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const link = btn.dataset.link;
-                const newWindow = btn.dataset.new === 'true';
-                if (link) {
-                    if (newWindow) {
-                        window.open(link, '_blank');
-                    } else {
-                        window.location.href = link;
-                    }
-                } else {
-                    alert(`🎮 《${btn.closest('.game-card')?.querySelector('h3')?.innerText || '游戏'}》\n\n完整游戏正在开发中，敬请期待碘队正式版！\n当前为概念展示。`);
-                }
-            });
-        });
-    }
-
-    // ======================= 深色主题 & 滚动 =======================
-    function initTheme() {
-        const themeBtn = document.getElementById('themeSwitcher');
-        const isDark = localStorage.getItem('theme') === 'dark';
-        if (isDark) {
-            document.body.classList.add('dark');
-            themeBtn.innerHTML = '☀️ 浅色模式';
-        } else {
-            themeBtn.innerHTML = '🌙 深色模式';
-        }
-        themeBtn.addEventListener('click', () => {
-            document.body.classList.toggle('dark');
-            const darkNow = document.body.classList.contains('dark');
-            localStorage.setItem('theme', darkNow ? 'dark' : 'light');
-            themeBtn.innerHTML = darkNow ? '☀️ 浅色模式' : '🌙 深色模式';
-        });
-    }
-
-    function setupScroll() {
-        const btn = document.getElementById('scrollToFeedback');
-        if (btn) {
-            btn.addEventListener('click', () => {
-                const panel = document.getElementById('feedbackPanel');
-                if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         }
-    }
 
-    // ======================= 初始化 =======================
-    function init() {
-        initUsers();
+        // ======================= 深色主题 =======================
+        function initTheme() {
+            const themeBtn = document.getElementById('themeSwitcher');
+            const isDark = localStorage.getItem('theme') === 'dark';
+            if (isDark) document.body.classList.add('dark');
+            themeBtn.innerHTML = isDark ? '☀️ 浅色模式' : '🌙 深色模式';
+            themeBtn.onclick = () => {
+                document.body.classList.toggle('dark');
+                const darkNow = document.body.classList.contains('dark');
+                localStorage.setItem('theme', darkNow ? 'dark' : 'light');
+                themeBtn.innerHTML = darkNow ? '☀️ 浅色模式' : '🌙 深色模式';
+            };
+        }
+
+        // ======================= 初始化 =======================
+        function initSupabase() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                // 监听登录状态变化
+                supabase.auth.onAuthStateChange(() => {
+                    updateAuthUI();
+                });
+                updateAuthUI();
+            } catch(e) {
+                console.warn('Supabase 初始化失败', e);
+            }
+        }
+
+        initSupabase();
         renderGames();
-        renderFeedbacks();
         initTheme();
-        setupScroll();
-        updateAuthUI();
-        renderFeedbackInput();
 
-        switchBtn.addEventListener('click', () => {
+        // 绑定模态框按钮
+        switchBtn.onclick = () => {
             if (currentAuthMode === 'login') showAuthModal('register');
             else showAuthModal('login');
-        });
-        submitBtn.addEventListener('click', handleAuthSubmit);
-        closeModalBtn.addEventListener('click', hideAuthModal);
-        modal.addEventListener('click', (e) => { if (e.target === modal) hideAuthModal(); });
-        window.addEventListener('storage', (e) => {
-            if (e.key === FEEDBACK_KEY) renderFeedbacks();
-            if (e.key === CURRENT_USER_KEY || e.key === USERS_KEY) {
-                updateAuthUI();
-                renderFeedbackInput();
-                renderFeedbacks();
-            }
-        });
-    }
-
-    init();
+        };
+        submitBtn.onclick = handleAuthSubmit;
+        closeModalBtn.onclick = hideAuthModal;
+        modal.onclick = (e) => { if (e.target === modal) hideAuthModal(); };
+    });
 </script>
 </body>
 </html>
