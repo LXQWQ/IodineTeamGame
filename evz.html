@@ -121,6 +121,30 @@
             text-align: center;
             color: var(--text-light);
         }
+        /* 铲子大按钮样式 */
+        .shovel-big-btn {
+            background: #b0a070;
+            border: 2px solid var(--border);
+            border-radius: 1rem;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: 0.1s;
+            color: white;
+            font-weight: bold;
+            margin-top: 0.5rem;
+            grid-column: span 2;
+        }
+        .shovel-big-btn.active {
+            background: #e05a3a;
+            box-shadow: 0 0 0 2px #ffaa00;
+        }
+        .shovel-big-btn:hover {
+            transform: scale(0.98);
+        }
         .game-area {
             flex: 1;
             min-width: 680px;
@@ -192,15 +216,6 @@
         .rank-btn {
             background: var(--heal);
             color: white;
-        }
-        .shovel-btn {
-            background: #b0a070;
-            color: #0a1a2a;
-        }
-        .shovel-btn.active {
-            background: #e05a3a;
-            color: white;
-            box-shadow: 0 0 0 2px #ffaa00;
         }
         .game-message {
             text-align: center;
@@ -288,6 +303,8 @@
     <div class="elements-sidebar">
         <div class="sidebar-header">⚛️ 元素工厂</div>
         <div class="element-grid" id="elementGrid"></div>
+        <!-- 铲子大按钮，独立占一行两列 -->
+        <div id="shovelBigBtn" class="shovel-big-btn">🔧 铲子模式</div>
         <button class="help-btn" id="openGuideBtn">📖 元素图鉴</button>
     </div>
 
@@ -305,13 +322,10 @@
             <div class="controls-left">
                 <button id="restartBtn">🔄 重新开局</button>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button id="shovelBtn" class="shovel-btn">🔧 铲子模式</button>
-                <button id="rankBtn" class="rank-btn">📊 排行榜</button>
-            </div>
+            <button id="rankBtn" class="rank-btn">📊 排行榜</button>
         </div>
         <div class="game-message" id="gameMessage">⚛️ 点击左侧元素选中，再点击格子放置。前60秒为发育期，不刷怪。</div>
-        <footer>🧪 碳产电子球 · 氢氧攻击 · 氟毒气 · 磷爆破 · 硅地刺 · 镁穿透 · 氦氖防御 · 铝自爆<br>✨ 地刺不阻挡僵尸，但会持续攻击同一格的僵尸。积分已同步独立排行榜。<br>🔧 点击铲子模式，再点击植物可铲除并返还一半电子。</footer>
+        <footer>🧪 碳产电子球 · 氢氧攻击 · 氟毒气 · 硅地刺 · 镁穿透 · 氦氖防御 · 铝自爆（清除面前2格）<br>🔥 磷为范围技能，点击磷卡片后点击草地，清除3x3范围僵尸。<br>✨ 地刺不阻挡僵尸，但会持续攻击同一格的僵尸。积分已同步独立排行榜。<br>🔧 点击铲子模式，再点击植物可铲除并返还一半电子。</footer>
     </div>
 </div>
 
@@ -335,7 +349,7 @@
 
 <script>
     (function(){
-        // ======================= Supabase 配置（使用独立表 evz_rankings） =======================
+        // ======================= Supabase 配置 =======================
         const SUPABASE_URL = 'https://ujinwsfueaifaoskapzs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
         let supabase = null;
@@ -426,7 +440,7 @@
             });
         }
 
-        // ---------- 游戏原有代码 ----------
+        // ---------- 游戏核心代码 ----------
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const COLS = 9;
@@ -437,21 +451,21 @@
         const CELL_W = 100;
         const CELL_H = 100;
 
-        // 元素库
+        // 元素库（磷改为技能类型）
         const ELEMENTS = {
             carbon: { name: "碳", symbol: "C", cost: 50, role: "sunflower", produceInterval: 8.0, produceAmount: 25, desc: "每8秒产生一个电子球", color: "#6b8e23", health: 300, damage: 0, isRanged: false },
             hydrogen: { name: "氢", symbol: "H", cost: 100, role: "peashooter", damage: 25, cooldown: 0.8, desc: "单发豌豆", color: "#5a9ac0", health: 300, isRanged: true },
             oxygen: { name: "氧", symbol: "O", cost: 150, role: "repeater", damage: 20, cooldown: 0.4, desc: "双发豌豆", color: "#4682b4", health: 300, isRanged: true },
             fluorine: { name: "氟", symbol: "F", cost: 175, role: "poison", damage: 15, cooldown: 0.6, poison: true, desc: "毒气持续伤害", color: "#8fbc8f", health: 300, isRanged: true },
             silicon: { name: "硅", symbol: "Si", cost: 75, role: "spikeweed", damage: 25, cooldown: 1.2, desc: "地刺，不阻挡僵尸，持续伤害同一格的僵尸", color: "#b0a070", health: 300, isRanged: false, isSpikeweed: true },
-            phosphorus: { name: "磷", symbol: "P", cost: 200, role: "cherrybomb", explosionRadius: 100, damage: 180, desc: "大范围爆炸", color: "#e67e22", health: 300, isRanged: true },
+            phosphorus: { name: "磷", symbol: "P", cost: 200, role: "skill", skillRadius: 1, damage: 9999, desc: "范围技能，清除3x3范围内所有僵尸", color: "#e67e22", isSkill: true }, // 改为技能
             magnesium: { name: "镁", symbol: "Mg", cost: 160, role: "pierce", damage: 30, cooldown: 1.0, pierce: true, desc: "穿透射击", color: "#d4af37", health: 300, isRanged: true },
             helium: { name: "氦", symbol: "He", cost: 50, role: "wallnut", health: 4000, desc: "坚果墙", color: "#a0522d" },
             neon: { name: "氖", symbol: "Ne", cost: 100, role: "tallnut", health: 6000, desc: "高坚果", color: "#cd853f" },
             aluminum: { name: "铝", symbol: "Al", cost: 125, role: "explodenut", health: 3000, explosionDamage: 300, desc: "自爆坚果，死亡时清除面前2格僵尸", color: "#b0c4de" }
         };
         for (let key in ELEMENTS) {
-            if (!ELEMENTS[key].health && ELEMENTS[key].role !== 'wallnut' && ELEMENTS[key].role !== 'tallnut' && ELEMENTS[key].role !== 'explodenut') {
+            if (!ELEMENTS[key].health && ELEMENTS[key].role !== 'wallnut' && ELEMENTS[key].role !== 'tallnut' && ELEMENTS[key].role !== 'explodenut' && !ELEMENTS[key].isSkill) {
                 ELEMENTS[key].health = 300;
             }
         }
@@ -472,6 +486,8 @@
 
         // 铲子模式
         let shovelMode = false;
+        // 磷技能模式
+        let skillMode = false;
 
         // 电子球系统
         let electrons = [];
@@ -628,6 +644,7 @@
                 }
                 if (this.data.role === 'explodenut' && this.health <= 0 && !this.exploded) {
                     this.exploded = true;
+                    // 清除同一行右侧两格内的僵尸（面前2格）
                     const startX = this.x;
                     for (let z of zombies) {
                         if (z.row === this.row && z.x > startX && z.x < startX + 2 * CELL_W) {
@@ -897,14 +914,20 @@
             }
         }
 
+        // 放置普通元素（非技能）
         function placeElement(row, col) {
             if (gameOver) return false;
             if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
-            if (gridElements[row][col] !== null) return false; // 已有植物，不能放置
-            const cost = ELEMENTS[selectedElement].cost;
+            if (gridElements[row][col] !== null) return false;
+            const elemData = ELEMENTS[selectedElement];
+            if (elemData.isSkill) {
+                // 技能不应在这里触发，单独处理
+                return false;
+            }
+            const cost = elemData.cost;
             if (essence < cost) { document.getElementById('gameMessage').innerHTML = `❌ 电子不足，需要 ${cost} 电子！`; return false; }
             if (isElementOnCooldown(selectedElement)) {
-                document.getElementById('gameMessage').innerHTML = `⏳ 元素 ${ELEMENTS[selectedElement].name} 冷却中，请稍后再放。`;
+                document.getElementById('gameMessage').innerHTML = `⏳ 元素 ${elemData.name} 冷却中，请稍后再放。`;
                 return false;
             }
             essence -= cost;
@@ -916,6 +939,41 @@
             return true;
         }
 
+        // 磷技能：清除3x3范围僵尸
+        function usePhosphorusSkill(row, col) {
+            if (gameOver) return false;
+            const cost = ELEMENTS.phosphorus.cost;
+            if (essence < cost) { document.getElementById('gameMessage').innerHTML = `❌ 电子不足，需要 ${cost} 电子！`; return false; }
+            if (isElementOnCooldown('phosphorus')) {
+                document.getElementById('gameMessage').innerHTML = `⏳ 磷技能冷却中，请稍后再放。`;
+                return false;
+            }
+            essence -= cost;
+            updateUI();
+            startElementCooldown('phosphorus', 5); // 技能冷却5秒
+            // 清除3x3范围内僵尸
+            let killedCount = 0;
+            for (let i=zombies.length-1; i>=0; i--) {
+                const z = zombies[i];
+                const zRow = z.row;
+                const zCol = Math.floor(z.x / CELL_W);
+                if (Math.abs(zRow - row) <= 1 && Math.abs(zCol - col) <= 1) {
+                    // 获得积分
+                    totalScore += z.rewardScore;
+                    zombies.splice(i,1);
+                    killedCount++;
+                }
+            }
+            if (killedCount > 0) {
+                updateUI();
+                if (isLoggedIn && cloudAvailable) updateCloudScore(totalScore);
+                document.getElementById('gameMessage').innerHTML = `🔥 磷爆！清除了 ${killedCount} 只僵尸。`;
+            } else {
+                document.getElementById('gameMessage').innerHTML = `🔥 磷爆，但没有僵尸在范围内。`;
+            }
+            return true;
+        }
+
         // 铲除植物
         function shovelPlant(row, col) {
             const elem = gridElements[row][col];
@@ -923,7 +981,6 @@
             const cost = ELEMENTS[elem.type].cost;
             const refund = Math.floor(cost / 2);
             essence += refund;
-            // 从数组中移除
             const idx = elements.findIndex(e => e === elem);
             if (idx !== -1) elements.splice(idx,1);
             gridElements[row][col] = null;
@@ -976,7 +1033,7 @@
                 }
             }
 
-            // 攻击逻辑：远程植物选择同一行最左边的僵尸（最靠近房子）
+            // 攻击逻辑
             for (let elem of elements) {
                 if (elem.attackTimer > 0) continue;
                 if (elem.data.isSpikeweed) {
@@ -1001,17 +1058,6 @@
                     if (target) {
                         elem.attack(target);
                         elem.attackTimer = elem.data.cooldown;
-                        if (elem.data.role === 'cherrybomb') {
-                            for (let z of zombies) {
-                                if (z.row === elem.row && Math.abs(z.x - elem.x) < elem.data.explosionRadius) {
-                                    z.hp -= elem.data.damage;
-                                }
-                            }
-                            const idx = elements.findIndex(e => e === elem);
-                            if (idx !== -1) elements.splice(idx,1);
-                            gridElements[elem.row][elem.col] = null;
-                            continue;
-                        }
                     }
                 }
             }
@@ -1063,10 +1109,11 @@
             drawFlyAnimations();
 
             if (mouseGrid.row !== -1 && !gameOver && mouseGrid.col >=0 && mouseGrid.col < COLS) {
-                // 铲子模式下高亮显示红色，否则黄色
                 ctx.save(); 
                 ctx.globalAlpha = 0.4; 
-                ctx.fillStyle = shovelMode ? "#e05a3a" : "#f0c040";
+                if (skillMode) ctx.fillStyle = "#e67e22";
+                else if (shovelMode) ctx.fillStyle = "#e05a3a";
+                else ctx.fillStyle = "#f0c040";
                 ctx.fillRect(mouseGrid.col*CELL_W, mouseGrid.row*CELL_H, CELL_W, CELL_H); 
                 ctx.restore();
             }
@@ -1083,15 +1130,16 @@
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
             const mouseX = (e.clientX - rect.left) * scaleX, mouseY = (e.clientY - rect.top) * scaleY;
-            // 优先收集电子球
             if (tryCollectElectron(mouseX, mouseY)) return;
             const col = Math.floor(mouseX / CELL_W);
             const row = Math.floor(mouseY / CELL_H);
             if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
-                if (shovelMode) {
-                    // 铲除模式
+                if (skillMode) {
+                    // 磷技能
+                    usePhosphorusSkill(row, col);
+                    setSkillMode(false);
+                } else if (shovelMode) {
                     shovelPlant(row, col);
-                    // 铲除后自动退出铲子模式
                     setShovelMode(false);
                 } else {
                     placeElement(row, col);
@@ -1111,13 +1159,24 @@
 
         function setShovelMode(active) {
             shovelMode = active;
-            const btn = document.getElementById('shovelBtn');
+            if (skillMode) setSkillMode(false);
+            const btn = document.getElementById('shovelBigBtn');
             if (active) {
                 btn.classList.add('active');
                 document.getElementById('gameMessage').innerHTML = "🔧 铲子模式已开启，点击植物可铲除并返还一半电子。再次点击铲子按钮取消。";
             } else {
                 btn.classList.remove('active');
-                document.getElementById('gameMessage').innerHTML = "⚛️ 铲子模式已关闭，点击左侧元素选中，再点击格子放置。";
+                document.getElementById('gameMessage').innerHTML = "⚛️ 铲子模式已关闭。";
+            }
+        }
+
+        function setSkillMode(active) {
+            skillMode = active;
+            if (shovelMode) setShovelMode(false);
+            if (active) {
+                document.getElementById('gameMessage').innerHTML = "🔥 磷爆模式已开启，点击草地格子引爆3x3范围僵尸。";
+            } else {
+                document.getElementById('gameMessage').innerHTML = "⚛️ 磷爆模式已关闭。";
             }
         }
 
@@ -1137,6 +1196,19 @@
                 btn.innerHTML = `<div class="element-symbol">${elem.symbol}</div><div class="element-cost">${elem.cost}⚡</div>`;
                 btn.addEventListener('click', () => {
                     if (shovelMode) setShovelMode(false);
+                    if (skillMode) setSkillMode(false);
+                    if (elem.isSkill) {
+                        // 磷技能
+                        if (isElementOnCooldown(type)) {
+                            document.getElementById('gameMessage').innerHTML = `⏳ 技能 ${elem.name} 冷却中，请稍后再放。`;
+                            return;
+                        }
+                        setSkillMode(true);
+                        selectedElement = type;
+                        renderElementButtons();
+                        document.getElementById('gameMessage').innerHTML = `🔥 已选中 ${elem.name} 技能，点击草地格子引爆。`;
+                        return;
+                    }
                     if (isElementOnCooldown(type)) {
                         document.getElementById('gameMessage').innerHTML = `⏳ 元素 ${elem.name} 冷却中，请稍后再放。`;
                         return;
@@ -1157,7 +1229,9 @@
                 const elem = ELEMENTS[type];
                 const div = document.createElement('div');
                 div.className = 'elem-desc';
-                div.innerHTML = `<div class="symbol" style="background:${elem.color}">${elem.symbol}</div><div><strong>${elem.name}</strong><br>${elem.desc}<br>💰 成本: ${elem.cost} 电子<br>❤️ 生命: ${elem.health || 300}</div>`;
+                let skillDesc = '';
+                if (elem.isSkill) skillDesc = '<br>🔥 技能：清除3x3范围僵尸';
+                div.innerHTML = `<div class="symbol" style="background:${elem.color}">${elem.symbol}</div><div><strong>${elem.name}</strong><br>${elem.desc}${skillDesc}<br>💰 成本: ${elem.cost} 电子<br>❤️ 生命: ${elem.health || '—'}</div>`;
                 container.appendChild(div);
             });
         }
@@ -1178,6 +1252,7 @@
             for (let t in cooldownTimers) clearTimeout(cooldownTimers[t]);
             cooldownTimers = {};
             setShovelMode(false);
+            setSkillMode(false);
             updateUI();
             document.getElementById('gameMessage').innerHTML = "✨ 游戏已重置！前60秒为发育期，不刷怪。";
             if (frameRequest) cancelAnimationFrame(frameRequest);
@@ -1200,7 +1275,7 @@
                     document.getElementById('rankModal').classList.remove('active');
                 }
             });
-            document.getElementById('shovelBtn').addEventListener('click', toggleShovelMode);
+            document.getElementById('shovelBigBtn').addEventListener('click', toggleShovelMode);
         }
 
         async function init() {
