@@ -183,10 +183,24 @@
             border-radius: 2rem;
             font-weight: bold;
             cursor: pointer;
+            transition: 0.1s;
+        }
+        button:hover {
+            transform: scale(0.97);
+            background: var(--accent-light);
         }
         .rank-btn {
             background: var(--heal);
             color: white;
+        }
+        .shovel-btn {
+            background: #b0a070;
+            color: #0a1a2a;
+        }
+        .shovel-btn.active {
+            background: #e05a3a;
+            color: white;
+            box-shadow: 0 0 0 2px #ffaa00;
         }
         .game-message {
             text-align: center;
@@ -291,10 +305,13 @@
             <div class="controls-left">
                 <button id="restartBtn">🔄 重新开局</button>
             </div>
-            <button id="rankBtn" class="rank-btn">📊 EVZ 排行榜</button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="shovelBtn" class="shovel-btn">🔧 铲子模式</button>
+                <button id="rankBtn" class="rank-btn">📊 排行榜</button>
+            </div>
         </div>
         <div class="game-message" id="gameMessage">⚛️ 点击左侧元素选中，再点击格子放置。前60秒为发育期，不刷怪。</div>
-        <footer>🧪 碳产电子球 · 氢氧攻击 · 氟毒气 · 磷爆破 · 硅地刺 · 镁穿透 · 氦氖防御 · 铝自爆<br>✨ 地刺不阻挡僵尸，但会持续攻击同一格的僵尸。积分已同步独立排行榜。</footer>
+        <footer>🧪 碳产电子球 · 氢氧攻击 · 氟毒气 · 磷爆破 · 硅地刺 · 镁穿透 · 氦氖防御 · 铝自爆<br>✨ 地刺不阻挡僵尸，但会持续攻击同一格的僵尸。积分已同步独立排行榜。<br>🔧 点击铲子模式，再点击植物可铲除并返还一半电子。</footer>
     </div>
 </div>
 
@@ -420,7 +437,7 @@
         const CELL_W = 100;
         const CELL_H = 100;
 
-        // 元素库（修正：碳不应该有 isRanged 或 damage 为0）
+        // 元素库
         const ELEMENTS = {
             carbon: { name: "碳", symbol: "C", cost: 50, role: "sunflower", produceInterval: 8.0, produceAmount: 25, desc: "每8秒产生一个电子球", color: "#6b8e23", health: 300, damage: 0, isRanged: false },
             hydrogen: { name: "氢", symbol: "H", cost: 100, role: "peashooter", damage: 25, cooldown: 0.8, desc: "单发豌豆", color: "#5a9ac0", health: 300, isRanged: true },
@@ -452,6 +469,9 @@
         let frameRequest = null;
         let lastFrame = 0;
         let lastZombieSpawnTime = 0;
+
+        // 铲子模式
+        let shovelMode = false;
 
         // 电子球系统
         let electrons = [];
@@ -880,7 +900,7 @@
         function placeElement(row, col) {
             if (gameOver) return false;
             if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
-            if (gridElements[row][col] !== null) return false;
+            if (gridElements[row][col] !== null) return false; // 已有植物，不能放置
             const cost = ELEMENTS[selectedElement].cost;
             if (essence < cost) { document.getElementById('gameMessage').innerHTML = `❌ 电子不足，需要 ${cost} 电子！`; return false; }
             if (isElementOnCooldown(selectedElement)) {
@@ -893,6 +913,22 @@
             elements.push(newElem);
             updateUI();
             startElementCooldown(selectedElement, 3);
+            return true;
+        }
+
+        // 铲除植物
+        function shovelPlant(row, col) {
+            const elem = gridElements[row][col];
+            if (!elem) return false;
+            const cost = ELEMENTS[elem.type].cost;
+            const refund = Math.floor(cost / 2);
+            essence += refund;
+            // 从数组中移除
+            const idx = elements.findIndex(e => e === elem);
+            if (idx !== -1) elements.splice(idx,1);
+            gridElements[row][col] = null;
+            updateUI();
+            document.getElementById('gameMessage').innerHTML = `🔧 铲除了 ${ELEMENTS[elem.type].name}，返还 ${refund} 电子。`;
             return true;
         }
 
@@ -940,10 +976,9 @@
                 }
             }
 
-            // 攻击逻辑：只有 damage > 0 且 isRanged === true 的元素才发射子弹
+            // 攻击逻辑：远程植物选择同一行最左边的僵尸（最靠近房子）
             for (let elem of elements) {
                 if (elem.attackTimer > 0) continue;
-                // 地刺特殊处理
                 if (elem.data.isSpikeweed) {
                     const col = elem.col;
                     for (let z of zombies) {
@@ -955,11 +990,12 @@
                         }
                     }
                 } else if (elem.data.isRanged === true && elem.data.damage > 0) {
-                    // 远程攻击元素，伤害必须大于0
                     let target = null;
+                    let minX = Infinity;
                     for (let z of zombies) {
-                        if (z.row === elem.row && z.x > elem.x) {
-                            target = z; break;
+                        if (z.row === elem.row && z.x > elem.x && z.x < minX) {
+                            minX = z.x;
+                            target = z;
                         }
                     }
                     if (target) {
@@ -1026,8 +1062,13 @@
             for (let b of bullets) b.draw(ctx);
             drawFlyAnimations();
 
-            if (mouseGrid.row !== -1 && !gameOver && mouseGrid.col >=0 && mouseGrid.col < COLS && gridElements[mouseGrid.row] && !gridElements[mouseGrid.row][mouseGrid.col]) {
-                ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = "#f0c040"; ctx.fillRect(mouseGrid.col*CELL_W, mouseGrid.row*CELL_H, CELL_W, CELL_H); ctx.restore();
+            if (mouseGrid.row !== -1 && !gameOver && mouseGrid.col >=0 && mouseGrid.col < COLS) {
+                // 铲子模式下高亮显示红色，否则黄色
+                ctx.save(); 
+                ctx.globalAlpha = 0.4; 
+                ctx.fillStyle = shovelMode ? "#e05a3a" : "#f0c040";
+                ctx.fillRect(mouseGrid.col*CELL_W, mouseGrid.row*CELL_H, CELL_W, CELL_H); 
+                ctx.restore();
             }
             if (gameOver) {
                 ctx.font = "bold 32px sans-serif";
@@ -1042,11 +1083,22 @@
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
             const mouseX = (e.clientX - rect.left) * scaleX, mouseY = (e.clientY - rect.top) * scaleY;
+            // 优先收集电子球
             if (tryCollectElectron(mouseX, mouseY)) return;
             const col = Math.floor(mouseX / CELL_W);
             const row = Math.floor(mouseY / CELL_H);
-            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) placeElement(row, col);
+            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+                if (shovelMode) {
+                    // 铲除模式
+                    shovelPlant(row, col);
+                    // 铲除后自动退出铲子模式
+                    setShovelMode(false);
+                } else {
+                    placeElement(row, col);
+                }
+            }
         }
+
         function handleMouseMove(e) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
@@ -1055,6 +1107,22 @@
             const row = Math.floor(mouseY / CELL_H);
             if (row >= 0 && row < ROWS && col >= 0 && col < COLS) mouseGrid = { row, col };
             else mouseGrid = { row: -1, col: -1 };
+        }
+
+        function setShovelMode(active) {
+            shovelMode = active;
+            const btn = document.getElementById('shovelBtn');
+            if (active) {
+                btn.classList.add('active');
+                document.getElementById('gameMessage').innerHTML = "🔧 铲子模式已开启，点击植物可铲除并返还一半电子。再次点击铲子按钮取消。";
+            } else {
+                btn.classList.remove('active');
+                document.getElementById('gameMessage').innerHTML = "⚛️ 铲子模式已关闭，点击左侧元素选中，再点击格子放置。";
+            }
+        }
+
+        function toggleShovelMode() {
+            setShovelMode(!shovelMode);
         }
 
         function renderElementButtons() {
@@ -1068,6 +1136,7 @@
                 btn.dataset.type = type;
                 btn.innerHTML = `<div class="element-symbol">${elem.symbol}</div><div class="element-cost">${elem.cost}⚡</div>`;
                 btn.addEventListener('click', () => {
+                    if (shovelMode) setShovelMode(false);
                     if (isElementOnCooldown(type)) {
                         document.getElementById('gameMessage').innerHTML = `⏳ 元素 ${elem.name} 冷却中，请稍后再放。`;
                         return;
@@ -1108,6 +1177,7 @@
             elementCooldowns = {};
             for (let t in cooldownTimers) clearTimeout(cooldownTimers[t]);
             cooldownTimers = {};
+            setShovelMode(false);
             updateUI();
             document.getElementById('gameMessage').innerHTML = "✨ 游戏已重置！前60秒为发育期，不刷怪。";
             if (frameRequest) cancelAnimationFrame(frameRequest);
@@ -1130,6 +1200,7 @@
                     document.getElementById('rankModal').classList.remove('active');
                 }
             });
+            document.getElementById('shovelBtn').addEventListener('click', toggleShovelMode);
         }
 
         async function init() {
