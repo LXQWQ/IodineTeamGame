@@ -506,21 +506,21 @@
         }
 
         async function updateRanking() {
-            if (isLoggedIn && cloudAvailable) {
-                try {
-                    const { data: existing } = await supabase
+        if (isLoggedIn && cloudAvailable) {
+            try {
+                const { data: existing } = await supabase
+                    .from('rankings')
+                    .select('score')
+                    .eq('user_name', currentUser)
+                    .maybeSingle();
+                if (!existing || existing.score < totalScore) {
+                    await supabase
                         .from('rankings')
-                        .select('score')
-                        .eq('user_name', currentUser)
-                        .maybeSingle();
-                    if (!existing || existing.score < totalScore) {
-                        await supabase
-                            .from('rankings')
-                            .upsert({ user_name: currentUser, score: totalScore, max_hp: maxHealth, updated_at: new Date().toISOString() }, { onConflict: 'user_name' });
-                    }
-                } catch(e) { console.warn(e); }
-            }
-            renderRanking();
+                        .upsert({ user_name: currentUser, score: totalScore, max_hp: maxHealth, updated_at: new Date().toISOString() }, { onConflict: 'user_name' });
+                }
+            } catch(e) { console.warn(e); }
+        }
+        await renderRanking();   // 关键：等待排行榜刷新完成
         }
 
         async function renderRanking() {
