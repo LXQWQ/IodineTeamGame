@@ -121,7 +121,6 @@
             text-align: center;
             color: var(--text-light);
         }
-        /* 铲子大按钮样式 */
         .shovel-big-btn {
             background: #b0a070;
             border: 2px solid var(--border);
@@ -303,7 +302,6 @@
     <div class="elements-sidebar">
         <div class="sidebar-header">⚛️ 元素工厂</div>
         <div class="element-grid" id="elementGrid"></div>
-        <!-- 铲子大按钮，独立占一行两列 -->
         <div id="shovelBigBtn" class="shovel-big-btn">🔧 铲子模式</div>
         <button class="help-btn" id="openGuideBtn">📖 元素图鉴</button>
     </div>
@@ -325,7 +323,7 @@
             <button id="rankBtn" class="rank-btn">📊 排行榜</button>
         </div>
         <div class="game-message" id="gameMessage">⚛️ 点击左侧元素选中，再点击格子放置。前60秒为发育期，不刷怪。</div>
-        <footer>🧪 碳产电子球 · 氢氧攻击 · 氟毒气 · 硅地刺 · 镁穿透 · 氦氖防御 · 铝自爆（清除面前2格）<br>🔥 磷为范围技能，点击磷卡片后点击草地，清除3x3范围僵尸。<br>✨ 地刺不阻挡僵尸，但会持续攻击同一格的僵尸。积分已同步独立排行榜。<br>🔧 点击铲子模式，再点击植物可铲除并返还一半电子。</footer>
+        <footer>🧪 碳产电子球 · 氢氧攻击 · 氟毒气 · 硅地刺 · 镁穿透 · 氦氖防御 · 铝自爆（清除自身及右侧两格僵尸）<br>🔥 磷为范围技能，点击磷卡片后点击草地，清除3x3范围僵尸。<br>✨ 地刺不阻挡僵尸，但会持续攻击同一格的僵尸。积分已同步独立排行榜。<br>🔧 点击铲子模式，再点击植物可铲除并返还一半电子。</footer>
     </div>
 </div>
 
@@ -451,18 +449,18 @@
         const CELL_W = 100;
         const CELL_H = 100;
 
-        // 元素库（磷改为技能类型）
+        // 元素库
         const ELEMENTS = {
             carbon: { name: "碳", symbol: "C", cost: 50, role: "sunflower", produceInterval: 8.0, produceAmount: 25, desc: "每8秒产生一个电子球", color: "#6b8e23", health: 300, damage: 0, isRanged: false },
             hydrogen: { name: "氢", symbol: "H", cost: 100, role: "peashooter", damage: 25, cooldown: 0.8, desc: "单发豌豆", color: "#5a9ac0", health: 300, isRanged: true },
             oxygen: { name: "氧", symbol: "O", cost: 150, role: "repeater", damage: 20, cooldown: 0.4, desc: "双发豌豆", color: "#4682b4", health: 300, isRanged: true },
             fluorine: { name: "氟", symbol: "F", cost: 175, role: "poison", damage: 15, cooldown: 0.6, poison: true, desc: "毒气持续伤害", color: "#8fbc8f", health: 300, isRanged: true },
             silicon: { name: "硅", symbol: "Si", cost: 75, role: "spikeweed", damage: 25, cooldown: 1.2, desc: "地刺，不阻挡僵尸，持续伤害同一格的僵尸", color: "#b0a070", health: 300, isRanged: false, isSpikeweed: true },
-            phosphorus: { name: "磷", symbol: "P", cost: 200, role: "skill", skillRadius: 1, damage: 9999, desc: "范围技能，清除3x3范围内所有僵尸", color: "#e67e22", isSkill: true }, // 改为技能
-            magnesium: { name: "镁", symbol: "Mg", cost: 160, role: "pierce", damage: 30, cooldown: 1.0, pierce: true, desc: "穿透射击", color: "#d4af37", health: 300, isRanged: true },
+            phosphorus: { name: "磷", symbol: "P", cost: 200, role: "skill", skillRadius: 1, damage: 9999, desc: "范围技能，清除3x3范围内所有僵尸", color: "#e67e22", isSkill: true },
+            magnesium: { name: "镁", symbol: "Mg", cost: 160, role: "pierce", damage: 30, cooldown: 1.0, pierce: true, desc: "穿透射击，子弹无限穿透直到离开屏幕", color: "#d4af37", health: 300, isRanged: true },
             helium: { name: "氦", symbol: "He", cost: 50, role: "wallnut", health: 4000, desc: "坚果墙", color: "#a0522d" },
             neon: { name: "氖", symbol: "Ne", cost: 100, role: "tallnut", health: 6000, desc: "高坚果", color: "#cd853f" },
-            aluminum: { name: "铝", symbol: "Al", cost: 125, role: "explodenut", health: 3000, explosionDamage: 300, desc: "自爆坚果，死亡时清除面前2格僵尸", color: "#b0c4de" }
+            aluminum: { name: "铝", symbol: "Al", cost: 125, role: "explodenut", health: 3000, explosionDamage: 300, desc: "自爆坚果，死亡时清除自身及右侧两格僵尸", color: "#b0c4de" }
         };
         for (let key in ELEMENTS) {
             if (!ELEMENTS[key].health && ELEMENTS[key].role !== 'wallnut' && ELEMENTS[key].role !== 'tallnut' && ELEMENTS[key].role !== 'explodenut' && !ELEMENTS[key].isSkill) {
@@ -484,12 +482,9 @@
         let lastFrame = 0;
         let lastZombieSpawnTime = 0;
 
-        // 铲子模式
         let shovelMode = false;
-        // 磷技能模式
         let skillMode = false;
 
-        // 电子球系统
         let electrons = [];
         let lastElectronSpawn = 0;
         const ELECTRON_AUTO_COLLECT_TIME = 2000;
@@ -497,11 +492,51 @@
 
         let flyAnimations = [];
 
-        // 元素冷却
         let elementCooldowns = {};
         let cooldownTimers = {};
 
-        // 僵尸类型
+        // 粒子系统
+        let particles = [];
+
+        class Particle {
+            constructor(x, y, vx, vy, color, size = 3, life = 0.5) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.size = size;
+                this.life = life; // 秒
+                this.maxLife = life;
+            }
+            update(deltaTime) {
+                this.x += this.vx * deltaTime;
+                this.y += this.vy * deltaTime;
+                this.life -= deltaTime;
+                return this.life > 0;
+            }
+            draw(ctx) {
+                const alpha = Math.min(1, this.life / this.maxLife * 2);
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function addParticles(x, y, color, count = 5) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 60 + 30;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                particles.push(new Particle(x, y, vx, vy, color, Math.random() * 3 + 2, 0.4));
+            }
+        }
+
         const ZOMBIE_TYPES = {
             Basic: { name: "Basic", color: "#4a6e3a", hpBase: 300, speedBase: 30, rewardScore: 10, unlockTime: 0 },
             Armored: { name: "Armored", color: "#8b5a2b", hpBase: 800, speedBase: 30, rewardScore: 30, unlockTime: 30 },
@@ -516,31 +551,76 @@
         let bullets = [];
 
         class Bullet {
-            constructor(x, y, targetZombie, damage, type, color) {
+            constructor(x, y, targetZombie, damage, type, color, isPierce = false) {
                 this.x = x; this.y = y; this.target = targetZombie; this.damage = damage; this.type = type;
                 this.color = color;
-                this.speed = 5; this.active = true;
+                this.speed = 5; 
+                this.active = true;
+                this.isPierce = isPierce;
+                this.piercedZombies = new Set(); // 记录已穿透的僵尸，避免单次穿透多次伤害
+                // 粒子拖尾效果：在子弹尾部生成粒子
+                this.lastX = x;
+                this.lastY = y;
+                this.trailTimer = 0;
             }
-            update() {
-                if (!this.target || this.target.hp <= 0) { this.active = false; return; }
-                const dx = this.target.x - this.x, dy = this.target.y - this.y;
-                const dist = Math.hypot(dx, dy);
-                if (dist < 8) {
-                    this.target.hp -= this.damage;
-                    if (this.type === 'poison') this.target.poisoned = 60;
+            update(deltaTime) {
+                if (!this.isPierce && (!this.target || this.target.hp <= 0)) {
                     this.active = false;
+                    return;
+                }
+                if (this.isPierce) {
+                    // 穿透子弹：向正前方移动，攻击沿途所有僵尸
+                    const step = this.speed;
+                    this.x += step;
+                    // 检查沿途碰撞
+                    for (let z of zombies) {
+                        if (this.piercedZombies.has(z)) continue;
+                        const dx = z.x - this.x, dy = z.y - this.y;
+                        if (Math.abs(dx) < 30 && Math.abs(dy) < 30) {
+                            z.hp -= this.damage;
+                            this.piercedZombies.add(z);
+                            addParticles(this.x, this.y, this.color, 8);
+                            if (this.type === 'poison') z.poisoned = 60;
+                            // 穿透子弹不消失，继续飞行
+                        }
+                    }
+                    // 超出屏幕右侧或左侧则消失
+                    if (this.x > canvas.width + 100 || this.x < -100) {
+                        this.active = false;
+                    }
                 } else {
-                    const step = Math.min(this.speed, dist);
-                    const angle = Math.atan2(dy, dx);
-                    this.x += Math.cos(angle) * step;
-                    this.y += Math.sin(angle) * step;
+                    // 普通子弹追踪目标
+                    const dx = this.target.x - this.x, dy = this.target.y - this.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < 8) {
+                        this.target.hp -= this.damage;
+                        addParticles(this.x, this.y, this.color, 10);
+                        if (this.type === 'poison') this.target.poisoned = 60;
+                        this.active = false;
+                    } else {
+                        const step = Math.min(this.speed, dist);
+                        const angle = Math.atan2(dy, dx);
+                        this.x += Math.cos(angle) * step;
+                        this.y += Math.sin(angle) * step;
+                    }
+                }
+                // 粒子拖尾效果
+                this.trailTimer += deltaTime;
+                if (this.trailTimer > 0.03) {
+                    this.trailTimer = 0;
+                    particles.push(new Particle(this.x, this.y, 0, 0, this.color, 2, 0.2));
                 }
             }
-            draw(ctx) { 
-                ctx.beginPath(); 
-                ctx.arc(this.x, this.y, 6, 0, 2*Math.PI); 
-                ctx.fillStyle = this.color; 
-                ctx.fill(); 
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 6, 0, 2*Math.PI);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                // 添加光晕效果
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
             }
         }
 
@@ -571,6 +651,7 @@
                                 const idx = elements.findIndex(e => e === elem);
                                 if (idx !== -1) elements.splice(idx,1);
                                 gridElements[this.row][col] = null;
+                                addParticles(elem.x, elem.y, elem.data.color, 15);
                             }
                         } else {
                             this.attackTimer -= deltaTime;
@@ -602,6 +683,7 @@
                         for (let z of zombies) {
                             if (z !== this && Math.hypot(z.x - this.x, z.y - this.y) < ZOMBIE_TYPES.Healer.healRange) {
                                 z.hp = Math.min(z.maxHp, z.hp + ZOMBIE_TYPES.Healer.healAmount);
+                                addParticles(z.x, z.y, "#20b2aa", 5);
                             }
                         }
                     }
@@ -644,13 +726,16 @@
                 }
                 if (this.data.role === 'explodenut' && this.health <= 0 && !this.exploded) {
                     this.exploded = true;
-                    // 清除同一行右侧两格内的僵尸（面前2格）
-                    const startX = this.x;
+                    const startCol = this.col;
+                    const endCol = Math.min(COLS-1, this.col + 2);
                     for (let z of zombies) {
-                        if (z.row === this.row && z.x > startX && z.x < startX + 2 * CELL_W) {
+                        const zCol = Math.floor(z.x / CELL_W);
+                        if (z.row === this.row && zCol >= startCol && zCol <= endCol) {
                             z.hp = 0;
+                            addParticles(z.x, z.y, "#ffaa00", 20);
                         }
                     }
+                    addParticles(this.x, this.y, this.data.color, 30);
                     const idx = elements.findIndex(e => e === this);
                     if (idx !== -1) elements.splice(idx,1);
                     gridElements[this.row][this.col] = null;
@@ -680,16 +765,18 @@
                 let dmg = this.data.damage;
                 let poison = this.data.role === 'poison';
                 let bulletColor = this.data.color;
-                bullets.push(new Bullet(this.x, this.y, shootTarget, dmg, poison ? 'poison' : 'normal', bulletColor));
-                if (this.data.role === 'repeater') bullets.push(new Bullet(this.x, this.y, shootTarget, dmg, poison ? 'poison' : 'normal', bulletColor));
+                const isPierce = (this.data.role === 'pierce');
+                if (isPierce) {
+                    // 穿透子弹：无目标，直接向前飞行
+                    bullets.push(new Bullet(this.x, this.y, null, dmg, poison ? 'poison' : 'normal', bulletColor, true));
+                } else {
+                    bullets.push(new Bullet(this.x, this.y, shootTarget, dmg, poison ? 'poison' : 'normal', bulletColor, false));
+                }
+                if (this.data.role === 'repeater') {
+                    bullets.push(new Bullet(this.x, this.y, shootTarget, dmg, poison ? 'poison' : 'normal', bulletColor, false));
+                }
                 if (this.data.role === 'pierce') {
-                    let second = null;
-                    for (let z of zombies) {
-                        if (z.row === this.row && z !== shootTarget && z.x > this.x) {
-                            second = z; break;
-                        }
-                    }
-                    if (second) bullets.push(new Bullet(this.x, this.y, second, dmg, poison ? 'poison' : 'normal', bulletColor));
+                    // 镁穿透子弹已处理，不再额外添加
                 }
                 return true;
             }
@@ -908,22 +995,19 @@
                             const idx = elements.findIndex(e => e === elem);
                             if (idx !== -1) elements.splice(idx,1);
                             gridElements[r][c] = null;
+                            addParticles(elem.x, elem.y, elem.data.color, 15);
                         }
                     }
                 }
             }
         }
 
-        // 放置普通元素（非技能）
         function placeElement(row, col) {
             if (gameOver) return false;
             if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
             if (gridElements[row][col] !== null) return false;
             const elemData = ELEMENTS[selectedElement];
-            if (elemData.isSkill) {
-                // 技能不应在这里触发，单独处理
-                return false;
-            }
+            if (elemData.isSkill) return false;
             const cost = elemData.cost;
             if (essence < cost) { document.getElementById('gameMessage').innerHTML = `❌ 电子不足，需要 ${cost} 电子！`; return false; }
             if (isElementOnCooldown(selectedElement)) {
@@ -936,10 +1020,10 @@
             elements.push(newElem);
             updateUI();
             startElementCooldown(selectedElement, 3);
+            addParticles(newElem.x, newElem.y, elemData.color, 12);
             return true;
         }
 
-        // 磷技能：清除3x3范围僵尸
         function usePhosphorusSkill(row, col) {
             if (gameOver) return false;
             const cost = ELEMENTS.phosphorus.cost;
@@ -950,16 +1034,15 @@
             }
             essence -= cost;
             updateUI();
-            startElementCooldown('phosphorus', 5); // 技能冷却5秒
-            // 清除3x3范围内僵尸
+            startElementCooldown('phosphorus', 5);
             let killedCount = 0;
             for (let i=zombies.length-1; i>=0; i--) {
                 const z = zombies[i];
                 const zRow = z.row;
                 const zCol = Math.floor(z.x / CELL_W);
                 if (Math.abs(zRow - row) <= 1 && Math.abs(zCol - col) <= 1) {
-                    // 获得积分
                     totalScore += z.rewardScore;
+                    addParticles(z.x, z.y, "#ff6600", 25);
                     zombies.splice(i,1);
                     killedCount++;
                 }
@@ -974,7 +1057,6 @@
             return true;
         }
 
-        // 铲除植物
         function shovelPlant(row, col) {
             const elem = gridElements[row][col];
             if (!elem) return false;
@@ -985,6 +1067,7 @@
             if (idx !== -1) elements.splice(idx,1);
             gridElements[row][col] = null;
             updateUI();
+            addParticles(elem.x, elem.y, elem.data.color, 20);
             document.getElementById('gameMessage').innerHTML = `🔧 铲除了 ${ELEMENTS[elem.type].name}，返还 ${refund} 电子。`;
             return true;
         }
@@ -1010,7 +1093,7 @@
             spawnZombieByTime(now);
 
             for (let elem of elements) elem.update(delta);
-            for (let i=bullets.length-1; i>=0; i--) { bullets[i].update(); if (!bullets[i].active) bullets.splice(i,1); }
+            for (let i=bullets.length-1; i>=0; i--) { bullets[i].update(delta); if (!bullets[i].active) bullets.splice(i,1); }
 
             for (let i=zombies.length-1; i>=0; i--) {
                 const z = zombies[i];
@@ -1029,11 +1112,18 @@
                         handleExplosiveDeath(z, row, col);
                     }
                     addScoreAndSync(z.rewardScore);
+                    addParticles(z.x, z.y, ZOMBIE_TYPES[z.type]?.color || "#ffffff", 20);
                     zombies.splice(i,1);
                 }
             }
 
-            // 攻击逻辑
+            // 更新粒子
+            for (let i=particles.length-1; i>=0; i--) {
+                if (!particles[i].update(delta)) {
+                    particles.splice(i,1);
+                }
+            }
+
             for (let elem of elements) {
                 if (elem.attackTimer > 0) continue;
                 if (elem.data.isSpikeweed) {
@@ -1043,6 +1133,7 @@
                         if (z.row === elem.row && zCol === col) {
                             z.hp -= elem.data.damage;
                             elem.attackTimer = elem.data.cooldown;
+                            addParticles(z.x, z.y, elem.data.color, 5);
                             break;
                         }
                     }
@@ -1057,6 +1148,10 @@
                     }
                     if (target) {
                         elem.attack(target);
+                        elem.attackTimer = elem.data.cooldown;
+                    } else if (elem.data.role === 'pierce') {
+                        // 镁无目标时也可以发射穿透弹（清屏效果）
+                        elem.attack(null);
                         elem.attackTimer = elem.data.cooldown;
                     }
                 }
@@ -1106,6 +1201,7 @@
                 ctx.restore();
             }
             for (let b of bullets) b.draw(ctx);
+            for (let p of particles) p.draw(ctx);
             drawFlyAnimations();
 
             if (mouseGrid.row !== -1 && !gameOver && mouseGrid.col >=0 && mouseGrid.col < COLS) {
@@ -1135,7 +1231,6 @@
             const row = Math.floor(mouseY / CELL_H);
             if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
                 if (skillMode) {
-                    // 磷技能
                     usePhosphorusSkill(row, col);
                     setSkillMode(false);
                 } else if (shovelMode) {
@@ -1198,7 +1293,6 @@
                     if (shovelMode) setShovelMode(false);
                     if (skillMode) setSkillMode(false);
                     if (elem.isSkill) {
-                        // 磷技能
                         if (isElementOnCooldown(type)) {
                             document.getElementById('gameMessage').innerHTML = `⏳ 技能 ${elem.name} 冷却中，请稍后再放。`;
                             return;
@@ -1244,6 +1338,7 @@
             bullets = [];
             electrons = [];
             flyAnimations = [];
+            particles = [];
             initGrid();
             gameStartTime = performance.now();
             lastZombieSpawnTime = 0;
