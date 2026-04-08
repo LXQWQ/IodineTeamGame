@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>化学元素大战僵尸 · 无尽生存</title>
+    <title>化学元素大战僵尸 · 塔防游戏</title>
     <style>
         * {
             margin: 0;
@@ -92,11 +92,14 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(0,0,0,0.6);
-            color: #ffaa00;
-            font-size: 0.7rem;
+            background: rgba(0,0,0,0.75);
+            color: #ffcc66;
+            font-size: 0.75rem;
+            font-weight: bold;
             text-align: center;
             pointer-events: none;
+            padding: 2px 0;
+            backdrop-filter: blur(2px);
         }
         .element-symbol {
             font-size: 1.4rem;
@@ -300,7 +303,7 @@
 <body>
 <div class="game-layout">
     <div class="elements-sidebar">
-        <div class="sidebar-header">⚛️ 元素工厂</div>
+        <div class="sidebar-header">⚛️ 碘队元素工厂 </div>
         <div class="element-grid" id="elementGrid"></div>
         <div id="shovelBigBtn" class="shovel-big-btn">🔧 铲子模式</div>
         <button class="help-btn" id="openGuideBtn">📖 元素图鉴</button>
@@ -308,7 +311,7 @@
 
     <div class="game-area">
         <div class="game-header">
-            <h1>⚛️ 化学元素大战僵尸 · 无尽生存</h1>
+            <h1>⚛️ 化学元素大战僵尸 · 原版冷却节奏</h1>
             <div class="stats">
                 <div class="stat">⚡ 电子: <span id="essence">200</span></div>
                 <div class="stat">🏆 积分: <span id="score">0</span></div>
@@ -322,21 +325,19 @@
             </div>
             <button id="rankBtn" class="rank-btn">📊 排行榜</button>
         </div>
-        <div class="game-message" id="gameMessage">⚛️ 点击左侧元素选中，再点击格子放置。前60秒为发育期，不刷怪。</div>
-        <footer>🧪 碳产电子球 · 氢氧攻击 · 氟毒气 · 硅地刺 · 镁穿透 · 氦氖防御 · 铝自爆（清除自身及右侧两格僵尸）<br>🔥 磷为范围技能，点击磷卡片后点击草地，清除3x3范围僵尸。<br>✨ 地刺不阻挡僵尸，但会持续攻击同一格的僵尸。积分已同步独立排行榜。<br>🔧 点击铲子模式，再点击植物可铲除并返还一半电子。</footer>
+        <div class="game-message" id="gameMessage">⚛️ 点击左侧元素选中，再点击格子放置。每个元素独立冷却(向日葵/攻击类7.5s，坚果类30s，铝30s，磷技能50s)。</div>
+        <footer>🧪 碳产电子球 · 氢氧攻击 · 氟毒气 · 硅地刺 · 镁穿透 · 氦氖防御 · 铝自爆（清除自身及右侧两格僵尸）<br>🔥 磷为范围技能，点击磷卡片后点击草地，清除3x3范围僵尸。<br>✨ 地刺不阻挡僵尸，持续攻击同格僵尸。冷却机制完全参照PVZ经典节奏。<br>🔧 点击铲子模式，再点击植物可铲除并返还一半电子。</footer>
     </div>
 </div>
 
-<!-- 元素图鉴模态框 -->
 <div id="guideModal" class="modal">
     <div class="modal-content">
-        <h3>📖 元素图鉴</h3>
+        <h3>📖 元素图鉴 & 冷却时间</h3>
         <div id="guideContent"></div>
         <button class="close-modal" id="closeGuideBtn">关闭</button>
     </div>
 </div>
 
-<!-- 独立排行榜模态框 -->
 <div id="rankModal" class="modal">
     <div class="modal-content">
         <h3>🏆 EVZ 全服积分排行榜</h3>
@@ -363,7 +364,7 @@
                 cloudAvailable = true;
                 console.log('云服务可用');
             } catch(e) {
-                console.warn('Supabase 连接失败或 evz_rankings 表不存在，排行榜将使用本地模拟', e);
+                console.warn('Supabase 连接失败或表不存在，排行榜本地模拟', e);
                 cloudAvailable = false;
             }
             const storedUser = localStorage.getItem('iodine_current_user');
@@ -449,18 +450,18 @@
         const CELL_W = 100;
         const CELL_H = 100;
 
-        // 元素库
+        // 元素库 + 原版冷却时间 (单位: 秒)
         const ELEMENTS = {
-            carbon: { name: "碳", symbol: "C", cost: 50, role: "sunflower", produceInterval: 8.0, produceAmount: 25, desc: "每8秒产生一个电子球", color: "#6b8e23", health: 300, damage: 0, isRanged: false },
-            hydrogen: { name: "氢", symbol: "H", cost: 100, role: "peashooter", damage: 25, cooldown: 0.8, desc: "单发豌豆", color: "#5a9ac0", health: 300, isRanged: true },
-            oxygen: { name: "氧", symbol: "O", cost: 150, role: "repeater", damage: 20, cooldown: 0.4, desc: "双发豌豆", color: "#4682b4", health: 300, isRanged: true },
-            fluorine: { name: "氟", symbol: "F", cost: 175, role: "poison", damage: 15, cooldown: 0.6, poison: true, desc: "毒气持续伤害", color: "#8fbc8f", health: 300, isRanged: true },
-            silicon: { name: "硅", symbol: "Si", cost: 75, role: "spikeweed", damage: 25, cooldown: 1.2, desc: "地刺，不阻挡僵尸，持续伤害同一格的僵尸", color: "#b0a070", health: 300, isRanged: false, isSpikeweed: true },
-            phosphorus: { name: "磷", symbol: "P", cost: 200, role: "skill", skillRadius: 1, damage: 9999, desc: "范围技能，清除3x3范围内所有僵尸", color: "#e67e22", isSkill: true },
-            magnesium: { name: "镁", symbol: "Mg", cost: 160, role: "pierce", damage: 30, cooldown: 1.0, pierce: true, desc: "穿透射击，子弹无限穿透直到离开屏幕", color: "#d4af37", health: 300, isRanged: true },
-            helium: { name: "氦", symbol: "He", cost: 50, role: "wallnut", health: 4000, desc: "坚果墙", color: "#a0522d" },
-            neon: { name: "氖", symbol: "Ne", cost: 100, role: "tallnut", health: 6000, desc: "高坚果", color: "#cd853f" },
-            aluminum: { name: "铝", symbol: "Al", cost: 125, role: "explodenut", health: 3000, explosionDamage: 300, desc: "自爆坚果，死亡时清除自身及右侧两格僵尸", color: "#b0c4de" }
+            carbon: { name: "碳", symbol: "C", cost: 50, role: "sunflower", produceInterval: 8.0, produceAmount: 25, desc: "每8秒产生一个电子球", color: "#6b8e23", health: 300, damage: 0, isRanged: false, cooldown: 7.5 },
+            hydrogen: { name: "氢", symbol: "H", cost: 100, role: "peashooter", damage: 25, cooldownAttack: 0.8, desc: "单发豌豆", color: "#5a9ac0", health: 300, isRanged: true, cooldown: 7.5 },
+            oxygen: { name: "氧", symbol: "O", cost: 150, role: "repeater", damage: 20, cooldownAttack: 0.4, desc: "双发豌豆", color: "#4682b4", health: 300, isRanged: true, cooldown: 7.5 },
+            fluorine: { name: "氟", symbol: "F", cost: 175, role: "poison", damage: 15, cooldownAttack: 0.6, poison: true, desc: "毒气持续伤害", color: "#8fbc8f", health: 300, isRanged: true, cooldown: 7.5 },
+            silicon: { name: "硅", symbol: "Si", cost: 75, role: "spikeweed", damage: 25, cooldownAttack: 1.2, desc: "地刺，不阻挡僵尸，持续伤害同一格的僵尸", color: "#b0a070", health: 300, isRanged: false, isSpikeweed: true, cooldown: 7.5 },
+            phosphorus: { name: "磷", symbol: "P", cost: 200, role: "skill", skillRadius: 1, damage: 9999, desc: "范围技能，清除3x3范围内所有僵尸", color: "#e67e22", isSkill: true, cooldown: 50 },
+            magnesium: { name: "镁", symbol: "Mg", cost: 160, role: "pierce", damage: 30, cooldownAttack: 1.0, pierce: true, desc: "穿透射击，子弹无限穿透直到离开屏幕", color: "#d4af37", health: 300, isRanged: true, cooldown: 7.5 },
+            helium: { name: "氦", symbol: "He", cost: 50, role: "wallnut", health: 4000, desc: "坚果墙 (30秒冷却)", color: "#a0522d", cooldown: 30 },
+            neon: { name: "氖", symbol: "Ne", cost: 100, role: "tallnut", health: 6000, desc: "高坚果 (30秒冷却)", color: "#cd853f", cooldown: 30 },
+            aluminum: { name: "铝", symbol: "Al", cost: 125, role: "explodenut", health: 3000, explosionDamage: 300, desc: "自爆坚果，死亡时清除自身及右侧两格僵尸 (30秒冷却)", color: "#b0c4de", cooldown: 30 }
         };
         for (let key in ELEMENTS) {
             if (!ELEMENTS[key].health && ELEMENTS[key].role !== 'wallnut' && ELEMENTS[key].role !== 'tallnut' && ELEMENTS[key].role !== 'explodenut' && !ELEMENTS[key].isSkill) {
@@ -469,7 +470,6 @@
         }
         const elementOrder = ['carbon','hydrogen','oxygen','fluorine','silicon','phosphorus','magnesium','helium','neon','aluminum'];
 
-        // 游戏状态
         let essence = 200;
         let totalScore = 0;
         let gameStartTime = null;
@@ -481,61 +481,25 @@
         let frameRequest = null;
         let lastFrame = 0;
         let lastZombieSpawnTime = 0;
-
         let shovelMode = false;
         let skillMode = false;
-
         let electrons = [];
         let lastElectronSpawn = 0;
         const ELECTRON_AUTO_COLLECT_TIME = 2000;
         const ELECTRON_VALUE = 25;
-
         let flyAnimations = [];
-
         let elementCooldowns = {};
         let cooldownTimers = {};
-
-        // 粒子系统
         let particles = [];
 
         class Particle {
             constructor(x, y, vx, vy, color, size = 3, life = 0.5) {
-                this.x = x;
-                this.y = y;
-                this.vx = vx;
-                this.vy = vy;
-                this.color = color;
-                this.size = size;
-                this.life = life; // 秒
-                this.maxLife = life;
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.size = size; this.life = life; this.maxLife = life;
             }
-            update(deltaTime) {
-                this.x += this.vx * deltaTime;
-                this.y += this.vy * deltaTime;
-                this.life -= deltaTime;
-                return this.life > 0;
-            }
-            draw(ctx) {
-                const alpha = Math.min(1, this.life / this.maxLife * 2);
-                ctx.save();
-                ctx.globalAlpha = alpha;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.restore();
-            }
+            update(deltaTime) { this.x += this.vx * deltaTime; this.y += this.vy * deltaTime; this.life -= deltaTime; return this.life > 0; }
+            draw(ctx) { const alpha = Math.min(1, this.life / this.maxLife * 2); ctx.save(); ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI); ctx.fillStyle = this.color; ctx.fill(); ctx.restore(); }
         }
-
-        function addParticles(x, y, color, count = 5) {
-            for (let i = 0; i < count; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 60 + 30;
-                const vx = Math.cos(angle) * speed;
-                const vy = Math.sin(angle) * speed;
-                particles.push(new Particle(x, y, vx, vy, color, Math.random() * 3 + 2, 0.4));
-            }
-        }
+        function addParticles(x, y, color, count = 5) { for (let i=0;i<count;i++) { const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 60 + 30; particles.push(new Particle(x, y, Math.cos(angle)*speed, Math.sin(angle)*speed, color, Math.random()*3+2, 0.4)); } }
 
         const ZOMBIE_TYPES = {
             Basic: { name: "Basic", color: "#4a6e3a", hpBase: 300, speedBase: 30, rewardScore: 10, unlockTime: 0 },
@@ -549,840 +513,141 @@
         };
 
         let bullets = [];
-
         class Bullet {
             constructor(x, y, targetZombie, damage, type, color, isPierce = false) {
-                this.x = x; this.y = y; this.target = targetZombie; this.damage = damage; this.type = type;
-                this.color = color;
-                this.speed = 5; 
-                this.active = true;
-                this.isPierce = isPierce;
-                this.piercedZombies = new Set(); // 记录已穿透的僵尸，避免单次穿透多次伤害
-                // 粒子拖尾效果：在子弹尾部生成粒子
-                this.lastX = x;
-                this.lastY = y;
-                this.trailTimer = 0;
+                this.x = x; this.y = y; this.target = targetZombie; this.damage = damage; this.type = type; this.color = color; this.speed = 5; this.active = true; this.isPierce = isPierce; this.piercedZombies = new Set(); this.trailTimer = 0;
             }
             update(deltaTime) {
-                if (!this.isPierce && (!this.target || this.target.hp <= 0)) {
-                    this.active = false;
-                    return;
-                }
+                if (!this.isPierce && (!this.target || this.target.hp <= 0)) { this.active = false; return; }
                 if (this.isPierce) {
-                    // 穿透子弹：向正前方移动，攻击沿途所有僵尸
-                    const step = this.speed;
-                    this.x += step;
-                    // 检查沿途碰撞
+                    this.x += this.speed;
                     for (let z of zombies) {
                         if (this.piercedZombies.has(z)) continue;
-                        const dx = z.x - this.x, dy = z.y - this.y;
-                        if (Math.abs(dx) < 30 && Math.abs(dy) < 30) {
-                            z.hp -= this.damage;
-                            this.piercedZombies.add(z);
-                            addParticles(this.x, this.y, this.color, 8);
-                            if (this.type === 'poison') z.poisoned = 60;
-                            // 穿透子弹不消失，继续飞行
-                        }
+                        if (Math.abs(z.x - this.x) < 30 && Math.abs(z.y - this.y) < 30) { z.hp -= this.damage; this.piercedZombies.add(z); addParticles(this.x, this.y, this.color, 8); if (this.type === 'poison') z.poisoned = 60; }
                     }
-                    // 超出屏幕右侧或左侧则消失
-                    if (this.x > canvas.width + 100 || this.x < -100) {
-                        this.active = false;
-                    }
+                    if (this.x > canvas.width + 100 || this.x < -100) this.active = false;
                 } else {
-                    // 普通子弹追踪目标
-                    const dx = this.target.x - this.x, dy = this.target.y - this.y;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist < 8) {
-                        this.target.hp -= this.damage;
-                        addParticles(this.x, this.y, this.color, 10);
-                        if (this.type === 'poison') this.target.poisoned = 60;
-                        this.active = false;
-                    } else {
-                        const step = Math.min(this.speed, dist);
-                        const angle = Math.atan2(dy, dx);
-                        this.x += Math.cos(angle) * step;
-                        this.y += Math.sin(angle) * step;
-                    }
+                    const dx = this.target.x - this.x, dy = this.target.y - this.y, dist = Math.hypot(dx, dy);
+                    if (dist < 8) { this.target.hp -= this.damage; addParticles(this.x, this.y, this.color, 10); if (this.type === 'poison') this.target.poisoned = 60; this.active = false; }
+                    else { const angle = Math.atan2(dy, dx); this.x += Math.cos(angle) * Math.min(this.speed, dist); this.y += Math.sin(angle) * Math.min(this.speed, dist); }
                 }
-                // 粒子拖尾效果
-                this.trailTimer += deltaTime;
-                if (this.trailTimer > 0.03) {
-                    this.trailTimer = 0;
-                    particles.push(new Particle(this.x, this.y, 0, 0, this.color, 2, 0.2));
-                }
+                this.trailTimer += deltaTime; if (this.trailTimer > 0.03) { this.trailTimer = 0; particles.push(new Particle(this.x, this.y, 0, 0, this.color, 2, 0.2)); }
             }
-            draw(ctx) {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 6, 0, 2*Math.PI);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                // 添加光晕效果
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = this.color;
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            }
+            draw(ctx) { ctx.beginPath(); ctx.arc(this.x, this.y, 6, 0, 2*Math.PI); ctx.fillStyle = this.color; ctx.fill(); ctx.shadowBlur = 8; ctx.shadowColor = this.color; ctx.fill(); ctx.shadowBlur = 0; }
         }
 
         class Zombie {
-            constructor(row, type, hp, speed, rewardScore, x) {
-                this.row = row;
-                this.y = row * CELL_H + CELL_H/2;
-                this.x = x || canvas.width - EXTRA_RIGHT/2 - 20;
-                this.hp = hp; this.maxHp = hp; this.speed = speed; this.rewardScore = rewardScore; this.type = type;
-                this.slowed = 0; this.poisoned = 0;
-                this.width = ZOMBIE_TYPES[type]?.width || 50;
-                this.height = ZOMBIE_TYPES[type]?.height || 70;
-                this.jumpCooldown = 0;
-                this.healTimer = 0;
-                this.attackTimer = 0;
-            }
+            constructor(row, type, hp, speed, rewardScore, x) { this.row=row; this.y=row*CELL_H+CELL_H/2; this.x=x||canvas.width-EXTRA_RIGHT/2-20; this.hp=hp; this.maxHp=hp; this.speed=speed; this.rewardScore=rewardScore; this.type=type; this.slowed=0; this.poisoned=0; this.width=ZOMBIE_TYPES[type]?.width||50; this.height=ZOMBIE_TYPES[type]?.height||70; this.jumpCooldown=0; this.healTimer=0; this.attackTimer=0; }
             update(deltaTime) {
-                let moveSpeed = this.speed / 60;
-                if (this.slowed > 0) { moveSpeed *= 0.5; this.slowed--; }
-                const col = Math.floor(this.x / CELL_W);
-                if (col >= 0 && col < COLS) {
+                let moveSpeed = this.speed/60; if(this.slowed>0){ moveSpeed*=0.5; this.slowed--; }
+                const col = Math.floor(this.x/CELL_W);
+                if(col>=0 && col<COLS) {
                     const elem = gridElements[this.row]?.[col];
-                    if (elem && elem.health > 0) {
-                        if (this.attackTimer <= 0) {
-                            elem.health -= 10;
-                            this.attackTimer = 0.5;
-                            if (elem.health <= 0) {
-                                const idx = elements.findIndex(e => e === elem);
-                                if (idx !== -1) elements.splice(idx,1);
-                                gridElements[this.row][col] = null;
-                                addParticles(elem.x, elem.y, elem.data.color, 15);
-                            }
-                        } else {
-                            this.attackTimer -= deltaTime;
-                        }
-                        if (elem.data.isSpikeweed) {
-                            // 地刺不阻挡
-                        } else {
-                            return;
-                        }
+                    if(elem && elem.health>0 && !elem.data.isSpikeweed) {
+                        if(this.attackTimer<=0){ elem.health-=10; this.attackTimer=0.5; if(elem.health<=0){ const idx=elements.findIndex(e=>e===elem); if(idx!==-1)elements.splice(idx,1); gridElements[this.row][col]=null; addParticles(elem.x, elem.y, elem.data.color, 15); } }
+                        else this.attackTimer-=deltaTime;
+                        return;
                     }
                 }
                 let newX = this.x - moveSpeed;
-                if (this.type === 'Jumper') {
-                    const checkCol = Math.floor((this.x - 20) / CELL_W);
-                    if (checkCol >= 0 && checkCol < COLS) {
-                        const elem = gridElements[this.row]?.[checkCol];
-                        if (elem && elem.health > 0 && !elem.data.isSpikeweed) {
-                            newX = this.x - CELL_W;
-                            this.jumpCooldown = 10;
-                        }
-                    }
-                }
-                this.x = newX;
-                if (this.poisoned > 0) { this.hp -= 2; this.poisoned--; }
-                if (this.type === 'Healer') {
-                    this.healTimer += deltaTime;
-                    if (this.healTimer >= ZOMBIE_TYPES.Healer.healInterval) {
-                        this.healTimer = 0;
-                        for (let z of zombies) {
-                            if (z !== this && Math.hypot(z.x - this.x, z.y - this.y) < ZOMBIE_TYPES.Healer.healRange) {
-                                z.hp = Math.min(z.maxHp, z.hp + ZOMBIE_TYPES.Healer.healAmount);
-                                addParticles(z.x, z.y, "#20b2aa", 5);
-                            }
-                        }
-                    }
-                }
+                if(this.type==='Jumper'){ const checkCol=Math.floor((this.x-20)/CELL_W); if(checkCol>=0&&checkCol<COLS){ const elem=gridElements[this.row]?.[checkCol]; if(elem&&elem.health>0&&!elem.data.isSpikeweed) newX=this.x-CELL_W; } }
+                this.x=newX;
+                if(this.poisoned>0){ this.hp-=2; this.poisoned--; }
+                if(this.type==='Healer'){ this.healTimer+=deltaTime; if(this.healTimer>=ZOMBIE_TYPES.Healer.healInterval){ this.healTimer=0; for(let z of zombies){ if(z!==this && Math.hypot(z.x-this.x, z.y-this.y)<ZOMBIE_TYPES.Healer.healRange){ z.hp=Math.min(z.maxHp, z.hp+ZOMBIE_TYPES.Healer.healAmount); addParticles(z.x, z.y, "#20b2aa",5); } } } }
             }
-            draw(ctx) {
-                ctx.save();
-                const x = this.x - this.width/2, y = this.y - this.height/2;
-                const color = ZOMBIE_TYPES[this.type]?.color || "#4a6e3a";
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.roundRect(x, y, this.width, this.height, 12);
-                ctx.fill();
-                ctx.fillStyle = "#000";
-                ctx.fillRect(x+10, y+15, 10, 10); ctx.fillRect(x+30, y+15, 10, 10);
-                const percent = this.hp / this.maxHp;
-                ctx.fillStyle = "#c23b22"; ctx.fillRect(x, y-12, this.width, 8);
-                ctx.fillStyle = "#2c7a4c"; ctx.fillRect(x, y-12, this.width * percent, 8);
-                ctx.restore();
-            }
+            draw(ctx){ ctx.save(); const x=this.x-this.width/2, y=this.y-this.height/2; ctx.fillStyle=ZOMBIE_TYPES[this.type]?.color||"#4a6e3a"; ctx.beginPath(); ctx.roundRect(x,y,this.width,this.height,12); ctx.fill(); ctx.fillStyle="#000"; ctx.fillRect(x+10,y+15,10,10); ctx.fillRect(x+30,y+15,10,10); const percent=this.hp/this.maxHp; ctx.fillStyle="#c23b22"; ctx.fillRect(x,y-12,this.width,8); ctx.fillStyle="#2c7a4c"; ctx.fillRect(x,y-12,this.width*percent,8); ctx.restore(); }
         }
 
         class ElementObj {
-            constructor(type, row, col) {
-                this.type = type; this.data = ELEMENTS[type]; this.row = row; this.col = col;
-                this.x = col * CELL_W + CELL_W/2; this.y = row * CELL_H + CELL_H/2;
-                this.attackTimer = 0; this.produceTimer = 0;
-                this.health = this.data.health || 300;
-                this.maxHealth = this.health;
-                this.exploded = false;
+            constructor(type, row, col) { this.type=type; this.data=ELEMENTS[type]; this.row=row; this.col=col; this.x=col*CELL_W+CELL_W/2; this.y=row*CELL_H+CELL_H/2; this.attackTimer=0; this.produceTimer=0; this.health=this.data.health||300; this.maxHealth=this.health; this.exploded=false; }
+            update(deltaTime){
+                if(this.attackTimer>0) this.attackTimer-=deltaTime;
+                if(this.data.role==='sunflower'){ this.produceTimer+=deltaTime; if(this.produceTimer>=this.data.produceInterval){ this.produceTimer=0; spawnElectronAt(this.x,this.y); } }
+                if(this.data.role==='explodenut' && this.health<=0 && !this.exploded){ this.exploded=true; const startCol=this.col, endCol=Math.min(COLS-1,this.col+2); for(let z of zombies){ const zCol=Math.floor(z.x/CELL_W); if(z.row===this.row && zCol>=startCol && zCol<=endCol){ z.hp=0; addParticles(z.x,z.y,"#ffaa00",20); } } addParticles(this.x,this.y,this.data.color,30); const idx=elements.findIndex(e=>e===this); if(idx!==-1)elements.splice(idx,1); gridElements[this.row][this.col]=null; }
             }
-            update(deltaTime) {
-                if (this.attackTimer > 0) this.attackTimer -= deltaTime;
-                if (this.data.role === 'sunflower') {
-                    this.produceTimer += deltaTime;
-                    if (this.produceTimer >= this.data.produceInterval) {
-                        this.produceTimer = 0;
-                        spawnElectronAt(this.x, this.y);
-                    }
-                }
-                if (this.data.role === 'explodenut' && this.health <= 0 && !this.exploded) {
-                    this.exploded = true;
-                    const startCol = this.col;
-                    const endCol = Math.min(COLS-1, this.col + 2);
-                    for (let z of zombies) {
-                        const zCol = Math.floor(z.x / CELL_W);
-                        if (z.row === this.row && zCol >= startCol && zCol <= endCol) {
-                            z.hp = 0;
-                            addParticles(z.x, z.y, "#ffaa00", 20);
-                        }
-                    }
-                    addParticles(this.x, this.y, this.data.color, 30);
-                    const idx = elements.findIndex(e => e === this);
-                    if (idx !== -1) elements.splice(idx,1);
-                    gridElements[this.row][this.col] = null;
-                }
-            }
-            draw(ctx) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.roundRect(this.x-35, this.y-35, 70, 70, 16);
-                ctx.fillStyle = this.data.color || "#2a4a6a";
-                ctx.fill();
-                ctx.strokeStyle = "#88c4f0"; ctx.lineWidth = 2; ctx.stroke();
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 26px monospace";
-                ctx.fillText(this.data.symbol, this.x-18, this.y+12);
-                if (this.health < this.maxHealth) {
-                    const percent = this.health / this.maxHealth;
-                    ctx.fillStyle = "#c23b22";
-                    ctx.fillRect(this.x-35, this.y-45, 70, 8);
-                    ctx.fillStyle = "#2c7a4c";
-                    ctx.fillRect(this.x-35, this.y-45, 70 * percent, 8);
-                }
-                ctx.restore();
-            }
-            attack(shootTarget) {
-                if (!shootTarget) return false;
-                let dmg = this.data.damage;
-                let poison = this.data.role === 'poison';
-                let bulletColor = this.data.color;
-                const isPierce = (this.data.role === 'pierce');
-                if (isPierce) {
-                    // 穿透子弹：无目标，直接向前飞行
-                    bullets.push(new Bullet(this.x, this.y, null, dmg, poison ? 'poison' : 'normal', bulletColor, true));
-                } else {
-                    bullets.push(new Bullet(this.x, this.y, shootTarget, dmg, poison ? 'poison' : 'normal', bulletColor, false));
-                }
-                if (this.data.role === 'repeater') {
-                    bullets.push(new Bullet(this.x, this.y, shootTarget, dmg, poison ? 'poison' : 'normal', bulletColor, false));
-                }
-                if (this.data.role === 'pierce') {
-                    // 镁穿透子弹已处理，不再额外添加
-                }
-                return true;
-            }
+            draw(ctx){ ctx.save(); ctx.beginPath(); ctx.roundRect(this.x-35,this.y-35,70,70,16); ctx.fillStyle=this.data.color||"#2a4a6a"; ctx.fill(); ctx.strokeStyle="#88c4f0"; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle="#ffffff"; ctx.font="bold 26px monospace"; ctx.fillText(this.data.symbol,this.x-18,this.y+12); if(this.health<this.maxHealth){ const percent=this.health/this.maxHealth; ctx.fillStyle="#c23b22"; ctx.fillRect(this.x-35,this.y-45,70,8); ctx.fillStyle="#2c7a4c"; ctx.fillRect(this.x-35,this.y-45,70*percent,8); } ctx.restore(); }
+            attack(shootTarget){ let dmg=this.data.damage; let poison=(this.data.role==='poison'); let bulletColor=this.data.color; const isPierce=(this.data.role==='pierce'); if(isPierce) bullets.push(new Bullet(this.x,this.y,null,dmg,poison?'poison':'normal',bulletColor,true)); else { bullets.push(new Bullet(this.x,this.y,shootTarget,dmg,poison?'poison':'normal',bulletColor,false)); if(this.data.role==='repeater') bullets.push(new Bullet(this.x,this.y,shootTarget,dmg,poison?'poison':'normal',bulletColor,false)); } return true; }
         }
 
         if (!CanvasRenderingContext2D.prototype.roundRect) {
-            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-                if (w < 2 * r) r = w / 2;
-                if (h < 2 * r) r = h / 2;
-                this.moveTo(x+r, y);
-                this.lineTo(x+w-r, y);
-                this.quadraticCurveTo(x+w, y, x+w, y+r);
-                this.lineTo(x+w, y+h-r);
-                this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-                this.lineTo(x+r, y+h);
-                this.quadraticCurveTo(x, y+h, x, y+h-r);
-                this.lineTo(x, y+r);
-                this.quadraticCurveTo(x, y, x+r, y);
-                return this;
-            };
+            CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){ if(w<2*r) r=w/2; if(h<2*r) r=h/2; this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r); this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h); this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r); this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); return this; };
         }
 
         function initGrid() { gridElements = Array(ROWS).fill().map(() => Array(COLS).fill(null)); elements = []; }
-        function updateUI() {
-            document.getElementById('essence').innerText = Math.floor(essence);
-            document.getElementById('score').innerText = totalScore;
-            if (gameStartTime) {
-                const elapsed = (performance.now() - gameStartTime) / 1000;
-                document.getElementById('gameTime').innerText = Math.floor(elapsed);
-            }
-        }
+        function updateUI() { document.getElementById('essence').innerText = Math.floor(essence); document.getElementById('score').innerText = totalScore; if(gameStartTime) document.getElementById('gameTime').innerText = Math.floor((performance.now()-gameStartTime)/1000); }
+        function spawnElectronAt(x,y) { electrons.push({ x, y, spawnTime: performance.now() }); if(electrons.length>8) electrons.shift(); }
+        function trySpawnElectron(now) { if(!gameOver && (!lastElectronSpawn || now-lastElectronSpawn>(4000+Math.random()*5000))){ lastElectronSpawn=now; const x=20+Math.random()*(canvas.width-40), y=20+Math.random()*(canvas.height-40); electrons.push({x,y,spawnTime:now}); if(electrons.length>8) electrons.shift(); } }
+        function updateElectrons(now) { for(let i=0;i<electrons.length;i++){ if(now-electrons[i].spawnTime>=ELECTRON_AUTO_COLLECT_TIME){ startFlyAnimation(electrons[i].x,electrons[i].y); electrons.splice(i,1); i--; } } }
+        function startFlyAnimation(fromX,fromY){ const targetRect=document.querySelector('.stats').getBoundingClientRect(), canvasRect=canvas.getBoundingClientRect(); flyAnimations.push({ startX:fromX+canvasRect.left, startY:fromY+canvasRect.top, targetX:targetRect.left+targetRect.width-20, targetY:targetRect.top+20, progress:0, duration:300, startTime:performance.now() }); }
+        function updateFlyAnimations(now){ for(let i=0;i<flyAnimations.length;i++){ const anim=flyAnimations[i]; if(now-anim.startTime>=anim.duration){ essence+=ELECTRON_VALUE; updateUI(); flyAnimations.splice(i,1); i--; } else anim.progress=(now-anim.startTime)/anim.duration; } }
+        function drawFlyAnimations(){ const canvasRect=canvas.getBoundingClientRect(); for(let anim of flyAnimations){ const t=anim.progress, x=anim.startX+(anim.targetX-anim.startX)*t, y=anim.startY+(anim.targetY-anim.startY)*t; ctx.save(); ctx.beginPath(); ctx.arc(x-canvasRect.left, y-canvasRect.top,12,0,2*Math.PI); ctx.fillStyle="#ffd966"; ctx.shadowBlur=8; ctx.fill(); ctx.beginPath(); ctx.arc(x-canvasRect.left, y-canvasRect.top,6,0,2*Math.PI); ctx.fillStyle="#fff4b0"; ctx.fill(); ctx.restore(); } }
+        function tryCollectElectron(mouseX,mouseY){ for(let i=0;i<electrons.length;i++){ if(Math.hypot(mouseX-electrons[i].x, mouseY-electrons[i].y)<20){ startFlyAnimation(electrons[i].x,electrons[i].y); electrons.splice(i,1); return true; } } return false; }
 
-        function spawnElectronAt(x, y) {
-            electrons.push({ x, y, spawnTime: performance.now() });
-            if (electrons.length > 8) electrons.shift();
-        }
+        // 冷却系统 (完全遵循原版时间)
+        function startElementCooldown(elementType, durationSeconds) { elementCooldowns[elementType] = durationSeconds; updateElementButtonsCooldown(); if(cooldownTimers[elementType]) clearTimeout(cooldownTimers[elementType]); cooldownTimers[elementType] = setTimeout(() => { delete elementCooldowns[elementType]; updateElementButtonsCooldown(); }, durationSeconds * 1000); }
+        function isElementOnCooldown(elementType) { return elementCooldowns[elementType] !== undefined; }
+        function updateElementButtonsCooldown() { document.querySelectorAll('.element-btn').forEach(btn => { const type=btn.dataset.type; if(!type) return; if(isElementOnCooldown(type)){ btn.classList.add('disabled'); let overlay=btn.querySelector('.cooldown-overlay'); if(!overlay){ overlay=document.createElement('div'); overlay.className='cooldown-overlay'; btn.appendChild(overlay); } const remaining=elementCooldowns[type]; overlay.innerText=`${remaining.toFixed(1)}s`; } else { btn.classList.remove('disabled'); const overlay=btn.querySelector('.cooldown-overlay'); if(overlay) overlay.remove(); } }); }
+        let lastCooldownUpdate=0;
+        function updateCooldowns(now){ if(!lastCooldownUpdate) lastCooldownUpdate=now; let deltaSec=Math.min(0.2,(now-lastCooldownUpdate)/1000); if(deltaSec<0.05) return; lastCooldownUpdate=now; let changed=false; for(let type in elementCooldowns){ elementCooldowns[type]-=deltaSec; if(elementCooldowns[type]<=0){ delete elementCooldowns[type]; changed=true; } } if(changed) updateElementButtonsCooldown(); }
 
-        function trySpawnElectron(now) {
-            if (gameOver) return;
-            if (!lastElectronSpawn || now - lastElectronSpawn > (4000 + Math.random() * 5000)) {
-                lastElectronSpawn = now;
-                const x = 20 + Math.random() * (canvas.width - 40);
-                const y = 20 + Math.random() * (canvas.height - 40);
-                electrons.push({ x, y, spawnTime: now });
-                if (electrons.length > 8) electrons.shift();
-            }
-        }
+        function spawnZombieByTime(now){ if(gameOver||!gameStartTime) return; const elapsed=(now-gameStartTime)/1000; if(elapsed<60) return; let baseInterval=Math.max(0.8,2.5-totalScore/500); if(!lastZombieSpawnTime) lastZombieSpawnTime=now; if(now-lastZombieSpawnTime>=baseInterval*1000){ lastZombieSpawnTime=now; let availableTypes=[]; for(let [key,type] of Object.entries(ZOMBIE_TYPES)) if(elapsed>=type.unlockTime) availableTypes.push(key); if(availableTypes.length===0) return; const chosenType=availableTypes[Math.floor(Math.random()*availableTypes.length)], typeData=ZOMBIE_TYPES[chosenType]; let extraHp=Math.floor(totalScore/20), extraSpeed=totalScore/200; const hp=typeData.hpBase+extraHp, speed=Math.min(200,typeData.speedBase+extraSpeed), rewardScore=typeData.rewardScore, row=Math.floor(Math.random()*ROWS); zombies.push(new Zombie(row,chosenType,hp,speed,rewardScore,canvas.width-EXTRA_RIGHT/2-20)); } }
+        function handleExplosiveDeath(zombie,row,col){ for(let r=Math.max(0,row-1);r<=Math.min(ROWS-1,row+1);r++) for(let c=Math.max(0,col-1);c<=Math.min(COLS-1,col+1);c++){ const elem=gridElements[r][c]; if(elem&&elem.health){ elem.health-=60; if(elem.health<=0){ const idx=elements.findIndex(e=>e===elem); if(idx!==-1)elements.splice(idx,1); gridElements[r][c]=null; addParticles(elem.x,elem.y,elem.data.color,15); } } } }
 
-        function updateElectrons(now) {
-            for (let i=0; i<electrons.length; i++) {
-                const e = electrons[i];
-                if (now - e.spawnTime >= ELECTRON_AUTO_COLLECT_TIME) {
-                    startFlyAnimation(e.x, e.y);
-                    electrons.splice(i,1);
-                    i--;
-                }
-            }
-        }
-
-        function startFlyAnimation(fromX, fromY) {
-            const targetRect = document.querySelector('.stats').getBoundingClientRect();
-            const canvasRect = canvas.getBoundingClientRect();
-            const targetX = targetRect.left + targetRect.width - 20;
-            const targetY = targetRect.top + 20;
-            const startX = fromX + canvasRect.left;
-            const startY = fromY + canvasRect.top;
-            flyAnimations.push({
-                startX, startY, targetX, targetY, progress: 0, duration: 300, startTime: performance.now()
-            });
-        }
-
-        function updateFlyAnimations(now) {
-            for (let i=0; i<flyAnimations.length; i++) {
-                const anim = flyAnimations[i];
-                const elapsed = now - anim.startTime;
-                if (elapsed >= anim.duration) {
-                    essence += ELECTRON_VALUE;
-                    updateUI();
-                    flyAnimations.splice(i,1);
-                    i--;
-                } else {
-                    anim.progress = elapsed / anim.duration;
-                }
-            }
-        }
-
-        function drawFlyAnimations() {
-            const canvasRect = canvas.getBoundingClientRect();
-            for (let anim of flyAnimations) {
-                const t = anim.progress;
-                const x = anim.startX + (anim.targetX - anim.startX) * t;
-                const y = anim.startY + (anim.targetY - anim.startY) * t;
-                const canvasX = x - canvasRect.left;
-                const canvasY = y - canvasRect.top;
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(canvasX, canvasY, 12, 0, 2*Math.PI);
-                ctx.fillStyle = "#ffd966";
-                ctx.shadowBlur = 8;
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(canvasX, canvasY, 6, 0, 2*Math.PI);
-                ctx.fillStyle = "#fff4b0";
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        function tryCollectElectron(mouseX, mouseY) {
-            for (let i=0; i<electrons.length; i++) {
-                const e = electrons[i];
-                const dx = mouseX - e.x, dy = mouseY - e.y;
-                if (Math.hypot(dx, dy) < 20) {
-                    startFlyAnimation(e.x, e.y);
-                    electrons.splice(i,1);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        function startElementCooldown(elementType, durationSeconds = 3) {
-            elementCooldowns[elementType] = durationSeconds;
-            updateElementButtonsCooldown();
-            if (cooldownTimers[elementType]) clearTimeout(cooldownTimers[elementType]);
-            cooldownTimers[elementType] = setTimeout(() => {
-                delete elementCooldowns[elementType];
-                updateElementButtonsCooldown();
-            }, durationSeconds * 1000);
-        }
-
-        function isElementOnCooldown(elementType) {
-            return elementCooldowns[elementType] !== undefined;
-        }
-
-        function updateElementButtonsCooldown() {
-            const btns = document.querySelectorAll('.element-btn');
-            btns.forEach(btn => {
-                const type = btn.dataset.type;
-                if (!type) return;
-                if (isElementOnCooldown(type)) {
-                    btn.classList.add('disabled');
-                    let overlay = btn.querySelector('.cooldown-overlay');
-                    if (!overlay) {
-                        overlay = document.createElement('div');
-                        overlay.className = 'cooldown-overlay';
-                        btn.appendChild(overlay);
-                    }
-                    const remaining = elementCooldowns[type];
-                    overlay.innerText = `${Math.ceil(remaining)}s`;
-                } else {
-                    btn.classList.remove('disabled');
-                    const overlay = btn.querySelector('.cooldown-overlay');
-                    if (overlay) overlay.remove();
-                }
-            });
-        }
-
-        let lastCooldownUpdate = 0;
-        function updateCooldowns(now) {
-            if (!lastCooldownUpdate) lastCooldownUpdate = now;
-            const deltaSec = Math.min(0.2, (now - lastCooldownUpdate) / 1000);
-            if (deltaSec < 0.05) return;
-            lastCooldownUpdate = now;
-            let changed = false;
-            for (let type in elementCooldowns) {
-                elementCooldowns[type] -= deltaSec;
-                if (elementCooldowns[type] <= 0) {
-                    delete elementCooldowns[type];
-                    changed = true;
-                }
-            }
-            if (changed) updateElementButtonsCooldown();
-        }
-
-        function spawnZombieByTime(now) {
-            if (gameOver || !gameStartTime) return;
-            const elapsed = (now - gameStartTime) / 1000;
-            if (elapsed < 60) return;
-            let baseInterval = Math.max(0.8, 2.5 - totalScore / 500);
-            if (!lastZombieSpawnTime) lastZombieSpawnTime = now;
-            if (now - lastZombieSpawnTime >= baseInterval * 1000) {
-                lastZombieSpawnTime = now;
-                let availableTypes = [];
-                for (let [key, type] of Object.entries(ZOMBIE_TYPES)) {
-                    if (elapsed >= type.unlockTime) {
-                        availableTypes.push(key);
-                    }
-                }
-                if (availableTypes.length === 0) return;
-                const chosenType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-                const typeData = ZOMBIE_TYPES[chosenType];
-                let extraHp = Math.floor(totalScore / 20);
-                let extraSpeed = totalScore / 200;
-                const hp = typeData.hpBase + extraHp;
-                const speed = Math.min(200, typeData.speedBase + extraSpeed);
-                const rewardScore = typeData.rewardScore;
-                const row = Math.floor(Math.random() * ROWS);
-                const startX = canvas.width - EXTRA_RIGHT/2 - 20;
-                const zombie = new Zombie(row, chosenType, hp, speed, rewardScore, startX);
-                zombies.push(zombie);
-            }
-        }
-
-        function handleExplosiveDeath(zombie, row, col) {
-            const startRow = Math.max(0, row - 1);
-            const endRow = Math.min(ROWS-1, row + 1);
-            const startCol = Math.max(0, col - 1);
-            const endCol = Math.min(COLS-1, col + 1);
-            for (let r = startRow; r <= endRow; r++) {
-                for (let c = startCol; c <= endCol; c++) {
-                    const elem = gridElements[r][c];
-                    if (elem && elem.health) {
-                        elem.health -= 60;
-                        if (elem.health <= 0) {
-                            const idx = elements.findIndex(e => e === elem);
-                            if (idx !== -1) elements.splice(idx,1);
-                            gridElements[r][c] = null;
-                            addParticles(elem.x, elem.y, elem.data.color, 15);
-                        }
-                    }
-                }
-            }
-        }
-
-        function placeElement(row, col) {
-            if (gameOver) return false;
-            if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
-            if (gridElements[row][col] !== null) return false;
-            const elemData = ELEMENTS[selectedElement];
-            if (elemData.isSkill) return false;
-            const cost = elemData.cost;
-            if (essence < cost) { document.getElementById('gameMessage').innerHTML = `❌ 电子不足，需要 ${cost} 电子！`; return false; }
-            if (isElementOnCooldown(selectedElement)) {
-                document.getElementById('gameMessage').innerHTML = `⏳ 元素 ${elemData.name} 冷却中，请稍后再放。`;
-                return false;
-            }
-            essence -= cost;
-            const newElem = new ElementObj(selectedElement, row, col);
-            gridElements[row][col] = newElem;
-            elements.push(newElem);
-            updateUI();
-            startElementCooldown(selectedElement, 3);
-            addParticles(newElem.x, newElem.y, elemData.color, 12);
+        function placeElement(row,col){
+            if(gameOver) return false;
+            if(row<0||row>=ROWS||col<0||col>=COLS||gridElements[row][col]!==null) return false;
+            const elemData=ELEMENTS[selectedElement];
+            if(elemData.isSkill) return false;
+            if(essence<elemData.cost){ document.getElementById('gameMessage').innerHTML=`❌ 电子不足，需要 ${elemData.cost} 电子！`; return false; }
+            if(isElementOnCooldown(selectedElement)){ document.getElementById('gameMessage').innerHTML=`⏳ 元素 ${elemData.name} 冷却中 (${elementCooldowns[selectedElement].toFixed(1)}秒)`; return false; }
+            essence-=elemData.cost;
+            const newElem=new ElementObj(selectedElement,row,col);
+            gridElements[row][col]=newElem; elements.push(newElem); updateUI();
+            startElementCooldown(selectedElement, elemData.cooldown);
+            addParticles(newElem.x,newElem.y,elemData.color,12);
             return true;
         }
-
-        function usePhosphorusSkill(row, col) {
-            if (gameOver) return false;
-            const cost = ELEMENTS.phosphorus.cost;
-            if (essence < cost) { document.getElementById('gameMessage').innerHTML = `❌ 电子不足，需要 ${cost} 电子！`; return false; }
-            if (isElementOnCooldown('phosphorus')) {
-                document.getElementById('gameMessage').innerHTML = `⏳ 磷技能冷却中，请稍后再放。`;
-                return false;
-            }
-            essence -= cost;
-            updateUI();
-            startElementCooldown('phosphorus', 5);
-            let killedCount = 0;
-            for (let i=zombies.length-1; i>=0; i--) {
-                const z = zombies[i];
-                const zRow = z.row;
-                const zCol = Math.floor(z.x / CELL_W);
-                if (Math.abs(zRow - row) <= 1 && Math.abs(zCol - col) <= 1) {
-                    totalScore += z.rewardScore;
-                    addParticles(z.x, z.y, "#ff6600", 25);
-                    zombies.splice(i,1);
-                    killedCount++;
-                }
-            }
-            if (killedCount > 0) {
-                updateUI();
-                if (isLoggedIn && cloudAvailable) updateCloudScore(totalScore);
-                document.getElementById('gameMessage').innerHTML = `🔥 磷爆！清除了 ${killedCount} 只僵尸。`;
-            } else {
-                document.getElementById('gameMessage').innerHTML = `🔥 磷爆，但没有僵尸在范围内。`;
-            }
+        function usePhosphorusSkill(row,col){
+            if(gameOver) return false;
+            const cost=ELEMENTS.phosphorus.coolData?ELEMENTS.phosphorus.cost:200;
+            if(essence<cost){ document.getElementById('gameMessage').innerHTML=`❌ 电子不足，需要 ${cost} 电子！`; return false; }
+            if(isElementOnCooldown('phosphorus')){ document.getElementById('gameMessage').innerHTML=`⏳ 磷技能冷却中 (${elementCooldowns.phosphorus.toFixed(1)}秒)`; return false; }
+            essence-=cost; updateUI(); startElementCooldown('phosphorus', ELEMENTS.phosphorus.cooldown);
+            let killedCount=0;
+            for(let i=zombies.length-1;i>=0;i--){ const z=zombies[i]; const zCol=Math.floor(z.x/CELL_W); if(Math.abs(z.row-row)<=1 && Math.abs(zCol-col)<=1){ totalScore+=z.rewardScore; addParticles(z.x,z.y,"#ff6600",25); zombies.splice(i,1); killedCount++; } }
+            updateUI(); if(isLoggedIn&&cloudAvailable) updateCloudScore(totalScore);
+            document.getElementById('gameMessage').innerHTML=killedCount>0?`🔥 磷爆！清除了 ${killedCount} 只僵尸。`:`🔥 磷爆，但没有僵尸在范围内。`;
             return true;
         }
+        function shovelPlant(row,col){ const elem=gridElements[row][col]; if(!elem) return false; const refund=Math.floor(ELEMENTS[elem.type].cost/2); essence+=refund; const idx=elements.findIndex(e=>e===elem); if(idx!==-1) elements.splice(idx,1); gridElements[row][col]=null; updateUI(); addParticles(elem.x,elem.y,elem.data.color,20); document.getElementById('gameMessage').innerHTML=`🔧 铲除了 ${ELEMENTS[elem.type].name}，返还 ${refund} 电子。`; return true; }
+        async function addScoreAndSync(amount){ totalScore+=amount; updateUI(); if(isLoggedIn&&cloudAvailable) await updateCloudScore(totalScore); }
 
-        function shovelPlant(row, col) {
-            const elem = gridElements[row][col];
-            if (!elem) return false;
-            const cost = ELEMENTS[elem.type].cost;
-            const refund = Math.floor(cost / 2);
-            essence += refund;
-            const idx = elements.findIndex(e => e === elem);
-            if (idx !== -1) elements.splice(idx,1);
-            gridElements[row][col] = null;
-            updateUI();
-            addParticles(elem.x, elem.y, elem.data.color, 20);
-            document.getElementById('gameMessage').innerHTML = `🔧 铲除了 ${ELEMENTS[elem.type].name}，返还 ${refund} 电子。`;
-            return true;
+        let lastGameFrame=0;
+        function gameUpdate(now){
+            if(gameOver){ draw(); return; }
+            let delta=Math.min(0.033,(now-lastGameFrame)/1000); if(delta<=0){ lastGameFrame=now; requestAnimationFrame(gameUpdate); return; }
+            lastGameFrame=now; updateCooldowns(now); trySpawnElectron(now); updateElectrons(now); updateFlyAnimations(now); spawnZombieByTime(now);
+            for(let elem of elements) elem.update(delta);
+            for(let i=bullets.length-1;i>=0;i--){ bullets[i].update(delta); if(!bullets[i].active) bullets.splice(i,1); }
+            for(let i=0;i<zombies.length;i++){ const z=zombies[i]; z.update(delta); if(z.x+z.width/2<=0){ gameOver=true; document.getElementById('gameMessage').innerHTML="💀 游戏结束！"; cancelAnimationFrame(frameRequest); draw(); return; } if(z.hp<=0){ if(z.type==='Explosive') handleExplosiveDeath(z,z.row,Math.floor(z.x/CELL_W)); addScoreAndSync(z.rewardScore); addParticles(z.x,z.y,ZOMBIE_TYPES[z.type]?.color||"#ffffff",20); zombies.splice(i,1); i--; } }
+            for(let i=particles.length-1;i>=0;i--) if(!particles[i].update(delta)) particles.splice(i,1);
+            for(let elem of elements){ if(elem.attackTimer>0) continue; if(elem.data.isSpikeweed){ const col=elem.col; for(let z of zombies){ if(z.row===elem.row && Math.floor(z.x/CELL_W)===col){ z.hp-=elem.data.damage; elem.attackTimer=elem.data.cooldownAttack; addParticles(z.x,z.y,elem.data.color,5); break; } } } else if(elem.data.isRanged===true && elem.data.damage>0){ let target=null; let minX=Infinity; for(let z of zombies) if(z.row===elem.row && z.x>elem.x && z.x<minX){ minX=z.x; target=z; } if(target){ elem.attack(target); elem.attackTimer=elem.data.cooldownAttack; } else if(elem.data.role==='pierce'){ elem.attack(null); elem.attackTimer=elem.data.cooldownAttack; } } }
+            draw(); frameRequest=requestAnimationFrame(gameUpdate);
         }
+        function draw(){ ctx.clearRect(0,0,canvas.width,canvas.height); for(let i=0;i<=COLS;i++){ ctx.beginPath(); ctx.moveTo(i*CELL_W,0); ctx.lineTo(i*CELL_W,canvas.height); ctx.stroke(); } for(let i=0;i<=ROWS;i++){ ctx.beginPath(); ctx.moveTo(0,i*CELL_H); ctx.lineTo(canvas.width-EXTRA_RIGHT,i*CELL_H); ctx.stroke(); } ctx.fillStyle="#1a3a2a"; ctx.fillRect(canvas.width-EXTRA_RIGHT,0,EXTRA_RIGHT,canvas.height); for(let elem of elements) elem.draw(ctx); for(let z of zombies) z.draw(ctx); for(let e of electrons){ const elapsed=(performance.now()-e.spawnTime)/1000; const alpha=elapsed<1.8?1:(1-(elapsed-1.8)/0.2); ctx.save(); ctx.globalAlpha=Math.max(0,Math.min(1,alpha)); ctx.beginPath(); ctx.arc(e.x,e.y,14,0,2*Math.PI); ctx.fillStyle="#ffd966"; ctx.shadowBlur=12; ctx.fill(); ctx.beginPath(); ctx.arc(e.x,e.y,7,0,2*Math.PI); ctx.fillStyle="#fff4b0"; ctx.fill(); ctx.restore(); } for(let b of bullets) b.draw(ctx); for(let p of particles) p.draw(ctx); drawFlyAnimations(); if(mouseGrid.row!==-1 && !gameOver && mouseGrid.col>=0 && mouseGrid.col<COLS){ ctx.save(); ctx.globalAlpha=0.4; if(skillMode) ctx.fillStyle="#e67e22"; else if(shovelMode) ctx.fillStyle="#e05a3a"; else ctx.fillStyle="#f0c040"; ctx.fillRect(mouseGrid.col*CELL_W,mouseGrid.row*CELL_H,CELL_W,CELL_H); ctx.restore(); } if(gameOver){ ctx.font="bold 32px sans-serif"; ctx.fillStyle="#f0c040"; ctx.fillText("GAME OVER",canvas.width/2-120,canvas.height/2); } }
 
-        async function addScoreAndSync(amount) {
-            totalScore += amount;
-            updateUI();
-            if (isLoggedIn && cloudAvailable) {
-                await updateCloudScore(totalScore);
-            }
-        }
+        let mouseGrid={row:-1,col:-1};
+        function handleCanvasClick(e){ if(gameOver) return; const rect=canvas.getBoundingClientRect(), scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height; const mouseX=(e.clientX-rect.left)*scaleX, mouseY=(e.clientY-rect.top)*scaleY; if(tryCollectElectron(mouseX,mouseY)) return; const col=Math.floor(mouseX/CELL_W), row=Math.floor(mouseY/CELL_H); if(row>=0&&row<ROWS&&col>=0&&col<COLS){ if(skillMode){ usePhosphorusSkill(row,col); setSkillMode(false); } else if(shovelMode){ shovelPlant(row,col); setShovelMode(false); } else placeElement(row,col); } }
+        function handleMouseMove(e){ const rect=canvas.getBoundingClientRect(), scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height; const mouseX=(e.clientX-rect.left)*scaleX, mouseY=(e.clientY-rect.top)*scaleY; const col=Math.floor(mouseX/CELL_W), row=Math.floor(mouseY/CELL_H); if(row>=0&&row<ROWS&&col>=0&&col<COLS) mouseGrid={row,col}; else mouseGrid={row:-1,col:-1}; }
+        function setShovelMode(active){ shovelMode=active; if(active&&skillMode) setSkillMode(false); document.getElementById('shovelBigBtn').classList.toggle('active',active); document.getElementById('gameMessage').innerHTML=active?"🔧 铲子模式已开启，点击植物可铲除并返还一半电子。":"⚛️ 铲子模式已关闭。"; }
+        function setSkillMode(active){ skillMode=active; if(active&&shovelMode) setShovelMode(false); document.getElementById('gameMessage').innerHTML=active?"🔥 磷爆模式已开启，点击草地格子引爆3x3范围僵尸。":"⚛️ 磷爆模式已关闭。"; }
+        function toggleShovelMode(){ setShovelMode(!shovelMode); }
 
-        function gameUpdate(now) {
-            if (gameOver) { draw(); return; }
-            let delta = Math.min(0.033, (now - lastFrame) / 1000);
-            if (delta <= 0) { lastFrame = now; requestAnimationFrame(gameUpdate); return; }
-            lastFrame = now;
-
-            updateCooldowns(now);
-            trySpawnElectron(now);
-            updateElectrons(now);
-            updateFlyAnimations(now);
-            spawnZombieByTime(now);
-
-            for (let elem of elements) elem.update(delta);
-            for (let i=bullets.length-1; i>=0; i--) { bullets[i].update(delta); if (!bullets[i].active) bullets.splice(i,1); }
-
-            for (let i=zombies.length-1; i>=0; i--) {
-                const z = zombies[i];
-                z.update(delta);
-                if (z.x + z.width/2 <= 0) {
-                    gameOver = true;
-                    document.getElementById('gameMessage').innerHTML = "💀 游戏结束！";
-                    cancelAnimationFrame(frameRequest);
-                    draw();
-                    return;
-                }
-                if (z.hp <= 0) {
-                    if (z.type === 'Explosive') {
-                        const row = z.row;
-                        const col = Math.floor(z.x / CELL_W);
-                        handleExplosiveDeath(z, row, col);
-                    }
-                    addScoreAndSync(z.rewardScore);
-                    addParticles(z.x, z.y, ZOMBIE_TYPES[z.type]?.color || "#ffffff", 20);
-                    zombies.splice(i,1);
-                }
-            }
-
-            // 更新粒子
-            for (let i=particles.length-1; i>=0; i--) {
-                if (!particles[i].update(delta)) {
-                    particles.splice(i,1);
-                }
-            }
-
-            for (let elem of elements) {
-                if (elem.attackTimer > 0) continue;
-                if (elem.data.isSpikeweed) {
-                    const col = elem.col;
-                    for (let z of zombies) {
-                        const zCol = Math.floor(z.x / CELL_W);
-                        if (z.row === elem.row && zCol === col) {
-                            z.hp -= elem.data.damage;
-                            elem.attackTimer = elem.data.cooldown;
-                            addParticles(z.x, z.y, elem.data.color, 5);
-                            break;
-                        }
-                    }
-                } else if (elem.data.isRanged === true && elem.data.damage > 0) {
-                    let target = null;
-                    let minX = Infinity;
-                    for (let z of zombies) {
-                        if (z.row === elem.row && z.x > elem.x && z.x < minX) {
-                            minX = z.x;
-                            target = z;
-                        }
-                    }
-                    if (target) {
-                        elem.attack(target);
-                        elem.attackTimer = elem.data.cooldown;
-                    } else if (elem.data.role === 'pierce') {
-                        // 镁无目标时也可以发射穿透弹（清屏效果）
-                        elem.attack(null);
-                        elem.attackTimer = elem.data.cooldown;
-                    }
-                }
-            }
-
-            draw();
-            frameRequest = requestAnimationFrame(gameUpdate);
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = "#5a7a4a";
-            ctx.lineWidth = 1;
-            for (let i = 0; i <= COLS; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i*CELL_W, 0);
-                ctx.lineTo(i*CELL_W, canvas.height);
-                ctx.stroke();
-            }
-            for (let i = 0; i <= ROWS; i++) {
-                ctx.beginPath();
-                ctx.moveTo(0, i*CELL_H);
-                ctx.lineTo(canvas.width - EXTRA_RIGHT, i*CELL_H);
-                ctx.stroke();
-            }
-            ctx.fillStyle = "#1a3a2a";
-            ctx.fillRect(canvas.width - EXTRA_RIGHT, 0, EXTRA_RIGHT, canvas.height);
-            ctx.strokeStyle = "#5a7a4a";
-            ctx.strokeRect(canvas.width - EXTRA_RIGHT, 0, EXTRA_RIGHT, canvas.height);
-            
-            for (let elem of elements) elem.draw(ctx);
-            for (let z of zombies) z.draw(ctx);
-            for (let e of electrons) {
-                const elapsed = (performance.now() - e.spawnTime) / 1000;
-                const alpha = elapsed < 1.8 ? 1 : (1 - (elapsed-1.8)/0.2);
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-                ctx.beginPath();
-                ctx.arc(e.x, e.y, 14, 0, 2*Math.PI);
-                ctx.fillStyle = "#ffd966";
-                ctx.shadowBlur = 12;
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(e.x, e.y, 7, 0, 2*Math.PI);
-                ctx.fillStyle = "#fff4b0";
-                ctx.fill();
-                ctx.restore();
-            }
-            for (let b of bullets) b.draw(ctx);
-            for (let p of particles) p.draw(ctx);
-            drawFlyAnimations();
-
-            if (mouseGrid.row !== -1 && !gameOver && mouseGrid.col >=0 && mouseGrid.col < COLS) {
-                ctx.save(); 
-                ctx.globalAlpha = 0.4; 
-                if (skillMode) ctx.fillStyle = "#e67e22";
-                else if (shovelMode) ctx.fillStyle = "#e05a3a";
-                else ctx.fillStyle = "#f0c040";
-                ctx.fillRect(mouseGrid.col*CELL_W, mouseGrid.row*CELL_H, CELL_W, CELL_H); 
-                ctx.restore();
-            }
-            if (gameOver) {
-                ctx.font = "bold 32px sans-serif";
-                ctx.fillStyle = "#f0c040";
-                ctx.fillText("GAME OVER", canvas.width/2-120, canvas.height/2);
-            }
-        }
-
-        let mouseGrid = { row: -1, col: -1 };
-        function handleCanvasClick(e) {
-            if (gameOver) return;
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
-            const mouseX = (e.clientX - rect.left) * scaleX, mouseY = (e.clientY - rect.top) * scaleY;
-            if (tryCollectElectron(mouseX, mouseY)) return;
-            const col = Math.floor(mouseX / CELL_W);
-            const row = Math.floor(mouseY / CELL_H);
-            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
-                if (skillMode) {
-                    usePhosphorusSkill(row, col);
-                    setSkillMode(false);
-                } else if (shovelMode) {
-                    shovelPlant(row, col);
-                    setShovelMode(false);
-                } else {
-                    placeElement(row, col);
-                }
-            }
-        }
-
-        function handleMouseMove(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
-            const mouseX = (e.clientX - rect.left) * scaleX, mouseY = (e.clientY - rect.top) * scaleY;
-            const col = Math.floor(mouseX / CELL_W);
-            const row = Math.floor(mouseY / CELL_H);
-            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) mouseGrid = { row, col };
-            else mouseGrid = { row: -1, col: -1 };
-        }
-
-        function setShovelMode(active) {
-            shovelMode = active;
-            if (skillMode) setSkillMode(false);
-            const btn = document.getElementById('shovelBigBtn');
-            if (active) {
-                btn.classList.add('active');
-                document.getElementById('gameMessage').innerHTML = "🔧 铲子模式已开启，点击植物可铲除并返还一半电子。再次点击铲子按钮取消。";
-            } else {
-                btn.classList.remove('active');
-                document.getElementById('gameMessage').innerHTML = "⚛️ 铲子模式已关闭。";
-            }
-        }
-
-        function setSkillMode(active) {
-            skillMode = active;
-            if (shovelMode) setShovelMode(false);
-            if (active) {
-                document.getElementById('gameMessage').innerHTML = "🔥 磷爆模式已开启，点击草地格子引爆3x3范围僵尸。";
-            } else {
-                document.getElementById('gameMessage').innerHTML = "⚛️ 磷爆模式已关闭。";
-            }
-        }
-
-        function toggleShovelMode() {
-            setShovelMode(!shovelMode);
-        }
-
-        function renderElementButtons() {
-            const container = document.getElementById('elementGrid');
-            container.innerHTML = '';
-            elementOrder.forEach(type => {
-                const elem = ELEMENTS[type];
-                const btn = document.createElement('div');
-                btn.className = `element-btn ${selectedElement === type ? 'selected' : ''}`;
-                btn.style.backgroundColor = elem.color;
-                btn.dataset.type = type;
-                btn.innerHTML = `<div class="element-symbol">${elem.symbol}</div><div class="element-cost">${elem.cost}⚡</div>`;
-                btn.addEventListener('click', () => {
-                    if (shovelMode) setShovelMode(false);
-                    if (skillMode) setSkillMode(false);
-                    if (elem.isSkill) {
-                        if (isElementOnCooldown(type)) {
-                            document.getElementById('gameMessage').innerHTML = `⏳ 技能 ${elem.name} 冷却中，请稍后再放。`;
-                            return;
-                        }
-                        setSkillMode(true);
-                        selectedElement = type;
-                        renderElementButtons();
-                        document.getElementById('gameMessage').innerHTML = `🔥 已选中 ${elem.name} 技能，点击草地格子引爆。`;
-                        return;
-                    }
-                    if (isElementOnCooldown(type)) {
-                        document.getElementById('gameMessage').innerHTML = `⏳ 元素 ${elem.name} 冷却中，请稍后再放。`;
-                        return;
-                    }
-                    selectedElement = type;
-                    renderElementButtons();
-                    document.getElementById('gameMessage').innerHTML = `已选中 ${elem.name} (${elem.symbol})，点击草地放置。`;
-                });
-                container.appendChild(btn);
-            });
-            updateElementButtonsCooldown();
-        }
-
-        function renderGuide() {
-            const container = document.getElementById('guideContent');
-            container.innerHTML = '';
-            elementOrder.forEach(type => {
-                const elem = ELEMENTS[type];
-                const div = document.createElement('div');
-                div.className = 'elem-desc';
-                let skillDesc = '';
-                if (elem.isSkill) skillDesc = '<br>🔥 技能：清除3x3范围僵尸';
-                div.innerHTML = `<div class="symbol" style="background:${elem.color}">${elem.symbol}</div><div><strong>${elem.name}</strong><br>${elem.desc}${skillDesc}<br>💰 成本: ${elem.cost} 电子<br>❤️ 生命: ${elem.health || '—'}</div>`;
-                container.appendChild(div);
-            });
-        }
-
-        function restartGame() {
-            gameOver = false;
-            essence = 200;
-            totalScore = 0;
-            zombies = [];
-            bullets = [];
-            electrons = [];
-            flyAnimations = [];
-            particles = [];
-            initGrid();
-            gameStartTime = performance.now();
-            lastZombieSpawnTime = 0;
-            lastElectronSpawn = 0;
-            elementCooldowns = {};
-            for (let t in cooldownTimers) clearTimeout(cooldownTimers[t]);
-            cooldownTimers = {};
-            setShovelMode(false);
-            setSkillMode(false);
-            updateUI();
-            document.getElementById('gameMessage').innerHTML = "✨ 游戏已重置！前60秒为发育期，不刷怪。";
-            if (frameRequest) cancelAnimationFrame(frameRequest);
-            frameRequest = requestAnimationFrame(gameUpdate);
-            if (isLoggedIn) updateCloudScore(totalScore);
-        }
-
-        function bindEvents() {
-            canvas.addEventListener('click', handleCanvasClick);
-            canvas.addEventListener('mousemove', handleMouseMove);
-            document.getElementById('restartBtn').addEventListener('click', restartGame);
-            document.getElementById('openGuideBtn').addEventListener('click', () => { renderGuide(); document.getElementById('guideModal').classList.add('active'); });
-            document.getElementById('closeGuideBtn').addEventListener('click', () => { document.getElementById('guideModal').classList.remove('active'); });
-            document.getElementById('rankBtn').addEventListener('click', showRankModal);
-            document.getElementById('closeRankBtn').addEventListener('click', () => {
-                document.getElementById('rankModal').classList.remove('active');
-            });
-            document.getElementById('rankModal').addEventListener('click', (e) => {
-                if (e.target === document.getElementById('rankModal')) {
-                    document.getElementById('rankModal').classList.remove('active');
-                }
-            });
-            document.getElementById('shovelBigBtn').addEventListener('click', toggleShovelMode);
-        }
-
-        async function init() {
-            await initSupabaseAndUser();
-            renderElementButtons();
-            bindEvents();
-            updateUI();
-            initGrid();
-            gameStartTime = performance.now();
-            lastFrame = performance.now();
-            frameRequest = requestAnimationFrame(gameUpdate);
-        }
+        function renderElementButtons(){ const container=document.getElementById('elementGrid'); container.innerHTML=''; elementOrder.forEach(type=>{ const elem=ELEMENTS[type]; const btn=document.createElement('div'); btn.className=`element-btn ${selectedElement===type?'selected':''}`; btn.style.backgroundColor=elem.color; btn.dataset.type=type; btn.innerHTML=`<div class="element-symbol">${elem.symbol}</div><div class="element-cost">${elem.cost}⚡</div>`; btn.addEventListener('click',()=>{ if(shovelMode) setShovelMode(false); if(skillMode) setSkillMode(false); if(isElementOnCooldown(type)){ document.getElementById('gameMessage').innerHTML=`⏳ 元素 ${elem.name} 冷却中 (${elementCooldowns[type].toFixed(1)}秒)`; return; } if(elem.isSkill){ setSkillMode(true); selectedElement=type; renderElementButtons(); document.getElementById('gameMessage').innerHTML=`🔥 已选中 ${elem.name} 技能，点击草地格子引爆。`; return; } selectedElement=type; renderElementButtons(); document.getElementById('gameMessage').innerHTML=`已选中 ${elem.name} (${elem.symbol})，点击草地放置。`; }); container.appendChild(btn); }); updateElementButtonsCooldown(); }
+        function renderGuide(){ const container=document.getElementById('guideContent'); container.innerHTML=''; elementOrder.forEach(type=>{ const elem=ELEMENTS[type]; const div=document.createElement('div'); div.className='elem-desc'; let cdText=elem.isSkill?`冷却: ${elem.cooldown}秒`:`种植冷却: ${elem.cooldown}秒`; div.innerHTML=`<div class="symbol" style="background:${elem.color}">${elem.symbol}</div><div><strong>${elem.name}</strong><br>${elem.desc}<br>💰 成本: ${elem.cost} 电子<br>⏱️ ${cdText}<br>❤️ 生命: ${elem.health||'—'}</div>`; container.appendChild(div); }); }
+        function restartGame(){ gameOver=false; essence=200; totalScore=0; zombies=[]; bullets=[]; electrons=[]; flyAnimations=[]; particles=[]; initGrid(); gameStartTime=performance.now(); lastZombieSpawnTime=0; lastElectronSpawn=0; for(let t in cooldownTimers) clearTimeout(cooldownTimers[t]); elementCooldowns={}; cooldownTimers={}; setShovelMode(false); setSkillMode(false); selectedElement='carbon'; renderElementButtons(); updateUI(); document.getElementById('gameMessage').innerHTML="✨ 游戏已重置！前60秒为发育期，不刷怪。每个元素独立冷却(PVZ原版节奏)"; if(frameRequest) cancelAnimationFrame(frameRequest); frameRequest=requestAnimationFrame(gameUpdate); if(isLoggedIn) updateCloudScore(totalScore); }
+        function bindEvents(){ canvas.addEventListener('click',handleCanvasClick); canvas.addEventListener('mousemove',handleMouseMove); document.getElementById('restartBtn').addEventListener('click',restartGame); document.getElementById('openGuideBtn').addEventListener('click',()=>{ renderGuide(); document.getElementById('guideModal').classList.add('active'); }); document.getElementById('closeGuideBtn').addEventListener('click',()=>{ document.getElementById('guideModal').classList.remove('active'); }); document.getElementById('rankBtn').addEventListener('click',showRankModal); document.getElementById('closeRankBtn').addEventListener('click',()=>{ document.getElementById('rankModal').classList.remove('active'); }); document.getElementById('rankModal').addEventListener('click',(e)=>{ if(e.target===document.getElementById('rankModal')) document.getElementById('rankModal').classList.remove('active'); }); document.getElementById('shovelBigBtn').addEventListener('click',toggleShovelMode); }
+        async function init(){ await initSupabaseAndUser(); renderElementButtons(); bindEvents(); updateUI(); initGrid(); gameStartTime=performance.now(); lastGameFrame=performance.now(); frameRequest=requestAnimationFrame(gameUpdate); }
         init();
     })();
 </script>
