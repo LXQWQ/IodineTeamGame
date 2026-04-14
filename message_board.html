@@ -15,11 +15,22 @@
         .back-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;color:var(--accent);text-decoration:none;font-weight:500}
         .back-btn:hover{background:var(--accent);color:white}
         .user-info{background:var(--accent-bg);padding:.4rem 1rem;border-radius:40px;display:inline-block;margin-bottom:1rem}
-        .msg-list{background:var(--bg-card);border-radius:1.5rem;border:1px solid var(--border);padding:1.5rem;max-height:500px;overflow-y:auto;margin-bottom:1.5rem}
-        .feedback-item{background:var(--bg-primary);border-radius:1rem;padding:.8rem 1rem;border-left:3px solid var(--accent);margin-bottom:.8rem}
+        .msg-list{background:var(--bg-card);border-radius:1.5rem;border:1px solid var(--border);padding:1.5rem;max-height:600px;overflow-y:auto;margin-bottom:1.5rem}
+        .feedback-item{background:var(--bg-primary);border-radius:1rem;padding:.8rem 1rem;border-left:3px solid var(--accent);margin-bottom:1.2rem}
         .fb-name{font-weight:700;font-size:.85rem;color:var(--accent)}
         .fb-time{font-size:.7rem;color:var(--text-secondary);margin-left:.5rem}
         .fb-text{margin-top:.3rem;word-break:break-word;font-size:.9rem}
+        .reply-section{margin-top:0.8rem;margin-left:1rem;border-left:2px dashed var(--border);padding-left:0.8rem}
+        .reply-item{background:var(--bg-card);border-radius:0.8rem;padding:0.5rem 0.7rem;margin-bottom:0.5rem;font-size:0.85rem;border:1px solid var(--border)}
+        .reply-name{font-weight:600;color:var(--accent-light);font-size:0.75rem}
+        .reply-time{font-size:0.65rem;color:var(--text-secondary);margin-left:0.5rem}
+        .reply-text{margin-top:0.2rem;word-break:break-word}
+        .reply-delete{float:right;font-size:0.7rem;color:var(--danger,#e05a3a);cursor:pointer;opacity:0.7}
+        .reply-delete:hover{opacity:1}
+        .reply-btn{background:none;border:none;color:var(--accent);font-size:0.7rem;cursor:pointer;padding:0;margin-top:0.5rem}
+        .reply-input-container{display:none;margin-top:0.5rem}
+        .reply-input-container textarea{width:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:0.8rem;padding:0.4rem 0.6rem;font-size:0.8rem;margin-bottom:0.4rem}
+        .reply-submit{background:var(--accent);color:white;border:none;border-radius:1rem;padding:0.2rem 0.8rem;font-size:0.7rem;cursor:pointer}
         .input-area{background:var(--bg-card);border-radius:1.5rem;border:1px solid var(--border);padding:1.5rem}
         textarea{width:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:1rem;padding:.7rem 1rem;font-family:inherit;color:var(--text-primary);resize:vertical;margin-bottom:1rem}
         button{background:var(--accent);color:white;border:none;border-radius:2rem;padding:.6rem 1.2rem;font-weight:600;cursor:pointer}
@@ -39,10 +50,23 @@
     <div id="userInfoArea" class="user-info">加载中...</div>
     <div class="msg-list" id="msgList">加载留言中...</div>
     <div class="input-area" id="inputArea"></div>
-    <footer>所有留言基于真实账号，请友善发言～</footer>
+    <footer>所有留言基于真实账号，可回复他人留言～</footer>
 </div>
 
 <script>
+    // 如果需要使用回复功能，请先在 Supabase 数据库中执行以下 SQL 创建 replies 表：
+    /*
+    CREATE TABLE IF NOT EXISTS replies (
+        id BIGSERIAL PRIMARY KEY,
+        feedback_time BIGINT NOT NULL,
+        nickname TEXT NOT NULL,
+        message TEXT NOT NULL,
+        time BIGINT NOT NULL,
+        time_fmt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_replies_feedback_time ON replies(feedback_time);
+    */
+
     document.addEventListener('DOMContentLoaded', async () => {
         const SUPABASE_URL = 'https://ujinwsfueaifaoskapzs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
@@ -54,7 +78,7 @@
             return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
         }
 
-        // 获取当前真实用户昵称
+        // 获取当前用户昵称
         async function getCurrentUserNickname() {
             const { data: { user }, error: userError } = await supabase.auth.getUser();
             if (userError || !user) return null;
@@ -67,34 +91,161 @@
             return data.username;
         }
 
-        // 渲染留言列表
-        async function renderFeedbacks() {
-            const container = document.getElementById('msgList');
-            if (!container) return;
-            const { data, error } = await supabase
+        // 加载所有留言及其回复
+        async function loadAllFeedbacksAndReplies() {
+            // 获取留言
+            const { data: feedbacks, error: fbError } = await supabase
                 .from('feedbacks')
                 .select('*')
                 .order('time', { ascending: false })
                 .limit(MAX_FEEDBACK);
-            if (error) {
-                console.error(error);
-                container.innerHTML = '<div style="text-align:center; padding:1rem;">加载失败，请刷新页面重试</div>';
-                return;
+            if (fbError) {
+                console.error(fbError);
+                return { feedbacks: [], replies: [] };
             }
-            if (!data || data.length === 0) {
+            // 获取所有回复
+            const { data: replies, error: repError } = await supabase
+                .from('replies')
+                .select('*')
+                .order('time', { ascending: true });
+            if (repError) {
+                console.error(repError);
+                return { feedbacks: feedbacks || [], replies: [] };
+            }
+            return { feedbacks: feedbacks || [], replies: replies || [] };
+        }
+
+        // 渲染留言列表（包含回复）
+        async function renderFeedbacks() {
+            const container = document.getElementById('msgList');
+            if (!container) return;
+            const { feedbacks, replies } = await loadAllFeedbacksAndReplies();
+            const currentUser = await getCurrentUserNickname();
+            if (!feedbacks || feedbacks.length === 0) {
                 container.innerHTML = '<div style="text-align:center; padding:1rem;">✨ 暂无留言，成为第一个留言的玩家吧～</div>';
                 return;
             }
+            // 将回复按 feedback_time 分组
+            const repliesMap = new Map();
+            for (const rep of replies) {
+                const key = rep.feedback_time;
+                if (!repliesMap.has(key)) repliesMap.set(key, []);
+                repliesMap.get(key).push(rep);
+            }
             let html = '';
-            data.forEach(fb => {
+            for (const fb of feedbacks) {
+                const fbReplies = repliesMap.get(fb.time) || [];
                 html += `
-                    <div class="feedback-item">
+                    <div class="feedback-item" data-fb-time="${fb.time}">
                         <div><span class="fb-name">🧪 ${escapeHtml(fb.nickname)}</span><span class="fb-time">${fb.time_fmt}</span></div>
                         <div class="fb-text">${escapeHtml(fb.message)}</div>
+                        <button class="reply-btn" data-time="${fb.time}">💬 回复</button>
+                        <div class="reply-section" id="reply-section-${fb.time}">
+                            ${renderReplies(fbReplies, currentUser)}
+                        </div>
+                        <div class="reply-input-container" id="reply-input-${fb.time}" style="display:none;">
+                            <textarea id="reply-text-${fb.time}" rows="2" placeholder="写下你的回复..." maxlength="200"></textarea>
+                            <button class="reply-submit" data-time="${fb.time}">提交回复</button>
+                        </div>
                     </div>
                 `;
-            });
+            }
             container.innerHTML = html;
+            // 绑定回复按钮事件
+            document.querySelectorAll('.reply-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const fbTime = btn.dataset.time;
+                    const inputDiv = document.getElementById(`reply-input-${fbTime}`);
+                    if (inputDiv) inputDiv.style.display = inputDiv.style.display === 'none' ? 'block' : 'none';
+                });
+            });
+            // 绑定提交回复事件
+            document.querySelectorAll('.reply-submit').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const fbTime = btn.dataset.time;
+                    const textarea = document.getElementById(`reply-text-${fbTime}`);
+                    const message = textarea.value.trim();
+                    if (!message) {
+                        alert("回复内容不能为空");
+                        return;
+                    }
+                    const nickname = await getCurrentUserNickname();
+                    if (!nickname) {
+                        alert("请先登录后再回复");
+                        return;
+                    }
+                    const newReply = {
+                        feedback_time: parseInt(fbTime),
+                        nickname: nickname,
+                        message: message,
+                        time: Date.now(),
+                        time_fmt: new Date().toLocaleString('zh-CN', { hour12: false })
+                    };
+                    const { error } = await supabase.from('replies').insert([newReply]);
+                    if (error) {
+                        console.error(error);
+                        alert("回复失败，请重试");
+                    } else {
+                        textarea.value = '';
+                        const inputDiv = document.getElementById(`reply-input-${fbTime}`);
+                        if (inputDiv) inputDiv.style.display = 'none';
+                        await renderFeedbacks(); // 重新渲染
+                    }
+                });
+            });
+            // 绑定删除回复事件（动态绑定，因为回复是动态生成的）
+            document.querySelectorAll('.reply-delete').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const replyId = btn.dataset.id;
+                    const currentUserNick = await getCurrentUserNickname();
+                    if (!currentUserNick) {
+                        alert("请先登录");
+                        return;
+                    }
+                    // 确认删除权限（后端会验证，前端先获取该回复的昵称）
+                    const { data: reply, error: fetchErr } = await supabase
+                        .from('replies')
+                        .select('nickname')
+                        .eq('id', replyId)
+                        .single();
+                    if (fetchErr || !reply) {
+                        alert("回复不存在");
+                        return;
+                    }
+                    if (reply.nickname !== currentUserNick) {
+                        alert("只能删除自己的回复");
+                        return;
+                    }
+                    const { error } = await supabase.from('replies').delete().eq('id', replyId);
+                    if (error) {
+                        alert("删除失败");
+                    } else {
+                        await renderFeedbacks();
+                    }
+                });
+            });
+        }
+
+        // 渲染回复列表
+        function renderReplies(replies, currentUser) {
+            if (!replies.length) return '<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.3rem;">暂无回复</div>';
+            let replyHtml = '';
+            for (const rep of replies) {
+                const isOwner = (currentUser === rep.nickname);
+                replyHtml += `
+                    <div class="reply-item">
+                        <div>
+                            <span class="reply-name">💬 ${escapeHtml(rep.nickname)}</span>
+                            <span class="reply-time">${rep.time_fmt}</span>
+                            ${isOwner ? `<span class="reply-delete" data-id="${rep.id}">删除</span>` : ''}
+                        </div>
+                        <div class="reply-text">${escapeHtml(rep.message)}</div>
+                    </div>
+                `;
+            }
+            return replyHtml;
         }
 
         // 发布留言
@@ -178,19 +329,18 @@
             }
         }
 
-        // 深色主题（读取主页设置）
+        // 深色主题
         function initTheme() {
             const isDark = localStorage.getItem('theme') === 'dark';
             if (isDark) document.body.classList.add('dark');
         }
 
-        // 初始化
         initTheme();
         await updateUserInfo();
         await renderFeedbacks();
         await renderInputArea();
 
-        // 监听登录状态变化（例如主页登录后）
+        // 监听登录状态变化
         supabase.auth.onAuthStateChange(async () => {
             await updateUserInfo();
             await renderInputArea();
