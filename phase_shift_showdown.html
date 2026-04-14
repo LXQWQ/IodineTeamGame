@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>相转移大作战 · 双人回合制</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --red-glow: #ef4444;
+            --blue-glow: #3b82f6;
+            --accent: #f59e0b;
+            --text-light: #f1f5f9;
+            --text-dim: #94a3b8;
+        }
+        body {
+            background: linear-gradient(145deg, #0b1120 0%, #111827 100%);
+            color: var(--text-light);
+            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        .game-container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 3rem;
+            padding: 1.5rem;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #f0f9ff, #bae6fd);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+        }
+        .arena {
+            display: flex;
+            align-items: stretch;
+            gap: 1.5rem;
+            margin: 1rem 0;
+            min-height: 400px;
+        }
+        /* 玩家区域 */
+        .player {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: 2rem;
+            padding: 1.2rem;
+            text-align: center;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            box-shadow: 0 8px 16px -6px rgba(0,0,0,0.3);
+        }
+        .player.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent), 0 10px 20px -5px rgba(0,0,0,0.5);
+            background: #2d3a4e;
+        }
+        .player-name {
+            font-size: 1.6rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .phase-icon {
+            font-size: 2rem;
+        }
+        .phase-text {
+            font-size: 0.9rem;
+            background: #0f172a;
+            display: inline-block;
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            margin-top: 0.5rem;
+            color: var(--text-dim);
+        }
+        .boundary-line {
+            width: 90%;
+            height: 4px;
+            background: var(--border);
+            margin: 1rem auto;
+            border-radius: 4px;
+            position: relative;
+        }
+        .boundary-line::before,
+        .boundary-line::after {
+            content: "⚡";
+            position: absolute;
+            top: -12px;
+            font-size: 1rem;
+            opacity: 0.6;
+        }
+        .boundary-line::before { left: -20px; color: var(--red-glow); }
+        .boundary-line::after { right: -20px; color: var(--blue-glow); }
+        /* 中央反应区 */
+        .reaction-zone {
+            width: 280px;
+            background: #0f172a;
+            border-radius: 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 1rem 0;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            border: 1px solid var(--accent);
+        }
+        .reactant {
+            width: 100%;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .reactant-icon {
+            font-size: 3.5rem;
+            filter: drop-shadow(0 4px 6px black);
+            transition: transform 0.2s;
+        }
+        .progress-track {
+            width: 180px;
+            height: 18px;
+            background: #334155;
+            border-radius: 40px;
+            margin: 15px auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--red-glow), var(--blue-glow));
+            border-radius: 40px;
+            transition: width 0.3s ease-out;
+        }
+        .position-value {
+            font-size: 0.8rem;
+            font-family: monospace;
+            background: #00000066;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        .current-turn {
+            background: var(--accent);
+            color: #0f172a;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        /* 卡牌区域 */
+        .hand-area {
+            background: var(--card-bg);
+            border-radius: 2rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: 1px solid var(--border);
+        }
+        .hand-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .cards {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card {
+            background: linear-gradient(145deg, #2d3a4e, #1e2a3a);
+            border-radius: 1.5rem;
+            width: 140px;
+            padding: 0.8rem 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            border: 1px solid #475569;
+            box-shadow: 0 6px 0 #0f172a;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 0 #0f172a;
+            background: #3b4a62;
+        }
+        .card:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 0 #0f172a;
+        }
+        .card.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            filter: grayscale(0.3);
+        }
+        .card-name {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 0.2rem;
+        }
+        .card-desc {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+        .card-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        button {
+            background: var(--accent);
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #0f172a;
+            transition: 0.1s;
+        }
+        button:hover {
+            transform: scale(0.97);
+            filter: brightness(1.1);
+        }
+        .reset-btn {
+            background: #475569;
+            color: white;
+        }
+        .game-message {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            min-height: 2.5rem;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-top: 1rem;
+            color: var(--text-dim);
+        }
+        @media (max-width: 850px) {
+            .arena { flex-direction: column; align-items: center; }
+            .reaction-zone { width: 100%; order: -1; margin-bottom: 1rem; }
+            .player { width: 100%; }
+            .card { width: 110px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <h1>⚛️ 相转移大作战 ⚛️</h1>
+    <div class="arena">
+        <!-- 左侧玩家（红方） -->
+        <div class="player" id="playerLeft">
+            <div class="player-name">
+                <span>🔴 红方修士</span>
+            </div>
+            <div class="phase-text" id="leftPhase">——</div>
+            <div class="boundary-line"></div>
+            <div class="phase-icon" id="leftIcon">❄️</div>
+        </div>
+
+        <!-- 中央反应物 -->
+        <div class="reaction-zone">
+            <div class="reactant">
+                <div class="reactant-icon" id="reactantIcon">🧪</div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="position-value" id="positionLabel">50.0</div>
+            </div>
+            <div class="current-turn" id="turnIndicator">红方回合</div>
+        </div>
+
+        <!-- 右侧玩家（蓝方） -->
+        <div class="player" id="playerRight">
+            <div class="player-name">
+                <span>🔵 蓝方道士</span>
+            </div>
+            <div class="phase-text" id="rightPhase">——</div>
+            <div class="boundary-line"></div>
+            <div class="phase-icon" id="rightIcon">🔥</div>
+        </div>
+    </div>
+
+    <div class="hand-area">
+        <div class="hand-title">
+            <span>🎴 当前反应卡牌 (点击使用)</span>
+            <button id="resetGameBtn" class="reset-btn">🔄 新的一局</button>
+        </div>
+        <div class="cards" id="cardsContainer">
+            <!-- 动态生成卡牌 -->
+        </div>
+        <div class="game-message" id="gameMessage"></div>
+    </div>
+    <footer>🧪 每回合选择一张卡牌，将反应物向己方拉动。先拉到边界线者获胜！相性随机分配，不同相有不同特效~</footer>
+</div>
+
+<script>
+    // ---------- 游戏配置 ----------
+    const PHASES = [
+        { name: "固相", icon: "❄️", desc: "致密稳定", colorHint: "#8b5cf6" },
+        { name: "液相", icon: "💧", desc: "流动融合", colorHint: "#3b82f6" },
+        { name: "气相", icon: "💨", desc: "扩散活跃", colorHint: "#f59e0b" },
+        { name: "等离子相", icon: "⚡", desc: "高能离子", colorHint: "#ef4444" }
+    ];
+
+    // 卡牌库（化学反应风格）
+    const CARD_POOL = [
+        { name: "🔥 加热", desc: "向气相推动", value: 3, flavor: "热量激发相变" },
+        { name: "❄️ 冷却", desc: "向固相沉降", value: -3, flavor: "凝聚沉降" },
+        { name: "⚡ 高压", desc: "压向液相", value: 2, flavor: "压力相变" },
+        { name: "🌀 减压", desc: "气化扩散", value: -2, flavor: "沸腾逸散" },
+        { name: "🧲 磁化", desc: "吸引离子", value: 1, flavor: "等离子偏移" },
+        { name: "💥 催化", desc: "剧烈反应", value: 4, flavor: "狂暴转移" },
+        { name: "🌊 溶解", desc: "融入液相", value: 1.5, flavor: "溶剂迁移" },
+        { name: "🧊 结晶", desc: "固化沉淀", value: -1.5, flavor: "析出晶体" },
+        { name: "💨 升华", desc: "直冲气相", value: 2.5, flavor: "跳过液相" },
+        { name: "🌙 凝华", desc: "直接凝华", value: -2.5, flavor: "跳过气相" }
+    ];
+
+    // 游戏状态
+    let gameActive = true;
+    let currentTurn = "left";   // "left" 或 "right"
+    let position = 50;           // 0 ~ 100, 0 = 左边界(红方胜), 100 = 右边界(蓝方胜)
+    let leftPhase = null, rightPhase = null;
+    let currentCards = [];       // 当前回合的4张卡牌对象数组
+
+    // DOM 元素
+    const leftDiv = document.getElementById('playerLeft');
+    const rightDiv = document.getElementById('playerRight');
+    const leftPhaseSpan = document.getElementById('leftPhase');
+    const rightPhaseSpan = document.getElementById('rightPhase');
+    const leftIconSpan = document.getElementById('leftIcon');
+    const rightIconSpan = document.getElementById('rightIcon');
+    const turnIndicator = document.getElementById('turnIndicator');
+    const progressFill = document.getElementById('progressFill');
+    const positionLabel = document.getElementById('positionLabel');
+    const cardsContainer = document.getElementById('cardsContainer');
+    const gameMessageDiv = document.getElementById('gameMessage');
+    const resetBtn = document.getElementById('resetGameBtn');
+
+    // 辅助函数
+    function updateUI() {
+        // 更新进度条宽度 (0% ~ 100%)
+        let percent = (position / 100) * 100;
+        progressFill.style.width = `${percent}%`;
+        positionLabel.innerText = position.toFixed(1);
+        // 更新高亮边框
+        if (currentTurn === 'left') {
+            leftDiv.classList.add('active');
+            rightDiv.classList.remove('active');
+            turnIndicator.innerText = `🔴 红方回合 · ${leftPhase?.name || "固相"}`;
+        } else {
+            rightDiv.classList.add('active');
+            leftDiv.classList.remove('active');
+            turnIndicator.innerText = `🔵 蓝方回合 · ${rightPhase?.name || "液相"}`;
+        }
+        // 边界胜利检测已经在 moveReaction 中做了，UI 胜利会显示弹框
+    }
+
+    // 移动反应物，delta 为正表示向左移动(红方有利)，负为向右移动(蓝方有利)
+    function moveReaction(delta) {
+        if (!gameActive) return false;
+        let newPos = position + delta;
+        if (newPos <= 0) {
+            newPos = 0;
+            gameActive = false;
+            gameMessageDiv.innerHTML = "🎉 红方胜利！相转移完成！点击「新的一局」继续挑战 🎉";
+            alert("🔴 红方将反应物完全拉入己方相域！胜利！");
+            return true;
+        } else if (newPos >= 100) {
+            newPos = 100;
+            gameActive = false;
+            gameMessageDiv.innerHTML = "🎉 蓝方胜利！相转移完成！点击「新的一局」继续挑战 🎉";
+            alert("🔵 蓝方将反应物完全拉入己方相域！胜利！");
+            return true;
+        }
+        position = newPos;
+        updateUI();
+        return false;
+    }
+
+    // 随机分配相（两个不同相）
+    function assignPhases() {
+        let shuffled = [...PHASES];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        leftPhase = shuffled[0];
+        rightPhase = shuffled[1];
+        leftPhaseSpan.innerText = `${leftPhase.name} ${leftPhase.icon}`;
+        rightPhaseSpan.innerText = `${rightPhase.name} ${rightPhase.icon}`;
+        leftIconSpan.innerText = leftPhase.icon;
+        rightIconSpan.innerText = rightPhase.icon;
+        // 根据相性略微调整初始位置偏移？不调整，保持公平50
+    }
+
+    // 随机抽取4张卡牌 (从卡池随机有放回)
+    function drawCards() {
+        let newCards = [];
+        for (let i = 0; i < 4; i++) {
+            let randomIndex = Math.floor(Math.random() * CARD_POOL.length);
+            let original = CARD_POOL[randomIndex];
+            // 克隆一张，防止引用修改
+            newCards.push({ ...original });
+        }
+        currentCards = newCards;
+        renderCards();
+    }
+
+    // 渲染卡牌
+    function renderCards() {
+        if (!cardsContainer) return;
+        cardsContainer.innerHTML = '';
+        for (let i = 0; i < currentCards.length; i++) {
+            const card = currentCards[i];
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+            // 显示数值 (绝对值带方向)
+            let valueStr = card.value > 0 ? `+${card.value} 向左` : `${card.value} 向右`;
+            cardDiv.innerHTML = `
+                <div class="card-name">${card.name}</div>
+                <div class="card-value">${valueStr}</div>
+                <div class="card-desc">${card.desc}</div>
+                <div class="card-desc" style="font-size:0.65rem;">✨ ${card.flavor}</div>
+            `;
+            cardDiv.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!gameActive) {
+                    gameMessageDiv.innerHTML = "游戏已结束，请重新开局。";
+                    return;
+                }
+                // 检查是否当前玩家回合
+                let isLeftTurn = (currentTurn === 'left');
+                // 卡牌数值：正数表示向左（红方有利），负数表示向右（蓝方有利）
+                let delta = card.value;
+                // 如果是蓝方回合，需要将 delta 取反，因为蓝方希望反应物向右移动（正方向）
+                let finalDelta = isLeftTurn ? delta : -delta;
+                // 应用移动
+                let gameEnded = moveReaction(finalDelta);
+                // 移动后，如果游戏未结束，切换玩家，重新抽卡
+                if (!gameEnded) {
+                    // 切换回合
+                    currentTurn = (currentTurn === 'left') ? 'right' : 'left';
+                    drawCards();        // 为新玩家抽4张新卡
+                    updateUI();
+                    gameMessageDiv.innerHTML = `${currentTurn === 'left' ? '红方' : '蓝方'} 回合，请出牌！`;
+                } else {
+                    // 游戏结束，禁用卡牌点击视觉（但按钮仍然disable style）
+                    renderCards();      // 重新渲染但添加禁用样式
+                    cardsContainer.querySelectorAll('.card').forEach(c => c.classList.add('disabled'));
+                }
+            });
+            cardsContainer.appendChild(cardDiv);
+        }
+        if (!gameActive) {
+            cardsContainer.querySelectorAll('.card').forEach(c => c.classList.add('disabled'));
+        }
+    }
+
+    // 重置游戏
+    function resetGame() {
+        gameActive = true;
+        position = 50;
+        currentTurn = "left";
+        assignPhases();          // 重新随机分配相
+        drawCards();            // 为红方抽4张新卡
+        updateUI();
+        gameMessageDiv.innerHTML = "✨ 新的一局！红方先手，使用卡牌将反应物拉向自己。";
+        // 确保卡牌可用
+        renderCards();
+    }
+
+    // 初始化游戏
+    function initGame() {
+        assignPhases();
+        position = 50;
+        currentTurn = "left";
+        gameActive = true;
+        drawCards();
+        updateUI();
+        gameMessageDiv.innerHTML = "✨ 游戏开始！红方先手，使用卡牌争夺反应物。";
+        resetBtn.addEventListener('click', () => resetGame());
+    }
+
+    initGame();
+</script>
+</body>
+</html>
