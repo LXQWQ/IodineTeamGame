@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>丹道化学 · 九鼎神丹（云存档）</title>
     <style>
-        /* 完整样式与原版一致，此处完整保留 */
+        /* 完整样式与原版一致 */
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--bg:#f8f4e8;--card:#fffef7;--text:#2c2418;--text-light:#6b5a4a;--border:#e2d8c8;--accent:#b45f2b;--accent-light:#d68b45;--accent-bg:#f5e6d3;--danger:#c23b22;--heal:#2c7a4c;--shadow:0 4px 12px rgba(0,0,0,0.08);--progress-bg:#e0d6c0;--progress-fill:#b45f2b;--tab-inactive:#e2d8c8}
         body.dark{--bg:#1a1c1e;--card:#2a2e32;--text:#ece8e0;--text-light:#aaa08c;--border:#3e3a34;--accent:#e09d5e;--accent-light:#f0b87a;--accent-bg:#3a2e24;--danger:#e05a3a;--heal:#4c9a6e;--progress-bg:#3e3a34;--progress-fill:#e09d5e;--tab-inactive:#3e3a34}
@@ -98,6 +98,118 @@
         .herb-list,.drug-list{flex:1;min-width:200px}
         .herb-item,.drug-item{background:var(--accent-bg);border-radius:1rem;padding:.6rem;margin-bottom:.6rem;display:flex;justify-content:space-between;align-items:center}
         .make-btn{background:var(--heal);border:none;color:white;padding:.3rem .8rem;border-radius:1.5rem;cursor:pointer;font-size:.8rem;font-weight:bold}
+        .wise-old-man {
+            background: var(--accent-bg);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: 2px solid var(--accent);
+            text-align: center;
+        }
+        .wise-old-man h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+        .challenge-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        .challenge-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .cooldown-text {
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+            color: var(--text-light);
+        }
+        .quiz-area {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            background: var(--card);
+            border-radius: 1rem;
+            display: none;
+        }
+        .quiz-question {
+            font-weight: bold;
+            margin-bottom: 0.8rem;
+        }
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .quiz-option {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            padding: 0.4rem 1rem;
+            cursor: pointer;
+            transition: 0.1s;
+            text-align: left;
+        }
+        .quiz-option:hover {
+            background: var(--accent-light);
+            color: white;
+        }
+        .quiz-progress {
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+        .reward-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .reward-modal.active {
+            display: flex;
+        }
+        .reward-content {
+            background: var(--card);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            text-align: center;
+        }
+        .reward-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.8rem;
+            margin: 1rem 0;
+        }
+        .reward-item {
+            background: var(--accent-bg);
+            border-radius: 1rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .reward-item:hover {
+            background: var(--accent);
+            color: white;
+        }
+        .reward-remain {
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
         footer{text-align:center;font-size:.7rem;margin-top:1.5rem;color:var(--text-light)}
         @media (max-width:700px){body{padding:.8rem}.tab-btn{padding:.4rem .8rem;font-size:.8rem}.ding-layout{flex-direction:column}.ding-circle{width:80px;height:80px}.ding-character{font-size:2.5rem}.inventory-grid{grid-template-columns:1fr}}
     </style>
@@ -168,7 +280,7 @@
         </div>
     </div>
 
-    <!-- 药王谷（仅制药） -->
+    <!-- 药王谷（仅制药 + 智慧老人） -->
     <div id="tab-pharmacy" class="tab-content">
         <div class="panel">
             <h3>🏥 药王谷 · 炼制丹药</h3>
@@ -183,12 +295,24 @@
                         <div id="drugRecipes"></div>
                     </div>
                 </div>
+                <!-- 智慧老人挑战区域 -->
+                <div class="wise-old-man" id="wiseOldMan">
+                    <h4>🧙‍♂️ 智慧老人 · 元素谜题</h4>
+                    <p>“年轻人，我这里有五道化学谜题，答对一题，便赠你一件宝物。每十分钟可挑战一次。”</p>
+                    <button class="challenge-btn" id="challengeBtn" disabled>🧪 加载题目中...</button>
+                    <div class="cooldown-text" id="cooldownText"></div>
+                    <div class="quiz-area" id="quizArea">
+                        <div class="quiz-question" id="quizQuestion"></div>
+                        <div class="quiz-options" id="quizOptions"></div>
+                        <div class="quiz-progress" id="quizProgress"></div>
+                    </div>
+                </div>
                 <div class="feedback" id="pharmacyFeedback"></div>
             </div>
         </div>
     </div>
 
-    <!-- 九鼎神丹（整合提纯与神丹） -->
+    <!-- 九鼎神丹 -->
     <div id="tab-ding" class="tab-content">
         <div class="panel">
             <h3>🔥 九鼎神丹 · 鼎炼万物</h3>
@@ -231,8 +355,19 @@
     <footer>⚠️ 粗矿剧毒，请用鼎提纯；神丹可永久提升气血上限；药物可快速恢复。云存档自动同步，换设备进度不丢失。</footer>
 </div>
 
+<!-- 奖励选择模态框 -->
+<div id="rewardModal" class="reward-modal">
+    <div class="reward-content">
+        <h3>🎁 智慧老人的馈赠</h3>
+        <p>答对 <span id="correctCount">0</span> 题，可选 <span id="rewardCount">0</span> 件宝物</p>
+        <div class="reward-items" id="rewardItemsList"></div>
+        <div class="reward-remain" id="rewardRemain">还可选择 0 件</div>
+        <button id="closeRewardBtn" style="margin-top:1rem; background:var(--accent); color:white; border:none; padding:0.5rem 1rem; border-radius:2rem; cursor:pointer;">关闭</button>
+    </div>
+</div>
+
 <script>
-    // 将所有代码包裹在 DOMContentLoaded 中，避免全局变量冲突
+        // 将所有代码包裹在 DOMContentLoaded 中
     document.addEventListener('DOMContentLoaded', () => {
         // ======================= 物品图鉴数据库 =======================
         const ITEM_CATALOG = {
@@ -318,6 +453,13 @@
         const DAMAGE_MIN = 8, DAMAGE_MAX = 20;
         const AUTO_STOP_HEALTH = 20;
 
+        // ======================= 奖励物品列表 =======================
+        const REWARD_ITEMS = [
+            "孔雀石", "赤铁矿", "黄铁矿", "锡矿石", "自然金矿", "辉银矿", "辰砂矿", "钙钛矿",
+            "曾青", "雄黄", "雌黄", "慈石", "戎盐", "矾石",
+            "茯苓", "何首乌", "人参", "雪莲", "灵芝"
+        ];
+
         // ======================= Supabase 配置 =======================
         const SUPABASE_URL = 'https://ujinwsfueaifaoskapzs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
@@ -346,6 +488,16 @@
         let refineStartTime = 0;
         let refineTimerInterval = null;
         let currentRefineTime = 0;
+
+        // 智慧老人挑战状态
+        let challengeCooldown = 0;
+        let challengeInterval = null;
+        let challengeReady = false;
+        let loadedQuizQuestions = [];          // 从JSON加载的全部题目
+        let currentChallengeQuestions = [];    // 本次挑战随机选中的5道题（含预生成选项）
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+        let isQuizActive = false;
 
         // ======================= 辅助函数 =======================
         function getUserDataKey() { return `dandao_user_${currentUser}`; }
@@ -420,7 +572,7 @@
             }
         }
 
-        // ======================= 本地存储（降级） =======================
+        // ======================= 本地存储 =======================
         function loadGameData() {
             const raw = localStorage.getItem(getUserDataKey());
             if (raw) {
@@ -506,21 +658,21 @@
         }
 
         async function updateRanking() {
-        if (isLoggedIn && cloudAvailable) {
-            try {
-                const { data: existing } = await supabase
-                    .from('rankings')
-                    .select('score')
-                    .eq('user_name', currentUser)
-                    .maybeSingle();
-                if (!existing || existing.score < totalScore) {
-                    await supabase
+            if (isLoggedIn && cloudAvailable) {
+                try {
+                    const { data: existing } = await supabase
                         .from('rankings')
-                        .upsert({ user_name: currentUser, score: totalScore, max_hp: maxHealth, updated_at: new Date().toISOString() }, { onConflict: 'user_name' });
-                }
-            } catch(e) { console.warn(e); }
-        }
-        await renderRanking();   // 关键：等待排行榜刷新完成
+                        .select('score')
+                        .eq('user_name', currentUser)
+                        .maybeSingle();
+                    if (!existing || existing.score < totalScore) {
+                        await supabase
+                            .from('rankings')
+                            .upsert({ user_name: currentUser, score: totalScore, max_hp: maxHealth, updated_at: new Date().toISOString() }, { onConflict: 'user_name' });
+                    }
+                } catch(e) { console.warn(e); }
+            }
+            renderRanking();
         }
 
         async function renderRanking() {
@@ -976,6 +1128,253 @@
         }
         function renderAllUI(){ renderInventory(); renderRecipeList(); updateScoreUI(); renderRanking(); }
 
+        // ======================= 智慧老人挑战逻辑（动态题库 + 随机抽题） =======================
+        // 辅助：从数组中随机取 n 个不重复的元素
+        function getRandomDistinctItems(arr, n) {
+            if (n > arr.length) n = arr.length;
+            const shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled.slice(0, n);
+        }
+
+        // 从备用列表中随机抽取 count 个不重复且不等于 correct 的选项
+        function getRandomDistractors(correct, distractorPool, count) {
+            let candidates = distractorPool.filter(d => d !== correct);
+            for (let i = candidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+            }
+            return candidates.slice(0, count);
+        }
+
+        // 为一道题生成选项列表（正确选项 + 随机干扰项，并随机排序）
+        function generateOptionsForQuestion(q) {
+            const dists = getRandomDistractors(q.correct, q.distractors, 3);
+            const opts = [q.correct, ...dists];
+            for (let i = opts.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [opts[i], opts[j]] = [opts[j], opts[i]];
+            }
+            return opts;
+        }
+
+        // 开始挑战前：随机选择 N 道不重复的题，并为每道题生成选项
+        function prepareChallenge(questionCount = 5) {
+            if (!loadedQuizQuestions.length) return false;
+            const selectedQuestions = getRandomDistinctItems(loadedQuizQuestions, questionCount);
+            currentChallengeQuestions = [];
+            for (let q of selectedQuestions) {
+                currentChallengeQuestions.push({
+                    text: q.text,
+                    correct: q.correct,
+                    options: generateOptionsForQuestion(q)
+                });
+            }
+            return true;
+        }
+
+        function loadChallengeCooldown() {
+            const key = `challenge_cooldown_${currentUser}`;
+            const lastTimestamp = localStorage.getItem(key);
+            if (lastTimestamp) {
+                const elapsed = (Date.now() - parseInt(lastTimestamp)) / 1000;
+                if (elapsed < 600) {
+                    challengeCooldown = 600 - elapsed;
+                } else {
+                    challengeCooldown = 0;
+                    localStorage.removeItem(key);
+                }
+            } else {
+                challengeCooldown = 0;
+            }
+            updateCooldownDisplay();
+            if (challengeCooldown > 0) {
+                startCooldownTimer();
+                document.getElementById('challengeBtn').disabled = true;
+            } else {
+                document.getElementById('challengeBtn').disabled = !challengeReady;
+            }
+        }
+
+        function startCooldownTimer() {
+            if (challengeInterval) clearInterval(challengeInterval);
+            challengeInterval = setInterval(() => {
+                if (challengeCooldown > 0) {
+                    challengeCooldown--;
+                    updateCooldownDisplay();
+                    if (challengeCooldown <= 0) {
+                        clearInterval(challengeInterval);
+                        challengeInterval = null;
+                        document.getElementById('challengeBtn').disabled = !challengeReady;
+                        document.getElementById('cooldownText').innerHTML = '';
+                        localStorage.removeItem(`challenge_cooldown_${currentUser}`);
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateCooldownDisplay() {
+            const cooldownDiv = document.getElementById('cooldownText');
+            if (challengeCooldown > 0) {
+                const minutes = Math.floor(challengeCooldown / 60);
+                const seconds = Math.floor(challengeCooldown % 60);
+                cooldownDiv.innerHTML = `⏳ 下次挑战: ${minutes}分${seconds}秒`;
+            } else {
+                cooldownDiv.innerHTML = '';
+            }
+        }
+
+        function startChallenge() {
+            if (!challengeReady) {
+                alert("题目还在加载中，请稍后再试。");
+                return;
+            }
+            if (challengeCooldown > 0) {
+                alert("智慧老人正在休息，请稍后再来挑战。");
+                return;
+            }
+            if (isQuizActive) return;
+            if (!prepareChallenge(5)) {
+                alert("题库数据异常，无法开始挑战。");
+                return;
+            }
+            isQuizActive = true;
+            currentQuizIndex = 0;
+            quizScore = 0;
+            showNextQuestion();
+        }
+
+        function showNextQuestion() {
+            if (currentQuizIndex >= currentChallengeQuestions.length) {
+                endChallenge();
+                return;
+            }
+            const q = currentChallengeQuestions[currentQuizIndex];
+            document.getElementById('quizQuestion').innerText = q.text;
+            const optionsDiv = document.getElementById('quizOptions');
+            optionsDiv.innerHTML = '';
+            q.options.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = 'quiz-option';
+                btn.innerText = opt;
+                btn.addEventListener('click', () => checkAnswer(opt));
+                optionsDiv.appendChild(btn);
+            });
+            document.getElementById('quizProgress').innerText = `第 ${currentQuizIndex+1} / ${currentChallengeQuestions.length} 题`;
+            document.getElementById('quizArea').style.display = 'block';
+        }
+
+        function checkAnswer(selected) {
+            const q = currentChallengeQuestions[currentQuizIndex];
+            if (selected === q.correct) {
+                quizScore++;
+                showFeedback(`✅ 回答正确！`, 'pharmacyFeedback');
+            } else {
+                showFeedback(`❌ 回答错误！正确答案是 ${q.correct}。`, 'pharmacyFeedback');
+            }
+            currentQuizIndex++;
+            setTimeout(() => {
+                if (currentQuizIndex < currentChallengeQuestions.length) {
+                    showNextQuestion();
+                } else {
+                    endChallenge();
+                }
+            }, 1000);
+        }
+
+        function endChallenge() {
+            isQuizActive = false;
+            document.getElementById('quizArea').style.display = 'none';
+            const rewardCount = quizScore;
+            if (rewardCount > 0) {
+                showRewardModal(rewardCount);
+            } else {
+                showFeedback(`🧙‍♂️ 智慧老人摇摇头：“一道题都没答对，回去多读书吧。”`, 'pharmacyFeedback');
+            }
+            // 设置冷却
+            challengeCooldown = 600;
+            const key = `challenge_cooldown_${currentUser}`;
+            localStorage.setItem(key, Date.now().toString());
+            updateCooldownDisplay();
+            startCooldownTimer();
+            document.getElementById('challengeBtn').disabled = true;
+        }
+
+        function showRewardModal(rewardCount) {
+            const modal = document.getElementById('rewardModal');
+            document.getElementById('correctCount').innerText = quizScore;
+            document.getElementById('rewardCount').innerText = rewardCount;
+            let remaining = rewardCount;
+            document.getElementById('rewardRemain').innerText = `还可选择 ${remaining} 件`;
+            const container = document.getElementById('rewardItemsList');
+            container.innerHTML = '';
+            REWARD_ITEMS.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'reward-item';
+                div.innerText = item;
+                div.addEventListener('click', () => {
+                    if (remaining <= 0) {
+                        alert("你已经选完了所有宝物！");
+                        return;
+                    }
+                    inventory[item] = (inventory[item] || 0) + 1;
+                    remaining--;
+                    document.getElementById('rewardRemain').innerText = `还可选择 ${remaining} 件`;
+                    saveGameData();
+                    renderInventory();
+                    showFeedback(`✨ 获得了 ${item} x1`, 'pharmacyFeedback');
+                    if (remaining <= 0) {
+                        modal.classList.remove('active');
+                        alert("感谢你的智慧！宝物已收入乾坤袋。");
+                    }
+                });
+                container.appendChild(div);
+            });
+            modal.classList.add('active');
+        }
+
+        function closeRewardModal() {
+            document.getElementById('rewardModal').classList.remove('active');
+        }
+
+        // 加载外部 JSON 题库，失败时使用内嵌默认题库（包含镁题等至少10道）
+        async function loadQuizQuestions() {
+            try {
+                const response = await fetch('quiz_questions.json');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    loadedQuizQuestions = data;
+                    console.log('题库加载成功，共', loadedQuizQuestions.length, '题');
+                } else {
+                    throw new Error('题库数据无效');
+                }
+            } catch (err) {
+                console.warn('加载外部题库失败，使用内嵌默认题库', err);
+                // 内嵌默认题库（包含“白昼之光”镁题及多道其他题，共11题）
+                loadedQuizQuestions = [
+                    { text: "一根银色的金属丝在空气中点燃，发出的白光比太阳还要刺眼，让人无法直视。", correct: "镁", distractors: ["铝", "铁", "铜", "钠", "钾", "钙", "锌", "锡", "铅", "镍", "银", "金", "铂", "钛", "铬", "锰", "钴", "镉", "汞"] },
+                    { text: "我是消毒水中常见的成分，稀释后可用于伤口消毒，但纯品剧毒，误服可致命。我的水溶液呈棕色，且易升华。我是？", correct: "碘", distractors: ["氯气", "汞", "溴", "氟气", "过氧化氢", "高锰酸钾", "乙醇", "甲醛", "苯酚", "臭氧", "二氧化氯", "次氯酸钠", "氢氧化钠", "氨水", "醋酸", "硫酸", "硝酸", "盐酸", "碳酸"] },
+                    { text: "我是地壳中含量最多的金属元素，也是人体必需的微量元素之一。我的单质呈银白色，常用于制造飞机和日用品。我是？", correct: "铝", distractors: ["铁", "铜", "镁", "钙", "钠", "钾", "锌", "钛", "铬", "锰", "镍", "钴", "锡", "铅", "铍", "锶", "钡", "镓", "铟"] },
+                    { text: "我是一种非金属单质，在空气中燃烧发出明亮的蓝紫色火焰，生成有刺激性气味的气体。我是？", correct: "硫", distractors: ["碳", "磷", "氢气", "氮气", "氧气", "氯气", "硅", "硒", "碲", "硼", "钠", "镁", "铝", "钾", "钙", "铁", "铜", "锌", "银"] },
+                    { text: "我是常见的干燥剂，与水反应放出大量热，能使酚酞变红。我的水溶液俗称“烧碱”。我是？", correct: "氢氧化钠", distractors: ["氧化钙", "氢氧化钙", "氯化钠", "碳酸钠", "碳酸氢钠", "硫酸钠", "硝酸钠", "氢氧化钾", "氢氧化锂", "氢氧化钡", "浓硫酸", "无水氯化钙", "硅胶", "分子筛", "氧化铝", "五氧化二磷", "碱石灰", "氢氧化镁", "氢氧化铝"] },
+                    { text: "我是胃酸的主要成分，能帮助消化，但浓度过高会腐蚀胃黏膜。我的化学式是HCl。我是？", correct: "盐酸", distractors: ["硫酸", "硝酸", "醋酸", "磷酸", "氢氟酸", "氢溴酸", "氢碘酸", "高氯酸", "氯酸", "亚硫酸", "草酸", "柠檬酸", "乳酸", "苹果酸", "酒石酸", "碳酸", "硅酸", "硼酸", "甲酸"] },
+                    { text: "我是最轻的金属，密度比水还小，与水剧烈反应生成氢气。我的化合物常用于治疗躁郁症。我是？", correct: "锂", distractors: ["钠", "钾", "镁", "钙", "铍", "铝", "铷", "铯", "钡", "锶", "钛", "锌", "铁", "铜", "银", "金", "铂", "铅", "锡"] },
+                    { text: "我是常见的惰性气体，在霓虹灯中发出橙红色光，常用于制造“氖灯”。我的原子序数是10。我是？", correct: "氖", distractors: ["氦", "氩", "氪", "氙", "氡", "氮", "氧", "氟", "氯", "氢", "碳", "硫", "磷", "硅", "硼", "铝", "钠", "镁", "钙"] },
+                    { text: "我是人体必需的微量元素，缺乏会导致甲状腺肿大。加碘食盐中添加的就是我的钾盐。我是？", correct: "碘", distractors: ["铁", "锌", "硒", "氟", "铜", "锰", "钴", "钼", "铬", "氯", "钠", "钾", "钙", "镁", "磷", "硫", "硅", "硼", "铝"] },
+                    { text: "我是地壳中含量第二多的金属元素，也是血红蛋白的核心。我的单质是银白色，容易被磁铁吸引。我是？", correct: "铁", distractors: ["铝", "铜", "镁", "钙", "钠", "钾", "锌", "钛", "铬", "锰", "镍", "钴", "锡", "铅", "金", "银", "铂", "镉", "汞"] },
+                    { text: "我是常见的半导体材料，广泛应用于芯片制造。我的单质是银灰色脆性固体，地壳中含量仅次于氧。我是？", correct: "硅", distractors: ["锗", "砷", "镓", "铟", "磷", "硫", "碳", "硼", "铝", "铁", "铜", "锌", "银", "金", "铂", "钛", "铬", "锰", "钴"] }
+                ];
+            }
+            challengeReady = true;
+            document.getElementById('challengeBtn').disabled = (challengeCooldown > 0);
+            if (challengeCooldown === 0) document.getElementById('challengeBtn').innerText = '🧪 开始挑战';
+            else document.getElementById('challengeBtn').innerText = '🧪 开始挑战 (冷却中)';
+        }
+
         // ======================= 初始化 Supabase 与登录状态 =======================
         function initSupabase() {
             try {
@@ -1055,6 +1454,15 @@
         initTheme();
         initSupabase();
         setInterval(() => saveGameData(), 10000);
+        
+        // 智慧老人挑战按钮事件
+        document.getElementById('challengeBtn').addEventListener('click', startChallenge);
+        document.getElementById('closeRewardBtn').addEventListener('click', closeRewardModal);
+        
+        // 加载题库（异步），加载完成后根据冷却状态启用按钮
+        loadQuizQuestions().then(() => {
+            loadChallengeCooldown();
+        });
     });
 </script>
 </body>
