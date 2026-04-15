@@ -308,7 +308,7 @@
         <div class="cards" id="cardsContainer"></div>
         <div class="game-message" id="gameMessage"></div>
     </div>
-    <footer>🧪 科学逻辑：加热→向右(熔化/气化)，冷却→向左(凝固/液化)，电离→向右(等离子化)，加压→向左(液化/固化)，减压→向右(气化)。使用卡牌向目标相偏移！</footer>
+    <footer>🧪 科学规则：使用卡牌后，若新相更接近你的相，则物质向你移动；反之远离。相不变时按自然方向（加热向右，冷却向左，电离向右，加压向左，减压向右，催化向玩家）。</footer>
 </div>
 
 <script>
@@ -322,7 +322,7 @@
     };
     const PHASE_KEYS = ["solid", "liquid", "gas", "organic", "plasma"];
 
-    // ======================= 物质库（丰富的化学物质） =======================
+    // ======================= 物质库 =======================
     const SUBSTANCES = [
         { name: "氢氧化钠", icon: "🧪", phases: ["solid", "liquid", "plasma"] },
         { name: "水", icon: "💧", phases: ["solid", "liquid", "gas"] },
@@ -336,112 +336,66 @@
         { name: "氢气", icon: "💨", phases: ["gas", "plasma"] }
     ];
 
-    // ======================= 卡牌效果（基于科学逻辑） =======================
-    // 所有卡牌返回 { delta, newPhase, message }
-    // delta > 0 表示向右偏移（向高序相或低序相？统一：加热向右，冷却向左，电离向右，加压向左，减压向右）
-    // 科学依据：
-    // - 加热：固体→液体→气体→有机→等离子，向右偏移（数值增大）
-    // - 冷却：逆向，向左偏移
-    // - 电离：向等离子相转变，向右偏移
-    // - 加压：促进液化/固化，向左偏移
-    // - 减压：促进气化/等离子化，向右偏移
-    // - 催化：不改变相，但根据当前物质与玩家相的关系决定偏移？不，催化应该基于反应速率，但为简单，我们让它根据当前相序与玩家相序的差异产生偏移（模拟催化剂定向促进）。但为了科学，我们改为：催化使反应向热力学更有利的方向偏移（即向玩家相？）——暂时保留中性，但可设计为向左或向右微调。为了不破坏平衡，我们让催化根据当前物质相与目标玩家相的序差产生偏移（如果玩家相在右边则向右，否则向左）。但这不是真实化学，只是为了游戏性。我们将在代码中让催化基于玩家相序与当前相序的差值决定偏移方向（模拟玩家引导反应方向）。
+    // ======================= 卡牌定义 =======================
+    // 每张卡牌包含：
+    // - name, desc
+    // - naturalDirection: 相不变时的自然偏移方向 (+1向右, -1向左)
+    // - getNewPhase: 函数，返回新相或 null
     const CARD_TEMPLATES = [
         {
             name: "🔥 加热",
-            desc: "增加热能，促进高能相变",
-            effect: (substance, currentPhase, playerPhase) => {
+            desc: "升高相序（固→液→气→有机→等离子）",
+            naturalDirection: +1,
+            getNewPhase: (currentPhase) => {
                 let order = PHASES[currentPhase].order;
-                let newPhase = null;
-                let delta = 0;
-                if (order < 4) {
-                    newPhase = PHASE_KEYS[order + 1];
-                    delta = 12;
-                } else {
-                    delta = 6; // 等离子再加热也难变，但偏移较小
-                }
-                return { delta: delta, newPhase: newPhase, message: `加热使物质向${PHASES[newPhase]?.name || currentPhase}转变，向右偏移。` };
+                if (order < 4) return PHASE_KEYS[order + 1];
+                return null;
             }
         },
         {
             name: "❄️ 冷却",
-            desc: "降低热能，促进低能相变",
-            effect: (substance, currentPhase, playerPhase) => {
+            desc: "降低相序（等离子→有机→气→液→固）",
+            naturalDirection: -1,
+            getNewPhase: (currentPhase) => {
                 let order = PHASES[currentPhase].order;
-                let newPhase = null;
-                let delta = 0;
-                if (order > 0) {
-                    newPhase = PHASE_KEYS[order - 1];
-                    delta = -12;
-                } else {
-                    delta = -6;
-                }
-                return { delta: delta, newPhase: newPhase, message: `冷却使物质向${PHASES[newPhase]?.name || currentPhase}转变，向左偏移。` };
+                if (order > 0) return PHASE_KEYS[order - 1];
+                return null;
             }
         },
         {
             name: "⚡ 电离",
-            desc: "高能电离，产生等离子体",
-            effect: (substance, currentPhase, playerPhase) => {
-                if (currentPhase !== "plasma") {
-                    let delta = 15;
-                    return { delta: delta, newPhase: "plasma", message: `电离使物质进入等离子相，大幅向右偏移！` };
-                } else {
-                    let delta = 8;
-                    return { delta: delta, newPhase: null, message: `等离子体进一步电离，向右偏移。` };
-                }
+            desc: "升高相序，直接向等离子相转变",
+            naturalDirection: +1,
+            getNewPhase: (currentPhase) => {
+                if (currentPhase !== "plasma") return "plasma";
+                return null;
             }
         },
         {
             name: "🌊 加压",
-            desc: "压缩体积，促进凝聚",
-            effect: (substance, currentPhase, playerPhase) => {
+            desc: "降低相序（促进凝聚）",
+            naturalDirection: -1,
+            getNewPhase: (currentPhase) => {
                 let order = PHASES[currentPhase].order;
-                let newPhase = null;
-                let delta = 0;
-                if (order > 0) {
-                    newPhase = PHASE_KEYS[order - 1];
-                    delta = -10;
-                } else {
-                    delta = -5;
-                }
-                return { delta: delta, newPhase: newPhase, message: `加压使物质向${PHASES[newPhase]?.name || currentPhase}转变，向左偏移。` };
+                if (order > 0) return PHASE_KEYS[order - 1];
+                return null;
             }
         },
         {
             name: "🌀 减压",
-            desc: "体积膨胀，促进气化",
-            effect: (substance, currentPhase, playerPhase) => {
+            desc: "升高相序（促进气化/等离子化）",
+            naturalDirection: +1,
+            getNewPhase: (currentPhase) => {
                 let order = PHASES[currentPhase].order;
-                let newPhase = null;
-                let delta = 0;
-                if (order < 4) {
-                    newPhase = PHASE_KEYS[order + 1];
-                    delta = 10;
-                } else {
-                    delta = 5;
-                }
-                return { delta: delta, newPhase: newPhase, message: `减压使物质向${PHASES[newPhase]?.name || currentPhase}转变，向右偏移。` };
+                if (order < 4) return PHASE_KEYS[order + 1];
+                return null;
             }
         },
         {
             name: "🧪 催化",
-            desc: "加速反应，定向偏移",
-            effect: (substance, currentPhase, playerPhase) => {
-                // 催化：根据玩家相与当前相的序差决定偏移方向（模拟玩家引导反应方向）
-                const currentOrder = PHASES[currentPhase].order;
-                const playerOrder = PHASES[playerPhase].order;
-                const diff = playerOrder - currentOrder;
-                let delta = 0;
-                if (diff > 0) {
-                    delta = 7;
-                } else if (diff < 0) {
-                    delta = -7;
-                } else {
-                    delta = 3; // 相同相则轻微向右
-                }
-                return { delta: delta, newPhase: null, message: `催化反应使物质向${playerPhase}偏移。` };
-            }
+            desc: "不改变相，直接向玩家方向偏移",
+            naturalDirection: 0, // 特殊，将由函数决定
+            getNewPhase: () => null
         }
     ];
 
@@ -475,11 +429,6 @@
     const reactantIconSpan = document.getElementById('reactantIcon');
 
     // ======================= 辅助函数 =======================
-    function randomPhase() {
-        return PHASE_KEYS[Math.floor(Math.random() * PHASE_KEYS.length)];
-    }
-
-    // 随机分配玩家相（确保不同）
     function assignPlayerPhases() {
         let phases = [...PHASE_KEYS];
         for (let i = phases.length - 1; i > 0; i--) {
@@ -496,7 +445,6 @@
         rightIconSpan.innerText = PHASES[rightPhase].icon;
     }
 
-    // 随机选择物质及其初始相
     function selectRandomSubstance() {
         const idx = Math.floor(Math.random() * SUBSTANCES.length);
         const sub = { ...SUBSTANCES[idx] };
@@ -509,25 +457,21 @@
         reactantIconSpan.innerText = sub.icon;
     }
 
-    // 计算初始位置：先手玩家（左侧）开局处于劣势，位置偏向右侧（对手方向）
+    // 先手玩家（左侧）劣势，位置 60~80
     function computeInitialPosition() {
-        const min = 60;
-        const max = 80;
-        return Math.floor(Math.random() * (max - min + 1) + min);
+        return Math.floor(Math.random() * (80 - 60 + 1) + 60);
     }
 
-    // 移动反应物
+    // 移动反应物，返回是否结束游戏
     function moveReaction(delta, newPhaseAfter = null) {
         if (!gameActive) return false;
         let newPos = position + delta;
         if (newPos <= 0) {
-            newPos = 0;
             gameActive = false;
             gameMessageDiv.innerHTML = `🎉 ${leftNameSpan.innerText} 胜利！物质完全转化为${PHASES[leftPhase].name}！点击「新物质·新对局」继续 🎉`;
             alert(`${leftNameSpan.innerText} 获胜！`);
             return true;
         } else if (newPos >= 100) {
-            newPos = 100;
             gameActive = false;
             gameMessageDiv.innerHTML = `🎉 ${rightNameSpan.innerText} 胜利！物质完全转化为${PHASES[rightPhase].name}！点击「新物质·新对局」继续 🎉`;
             alert(`${rightNameSpan.innerText} 获胜！`);
@@ -542,7 +486,56 @@
         return false;
     }
 
-    // 抽卡（从通用卡牌库随机抽4张）
+    // 核心：根据卡牌和当前状态计算偏移方向与幅度
+    function computeDeltaAndNewPhase(card, playerPhase) {
+        const currentOrder = PHASES[currentPhase].order;
+        const playerOrder = PHASES[playerPhase].order;
+        let newPhase = card.getNewPhase(currentPhase);
+        let direction = 0;
+        let magnitude = 8; // 基础幅度
+        let message = "";
+
+        if (card.name === "🧪 催化") {
+            // 催化：直接向玩家相方向偏移
+            if (playerOrder > currentOrder) direction = +1;
+            else if (playerOrder < currentOrder) direction = -1;
+            else direction = 0;
+            magnitude = 6;
+            message = `催化反应使物质向${PHASES[playerPhase].name}偏移。`;
+        } else {
+            if (newPhase && newPhase !== currentPhase) {
+                // 有相变：计算新旧相与玩家相的距离
+                const newOrder = PHASES[newPhase].order;
+                const distOld = Math.abs(currentOrder - playerOrder);
+                const distNew = Math.abs(newOrder - playerOrder);
+                if (distNew < distOld) {
+                    // 更接近玩家 -> 向玩家方向偏移
+                    direction = (playerOrder > currentOrder) ? +1 : -1;
+                    message = `物质转变为${PHASES[newPhase].name}，更接近你的相，向你移动。`;
+                } else if (distNew > distOld) {
+                    // 更远离玩家 -> 向对手方向偏移（即反向）
+                    direction = (playerOrder > currentOrder) ? -1 : +1;
+                    message = `物质转变为${PHASES[newPhase].name}，更远离你的相，向对手移动。`;
+                } else {
+                    // 距离不变，使用自然方向
+                    direction = card.naturalDirection;
+                    message = `物质转变为${PHASES[newPhase].name}，相距离不变，按自然趋势移动。`;
+                }
+            } else {
+                // 无相变，使用自然方向
+                direction = card.naturalDirection;
+                message = `物质相未变，按自然趋势移动。`;
+            }
+            // 幅度微调：若自然方向为0（不会发生），这里忽略
+        }
+
+        // 特殊处理：如果direction=0，则无偏移
+        if (direction === 0) magnitude = 0;
+        const delta = direction * magnitude;
+        return { delta, newPhase: (newPhase !== currentPhase ? newPhase : null), message };
+    }
+
+    // 抽卡
     function drawCards() {
         const shuffled = [...CARD_TEMPLATES];
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -560,12 +553,9 @@
             return;
         }
         const playerPhase = (currentTurn === "left") ? leftPhase : rightPhase;
-        const result = card.effect(currentSubstance, currentPhase, playerPhase);
-        let delta = result.delta;
-        let newPhase = result.newPhase;
-        let msg = result.message;
+        const { delta, newPhase, message } = computeDeltaAndNewPhase(card, playerPhase);
         const ended = moveReaction(delta, newPhase);
-        gameMessageDiv.innerHTML = `${currentTurn === "left" ? leftNameSpan.innerText : rightNameSpan.innerText} 使用了 ${card.name}！${msg} 拉动 ${delta.toFixed(1)} 点。`;
+        gameMessageDiv.innerHTML = `${currentTurn === "left" ? leftNameSpan.innerText : rightNameSpan.innerText} 使用了 ${card.name}！${message} 拉动 ${delta.toFixed(1)} 点。`;
         if (!ended) {
             currentTurn = (currentTurn === "left") ? "right" : "left";
             drawCards();
@@ -585,7 +575,7 @@
             cardDiv.innerHTML = `
                 <div class="card-name">${card.name}</div>
                 <div class="card-desc">${card.desc}</div>
-                <div class="card-power">⚡ 科学偏移</div>
+                <div class="card-power">⚡ 智能相变</div>
             `;
             if (!disable) {
                 cardDiv.addEventListener('click', () => useCard(card));
@@ -617,11 +607,10 @@
         currentTurn = "left";
         drawCards();
         updateUI();
-        gameMessageDiv.innerHTML = "✨ 新物质登场！先手玩家处于劣势，使用科学卡牌向目标相偏移。先拉到边界者胜！";
+        gameMessageDiv.innerHTML = "✨ 新物质登场！先手玩家处于劣势，使用卡牌让物质相更接近你，它就会向你移动！";
         renderCards();
     }
 
-    // 初始化
     function init() {
         assignPlayerPhases();
         selectRandomSubstance();
