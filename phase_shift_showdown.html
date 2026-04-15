@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>相转移大作战 · 双人回合制</title>
+    <title>相转移大作战 · 多相宇宙</title>
     <style>
         * {
             margin: 0;
@@ -15,8 +15,6 @@
             --bg: #0f172a;
             --card-bg: #1e293b;
             --border: #334155;
-            --red-glow: #ef4444;
-            --blue-glow: #3b82f6;
             --accent: #f59e0b;
             --text-light: #f1f5f9;
             --text-dim: #94a3b8;
@@ -32,7 +30,7 @@
             padding: 2rem;
         }
         .game-container {
-            max-width: 1200px;
+            max-width: 1300px;
             width: 100%;
             background: rgba(30, 41, 59, 0.6);
             backdrop-filter: blur(8px);
@@ -56,9 +54,8 @@
             align-items: stretch;
             gap: 1.5rem;
             margin: 1rem 0;
-            min-height: 400px;
+            min-height: 420px;
         }
-        /* 玩家区域 */
         .player {
             flex: 1;
             background: var(--card-bg);
@@ -102,19 +99,8 @@
             border-radius: 4px;
             position: relative;
         }
-        .boundary-line::before,
-        .boundary-line::after {
-            content: "⚡";
-            position: absolute;
-            top: -12px;
-            font-size: 1rem;
-            opacity: 0.6;
-        }
-        .boundary-line::before { left: -20px; color: var(--red-glow); }
-        .boundary-line::after { right: -20px; color: var(--blue-glow); }
-        /* 中央反应区 */
         .reaction-zone {
-            width: 280px;
+            width: 320px;
             background: #0f172a;
             border-radius: 3rem;
             display: flex;
@@ -126,15 +112,31 @@
             box-shadow: 0 0 15px rgba(0,0,0,0.5);
             border: 1px solid var(--accent);
         }
-        .reactant {
-            width: 100%;
+        .reactant-card {
+            background: #1e293b;
+            border-radius: 1.5rem;
+            padding: 0.8rem;
+            margin: 10px;
+            width: 90%;
             text-align: center;
-            margin: 10px 0;
+            border: 1px solid var(--accent);
+        }
+        .reactant-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        .reactant-state {
+            font-size: 0.8rem;
+            background: #0f172a;
+            display: inline-block;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            margin-top: 0.3rem;
         }
         .reactant-icon {
-            font-size: 3.5rem;
-            filter: drop-shadow(0 4px 6px black);
-            transition: transform 0.2s;
+            font-size: 3rem;
+            margin: 5px 0;
         }
         .progress-track {
             width: 180px;
@@ -148,7 +150,7 @@
         .progress-fill {
             width: 50%;
             height: 100%;
-            background: linear-gradient(90deg, var(--red-glow), var(--blue-glow));
+            background: linear-gradient(90deg, #ef4444, #3b82f6);
             border-radius: 40px;
             transition: width 0.3s ease-out;
         }
@@ -169,7 +171,6 @@
             display: inline-block;
             margin-top: 10px;
         }
-        /* 卡牌区域 */
         .hand-area {
             background: var(--card-bg);
             border-radius: 2rem;
@@ -194,7 +195,7 @@
         .card {
             background: linear-gradient(145deg, #2d3a4e, #1e2a3a);
             border-radius: 1.5rem;
-            width: 140px;
+            width: 150px;
             padding: 0.8rem 0.5rem;
             text-align: center;
             cursor: pointer;
@@ -218,17 +219,18 @@
         }
         .card-name {
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             margin-bottom: 0.2rem;
         }
         .card-desc {
             font-size: 0.7rem;
             color: var(--text-dim);
         }
-        .card-value {
-            font-size: 1.5rem;
+        .card-power {
+            font-size: 1rem;
             font-weight: bold;
             color: var(--accent);
+            margin-top: 0.3rem;
         }
         button {
             background: var(--accent);
@@ -265,93 +267,199 @@
             .arena { flex-direction: column; align-items: center; }
             .reaction-zone { width: 100%; order: -1; margin-bottom: 1rem; }
             .player { width: 100%; }
-            .card { width: 110px; }
+            .card { width: 120px; }
         }
     </style>
 </head>
 <body>
 <div class="game-container">
-    <h1>⚛️ 相转移大作战 ⚛️</h1>
+    <h1>⚛️ 相转移大作战 · 多相宇宙 ⚛️</h1>
     <div class="arena">
-        <!-- 左侧玩家（红方） -->
         <div class="player" id="playerLeft">
-            <div class="player-name">
-                <span>🔴 红方修士</span>
-            </div>
-            <div class="phase-text" id="leftPhase">——</div>
+            <div class="player-name"><span id="leftName">🔴 左道修士</span></div>
+            <div class="phase-text" id="leftPhase">固相</div>
             <div class="boundary-line"></div>
             <div class="phase-icon" id="leftIcon">❄️</div>
         </div>
-
-        <!-- 中央反应物 -->
         <div class="reaction-zone">
-            <div class="reactant">
+            <div class="reactant-card" id="reactantCard">
                 <div class="reactant-icon" id="reactantIcon">🧪</div>
-                <div class="progress-track">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="position-value" id="positionLabel">50.0</div>
+                <div class="reactant-name" id="reactantName">未知物质</div>
+                <div class="reactant-state" id="reactantState">状态未知</div>
             </div>
-            <div class="current-turn" id="turnIndicator">红方回合</div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="position-value" id="positionLabel">50.0</div>
+            <div class="current-turn" id="turnIndicator">左道回合</div>
         </div>
-
-        <!-- 右侧玩家（蓝方） -->
         <div class="player" id="playerRight">
-            <div class="player-name">
-                <span>🔵 蓝方道士</span>
-            </div>
-            <div class="phase-text" id="rightPhase">——</div>
+            <div class="player-name"><span id="rightName">🔵 右道修士</span></div>
+            <div class="phase-text" id="rightPhase">液相</div>
             <div class="boundary-line"></div>
-            <div class="phase-icon" id="rightIcon">🔥</div>
+            <div class="phase-icon" id="rightIcon">💧</div>
         </div>
     </div>
-
     <div class="hand-area">
         <div class="hand-title">
-            <span>🎴 当前反应卡牌 (点击使用)</span>
-            <button id="resetGameBtn" class="reset-btn">🔄 新的一局</button>
+            <span>🎴 反应条件卡牌 (点击使用)</span>
+            <button id="resetGameBtn" class="reset-btn">🔄 新物质·新对局</button>
         </div>
-        <div class="cards" id="cardsContainer">
-            <!-- 动态生成卡牌 -->
-        </div>
+        <div class="cards" id="cardsContainer"></div>
         <div class="game-message" id="gameMessage"></div>
     </div>
-    <footer>🧪 每回合选择一张卡牌，将反应物向己方拉动。先拉到边界线者获胜！相性随机分配，不同相有不同特效~</footer>
+    <footer>🧪 科学逻辑：加热→向右(熔化/气化)，冷却→向左(凝固/液化)，电离→向右(等离子化)，加压→向左(液化/固化)，减压→向右(气化)。使用卡牌向目标相偏移！</footer>
 </div>
 
 <script>
-    // ---------- 游戏配置 ----------
-    const PHASES = [
-        { name: "固相", icon: "❄️", desc: "致密稳定", colorHint: "#8b5cf6" },
-        { name: "液相", icon: "💧", desc: "流动融合", colorHint: "#3b82f6" },
-        { name: "气相", icon: "💨", desc: "扩散活跃", colorHint: "#f59e0b" },
-        { name: "等离子相", icon: "⚡", desc: "高能离子", colorHint: "#ef4444" }
+    // ======================= 相定义 =======================
+    const PHASES = {
+        solid: { name: "固相", icon: "❄️", order: 0 },
+        liquid: { name: "液相", icon: "💧", order: 1 },
+        gas: { name: "气相", icon: "💨", order: 2 },
+        organic: { name: "有机相", icon: "🌿", order: 3 },
+        plasma: { name: "等离子相", icon: "⚡", order: 4 }
+    };
+    const PHASE_KEYS = ["solid", "liquid", "gas", "organic", "plasma"];
+
+    // ======================= 物质库（丰富的化学物质） =======================
+    const SUBSTANCES = [
+        { name: "氢氧化钠", icon: "🧪", phases: ["solid", "liquid", "plasma"] },
+        { name: "水", icon: "💧", phases: ["solid", "liquid", "gas"] },
+        { name: "乙醇", icon: "🍷", phases: ["liquid", "gas", "organic"] },
+        { name: "甲烷", icon: "🔥", phases: ["gas", "organic"] },
+        { name: "二氧化碳", icon: "🌫️", phases: ["solid", "gas"] },
+        { name: "铁", icon: "⚙️", phases: ["solid", "liquid", "plasma"] },
+        { name: "汞", icon: "🌡️", phases: ["liquid", "gas"] },
+        { name: "葡萄糖", icon: "🍬", phases: ["solid", "liquid", "organic"] },
+        { name: "氯化钠", icon: "🧂", phases: ["solid", "liquid", "plasma"] },
+        { name: "氢气", icon: "💨", phases: ["gas", "plasma"] }
     ];
 
-    // 卡牌库（化学反应风格）
-    const CARD_POOL = [
-        { name: "🔥 加热", desc: "向气相推动", value: 3, flavor: "热量激发相变" },
-        { name: "❄️ 冷却", desc: "向固相沉降", value: -3, flavor: "凝聚沉降" },
-        { name: "⚡ 高压", desc: "压向液相", value: 2, flavor: "压力相变" },
-        { name: "🌀 减压", desc: "气化扩散", value: -2, flavor: "沸腾逸散" },
-        { name: "🧲 磁化", desc: "吸引离子", value: 1, flavor: "等离子偏移" },
-        { name: "💥 催化", desc: "剧烈反应", value: 4, flavor: "狂暴转移" },
-        { name: "🌊 溶解", desc: "融入液相", value: 1.5, flavor: "溶剂迁移" },
-        { name: "🧊 结晶", desc: "固化沉淀", value: -1.5, flavor: "析出晶体" },
-        { name: "💨 升华", desc: "直冲气相", value: 2.5, flavor: "跳过液相" },
-        { name: "🌙 凝华", desc: "直接凝华", value: -2.5, flavor: "跳过气相" }
+    // ======================= 卡牌效果（基于科学逻辑） =======================
+    // 所有卡牌返回 { delta, newPhase, message }
+    // delta > 0 表示向右偏移（向高序相或低序相？统一：加热向右，冷却向左，电离向右，加压向左，减压向右）
+    // 科学依据：
+    // - 加热：固体→液体→气体→有机→等离子，向右偏移（数值增大）
+    // - 冷却：逆向，向左偏移
+    // - 电离：向等离子相转变，向右偏移
+    // - 加压：促进液化/固化，向左偏移
+    // - 减压：促进气化/等离子化，向右偏移
+    // - 催化：不改变相，但根据当前物质与玩家相的关系决定偏移？不，催化应该基于反应速率，但为简单，我们让它根据当前相序与玩家相序的差异产生偏移（模拟催化剂定向促进）。但为了科学，我们改为：催化使反应向热力学更有利的方向偏移（即向玩家相？）——暂时保留中性，但可设计为向左或向右微调。为了不破坏平衡，我们让催化根据当前物质相与目标玩家相的序差产生偏移（如果玩家相在右边则向右，否则向左）。但这不是真实化学，只是为了游戏性。我们将在代码中让催化基于玩家相序与当前相序的差值决定偏移方向（模拟玩家引导反应方向）。
+    const CARD_TEMPLATES = [
+        {
+            name: "🔥 加热",
+            desc: "增加热能，促进高能相变",
+            effect: (substance, currentPhase, playerPhase) => {
+                let order = PHASES[currentPhase].order;
+                let newPhase = null;
+                let delta = 0;
+                if (order < 4) {
+                    newPhase = PHASE_KEYS[order + 1];
+                    delta = 12;
+                } else {
+                    delta = 6; // 等离子再加热也难变，但偏移较小
+                }
+                return { delta: delta, newPhase: newPhase, message: `加热使物质向${PHASES[newPhase]?.name || currentPhase}转变，向右偏移。` };
+            }
+        },
+        {
+            name: "❄️ 冷却",
+            desc: "降低热能，促进低能相变",
+            effect: (substance, currentPhase, playerPhase) => {
+                let order = PHASES[currentPhase].order;
+                let newPhase = null;
+                let delta = 0;
+                if (order > 0) {
+                    newPhase = PHASE_KEYS[order - 1];
+                    delta = -12;
+                } else {
+                    delta = -6;
+                }
+                return { delta: delta, newPhase: newPhase, message: `冷却使物质向${PHASES[newPhase]?.name || currentPhase}转变，向左偏移。` };
+            }
+        },
+        {
+            name: "⚡ 电离",
+            desc: "高能电离，产生等离子体",
+            effect: (substance, currentPhase, playerPhase) => {
+                if (currentPhase !== "plasma") {
+                    let delta = 15;
+                    return { delta: delta, newPhase: "plasma", message: `电离使物质进入等离子相，大幅向右偏移！` };
+                } else {
+                    let delta = 8;
+                    return { delta: delta, newPhase: null, message: `等离子体进一步电离，向右偏移。` };
+                }
+            }
+        },
+        {
+            name: "🌊 加压",
+            desc: "压缩体积，促进凝聚",
+            effect: (substance, currentPhase, playerPhase) => {
+                let order = PHASES[currentPhase].order;
+                let newPhase = null;
+                let delta = 0;
+                if (order > 0) {
+                    newPhase = PHASE_KEYS[order - 1];
+                    delta = -10;
+                } else {
+                    delta = -5;
+                }
+                return { delta: delta, newPhase: newPhase, message: `加压使物质向${PHASES[newPhase]?.name || currentPhase}转变，向左偏移。` };
+            }
+        },
+        {
+            name: "🌀 减压",
+            desc: "体积膨胀，促进气化",
+            effect: (substance, currentPhase, playerPhase) => {
+                let order = PHASES[currentPhase].order;
+                let newPhase = null;
+                let delta = 0;
+                if (order < 4) {
+                    newPhase = PHASE_KEYS[order + 1];
+                    delta = 10;
+                } else {
+                    delta = 5;
+                }
+                return { delta: delta, newPhase: newPhase, message: `减压使物质向${PHASES[newPhase]?.name || currentPhase}转变，向右偏移。` };
+            }
+        },
+        {
+            name: "🧪 催化",
+            desc: "加速反应，定向偏移",
+            effect: (substance, currentPhase, playerPhase) => {
+                // 催化：根据玩家相与当前相的序差决定偏移方向（模拟玩家引导反应方向）
+                const currentOrder = PHASES[currentPhase].order;
+                const playerOrder = PHASES[playerPhase].order;
+                const diff = playerOrder - currentOrder;
+                let delta = 0;
+                if (diff > 0) {
+                    delta = 7;
+                } else if (diff < 0) {
+                    delta = -7;
+                } else {
+                    delta = 3; // 相同相则轻微向右
+                }
+                return { delta: delta, newPhase: null, message: `催化反应使物质向${playerPhase}偏移。` };
+            }
+        }
     ];
 
-    // 游戏状态
+    // ======================= 游戏状态 =======================
+    let currentSubstance = null;
+    let currentPhase = "";
+    let leftPhase = "";
+    let rightPhase = "";
+    let position = 50;
+    let currentTurn = "left";
     let gameActive = true;
-    let currentTurn = "left";   // "left" 或 "right"
-    let position = 50;           // 0 ~ 100, 0 = 左边界(红方胜), 100 = 右边界(蓝方胜)
-    let leftPhase = null, rightPhase = null;
-    let currentCards = [];       // 当前回合的4张卡牌对象数组
+    let currentCards = [];
 
     // DOM 元素
     const leftDiv = document.getElementById('playerLeft');
     const rightDiv = document.getElementById('playerRight');
+    const leftNameSpan = document.getElementById('leftName');
+    const rightNameSpan = document.getElementById('rightName');
     const leftPhaseSpan = document.getElementById('leftPhase');
     const rightPhaseSpan = document.getElementById('rightPhase');
     const leftIconSpan = document.getElementById('leftIcon');
@@ -362,153 +470,170 @@
     const cardsContainer = document.getElementById('cardsContainer');
     const gameMessageDiv = document.getElementById('gameMessage');
     const resetBtn = document.getElementById('resetGameBtn');
+    const reactantNameSpan = document.getElementById('reactantName');
+    const reactantStateSpan = document.getElementById('reactantState');
+    const reactantIconSpan = document.getElementById('reactantIcon');
 
-    // 辅助函数
-    function updateUI() {
-        // 更新进度条宽度 (0% ~ 100%)
-        let percent = (position / 100) * 100;
-        progressFill.style.width = `${percent}%`;
-        positionLabel.innerText = position.toFixed(1);
-        // 更新高亮边框
-        if (currentTurn === 'left') {
-            leftDiv.classList.add('active');
-            rightDiv.classList.remove('active');
-            turnIndicator.innerText = `🔴 红方回合 · ${leftPhase?.name || "固相"}`;
-        } else {
-            rightDiv.classList.add('active');
-            leftDiv.classList.remove('active');
-            turnIndicator.innerText = `🔵 蓝方回合 · ${rightPhase?.name || "液相"}`;
-        }
-        // 边界胜利检测已经在 moveReaction 中做了，UI 胜利会显示弹框
+    // ======================= 辅助函数 =======================
+    function randomPhase() {
+        return PHASE_KEYS[Math.floor(Math.random() * PHASE_KEYS.length)];
     }
 
-    // 移动反应物，delta 为正表示向左移动(红方有利)，负为向右移动(蓝方有利)
-    function moveReaction(delta) {
+    // 随机分配玩家相（确保不同）
+    function assignPlayerPhases() {
+        let phases = [...PHASE_KEYS];
+        for (let i = phases.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [phases[i], phases[j]] = [phases[j], phases[i]];
+        }
+        leftPhase = phases[0];
+        rightPhase = phases[1];
+        leftNameSpan.innerText = `🔴 ${PHASES[leftPhase].name}修士`;
+        rightNameSpan.innerText = `🔵 ${PHASES[rightPhase].name}修士`;
+        leftPhaseSpan.innerText = PHASES[leftPhase].name;
+        rightPhaseSpan.innerText = PHASES[rightPhase].name;
+        leftIconSpan.innerText = PHASES[leftPhase].icon;
+        rightIconSpan.innerText = PHASES[rightPhase].icon;
+    }
+
+    // 随机选择物质及其初始相
+    function selectRandomSubstance() {
+        const idx = Math.floor(Math.random() * SUBSTANCES.length);
+        const sub = { ...SUBSTANCES[idx] };
+        currentSubstance = sub;
+        const allowedPhases = sub.phases;
+        const initPhase = allowedPhases[Math.floor(Math.random() * allowedPhases.length)];
+        currentPhase = initPhase;
+        reactantNameSpan.innerText = sub.name;
+        reactantStateSpan.innerText = PHASES[currentPhase].name;
+        reactantIconSpan.innerText = sub.icon;
+    }
+
+    // 计算初始位置：先手玩家（左侧）开局处于劣势，位置偏向右侧（对手方向）
+    function computeInitialPosition() {
+        const min = 60;
+        const max = 80;
+        return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+
+    // 移动反应物
+    function moveReaction(delta, newPhaseAfter = null) {
         if (!gameActive) return false;
         let newPos = position + delta;
         if (newPos <= 0) {
             newPos = 0;
             gameActive = false;
-            gameMessageDiv.innerHTML = "🎉 红方胜利！相转移完成！点击「新的一局」继续挑战 🎉";
-            alert("🔴 红方将反应物完全拉入己方相域！胜利！");
+            gameMessageDiv.innerHTML = `🎉 ${leftNameSpan.innerText} 胜利！物质完全转化为${PHASES[leftPhase].name}！点击「新物质·新对局」继续 🎉`;
+            alert(`${leftNameSpan.innerText} 获胜！`);
             return true;
         } else if (newPos >= 100) {
             newPos = 100;
             gameActive = false;
-            gameMessageDiv.innerHTML = "🎉 蓝方胜利！相转移完成！点击「新的一局」继续挑战 🎉";
-            alert("🔵 蓝方将反应物完全拉入己方相域！胜利！");
+            gameMessageDiv.innerHTML = `🎉 ${rightNameSpan.innerText} 胜利！物质完全转化为${PHASES[rightPhase].name}！点击「新物质·新对局」继续 🎉`;
+            alert(`${rightNameSpan.innerText} 获胜！`);
             return true;
         }
         position = newPos;
+        if (newPhaseAfter && newPhaseAfter !== currentPhase) {
+            currentPhase = newPhaseAfter;
+            reactantStateSpan.innerText = PHASES[currentPhase].name;
+        }
         updateUI();
         return false;
     }
 
-    // 随机分配相（两个不同相）
-    function assignPhases() {
-        let shuffled = [...PHASES];
+    // 抽卡（从通用卡牌库随机抽4张）
+    function drawCards() {
+        const shuffled = [...CARD_TEMPLATES];
         for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        leftPhase = shuffled[0];
-        rightPhase = shuffled[1];
-        leftPhaseSpan.innerText = `${leftPhase.name} ${leftPhase.icon}`;
-        rightPhaseSpan.innerText = `${rightPhase.name} ${rightPhase.icon}`;
-        leftIconSpan.innerText = leftPhase.icon;
-        rightIconSpan.innerText = rightPhase.icon;
-        // 根据相性略微调整初始位置偏移？不调整，保持公平50
-    }
-
-    // 随机抽取4张卡牌 (从卡池随机有放回)
-    function drawCards() {
-        let newCards = [];
-        for (let i = 0; i < 4; i++) {
-            let randomIndex = Math.floor(Math.random() * CARD_POOL.length);
-            let original = CARD_POOL[randomIndex];
-            // 克隆一张，防止引用修改
-            newCards.push({ ...original });
-        }
-        currentCards = newCards;
+        currentCards = shuffled.slice(0, 4);
         renderCards();
     }
 
-    // 渲染卡牌
-    function renderCards() {
-        if (!cardsContainer) return;
+    // 使用卡牌
+    function useCard(card) {
+        if (!gameActive) {
+            gameMessageDiv.innerHTML = "游戏已结束，请重新开局。";
+            return;
+        }
+        const playerPhase = (currentTurn === "left") ? leftPhase : rightPhase;
+        const result = card.effect(currentSubstance, currentPhase, playerPhase);
+        let delta = result.delta;
+        let newPhase = result.newPhase;
+        let msg = result.message;
+        const ended = moveReaction(delta, newPhase);
+        gameMessageDiv.innerHTML = `${currentTurn === "left" ? leftNameSpan.innerText : rightNameSpan.innerText} 使用了 ${card.name}！${msg} 拉动 ${delta.toFixed(1)} 点。`;
+        if (!ended) {
+            currentTurn = (currentTurn === "left") ? "right" : "left";
+            drawCards();
+            updateUI();
+            gameMessageDiv.innerHTML += ` 轮到 ${currentTurn === "left" ? leftNameSpan.innerText : rightNameSpan.innerText} 回合。`;
+        } else {
+            renderCards(true);
+        }
+    }
+
+    function renderCards(disable = false) {
         cardsContainer.innerHTML = '';
-        for (let i = 0; i < currentCards.length; i++) {
-            const card = currentCards[i];
+        for (let card of currentCards) {
             const cardDiv = document.createElement('div');
             cardDiv.className = 'card';
-            // 显示数值 (绝对值带方向)
-            let valueStr = card.value > 0 ? `+${card.value} 向左` : `${card.value} 向右`;
+            if (disable) cardDiv.classList.add('disabled');
             cardDiv.innerHTML = `
                 <div class="card-name">${card.name}</div>
-                <div class="card-value">${valueStr}</div>
                 <div class="card-desc">${card.desc}</div>
-                <div class="card-desc" style="font-size:0.65rem;">✨ ${card.flavor}</div>
+                <div class="card-power">⚡ 科学偏移</div>
             `;
-            cardDiv.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (!gameActive) {
-                    gameMessageDiv.innerHTML = "游戏已结束，请重新开局。";
-                    return;
-                }
-                // 检查是否当前玩家回合
-                let isLeftTurn = (currentTurn === 'left');
-                // 卡牌数值：正数表示向左（红方有利），负数表示向右（蓝方有利）
-                let delta = card.value;
-                // 如果是蓝方回合，需要将 delta 取反，因为蓝方希望反应物向右移动（正方向）
-                let finalDelta = isLeftTurn ? delta : -delta;
-                // 应用移动
-                let gameEnded = moveReaction(finalDelta);
-                // 移动后，如果游戏未结束，切换玩家，重新抽卡
-                if (!gameEnded) {
-                    // 切换回合
-                    currentTurn = (currentTurn === 'left') ? 'right' : 'left';
-                    drawCards();        // 为新玩家抽4张新卡
-                    updateUI();
-                    gameMessageDiv.innerHTML = `${currentTurn === 'left' ? '红方' : '蓝方'} 回合，请出牌！`;
-                } else {
-                    // 游戏结束，禁用卡牌点击视觉（但按钮仍然disable style）
-                    renderCards();      // 重新渲染但添加禁用样式
-                    cardsContainer.querySelectorAll('.card').forEach(c => c.classList.add('disabled'));
-                }
-            });
+            if (!disable) {
+                cardDiv.addEventListener('click', () => useCard(card));
+            }
             cardsContainer.appendChild(cardDiv);
-        }
-        if (!gameActive) {
-            cardsContainer.querySelectorAll('.card').forEach(c => c.classList.add('disabled'));
         }
     }
 
-    // 重置游戏
+    function updateUI() {
+        let percent = (position / 100) * 100;
+        progressFill.style.width = `${percent}%`;
+        positionLabel.innerText = position.toFixed(1);
+        if (currentTurn === 'left') {
+            leftDiv.classList.add('active');
+            rightDiv.classList.remove('active');
+            turnIndicator.innerText = `${leftNameSpan.innerText} 回合`;
+        } else {
+            rightDiv.classList.add('active');
+            leftDiv.classList.remove('active');
+            turnIndicator.innerText = `${rightNameSpan.innerText} 回合`;
+        }
+    }
+
     function resetGame() {
         gameActive = true;
-        position = 50;
+        assignPlayerPhases();
+        selectRandomSubstance();
+        position = computeInitialPosition();
         currentTurn = "left";
-        assignPhases();          // 重新随机分配相
-        drawCards();            // 为红方抽4张新卡
+        drawCards();
         updateUI();
-        gameMessageDiv.innerHTML = "✨ 新的一局！红方先手，使用卡牌将反应物拉向自己。";
-        // 确保卡牌可用
+        gameMessageDiv.innerHTML = "✨ 新物质登场！先手玩家处于劣势，使用科学卡牌向目标相偏移。先拉到边界者胜！";
         renderCards();
     }
 
-    // 初始化游戏
-    function initGame() {
-        assignPhases();
-        position = 50;
+    // 初始化
+    function init() {
+        assignPlayerPhases();
+        selectRandomSubstance();
+        position = computeInitialPosition();
         currentTurn = "left";
         gameActive = true;
         drawCards();
         updateUI();
-        gameMessageDiv.innerHTML = "✨ 游戏开始！红方先手，使用卡牌争夺反应物。";
         resetBtn.addEventListener('click', () => resetGame());
     }
 
-    initGame();
+    init();
 </script>
 </body>
 </html>
