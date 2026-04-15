@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>丹道化学 · 九鼎神丹（云存档）</title>
     <style>
-        /* 完整样式与原版一致 */
+        /* 完整样式与原版一致，此处完整保留 */
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--bg:#f8f4e8;--card:#fffef7;--text:#2c2418;--text-light:#6b5a4a;--border:#e2d8c8;--accent:#b45f2b;--accent-light:#d68b45;--accent-bg:#f5e6d3;--danger:#c23b22;--heal:#2c7a4c;--shadow:0 4px 12px rgba(0,0,0,0.08);--progress-bg:#e0d6c0;--progress-fill:#b45f2b;--tab-inactive:#e2d8c8}
         body.dark{--bg:#1a1c1e;--card:#2a2e32;--text:#ece8e0;--text-light:#aaa08c;--border:#3e3a34;--accent:#e09d5e;--accent-light:#f0b87a;--accent-bg:#3a2e24;--danger:#e05a3a;--heal:#4c9a6e;--progress-bg:#3e3a34;--progress-fill:#e09d5e;--tab-inactive:#3e3a34}
@@ -139,6 +139,7 @@
         .quiz-question {
             font-weight: bold;
             margin-bottom: 0.8rem;
+            text-align: left;
         }
         .quiz-options {
             display: flex;
@@ -298,8 +299,8 @@
                 <!-- 智慧老人挑战区域 -->
                 <div class="wise-old-man" id="wiseOldMan">
                     <h4>🧙‍♂️ 智慧老人 · 元素谜题</h4>
-                    <p>“年轻人，我这里有五道化学谜题，答对一题，便赠你一件宝物。每十分钟可挑战一次。”</p>
-                    <button class="challenge-btn" id="challengeBtn" disabled>🧪 加载题目中...</button>
+                    <p>“年轻人，我这里有五道化学谜题（难度递增），答对一题，便赠你一件宝物。每十分钟可挑战一次。”</p>
+                    <button class="challenge-btn" id="challengeBtn">🧪 开始挑战</button>
                     <div class="cooldown-text" id="cooldownText"></div>
                     <div class="quiz-area" id="quizArea">
                         <div class="quiz-question" id="quizQuestion"></div>
@@ -367,7 +368,7 @@
 </div>
 
 <script>
-        // 将所有代码包裹在 DOMContentLoaded 中
+    // 将所有代码包裹在 DOMContentLoaded 中，避免全局变量冲突
     document.addEventListener('DOMContentLoaded', () => {
         // ======================= 物品图鉴数据库 =======================
         const ITEM_CATALOG = {
@@ -453,7 +454,7 @@
         const DAMAGE_MIN = 8, DAMAGE_MAX = 20;
         const AUTO_STOP_HEALTH = 20;
 
-        // ======================= 奖励物品列表 =======================
+        // 奖励物品列表（矿物和药材）
         const REWARD_ITEMS = [
             "孔雀石", "赤铁矿", "黄铁矿", "锡矿石", "自然金矿", "辉银矿", "辰砂矿", "钙钛矿",
             "曾青", "雄黄", "雌黄", "慈石", "戎盐", "矾石",
@@ -490,11 +491,11 @@
         let currentRefineTime = 0;
 
         // 智慧老人挑战状态
-        let challengeCooldown = 0;
+        let challengeCooldown = 0; // 剩余冷却秒数
         let challengeInterval = null;
         let challengeReady = false;
-        let loadedQuizQuestions = [];          // 从JSON加载的全部题目
-        let currentChallengeQuestions = [];    // 本次挑战随机选中的5道题（含预生成选项）
+        let loadedQuizQuestions = [];        // 存储从JSON加载的所有题目（包含难度）
+        let currentChallengeQuestions = [];  // 本次挑战选中的5道题（按难度1-5各一道）
         let currentQuizIndex = 0;
         let quizScore = 0;
         let isQuizActive = false;
@@ -572,7 +573,7 @@
             }
         }
 
-        // ======================= 本地存储 =======================
+        // ======================= 本地存储（降级） =======================
         function loadGameData() {
             const raw = localStorage.getItem(getUserDataKey());
             if (raw) {
@@ -1128,32 +1129,37 @@
         }
         function renderAllUI(){ renderInventory(); renderRecipeList(); updateScoreUI(); renderRanking(); }
 
-        // ======================= 智慧老人挑战逻辑（动态题库 + 随机抽题） =======================
-        // 辅助：从数组中随机取 n 个不重复的元素
-        function getRandomDistinctItems(arr, n) {
-            if (n > arr.length) n = arr.length;
-            const shuffled = [...arr];
+        // ======================= 智慧老人挑战逻辑（难度等级系统） =======================
+        // 按难度分组
+        function groupQuestionsByDifficulty(questions) {
+            const groups = {1:[], 2:[], 3:[], 4:[], 5:[]};
+            for (let q of questions) {
+                const d = q.difficulty;
+                if (d >= 1 && d <= 5) groups[d].push(q);
+            }
+            return groups;
+        }
+
+        // 从指定难度组中随机抽取一道题
+        function getRandomQuestionFromGroup(group) {
+            if (!group.length) return null;
+            const idx = Math.floor(Math.random() * group.length);
+            return { ...group[idx] };
+        }
+
+        // 为一道题生成选项（正确选项 + 随机3个干扰项，随机排序）
+        function generateOptionsForQuestion(q) {
+            const distPool = q.distractors || [];
+            let candidates = distPool.filter(d => d !== q.correct);
+            // 随机取3个
+            const shuffled = [...candidates];
             for (let i = shuffled.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
             }
-            return shuffled.slice(0, n);
-        }
-
-        // 从备用列表中随机抽取 count 个不重复且不等于 correct 的选项
-        function getRandomDistractors(correct, distractorPool, count) {
-            let candidates = distractorPool.filter(d => d !== correct);
-            for (let i = candidates.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-            }
-            return candidates.slice(0, count);
-        }
-
-        // 为一道题生成选项列表（正确选项 + 随机干扰项，并随机排序）
-        function generateOptionsForQuestion(q) {
-            const dists = getRandomDistractors(q.correct, q.distractors, 3);
-            const opts = [q.correct, ...dists];
+            const selectedDistractors = shuffled.slice(0, 3);
+            const opts = [q.correct, ...selectedDistractors];
+            // 随机排序
             for (let i = opts.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [opts[i], opts[j]] = [opts[j], opts[i]];
@@ -1161,21 +1167,84 @@
             return opts;
         }
 
-        // 开始挑战前：随机选择 N 道不重复的题，并为每道题生成选项
-        function prepareChallenge(questionCount = 5) {
+        // 准备挑战：从各难度组中随机抽取1题（共5题）
+        function prepareChallenge() {
             if (!loadedQuizQuestions.length) return false;
-            const selectedQuestions = getRandomDistinctItems(loadedQuizQuestions, questionCount);
+            const groups = groupQuestionsByDifficulty(loadedQuizQuestions);
             currentChallengeQuestions = [];
-            for (let q of selectedQuestions) {
-                currentChallengeQuestions.push({
-                    text: q.text,
-                    correct: q.correct,
-                    options: generateOptionsForQuestion(q)
-                });
+            for (let d = 1; d <= 5; d++) {
+                const group = groups[d];
+                if (!group.length) {
+                    console.warn(`难度 ${d} 没有题目，使用默认题目`);
+                    // 备用题目（防止数据不完整）
+                    const fallback = {
+                        difficulty: d,
+                        title: "化学元素谜题",
+                        text: "请补充该难度的题目。",
+                        correct: "未知",
+                        distractors: ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S"]
+                    };
+                    currentChallengeQuestions.push({
+                        title: fallback.title,
+                        text: fallback.text,
+                        correct: fallback.correct,
+                        options: generateOptionsForQuestion(fallback)
+                    });
+                } else {
+                    const q = getRandomQuestionFromGroup(group);
+                    if (q) {
+                        currentChallengeQuestions.push({
+                            title: q.title,
+                            text: q.text,
+                            correct: q.correct,
+                            options: generateOptionsForQuestion(q)
+                        });
+                    }
+                }
             }
             return true;
         }
 
+        // 加载外部 JSON 题库，失败时使用内嵌默认题库
+        async function loadQuizQuestions() {
+            try {
+                const response = await fetch('quiz_questions.json');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    loadedQuizQuestions = data;
+                    console.log('题库加载成功，共', loadedQuizQuestions.length, '题');
+                } else {
+                    throw new Error('题库数据无效');
+                }
+            } catch (err) {
+                console.warn('加载外部题库失败，使用内嵌默认题库', err);
+                // 内嵌默认题库（每个难度至少3题）
+                loadedQuizQuestions = [
+                    { difficulty:1, title:"消毒水的秘密", text:"我是消毒水中常见的成分，稀释后可用于伤口消毒，但纯品剧毒，误服可致命。我的水溶液呈棕色，且易升华。我是？", correct:"碘", distractors:["氯气","汞","溴","氟气","过氧化氢","高锰酸钾","乙醇","甲醛","苯酚","臭氧","二氧化氯","次氯酸钠","氢氧化钠","氨水","醋酸","硫酸","硝酸","盐酸","碳酸"] },
+                    { difficulty:1, title:"地壳中的王者", text:"我是地壳中含量最多的金属元素，也是人体必需的微量元素之一。我的单质呈银白色，常用于制造飞机和日用品。我是？", correct:"铝", distractors:["铁","铜","镁","钙","钠","钾","锌","钛","铬","锰","镍","钴","锡","铅","铍","锶","钡","镓","铟"] },
+                    { difficulty:1, title:"蓝紫色的火焰", text:"我是一种非金属单质，在空气中燃烧发出明亮的蓝紫色火焰，生成有刺激性气味的气体。我是？", correct:"硫", distractors:["碳","磷","氢气","氮气","氧气","氯气","硅","硒","碲","硼","钠","镁","铝","钾","钙","铁","铜","锌","银"] },
+                    { difficulty:2, title:"烧碱的真面目", text:"我是常见的干燥剂，与水反应放出大量热，能使酚酞变红。我的水溶液俗称“烧碱”。我是？", correct:"氢氧化钠", distractors:["氧化钙","氢氧化钙","氯化钠","碳酸钠","碳酸氢钠","硫酸钠","硝酸钠","氢氧化钾","氢氧化锂","氢氧化钡","浓硫酸","无水氯化钙","硅胶","分子筛","氧化铝","五氧化二磷","碱石灰","氢氧化镁","氢氧化铝"] },
+                    { difficulty:2, title:"胃里的强酸", text:"我是胃酸的主要成分，能帮助消化，但浓度过高会腐蚀胃黏膜。我的化学式是HCl。我是？", correct:"盐酸", distractors:["硫酸","硝酸","醋酸","磷酸","氢氟酸","氢溴酸","氢碘酸","高氯酸","氯酸","亚硫酸","草酸","柠檬酸","乳酸","苹果酸","酒石酸","碳酸","硅酸","硼酸","甲酸"] },
+                    { difficulty:2, title:"轻于水的金属", text:"我是最轻的金属，密度比水还小，与水剧烈反应生成氢气。我的化合物常用于治疗躁郁症。我是？", correct:"锂", distractors:["钠","钾","镁","钙","铍","铝","铷","铯","钡","锶","钛","锌","铁","铜","银","金","铂","铅","锡"] },
+                    { difficulty:3, title:"霓虹灯的光源", text:"我是常见的惰性气体，在霓虹灯中发出橙红色光，常用于制造“氖灯”。我的原子序数是10。我是？", correct:"氖", distractors:["氦","氩","氪","氙","氡","氮","氧","氟","氯","氢","碳","硫","磷","硅","硼","铝","钠","镁","钙"] },
+                    { difficulty:3, title:"甲状腺的朋友", text:"我是人体必需的微量元素，缺乏会导致甲状腺肿大。加碘食盐中添加的就是我的钾盐。我是？", correct:"碘", distractors:["铁","锌","硒","氟","铜","锰","钴","钼","铬","氯","钠","钾","钙","镁","磷","硫","硅","硼","铝"] },
+                    { difficulty:3, title:"血红蛋白的核心", text:"我是地壳中含量第二多的金属元素，也是血红蛋白的核心。我的单质是银白色，容易被磁铁吸引。我是？", correct:"铁", distractors:["铝","铜","镁","钙","钠","钾","锌","钛","铬","锰","镍","钴","锡","铅","金","银","铂","镉","汞"] },
+                    { difficulty:4, title:"芯片的基石", text:"我是常见的半导体材料，广泛应用于芯片制造。我的单质是银灰色脆性固体，地壳中含量仅次于氧。我是？", correct:"硅", distractors:["锗","砷","镓","铟","磷","硫","碳","硼","铝","铁","铜","锌","银","金","铂","钛","铬","锰","钴"] },
+                    { difficulty:4, title:"最硬的天然物质", text:"我是自然界最硬的物质，由碳原子组成，常用于切割和打磨。我是？", correct:"金刚石", distractors:["石墨","石英","刚玉","碳化硅","立方氮化硼","莫桑石","红宝石","蓝宝石","水晶","玛瑙","翡翠","和田玉","岫玉","独山玉","绿松石","青金石","孔雀石","萤石","方解石"] },
+                    { difficulty:4, title:"温室效应的推手", text:"我是导致温室效应的主要气体之一，由碳和氧组成。我是？", correct:"二氧化碳", distractors:["甲烷","一氧化碳","水蒸气","氟利昂","臭氧","氮氧化物","二氧化硫","硫化氢","氨气","氯气","氢气","氧气","氮气","氩气","氦气","氖气","氪气","氙气","氡气"] },
+                    { difficulty:5, title:"银光闪闪的液态金属", text:"我是常温下唯一的液态金属，剧毒，曾用于体温计。我是？", correct:"汞", distractors:["镓","铯","钫","钠","钾","铷","锂","钙","镁","铝","锌","铁","铜","银","金","铂","铅","锡","铬"] },
+                    { difficulty:5, title:"最强的氧化剂", text:"我是元素周期表中电负性最强的元素，能与几乎所有物质反应，包括稀有气体。我是？", correct:"氟", distractors:["氯","溴","碘","氧","氮","碳","硫","磷","氢","氦","氖","氩","氪","氙","氡","钠","镁","铝","硅"] },
+                    { difficulty:5, title:"放射性元素的发现者", text:"我是居里夫人发现的放射性元素，用于治疗癌症，化学符号是Ra。我是？", correct:"镭", distractors:["铀","钚","钋","氡","锕","钍","镤","锎","锿","镄","钔","锘","铹","𬬻","𬭊","𬭳","𬭛","𬭶","鿏"] }
+                ];
+            }
+            challengeReady = true;
+            document.getElementById('challengeBtn').disabled = (challengeCooldown > 0);
+            if (challengeCooldown === 0) document.getElementById('challengeBtn').innerText = '🧪 开始挑战';
+            else document.getElementById('challengeBtn').innerText = '🧪 开始挑战 (冷却中)';
+        }
+
+        // 冷却相关函数
         function loadChallengeCooldown() {
             const key = `challenge_cooldown_${currentUser}`;
             const lastTimestamp = localStorage.getItem(key);
@@ -1237,7 +1306,7 @@
                 return;
             }
             if (isQuizActive) return;
-            if (!prepareChallenge(5)) {
+            if (!prepareChallenge()) {
                 alert("题库数据异常，无法开始挑战。");
                 return;
             }
@@ -1253,7 +1322,9 @@
                 return;
             }
             const q = currentChallengeQuestions[currentQuizIndex];
-            document.getElementById('quizQuestion').innerText = q.text;
+            // 显示标题和问题（带难度提示）
+            const difficultyStars = "⭐".repeat(currentQuizIndex+1);
+            document.getElementById('quizQuestion').innerHTML = `<strong>【难度 ${currentQuizIndex+1}】${q.title}</strong><br>${q.text}`;
             const optionsDiv = document.getElementById('quizOptions');
             optionsDiv.innerHTML = '';
             q.options.forEach(opt => {
@@ -1340,41 +1411,6 @@
             document.getElementById('rewardModal').classList.remove('active');
         }
 
-        // 加载外部 JSON 题库，失败时使用内嵌默认题库（包含镁题等至少10道）
-        async function loadQuizQuestions() {
-            try {
-                const response = await fetch('quiz_questions.json');
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    loadedQuizQuestions = data;
-                    console.log('题库加载成功，共', loadedQuizQuestions.length, '题');
-                } else {
-                    throw new Error('题库数据无效');
-                }
-            } catch (err) {
-                console.warn('加载外部题库失败，使用内嵌默认题库', err);
-                // 内嵌默认题库（包含“白昼之光”镁题及多道其他题，共11题）
-                loadedQuizQuestions = [
-                    { text: "一根银色的金属丝在空气中点燃，发出的白光比太阳还要刺眼，让人无法直视。", correct: "镁", distractors: ["铝", "铁", "铜", "钠", "钾", "钙", "锌", "锡", "铅", "镍", "银", "金", "铂", "钛", "铬", "锰", "钴", "镉", "汞"] },
-                    { text: "我是消毒水中常见的成分，稀释后可用于伤口消毒，但纯品剧毒，误服可致命。我的水溶液呈棕色，且易升华。我是？", correct: "碘", distractors: ["氯气", "汞", "溴", "氟气", "过氧化氢", "高锰酸钾", "乙醇", "甲醛", "苯酚", "臭氧", "二氧化氯", "次氯酸钠", "氢氧化钠", "氨水", "醋酸", "硫酸", "硝酸", "盐酸", "碳酸"] },
-                    { text: "我是地壳中含量最多的金属元素，也是人体必需的微量元素之一。我的单质呈银白色，常用于制造飞机和日用品。我是？", correct: "铝", distractors: ["铁", "铜", "镁", "钙", "钠", "钾", "锌", "钛", "铬", "锰", "镍", "钴", "锡", "铅", "铍", "锶", "钡", "镓", "铟"] },
-                    { text: "我是一种非金属单质，在空气中燃烧发出明亮的蓝紫色火焰，生成有刺激性气味的气体。我是？", correct: "硫", distractors: ["碳", "磷", "氢气", "氮气", "氧气", "氯气", "硅", "硒", "碲", "硼", "钠", "镁", "铝", "钾", "钙", "铁", "铜", "锌", "银"] },
-                    { text: "我是常见的干燥剂，与水反应放出大量热，能使酚酞变红。我的水溶液俗称“烧碱”。我是？", correct: "氢氧化钠", distractors: ["氧化钙", "氢氧化钙", "氯化钠", "碳酸钠", "碳酸氢钠", "硫酸钠", "硝酸钠", "氢氧化钾", "氢氧化锂", "氢氧化钡", "浓硫酸", "无水氯化钙", "硅胶", "分子筛", "氧化铝", "五氧化二磷", "碱石灰", "氢氧化镁", "氢氧化铝"] },
-                    { text: "我是胃酸的主要成分，能帮助消化，但浓度过高会腐蚀胃黏膜。我的化学式是HCl。我是？", correct: "盐酸", distractors: ["硫酸", "硝酸", "醋酸", "磷酸", "氢氟酸", "氢溴酸", "氢碘酸", "高氯酸", "氯酸", "亚硫酸", "草酸", "柠檬酸", "乳酸", "苹果酸", "酒石酸", "碳酸", "硅酸", "硼酸", "甲酸"] },
-                    { text: "我是最轻的金属，密度比水还小，与水剧烈反应生成氢气。我的化合物常用于治疗躁郁症。我是？", correct: "锂", distractors: ["钠", "钾", "镁", "钙", "铍", "铝", "铷", "铯", "钡", "锶", "钛", "锌", "铁", "铜", "银", "金", "铂", "铅", "锡"] },
-                    { text: "我是常见的惰性气体，在霓虹灯中发出橙红色光，常用于制造“氖灯”。我的原子序数是10。我是？", correct: "氖", distractors: ["氦", "氩", "氪", "氙", "氡", "氮", "氧", "氟", "氯", "氢", "碳", "硫", "磷", "硅", "硼", "铝", "钠", "镁", "钙"] },
-                    { text: "我是人体必需的微量元素，缺乏会导致甲状腺肿大。加碘食盐中添加的就是我的钾盐。我是？", correct: "碘", distractors: ["铁", "锌", "硒", "氟", "铜", "锰", "钴", "钼", "铬", "氯", "钠", "钾", "钙", "镁", "磷", "硫", "硅", "硼", "铝"] },
-                    { text: "我是地壳中含量第二多的金属元素，也是血红蛋白的核心。我的单质是银白色，容易被磁铁吸引。我是？", correct: "铁", distractors: ["铝", "铜", "镁", "钙", "钠", "钾", "锌", "钛", "铬", "锰", "镍", "钴", "锡", "铅", "金", "银", "铂", "镉", "汞"] },
-                    { text: "我是常见的半导体材料，广泛应用于芯片制造。我的单质是银灰色脆性固体，地壳中含量仅次于氧。我是？", correct: "硅", distractors: ["锗", "砷", "镓", "铟", "磷", "硫", "碳", "硼", "铝", "铁", "铜", "锌", "银", "金", "铂", "钛", "铬", "锰", "钴"] }
-                ];
-            }
-            challengeReady = true;
-            document.getElementById('challengeBtn').disabled = (challengeCooldown > 0);
-            if (challengeCooldown === 0) document.getElementById('challengeBtn').innerText = '🧪 开始挑战';
-            else document.getElementById('challengeBtn').innerText = '🧪 开始挑战 (冷却中)';
-        }
-
         // ======================= 初始化 Supabase 与登录状态 =======================
         function initSupabase() {
             try {
@@ -1458,8 +1494,7 @@
         // 智慧老人挑战按钮事件
         document.getElementById('challengeBtn').addEventListener('click', startChallenge);
         document.getElementById('closeRewardBtn').addEventListener('click', closeRewardModal);
-        
-        // 加载题库（异步），加载完成后根据冷却状态启用按钮
+        // 加载题库（异步）
         loadQuizQuestions().then(() => {
             loadChallengeCooldown();
         });
