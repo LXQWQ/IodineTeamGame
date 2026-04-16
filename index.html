@@ -93,7 +93,8 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const SUPABASE_URL = 'https://ujinwsfueaifaoskapzs.supabase.co';
+        // 已通过 Cloudflare Worker 反向代理，使用自定义域名
+        const SUPABASE_URL = 'https://supabase.iteamgame.dpdns.org';
         const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
         let supabase = null;
 
