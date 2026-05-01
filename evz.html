@@ -1302,7 +1302,7 @@
                     .slice(0, 2);
                 if (rowElems.length === 0) continue;
                 for (let target of rowElems) {
-                    let dmg = target.maxHealth * 0.2; // 固定伤害：目标元素最大生命值的20%
+                    let dmg = target.maxHealth * 0.1; // 固定伤害：目标元素最大生命值的20%
                     if (isDefensePlant(target)) dmg *= BOSS_PARAMS.vortex.defenseBonus;
                     if (isReductionPlant(target)) dmg *= BOSS_PARAMS.vortex.reductionBonus;
                     applyDamageToElement(target, dmg, 'vortex');
