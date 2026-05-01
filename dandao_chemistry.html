@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>丹道化学 · 九鼎神丹（云存档）</title>
     <style>
-        /* 完整样式与原版一致，此处完整保留 */
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--bg:#f8f4e8;--card:#fffef7;--text:#2c2418;--text-light:#6b5a4a;--border:#e2d8c8;--accent:#b45f2b;--accent-light:#d68b45;--accent-bg:#f5e6d3;--danger:#c23b22;--heal:#2c7a4c;--shadow:0 4px 12px rgba(0,0,0,0.08);--progress-bg:#e0d6c0;--progress-fill:#b45f2b;--tab-inactive:#e2d8c8}
         body.dark{--bg:#1a1c1e;--card:#2a2e32;--text:#ece8e0;--text-light:#aaa08c;--border:#3e3a34;--accent:#e09d5e;--accent-light:#f0b87a;--accent-bg:#3a2e24;--danger:#e05a3a;--heal:#4c9a6e;--progress-bg:#3e3a34;--progress-fill:#e09d5e;--tab-inactive:#3e3a34}
@@ -26,45 +25,7 @@
         .panel{background:var(--card);border-radius:1.5rem;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow)}
         .panel h3{background:var(--accent-bg);padding:.8rem 1rem;font-size:1.2rem;border-bottom:1px solid var(--border)}
         .panel-content{padding:1.2rem}
-        .ding-layout{display:flex;flex-wrap:wrap;gap:1.5rem}
-        .ding-left{flex:1;min-width:280px;max-height:600px;overflow-y:auto}
-        .ding-right{flex:1;min-width:320px}
-        .ding-circle-container{display:flex;justify-content:center;margin-bottom:1rem}
-        .ding-circle{width:100px;height:100px;border:6px solid var(--accent);border-radius:50%;display:flex;justify-content:center;align-items:center;position:relative;box-shadow:0 4px 12px rgba(180,95,43,0.3)}
-        .ding-circle::before{content:'';position:absolute;width:80px;height:80px;border:2px solid var(--accent-light);border-radius:50%}
-        .ding-character{font-size:3rem;font-weight:bold;color:var(--accent)}
-        .recipe-list{display:flex;flex-direction:column;gap:.6rem}
-        .recipe-item{background:var(--accent-bg);border-radius:.8rem;padding:.8rem;cursor:pointer;transition:.1s}
-        .recipe-item:hover{background:var(--accent);color:white}
-        .recipe-item.locked{opacity:.5;filter:grayscale(.3);cursor:not-allowed}
-        .recipe-item.selected{background:var(--accent);color:white;border:2px solid var(--accent-light)}
-        .recipe-name{font-weight:bold;font-size:1rem}
-        .recipe-desc{font-size:.75rem;margin-top:.2rem;color:var(--text-light)}
-        .material-list{background:var(--accent-bg);border-radius:1rem;padding:1rem;margin-bottom:1rem}
-        .material-list h4{margin-bottom:.5rem;font-size:1.1rem}
-        .material-requirements{font-size:.9rem;line-height:1.4}
-        .refine-section{margin-bottom:1.5rem;display:flex;flex-direction:column;gap:.5rem}
-        .refine-btn{background:var(--accent);color:white;border:none;padding:.8rem 1.5rem;border-radius:2rem;width:100%;cursor:pointer;font-weight:bold;font-size:1rem;transition:.2s}
-        .refine-btn:hover:not(:disabled){background:var(--accent-light);transform:translateY(-2px)}
-        .refine-btn:disabled{opacity:.5;cursor:not-allowed}
-        .stop-btn{background:var(--heal)}
-        .cancel-btn{background:var(--danger)}
-        .score-display{font-weight:bold;font-size:1.2rem;text-align:center;margin:1rem 0;padding:.8rem;background:var(--accent-bg);border-radius:1rem}
-        .rank-list{list-style:none;margin-top:1rem}
-        .rank-list li{display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border)}
-        .feedback{margin-top:.8rem;font-size:.85rem;text-align:center;min-height:1.2rem}
-        .danger-text{color:var(--danger)}
-        .success-text{color:var(--heal)}
-        .timer-container{background:var(--accent-bg);border-radius:1rem;padding:.8rem;margin:.8rem 0;text-align:center;display:none}
-        .timer-container.active{display:block}
-        .timer-text{font-weight:bold;font-size:1.1rem;margin-bottom:.5rem}
-        .timer-progress{width:100%;height:10px;background:var(--progress-bg);border-radius:20px;overflow:hidden;margin-bottom:.5rem}
-        .timer-fill{height:100%;background:var(--heal);width:0%;transition:width .1s linear}
-        .timer-hint{font-size:.8rem;color:var(--text-light)}
-        .timer-perfect{color:var(--heal);font-weight:bold}
-        .timer-warning{color:#ff9800}
-        .timer-danger{color:var(--danger)}
-        .max-hp-bonus{color:var(--heal);font-weight:bold}
+        /* 挖矿样式 */
         .mining-layout{display:flex;flex-wrap:wrap;gap:1.5rem}
         .mining-left{flex:2;min-width:240px}
         .mining-right{flex:1.2;min-width:200px;background:var(--accent-bg);border-radius:1.2rem;padding:1rem}
@@ -82,7 +43,7 @@
         .mining-progress-text{font-weight:bold;font-size:1rem;margin-bottom:.5rem}
         .mining-progress-bar{width:100%;height:10px;background:var(--progress-bg);border-radius:20px;overflow:hidden;margin-bottom:.5rem}
         .mining-progress-fill{height:100%;background:var(--accent);width:0%;transition:width .1s linear}
-        .mining-progress-hint{font-size:.8rem;color:var(--text-light)}
+        /* 乾坤袋样式 */
         .inventory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;max-height:550px;overflow-y:auto;padding:.5rem}
         .inv-card{background:var(--card);border:2px solid var(--border);border-radius:1rem;padding:1rem;display:flex;flex-direction:column}
         .inv-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed var(--border);padding-bottom:.5rem;margin-bottom:.5rem}
@@ -94,1386 +55,1296 @@
         .inv-action{text-align:right}
         .btn-consume{background:var(--heal);color:white;border:none;padding:.4rem 1.2rem;border-radius:1.5rem;cursor:pointer;font-weight:bold}
         .btn-consume.danger{background:var(--danger)}
+        /* 药王谷样式 */
         .pharmacy-row{display:flex;gap:1.5rem;flex-wrap:wrap}
         .herb-list,.drug-list{flex:1;min-width:200px}
         .herb-item,.drug-item{background:var(--accent-bg);border-radius:1rem;padding:.6rem;margin-bottom:.6rem;display:flex;justify-content:space-between;align-items:center}
         .make-btn{background:var(--heal);border:none;color:white;padding:.3rem .8rem;border-radius:1.5rem;cursor:pointer;font-size:.8rem;font-weight:bold}
-        .wise-old-man {
+        /* 智慧老人样式 */
+        .wise-old-man{background:var(--accent-bg);border-radius:1rem;padding:1rem;margin-top:1rem;border:2px solid var(--accent);text-align:center}
+        .wise-old-man h4{color:var(--accent);margin-bottom:0.5rem}
+        .challenge-btn{background:var(--accent);color:white;border:none;padding:0.5rem 1rem;border-radius:2rem;cursor:pointer;font-weight:bold;margin-top:0.5rem}
+        .challenge-btn:disabled{opacity:0.5;cursor:not-allowed}
+        .cooldown-text{font-size:0.8rem;margin-top:0.3rem;color:var(--text-light)}
+        .quiz-area{margin-top:1rem;padding:0.8rem;background:var(--card);border-radius:1rem;display:none}
+        .quiz-question{font-weight:bold;margin-bottom:0.8rem;text-align:left}
+        .quiz-options{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem}
+        .quiz-option{background:var(--bg);border:1px solid var(--border);border-radius:2rem;padding:0.4rem 1rem;cursor:pointer;text-align:left}
+        .quiz-option:hover{background:var(--accent-light);color:white}
+        .quiz-progress{font-size:0.8rem;text-align:center;margin-top:0.5rem}
+        .reward-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);justify-content:center;align-items:center;z-index:2000}
+        .reward-modal.active{display:flex}
+        .reward-content{background:var(--card);border-radius:1.5rem;padding:1.5rem;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;text-align:center}
+        .reward-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.8rem;margin:1rem 0}
+        .reward-item{background:var(--accent-bg);border-radius:1rem;padding:0.5rem;cursor:pointer}
+        .reward-item:hover{background:var(--accent);color:white}
+        .reward-remain{font-weight:bold;margin-top:0.5rem}
+        /* 炼丹炉新布局：三栏，鼎居中放大 */
+        .ding-layout{
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+        .recipe-book{
+            flex: 0.25;
+            min-width: 200px;
+            max-height: 550px;
+            overflow-y: auto;
             background: var(--accent-bg);
-            border-radius: 1rem;
-            padding: 1rem;
-            margin-top: 1rem;
-            border: 2px solid var(--accent);
-            text-align: center;
-        }
-        .wise-old-man h4 {
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-        }
-        .challenge-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 0.5rem;
-        }
-        .challenge-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .cooldown-text {
-            font-size: 0.8rem;
-            margin-top: 0.3rem;
-            color: var(--text-light);
-        }
-        .quiz-area {
-            margin-top: 1rem;
+            border-radius: 1.5rem;
             padding: 0.8rem;
-            background: var(--card);
-            border-radius: 1rem;
-            display: none;
+            border: 1px solid var(--border);
         }
-        .quiz-question {
-            font-weight: bold;
-            margin-bottom: 0.8rem;
-            text-align: left;
-        }
-        .quiz-options {
+        .recipe-detail-panel{
+            flex: 0.25;
+            min-width: 200px;
+            background: var(--accent-bg);
+            border-radius: 1.5rem;
+            padding: 0.8rem;
+            border: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
-            margin-bottom: 1rem;
         }
-        .quiz-option {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 2rem;
-            padding: 0.4rem 1rem;
+        .ding-cauldron{
+            flex: 0.4;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.2rem;
+        }
+        .recipe-list{
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .recipe-item{
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 0.6rem;
+            border-left: 4px solid var(--accent);
             cursor: pointer;
-            transition: 0.1s;
-            text-align: left;
+            font-size: 0.9rem;
         }
-        .quiz-option:hover {
+        .recipe-item.locked{
+            opacity: 0.5;
+            filter: grayscale(0.3);
+            cursor: not-allowed;
+        }
+        .recipe-item:hover{
             background: var(--accent-light);
             color: white;
         }
-        .quiz-progress {
-            font-size: 0.8rem;
-            text-align: center;
-            margin-top: 0.5rem;
+        .recipe-name{
+            font-weight: bold;
+            font-size: 0.95rem;
         }
-        .reward-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
+        .recipe-desc{
+            font-size: 0.7rem;
+            margin-top: 0.2rem;
+        }
+        .recipe-materials{
+            font-size: 0.65rem;
+            margin-top: 0.2rem;
+        }
+        .detail-title{
+            font-weight: bold;
+            font-size: 1rem;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.3rem;
+            margin-bottom: 0.5rem;
+        }
+        .ding-circle{
+            width: 240px;
+            height: 240px;
+            border: 12px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
+            position: relative;
+            background: var(--bg-card);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+            transition: all 0.2s;
         }
-        .reward-modal.active {
-            display: flex;
+        .ding-circle::before{
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 4px solid var(--accent-light);
+            border-radius: 50%;
         }
-        .reward-content {
-            background: var(--card);
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            text-align: center;
+        .ding-character{
+            font-size: 5rem;
+            font-weight: bold;
+            color: var(--accent);
+            text-shadow: 0 0 8px rgba(0,0,0,0.3);
         }
-        .reward-items {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 0.8rem;
-            margin: 1rem 0;
-        }
-        .reward-item {
+        .material-slot{
             background: var(--accent-bg);
             border-radius: 1rem;
-            padding: 0.5rem;
-            cursor: pointer;
-            transition: 0.1s;
+            padding: 0.6rem;
+            width: 100%;
+            text-align: center;
+            border: 1px solid var(--border);
         }
-        .reward-item:hover {
+        .slot-items{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 0.6rem;
+        }
+        .slot-item{
+            background: var(--card);
+            border-radius: 2rem;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .remove-item{
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 0.3rem;
+        }
+        .add-material-panel{
+            width: 100%;
+            background: var(--accent-bg);
+            border-radius: 1rem;
+            padding: 0.6rem;
+            margin-top: 0.5rem;
+        }
+        .inventory-items{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .inv-item-btn{
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .inv-item-btn:hover{
             background: var(--accent);
             color: white;
         }
-        .reward-remain {
-            font-weight: bold;
+        .refine-controls{
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
             margin-top: 0.5rem;
         }
-        footer{text-align:center;font-size:.7rem;margin-top:1.5rem;color:var(--text-light)}
-        @media (max-width:700px){body{padding:.8rem}.tab-btn{padding:.4rem .8rem;font-size:.8rem}.ding-layout{flex-direction:column}.ding-circle{width:80px;height:80px}.ding-character{font-size:2.5rem}.inventory-grid{grid-template-columns:1fr}}
+        .refine-btn{
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .refine-btn:disabled{
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .timer-container{
+            background: var(--accent-bg);
+            border-radius: 1rem;
+            padding: 0.6rem;
+            text-align: center;
+            width: 100%;
+            display: none;
+        }
+        .score-display{
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-align: center;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: var(--accent-bg);
+            border-radius: 1rem;
+        }
+        .rank-list{
+            list-style: none;
+            margin-top: 1rem;
+        }
+        .rank-list li{
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+        }
+        .feedback{
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+        .rank-float-btn{
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 2200;
+            border: none;
+            border-radius: 999px;
+            padding: 0.55rem 0.9rem;
+            background: var(--accent);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+        }
+        .rank-float-panel{
+            position: fixed;
+            right: 1rem;
+            bottom: 3.9rem;
+            width: min(320px, calc(100vw - 2rem));
+            max-height: min(70vh, 430px);
+            overflow-y: auto;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            z-index: 2200;
+            display: none;
+        }
+        .rank-float-panel.active{
+            display: block;
+        }
+        .rank-float-header{
+            background: var(--accent-bg);
+            padding: 0.65rem 0.85rem;
+            font-weight: bold;
+            border-bottom: 1px solid var(--border);
+            border-radius: 1rem 1rem 0 0;
+        }
+        .rank-float-body{
+            padding: 0.7rem 0.85rem;
+        }
+        footer{
+            text-align: center;
+            font-size: 0.7rem;
+            margin-top: 1.5rem;
+            color: var(--text-light);
+        }
+        @media (max-width: 900px){
+            .ding-layout{
+                flex-direction: column;
+            }
+            .recipe-book, .recipe-detail-panel, .ding-cauldron{
+                width: 100%;
+            }
+            .ding-circle{
+                width: 180px;
+                height: 180px;
+            }
+            .ding-circle::before{
+                width: 150px;
+                height: 150px;
+            }
+            .ding-character{
+                font-size: 3.5rem;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="container">
     <header>
-        <div>
-            <h1>🔮 丹道化学 · 九鼎神丹</h1>
-            <div class="sub">⚗️ 采掘粗矿 · 鼎炼万物 · 云存档</div>
-        </div>
-        <div style="display: flex; gap: 0.8rem; align-items: center;">
-            <div class="user-info" id="userInfoArea">
-                <span>🧪 加载中...</span>
-                <div class="health-bar"><div class="health-fill" id="healthFill"></div></div>
-                <span id="hpText">100</span>
-                <span id="maxHpText" style="font-size: 0.8rem;">/100</span>
-            </div>
-            <button class="theme-btn" id="darkModeToggle">🌙 丹房幽暗</button>
-        </div>
+        <div><h1>🔮 丹道化学 · 九鼎神丹</h1><div class="sub">⚗️ 采掘粗矿 · 鼎炼万物 · 云存档</div></div>
+        <div><div class="user-info" id="userInfoArea"><span>🧪 加载中...</span><div class="health-bar"><div class="health-fill" id="healthFill"></div></div><span id="hpText">100</span><span id="maxHpText">/100</span></div><button class="theme-btn" id="darkModeToggle">🌙 丹房幽暗</button></div>
     </header>
-
     <div class="tabs">
         <button class="tab-btn active" data-tab="mine">⛏️ 寻龙点穴</button>
         <button class="tab-btn" data-tab="bag">🎒 乾坤袋</button>
         <button class="tab-btn" data-tab="pharmacy">🏥 药王谷</button>
         <button class="tab-btn" data-tab="ding">🔥 九鼎神丹</button>
     </div>
-
     <!-- 挖矿标签页 -->
     <div id="tab-mine" class="tab-content active">
-        <div class="panel">
-            <h3>⛏️ 寻龙点穴 · 采掘粗矿</h3>
-            <div class="panel-content">
-                <div class="mining-layout">
-                    <div class="mining-left">
-                        <div class="terrain-grid" id="terrainGrid"></div>
-                        <div id="miningProgressContainer" class="mining-progress-container">
-                            <div class="mining-progress-text" id="miningProgressText">采掘中: 0%</div>
-                            <div class="mining-progress-bar"><div class="mining-progress-fill" id="miningProgressFill"></div></div>
-                            <div class="mining-progress-hint" id="miningProgressHint">正在挖掘...</div>
-                        </div>
-                        <button class="mine-btn" id="mineBtn" disabled>⛏️ 选择地形开始挖矿</button>
-                        <div class="feedback" id="mineFeedback"></div>
-                    </div>
-                    <div class="mining-right">
-                        <div style="font-weight: bold; margin-bottom: 0.5rem;">🎯 目标原矿</div>
-                        <select id="targetMineralSelect" class="target-select"><option value="">-- 不指定目标 --</option></select>
-                        <button id="autoMineBtn" class="mine-btn" disabled>⚙️ 开始自动挖矿</button>
-                        <button id="stopAutoMineBtn" class="mine-btn stop-mine-btn" style="display: none;">⏹️ 停止自动挖矿</button>
-                        <div class="feedback" id="autoFeedback"></div>
-                        <div style="font-size:0.7rem; margin-top: 0.8rem;">💡 自动挖矿直到生命<20或挖到目标</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="panel"><h3>⛏️ 寻龙点穴 · 采掘粗矿</h3><div class="panel-content"><div class="mining-layout"><div class="mining-left"><div class="terrain-grid" id="terrainGrid"></div><div id="miningProgressContainer" class="mining-progress-container"><div class="mining-progress-text" id="miningProgressText">采掘中: 0%</div><div class="mining-progress-bar"><div class="mining-progress-fill" id="miningProgressFill"></div></div><div class="mining-progress-hint" id="miningProgressHint">正在挖掘...</div></div><button class="mine-btn" id="mineBtn" disabled>⛏️ 选择地形开始挖矿</button><div class="feedback" id="mineFeedback"></div></div><div class="mining-right"><div style="font-weight:bold; margin-bottom:0.5rem;">🎯 目标原矿</div><select id="targetMineralSelect" class="target-select"><option value="">-- 不指定目标 --</option></select><button id="autoMineBtn" class="mine-btn" disabled>⚙️ 开始自动挖矿</button><button id="stopAutoMineBtn" class="mine-btn stop-mine-btn" style="display:none;">⏹️ 停止自动挖矿</button><div class="feedback" id="autoFeedback"></div><div style="font-size:0.7rem;">💡 自动挖矿直到生命<20或挖到目标</div></div></div></div></div>
     </div>
-
     <!-- 乾坤袋 -->
     <div id="tab-bag" class="tab-content">
-        <div class="panel">
-            <h3>🎒 乾坤袋 · 万物有灵</h3>
-            <div class="panel-content">
-                <div class="feedback" id="bagFeedback" style="font-size: 1rem; font-weight: bold; margin-bottom: 1rem;"></div>
-                <div class="inventory-grid" id="inventoryList"></div>
-            </div>
-        </div>
+        <div class="panel"><h3>🎒 乾坤袋 · 万物有灵</h3><div class="panel-content"><div class="feedback" id="bagFeedback" style="font-size:1rem; font-weight:bold; margin-bottom:1rem;"></div><div class="inventory-grid" id="inventoryList"></div></div></div>
     </div>
-
-    <!-- 药王谷（仅制药 + 智慧老人） -->
+    <!-- 药王谷 -->
     <div id="tab-pharmacy" class="tab-content">
-        <div class="panel">
-            <h3>🏥 药王谷 · 炼制丹药</h3>
-            <div class="panel-content">
-                <div class="pharmacy-row">
-                    <div class="herb-list">
-                        <div style="font-weight:bold; margin-bottom:0.5rem;">🌿 已拥有的药草</div>
-                        <div id="herbInventory"></div>
-                    </div>
-                    <div class="drug-list">
-                        <div style="font-weight:bold; margin-bottom:0.5rem;">💊 药物配方</div>
-                        <div id="drugRecipes"></div>
-                    </div>
-                </div>
-                <!-- 智慧老人挑战区域 -->
-                <div class="wise-old-man" id="wiseOldMan">
-                    <h4>🧙‍♂️ 智慧老人 · 元素谜题</h4>
-                    <p>“年轻人，我这里有五道化学谜题（难度递增），答对一题，便赠你一件宝物。每十分钟可挑战一次。”</p>
-                    <button class="challenge-btn" id="challengeBtn">🧪 开始挑战</button>
-                    <div class="cooldown-text" id="cooldownText"></div>
-                    <div class="quiz-area" id="quizArea">
-                        <div class="quiz-question" id="quizQuestion"></div>
-                        <div class="quiz-options" id="quizOptions"></div>
-                        <div class="quiz-progress" id="quizProgress"></div>
-                    </div>
-                </div>
-                <div class="feedback" id="pharmacyFeedback"></div>
-            </div>
-        </div>
+        <div class="panel"><h3>🏥 药王谷 · 炼制丹药</h3><div class="panel-content"><div class="pharmacy-row"><div class="herb-list"><div style="font-weight:bold;">🌿 已拥有的药草</div><div id="herbInventory"></div></div><div class="drug-list"><div style="font-weight:bold;">💊 药物配方</div><div id="drugRecipes"></div></div></div><div class="wise-old-man"><h4>🧙‍♂️ 智慧老人 · 元素谜题</h4><p>“五道化学谜题（难度递增），答对一题赠一件宝物。每十分钟可挑战一次。”</p><button class="challenge-btn" id="challengeBtn">🧪 开始挑战</button><div class="cooldown-text" id="cooldownText"></div><div class="quiz-area" id="quizArea"><div class="quiz-question" id="quizQuestion"></div><div class="quiz-options" id="quizOptions"></div><div class="quiz-progress" id="quizProgress"></div></div></div><div class="feedback" id="pharmacyFeedback"></div></div></div>
     </div>
-
-    <!-- 九鼎神丹 -->
+    <!-- 九鼎神丹（新三栏布局，鼎居中放大） -->
     <div id="tab-ding" class="tab-content">
-        <div class="panel">
-            <h3>🔥 九鼎神丹 · 鼎炼万物</h3>
-            <div class="panel-content">
-                <div class="ding-layout">
-                    <div class="ding-left">
-                        <div class="recipe-list" id="recipeList"></div>
-                    </div>
-                    <div class="ding-right">
-                        <div class="ding-circle-container">
-                            <div class="ding-circle">
-                                <span class="ding-character">鼎</span>
-                            </div>
-                        </div>
-                        <div class="material-list" id="selectedRecipeInfo">
-                            <h4>📜 选择配方</h4>
-                            <div class="material-requirements">请从左侧选择一个配方</div>
-                        </div>
-                        <div class="timer-container" id="refineTimer">
-                            <div class="timer-text" id="timerText">炼制中: 0秒</div>
-                            <div class="timer-progress"><div class="timer-fill" id="timerProgress"></div></div>
-                            <div class="timer-hint" id="timerHint">等待最佳时机...</div>
-                        </div>
-                        <div class="refine-section">
-                            <button id="refineBtn" class="refine-btn" disabled>🔥 点火开炉</button>
-                            <button id="stopRefineBtn" class="refine-btn stop-btn" style="display: none;">⏹️ 停火开鼎</button>
-                            <button id="cancelRefineBtn" class="refine-btn cancel-btn" style="display: none;">❌ 中断倾倒</button>
-                            <div class="feedback" id="refineFeedback"></div>
-                        </div>
-                        <div class="score-display" id="scoreDisplay">🏆 九鼎积分: 0</div>
-                        <div>
-                            <h4>🏆 九鼎天榜 · 全服积分排行</h4>
-                            <ul class="rank-list" id="rankList"></ul>
-                        </div>
-                    </div>
-                </div>
+        <div class="panel"><h3>🔥 九鼎神丹 · 丹炉炼宝</h3><div class="panel-content"><div class="ding-layout">
+            <!-- 左侧丹方秘录（缩小） -->
+            <div class="recipe-book"><div style="font-weight:bold; margin-bottom:0.6rem;">📜 丹方秘录</div><div class="recipe-list" id="recipeList"></div></div>
+            <!-- 中间配方详情面板（缩小） -->
+            <div class="recipe-detail-panel" id="recipeDetailPanel">
+                <div class="detail-title">📖 配方详情</div>
+                <div id="recipeDetailContent">点击左侧丹方查看详情</div>
             </div>
-        </div>
+            <!-- 右侧炼丹炉（放大鼎） -->
+            <div class="ding-cauldron">
+                <div class="ding-circle"><span class="ding-character">鼎</span></div>
+                <div class="material-slot"><h4>📦 当前投入材料</h4><div class="slot-items" id="slotItems"></div><button id="clearSlotBtn" class="refine-btn" style="background:var(--danger); padding:0.2rem 0.6rem;">清空材料槽</button></div>
+                <div class="add-material-panel"><div style="font-weight:bold;">➕ 从乾坤袋添加材料</div><div class="inventory-items" id="inventoryForAdding"></div></div>
+                <div class="refine-controls"><button id="refineBtn" class="refine-btn" disabled>🔥 点火开炉</button><button id="stopRefineBtn" class="refine-btn" style="display:none;">⏹️ 停火开鼎</button><button id="cancelRefineBtn" class="refine-btn" style="display:none;">❌ 中断倾倒</button></div>
+                <div class="timer-container" id="refineTimer"><div class="timer-text" id="timerText">炼制中: 0秒</div><div class="timer-progress"><div class="timer-fill" id="timerProgress"></div></div><div class="timer-hint" id="timerHint">等待最佳时机...</div></div>
+                <div class="feedback" id="refineFeedback"></div>
+                <div class="score-display" id="scoreDisplay">🏆 九鼎积分: 0</div>
+            </div>
+        </div></div></div>
     </div>
-    <footer>⚠️ 粗矿剧毒，请用鼎提纯；神丹可永久提升气血上限；药物可快速恢复。云存档自动同步，换设备进度不丢失。</footer>
+    <footer>⚠️ 粗矿剧毒，请用鼎提纯；神丹可永久提升气血上限；药物可快速恢复。云存档自动同步。手动从背包添加材料至材料槽，配比正确后可点火。</footer>
 </div>
-
-<!-- 奖励选择模态框 -->
-<div id="rewardModal" class="reward-modal">
-    <div class="reward-content">
-        <h3>🎁 智慧老人的馈赠</h3>
-        <p>答对 <span id="correctCount">0</span> 题，可选 <span id="rewardCount">0</span> 件宝物</p>
-        <div class="reward-items" id="rewardItemsList"></div>
-        <div class="reward-remain" id="rewardRemain">还可选择 0 件</div>
-        <button id="closeRewardBtn" style="margin-top:1rem; background:var(--accent); color:white; border:none; padding:0.5rem 1rem; border-radius:2rem; cursor:pointer;">关闭</button>
+<button id="rankToggleBtn" class="rank-float-btn" type="button">🏆 九鼎排行</button>
+<div id="rankFloatPanel" class="rank-float-panel">
+    <div class="rank-float-header">🏆 九鼎天榜 · 全服积分排行</div>
+    <div class="rank-float-body">
+        <ul class="rank-list" id="rankList"></ul>
     </div>
 </div>
+<div id="rewardModal" class="reward-modal"><div class="reward-content"><h3>🎁 智慧老人的馈赠</h3><p>答对 <span id="correctCount">0</span> 题，可选 <span id="rewardCount">0</span> 件宝物</p><div class="reward-items" id="rewardItemsList"></div><div class="reward-remain" id="rewardRemain">还可选择 0 件</div><button id="closeRewardBtn" style="margin-top:1rem; background:var(--accent); color:white; border:none; padding:0.5rem 1rem; border-radius:2rem;">关闭</button></div></div>
 
 <script>
-    // 将所有代码包裹在 DOMContentLoaded 中，避免全局变量冲突
-    document.addEventListener('DOMContentLoaded', () => {
-        // ======================= 物品图鉴数据库 =======================
-        const ITEM_CATALOG = {
-            "孔雀石": { rarity: "凡品", desc: "青翠如孔雀羽毛的粗矿石，含有丰富的铜元素。生吞刺胃。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
-            "赤铁矿": { rarity: "凡品", desc: "暗红色的粗矿石，蕴含大量铁元素。不可食用。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
-            "黄铁矿": { rarity: "凡品", desc: "金光闪闪的愚人金，富含铁与硫元素，化学反应剧烈。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
-            "锡矿石": { rarity: "凡品", desc: "沉甸甸的黑色原石，提炼后可得锡。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
-            "自然金矿": { rarity: "珍品", desc: "夹杂着金缕的伴生矿脉，极其沉重。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
-            "辉银矿": { rarity: "珍品", desc: "灰黑色的粗矿，提纯后可得耀眼的白银。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
-            "辰砂矿": { rarity: "珍品", desc: "暗红色的原矿，内含剧毒汞元素，是炼丹的极品原材。", source: "矿脉采掘", hpEffect: -10, maxHpEffect: 0 },
-            "钙钛矿": { rarity: "稀世", desc: "结构奇特的晶体粗矿，可熔炼出极其坚固轻盈的钛金。", source: "矿脉采掘", hpEffect: -10, maxHpEffect: 0 },
-            "铜": { rarity: "凡品", desc: "提纯后的赤红金属，常用于基础炼炉。", source: "矿物提纯", hpEffect: -10, maxHpEffect: 0 },
-            "铁": { rarity: "凡品", desc: "坚不可摧的黑铁，吞服会导致严重内出血。", source: "矿物提纯", hpEffect: -15, maxHpEffect: 0 },
-            "锡": { rarity: "凡品", desc: "质地较软的金属，带有一定的毒性。", source: "矿物提纯", hpEffect: -10, maxHpEffect: 0 },
-            "金": { rarity: "珍品", desc: "贵重金属，所谓吞金自尽绝非戏言，剧毒！", source: "矿物提纯", hpEffect: -35, maxHpEffect: 0 },
-            "银": { rarity: "珍品", desc: "贵重金属，过量吞服会重伤肠胃。", source: "矿物提纯", hpEffect: -25, maxHpEffect: 0 },
-            "钛金": { rarity: "稀世", desc: "极其轻盈且坚不可摧的纯粹金属，罕见至极。", source: "矿物提纯", hpEffect: -30, maxHpEffect: 0 },
-            "丹砂": { rarity: "稀世", desc: "提纯自辰砂矿，炼制神丹之极品核心，生吞有致命剧毒。", source: "矿物提纯", hpEffect: -40, maxHpEffect: 0 },
-            "石硫磺": { rarity: "凡品", desc: "气味刺鼻，阳气过重，火毒攻心。可由黄铁矿提炼而出。", source: "矿物提纯/采掘", hpEffect: -15, maxHpEffect: 0 },
-            "曾青": { rarity: "凡品", desc: "含铜的青色矿物，毒性不小。", source: "矿脉采掘", hpEffect: -20, maxHpEffect: 0 },
-            "雄黄": { rarity: "珍品", desc: "可驱邪避毒，但本身含有不可小觑的毒性。", source: "矿脉采掘", hpEffect: -20, maxHpEffect: 0 },
-            "雌黄": { rarity: "珍品", desc: "常与雄黄共生，质地极软但有剧毒。", source: "矿脉采掘", hpEffect: -20, maxHpEffect: 0 },
-            "慈石": { rarity: "凡品", desc: "带有磁性的石头，不可食用。", source: "矿脉采掘", hpEffect: -10, maxHpEffect: 0 },
-            "戎盐": { rarity: "凡品", desc: "粗制未提纯的盐块，过量食用伤肾。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
-            "矾石": { rarity: "凡品", desc: "味酸涩，有微毒，常用于外敷而非内服。", source: "矿脉采掘", hpEffect: -10, maxHpEffect: 0 },
-            "茯苓": { rarity: "凡品", desc: "健脾宁心的常见草药，平和无毒。", source: "药园采摘", hpEffect: 5, maxHpEffect: 0 },
-            "何首乌": { rarity: "珍品", desc: "补益精血的良药，长期服用可使白发变黑。", source: "药园采摘", hpEffect: 8, maxHpEffect: 0 },
-            "人参": { rarity: "珍品", desc: "大补元气的名贵药材，吊命极品。", source: "药园采摘", hpEffect: 15, maxHpEffect: 0 },
-            "雪莲": { rarity: "稀世", desc: "生于苦寒之地的奇花，清热解百毒。", source: "药园采摘", hpEffect: 20, maxHpEffect: 0 },
-            "灵芝": { rarity: "稀世", desc: "吸纳天地灵气生长的仙草，益寿延年。", source: "药园采摘", hpEffect: 25, maxHpEffect: 0 },
-            "培元膏": { rarity: "良药", desc: "固本培元的基础药物，迅速恢复气血。", source: "药房炼制", hpEffect: 40, maxHpEffect: 0 },
-            "续命丹": { rarity: "灵药", desc: "气血亏虚时可保一命，疗效极佳。", source: "药房炼制", hpEffect: 70, maxHpEffect: 0 },
-            "九转还魂散": { rarity: "仙药", desc: "只要一息尚存便可拉回鬼门关的奇迹之药。", source: "药房炼制", hpEffect: 100, maxHpEffect: 0 },
-            "一元鼎": { rarity: "神丹", desc: "蕴含一元复始之气，略微提升潜能。", source: "九鼎炼制", hpEffect: 5, maxHpEffect: 5 },
-            "两仪鼎": { rarity: "神丹", desc: "分化阴阳，调和气血，提升生命本源。", source: "九鼎炼制", hpEffect: 8, maxHpEffect: 8 },
-            "三才鼎": { rarity: "神丹", desc: "汇聚天地人三才之灵，效用不凡。", source: "九鼎炼制", hpEffect: 12, maxHpEffect: 12 },
-            "四象鼎": { rarity: "神丹", desc: "镇压四方，服用后气血绵长。", source: "九鼎炼制", hpEffect: 15, maxHpEffect: 15 },
-            "五行鼎": { rarity: "神丹", desc: "五行流转，生生不息，大幅提升气血上限。", source: "九鼎炼制", hpEffect: 18, maxHpEffect: 18 },
-            "六合鼎": { rarity: "神丹", desc: "囊括天地四方之威，药力惊人。", source: "九鼎炼制", hpEffect: 22, maxHpEffect: 22 },
-            "七星鼎": { rarity: "神丹", desc: "接引北斗七星之光，辅以坚不可摧的钛金洗毛伐髓。", source: "九鼎炼制", hpEffect: 25, maxHpEffect: 25 },
-            "八卦鼎": { rarity: "神丹", desc: "演化乾坤，服之脱胎换骨。", source: "九鼎炼制", hpEffect: 30, maxHpEffect: 30 },
-            "九鼎神丹": { rarity: "造化", desc: "夺天地造化，凡人食之可立地成仙！", source: "九鼎炼制", hpEffect: 50, maxHpEffect: 50 }
-        };
+(function(){
+    // ======================= 物品图鉴 =======================
+    const ITEM_CATALOG = {
+        "孔雀石": { rarity: "凡品", desc: "青翠如孔雀羽毛的粗矿石，含有丰富的铜元素。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
+        "赤铁矿": { rarity: "凡品", desc: "暗红色的粗矿石，蕴含大量铁元素。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
+        "黄铁矿": { rarity: "凡品", desc: "金光闪闪的愚人金，富含铁与硫元素。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
+        "锡矿石": { rarity: "凡品", desc: "沉甸甸的黑色原石，提炼后可得锡。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
+        "自然金矿": { rarity: "珍品", desc: "夹杂着金缕的伴生矿脉，极其沉重。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
+        "辉银矿": { rarity: "珍品", desc: "灰黑色的粗矿，提纯后可得耀眼的白银。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
+        "辰砂矿": { rarity: "珍品", desc: "暗红色的原矿，内含剧毒汞元素。", source: "矿脉采掘", hpEffect: -10, maxHpEffect: 0 },
+        "钙钛矿": { rarity: "稀世", desc: "结构奇特的晶体粗矿，可熔炼出钛金。", source: "矿脉采掘", hpEffect: -10, maxHpEffect: 0 },
+        "铜": { rarity: "凡品", desc: "提纯后的赤红金属，常用于基础炼炉。", source: "矿物提纯", hpEffect: -10, maxHpEffect: 0 },
+        "铁": { rarity: "凡品", desc: "坚不可摧的黑铁，吞服会导致严重内出血。", source: "矿物提纯", hpEffect: -15, maxHpEffect: 0 },
+        "锡": { rarity: "凡品", desc: "质地较软的金属，带有一定的毒性。", source: "矿物提纯", hpEffect: -10, maxHpEffect: 0 },
+        "金": { rarity: "珍品", desc: "贵重金属，吞金自尽绝非戏言。", source: "矿物提纯", hpEffect: -35, maxHpEffect: 0 },
+        "银": { rarity: "珍品", desc: "贵重金属，过量吞服会重伤肠胃。", source: "矿物提纯", hpEffect: -25, maxHpEffect: 0 },
+        "钛金": { rarity: "稀世", desc: "极其轻盈且坚不可摧的纯粹金属。", source: "矿物提纯", hpEffect: -30, maxHpEffect: 0 },
+        "丹砂": { rarity: "稀世", desc: "提纯自辰砂矿，炼制神丹之极品核心。", source: "矿物提纯", hpEffect: -40, maxHpEffect: 0 },
+        "石硫磺": { rarity: "凡品", desc: "气味刺鼻，阳气过重。", source: "矿物提纯/采掘", hpEffect: -15, maxHpEffect: 0 },
+        "曾青": { rarity: "凡品", desc: "含铜的青色矿物，毒性不小。", source: "矿脉采掘", hpEffect: -20, maxHpEffect: 0 },
+        "雄黄": { rarity: "珍品", desc: "可驱邪避毒，但本身含有毒性。", source: "矿脉采掘", hpEffect: -20, maxHpEffect: 0 },
+        "雌黄": { rarity: "珍品", desc: "常与雄黄共生，质地极软但有剧毒。", source: "矿脉采掘", hpEffect: -20, maxHpEffect: 0 },
+        "慈石": { rarity: "凡品", desc: "带有磁性的石头，不可食用。", source: "矿脉采掘", hpEffect: -10, maxHpEffect: 0 },
+        "戎盐": { rarity: "凡品", desc: "粗制未提纯的盐块，过量食用伤肾。", source: "矿脉采掘", hpEffect: -5, maxHpEffect: 0 },
+        "矾石": { rarity: "凡品", desc: "味酸涩，有微毒。", source: "矿脉采掘", hpEffect: -10, maxHpEffect: 0 },
+        "茯苓": { rarity: "凡品", desc: "健脾宁心的常见草药，平和无毒。", source: "药园采摘", hpEffect: 5, maxHpEffect: 0 },
+        "何首乌": { rarity: "珍品", desc: "补益精血的良药。", source: "药园采摘", hpEffect: 8, maxHpEffect: 0 },
+        "人参": { rarity: "珍品", desc: "大补元气的名贵药材。", source: "药园采摘", hpEffect: 15, maxHpEffect: 0 },
+        "雪莲": { rarity: "稀世", desc: "生于苦寒之地的奇花，清热解百毒。", source: "药园采摘", hpEffect: 20, maxHpEffect: 0 },
+        "灵芝": { rarity: "稀世", desc: "吸纳天地灵气生长的仙草。", source: "药园采摘", hpEffect: 25, maxHpEffect: 0 },
+        "培元膏": { rarity: "良药", desc: "固本培元的基础药物。", source: "药房炼制", hpEffect: 40, maxHpEffect: 0 },
+        "续命丹": { rarity: "灵药", desc: "气血亏虚时可保一命。", source: "药房炼制", hpEffect: 70, maxHpEffect: 0 },
+        "九转还魂散": { rarity: "仙药", desc: "只要一息尚存便可拉回鬼门关。", source: "药房炼制", hpEffect: 100, maxHpEffect: 0 },
+        "一元鼎": { rarity: "神丹", desc: "蕴含一元复始之气，略微提升潜能。", source: "九鼎炼制", hpEffect: 5, maxHpEffect: 5 },
+        "两仪鼎": { rarity: "神丹", desc: "分化阴阳，调和气血。", source: "九鼎炼制", hpEffect: 8, maxHpEffect: 8 },
+        "三才鼎": { rarity: "神丹", desc: "汇聚天地人三才之灵。", source: "九鼎炼制", hpEffect: 12, maxHpEffect: 12 },
+        "四象鼎": { rarity: "神丹", desc: "镇压四方，服用后气血绵长。", source: "九鼎炼制", hpEffect: 15, maxHpEffect: 15 },
+        "五行鼎": { rarity: "神丹", desc: "五行流转，生生不息。", source: "九鼎炼制", hpEffect: 18, maxHpEffect: 18 },
+        "六合鼎": { rarity: "神丹", desc: "囊括天地四方之威。", source: "九鼎炼制", hpEffect: 22, maxHpEffect: 22 },
+        "七星鼎": { rarity: "神丹", desc: "接引北斗七星之光。", source: "九鼎炼制", hpEffect: 25, maxHpEffect: 25 },
+        "八卦鼎": { rarity: "神丹", desc: "演化乾坤，服之脱胎换骨。", source: "九鼎炼制", hpEffect: 30, maxHpEffect: 30 },
+        "九鼎神丹": { rarity: "造化", desc: "夺天地造化，凡人食之可立地成仙！", source: "九鼎炼制", hpEffect: 50, maxHpEffect: 50 }
+    };
+    // ======================= 地形数据 =======================
+    const TERRAINS = [
+        { name: "青翠山林", minerals: [{ name:"孔雀石",weight:40},{ name:"赤铁矿",weight:35},{ name:"锡矿石",weight:20},{ name:"曾青",weight:5}] },
+        { name: "赤焰火山", minerals: [{ name:"黄铁矿",weight:45},{ name:"雄黄",weight:30},{ name:"雌黄",weight:15},{ name:"辰砂矿",weight:10}] },
+        { name: "金霞矿脉", minerals: [{ name:"自然金矿",weight:20},{ name:"辉银矿",weight:25},{ name:"孔雀石",weight:25},{ name:"钙钛矿",weight:15},{ name:"慈石",weight:15}] },
+        { name: "幽冥洞窟", minerals: [{ name:"黄铁矿",weight:30},{ name:"赤铁矿",weight:20},{ name:"戎盐",weight:25},{ name:"矾石",weight:15},{ name:"辰砂矿",weight:10}] },
+        { name: "灵泉幽谷", minerals: [{ name:"辉银矿",weight:25},{ name:"曾青",weight:30},{ name:"戎盐",weight:20},{ name:"慈石",weight:15},{ name:"锡矿石",weight:10}] },
+        { name: "灵芝百草园", minerals: [{ name:"灵芝",weight:35},{ name:"人参",weight:30},{ name:"何首乌",weight:20},{ name:"雪莲",weight:10},{ name:"茯苓",weight:5}] }
+    ];
+    // ======================= 配方数据 =======================
+    const SMELT_RECIPES = [
+        { id: "smelt_cu", type: "smelt", name: "提纯铜", req: {"孔雀石":2}, out: {"铜":1}, timeMin:2.0, timeMax:3.5, score:0, maxHpIncrease:0 },
+        { id: "smelt_fe", type: "smelt", name: "提纯铁", req: {"赤铁矿":2}, out: {"铁":1}, timeMin:2.0, timeMax:3.5 },
+        { id: "smelt_fe_s", type: "smelt", name: "提炼铁与硫磺", req: {"黄铁矿":2}, out: {"铁":1,"石硫磺":1}, timeMin:2.5, timeMax:4.0 },
+        { id: "smelt_sn", type: "smelt", name: "提纯锡", req: {"锡矿石":2}, out: {"锡":1}, timeMin:2.0, timeMax:3.5 },
+        { id: "smelt_au", type: "smelt", name: "提纯金", req: {"自然金矿":3}, out: {"金":1}, timeMin:3.0, timeMax:5.0 },
+        { id: "smelt_ag", type: "smelt", name: "提纯银", req: {"辉银矿":2}, out: {"银":1}, timeMin:2.5, timeMax:4.0 },
+        { id: "smelt_cinnabar", type: "smelt", name: "提纯丹砂", req: {"辰砂矿":2}, out: {"丹砂":1}, timeMin:3.0, timeMax:5.0 },
+        { id: "smelt_titanium", type: "smelt", name: "熔炼钛金", req: {"钙钛矿":3}, out: {"钛金":1}, timeMin:4.0, timeMax:6.0 }
+    ];
+    const DING_RECIPES = [
+        { id: "ding1", type: "ding", name: "一元鼎", req: {"金":2,"丹砂":2,"人参":1}, out: {"一元鼎":1}, baseScore:10, timeMin:3, timeMax:6, maxHpIncrease:5 },
+        { id: "ding2", type: "ding", name: "两仪鼎", req: {"银":2,"雄黄":2,"慈石":1}, out: {"两仪鼎":1}, baseScore:20, timeMin:6, timeMax:9, maxHpIncrease:8 },
+        { id: "ding3", type: "ding", name: "三才鼎", req: {"铜":3,"雌黄":2,"戎盐":2}, out: {"三才鼎":1}, baseScore:30, timeMin:9, timeMax:13, maxHpIncrease:12 },
+        { id: "ding4", type: "ding", name: "四象鼎", req: {"铁":3,"曾青":2,"石硫磺":2}, out: {"四象鼎":1}, baseScore:40, timeMin:12, timeMax:17, maxHpIncrease:15 },
+        { id: "ding5", type: "ding", name: "五行鼎", req: {"金":2,"银":2,"铜":2,"铁":2,"锡":2}, out: {"五行鼎":1}, baseScore:50, timeMin:15, timeMax:20, maxHpIncrease:18 },
+        { id: "ding6", type: "ding", name: "六合鼎", req: {"丹砂":4,"雄黄":3,"雌黄":3}, out: {"六合鼎":1}, baseScore:60, timeMin:18, timeMax:24, maxHpIncrease:22 },
+        { id: "ding7", type: "ding", name: "七星鼎", req: {"金":4,"银":4,"钛金":2,"慈石":4}, out: {"七星鼎":1}, baseScore:70, timeMin:22, timeMax:28, maxHpIncrease:25 },
+        { id: "ding8", type: "ding", name: "八卦鼎", req: {"灵芝":3,"人参":3,"雪莲":2,"茯苓":3}, out: {"八卦鼎":1}, baseScore:85, timeMin:27, timeMax:33, maxHpIncrease:30 },
+        { id: "ding9", type: "ding", name: "九鼎神丹", req: {"金":5,"银":5,"丹砂":5,"雄黄":5,"灵芝":5,"人参":5}, out: {"九鼎神丹":1}, baseScore:100, timeMin:36, timeMax:43, maxHpIncrease:50 }
+    ];
+    const ALL_RECIPES = [...SMELT_RECIPES, ...DING_RECIPES];
+    const MAX_SCORE_TIMES = 3;
+    const MINE_DURATION = 2800;
+    const DANGER_PROB = 0.25;
+    const DAMAGE_MIN = 8, DAMAGE_MAX = 20;
+    const AUTO_STOP_HEALTH = 20;
+    const RANK_UPLOAD_INTERVAL = 10000;
+    const REWARD_ITEMS = [
+        "孔雀石", "赤铁矿", "黄铁矿", "锡矿石", "自然金矿", "辉银矿", "辰砂矿", "钙钛矿",
+        "曾青", "雄黄", "雌黄", "慈石", "戎盐", "矾石",
+        "茯苓", "何首乌", "人参", "雪莲", "灵芝"
+    ];
+    // ======================= Supabase 配置 =======================
+    const SUPABASE_URL = 'https://supabase.iteamgame.dpdns.org';
+    const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
+    let supabase = null;
+    let cloudAvailable = false;
+    let isLoggedIn = false;
+    let currentUser = null;
+    let saveQueue = Promise.resolve();
+    // 全局游戏状态
+    let inventory = {};
+    let health = 100, maxHealth = 100;
+    let dingStatus = DING_RECIPES.map((_,idx) => ({ unlocked: idx===0, timesScored:0 }));
+    let totalScore = 0;
+    let isMining = false;
+    let autoMiningActive = false;
+    let autoMiningInterval = null;
+    let selectedTerrain = null;
+    let currentMiningTimer = null;
+    let currentProgressInterval = null;
+    let targetMineral = "";
+    // 炼丹炉状态
+    let currentSlottedMaterials = {};  // 当前投入的材料
+    let currentRecipe = null;          // 当前材料槽匹配的配方
+    let selectedBookRecipe = null;     // 当前在丹方秘录中选中的配方（用于详情展示）
+    let isRefining = false;
+    let refineStartTime = 0;
+    let refineTimerInterval = null;
+    let currentRefineTime = 0;
+    // 智慧老人状态
+    let challengeCooldown = 0;
+    let challengeInterval = null;
+    let challengeReady = false;
+    let loadedQuizQuestions = [];
+    let currentChallengeQuestions = [];
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+    let isQuizActive = false;
 
-        // ======================= 地形数据 =======================
-        const TERRAINS = [
-            { name: "青翠山林", minerals: [{ name:"孔雀石",weight:40},{ name:"赤铁矿",weight:35},{ name:"锡矿石",weight:20},{ name:"曾青",weight:5}] },
-            { name: "赤焰火山", minerals: [{ name:"黄铁矿",weight:45},{ name:"雄黄",weight:30},{ name:"雌黄",weight:15},{ name:"辰砂矿",weight:10}] },
-            { name: "金霞矿脉", minerals: [{ name:"自然金矿",weight:20},{ name:"辉银矿",weight:25},{ name:"孔雀石",weight:25},{ name:"钙钛矿",weight:15},{ name:"慈石",weight:15}] },
-            { name: "幽冥洞窟", minerals: [{ name:"黄铁矿",weight:30},{ name:"赤铁矿",weight:20},{ name:"戎盐",weight:25},{ name:"矾石",weight:15},{ name:"辰砂矿",weight:10}] },
-            { name: "灵泉幽谷", minerals: [{ name:"辉银矿",weight:25},{ name:"曾青",weight:30},{ name:"戎盐",weight:20},{ name:"慈石",weight:15},{ name:"锡矿石",weight:10}] },
-            { name: "灵芝百草园", minerals: [{ name:"灵芝",weight:35},{ name:"人参",weight:30},{ name:"何首乌",weight:20},{ name:"雪莲",weight:10},{ name:"茯苓",weight:5}] }
-        ];
-
-        // ======================= 配方数据 =======================
-        const SMELT_RECIPES = [
-            { id: "smelt_cu", type: "smelt", name: "提纯铜", req: {"孔雀石":2}, out: {"铜":1}, timeMin:2.0, timeMax:3.5, score:0, maxHpIncrease:0 },
-            { id: "smelt_fe", type: "smelt", name: "提纯铁", req: {"赤铁矿":2}, out: {"铁":1}, timeMin:2.0, timeMax:3.5, score:0, maxHpIncrease:0 },
-            { id: "smelt_fe_s", type: "smelt", name: "提炼铁与硫磺", req: {"黄铁矿":2}, out: {"铁":1,"石硫磺":1}, timeMin:2.5, timeMax:4.0, score:0, maxHpIncrease:0 },
-            { id: "smelt_sn", type: "smelt", name: "提纯锡", req: {"锡矿石":2}, out: {"锡":1}, timeMin:2.0, timeMax:3.5, score:0, maxHpIncrease:0 },
-            { id: "smelt_au", type: "smelt", name: "提纯金", req: {"自然金矿":3}, out: {"金":1}, timeMin:3.0, timeMax:5.0, score:0, maxHpIncrease:0 },
-            { id: "smelt_ag", type: "smelt", name: "提纯银", req: {"辉银矿":2}, out: {"银":1}, timeMin:2.5, timeMax:4.0, score:0, maxHpIncrease:0 },
-            { id: "smelt_cinnabar", type: "smelt", name: "提纯丹砂", req: {"辰砂矿":2}, out: {"丹砂":1}, timeMin:3.0, timeMax:5.0, score:0, maxHpIncrease:0 },
-            { id: "smelt_titanium", type: "smelt", name: "熔炼钛金", req: {"钙钛矿":3}, out: {"钛金":1}, timeMin:4.0, timeMax:6.0, score:0, maxHpIncrease:0 }
-        ];
-        const DING_RECIPES = [
-            { id: "ding1", type: "ding", name: "一元鼎", req: {"金":2,"丹砂":2,"人参":1}, out: {"一元鼎":1}, baseScore:10, timeMin:3, timeMax:6, maxHpIncrease:5 },
-            { id: "ding2", type: "ding", name: "两仪鼎", req: {"银":2,"雄黄":2,"慈石":1}, out: {"两仪鼎":1}, baseScore:20, timeMin:6, timeMax:9, maxHpIncrease:8 },
-            { id: "ding3", type: "ding", name: "三才鼎", req: {"铜":3,"雌黄":2,"戎盐":2}, out: {"三才鼎":1}, baseScore:30, timeMin:9, timeMax:13, maxHpIncrease:12 },
-            { id: "ding4", type: "ding", name: "四象鼎", req: {"铁":3,"曾青":2,"石硫磺":2}, out: {"四象鼎":1}, baseScore:40, timeMin:12, timeMax:17, maxHpIncrease:15 },
-            { id: "ding5", type: "ding", name: "五行鼎", req: {"金":2,"银":2,"铜":2,"铁":2,"锡":2}, out: {"五行鼎":1}, baseScore:50, timeMin:15, timeMax:20, maxHpIncrease:18 },
-            { id: "ding6", type: "ding", name: "六合鼎", req: {"丹砂":4,"雄黄":3,"雌黄":3}, out: {"六合鼎":1}, baseScore:60, timeMin:18, timeMax:24, maxHpIncrease:22 },
-            { id: "ding7", type: "ding", name: "七星鼎", req: {"金":4,"银":4,"钛金":2,"慈石":4}, out: {"七星鼎":1}, baseScore:70, timeMin:22, timeMax:28, maxHpIncrease:25 },
-            { id: "ding8", type: "ding", name: "八卦鼎", req: {"灵芝":3,"人参":3,"雪莲":2,"茯苓":3}, out: {"八卦鼎":1}, baseScore:85, timeMin:27, timeMax:33, maxHpIncrease:30 },
-            { id: "ding9", type: "ding", name: "九鼎神丹", req: {"金":5,"银":5,"丹砂":5,"雄黄":5,"灵芝":5,"人参":5}, out: {"九鼎神丹":1}, baseScore:100, timeMin:36, timeMax:43, maxHpIncrease:50 }
-        ];
-        const ALL_RECIPES = [...SMELT_RECIPES, ...DING_RECIPES];
-        const MAX_SCORE_TIMES = 3;
-
-        // 挖矿参数
-        const MINE_DURATION = 2800;
-        const DANGER_PROB = 0.25;
-        const DAMAGE_MIN = 8, DAMAGE_MAX = 20;
-        const AUTO_STOP_HEALTH = 20;
-
-        // 奖励物品列表（矿物和药材）
-        const REWARD_ITEMS = [
-            "孔雀石", "赤铁矿", "黄铁矿", "锡矿石", "自然金矿", "辉银矿", "辰砂矿", "钙钛矿",
-            "曾青", "雄黄", "雌黄", "慈石", "戎盐", "矾石",
-            "茯苓", "何首乌", "人参", "雪莲", "灵芝"
-        ];
-
-        // ======================= Supabase 配置 =======================
-        const SUPABASE_URL = 'https://supabase.iteamgame.dpdns.org';
-        const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
-        let supabase = null;
-        let cloudAvailable = false;
-        let isLoggedIn = false;
-        let currentUser = null;
-        let saveQueue = Promise.resolve();
-
-        // 全局游戏状态
-        let inventory = {};
-        let health = 100, maxHealth = 100;
-        let dingStatus = DING_RECIPES.map((_,idx) => ({ unlocked: idx===0, timesScored:0 }));
-        let totalScore = 0;
-
-        let isMining = false;
-        let autoMiningActive = false;
-        let autoMiningInterval = null;
-        let selectedTerrain = null;
-        let currentMiningTimer = null;
-        let currentProgressInterval = null;
-        let targetMineral = "";
-
-        let currentRecipe = null;
-        let isRefining = false;
-        let refineStartTime = 0;
-        let refineTimerInterval = null;
-        let currentRefineTime = 0;
-
-        // 智慧老人挑战状态
-        let challengeCooldown = 0; // 剩余冷却秒数
-        let challengeInterval = null;
-        let challengeReady = false;
-        let loadedQuizQuestions = [];        // 存储从JSON加载的所有题目（包含难度）
-        let currentChallengeQuestions = [];  // 本次挑战选中的5道题（按难度1-5各一道）
-        let currentQuizIndex = 0;
-        let quizScore = 0;
-        let isQuizActive = false;
-
-        // ======================= 辅助函数 =======================
-        function getUserDataKey() { return `dandao_user_${currentUser}`; }
-        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]||m)); }
-
-        function getGameDataSnapshot() {
-            return {
-                inventory: inventory,
-                health: health,
-                maxHealth: maxHealth,
-                dingStatus: dingStatus,
-                totalScore: totalScore,
-                updated_at: new Date().toISOString()
-            };
+    // ======================= 辅助函数 =======================
+    function getUserDataKey() { return `dandao_user_${currentUser}`; }
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]||m)); }
+    function getGameDataSnapshot() { return { inventory, health, maxHealth, dingStatus, totalScore, updated_at: new Date().toISOString() }; }
+    function restoreGameData(data) {
+        if (data.inventory) inventory = data.inventory;
+        if (data.health !== undefined) health = data.health;
+        if (data.maxHealth !== undefined) maxHealth = data.maxHealth;
+        if (data.dingStatus) dingStatus = data.dingStatus;
+        if (data.totalScore !== undefined) totalScore = data.totalScore;
+        if (health > maxHealth) health = maxHealth;
+        if (health <= 0) triggerRebirth();
+        updateHealthUI();
+        renderAllUI();
+    }
+    // ======================= 云端存档 =======================
+    async function loadFromCloud() {
+        if (!isLoggedIn || !cloudAvailable || !supabase) return false;
+        try {
+            const { data, error } = await supabase
+                .from('player_saves')
+                .select('game_data, updated_at')
+                .eq('user_name', currentUser)
+                .maybeSingle();
+            if (error) throw error;
+            if (data && data.game_data) {
+                restoreGameData(data.game_data);
+                console.log('云存档加载成功', data.updated_at);
+                return true;
+            }
+        } catch(err) {
+            console.warn('加载云存档失败', err);
         }
-
-        function restoreGameData(data) {
-            if (data.inventory) inventory = data.inventory;
-            if (data.health !== undefined) health = data.health;
-            if (data.maxHealth !== undefined) maxHealth = data.maxHealth;
-            if (data.dingStatus) dingStatus = data.dingStatus;
-            if (data.totalScore !== undefined) totalScore = data.totalScore;
-            if (health > maxHealth) health = maxHealth;
-            if (health <= 0) triggerRebirth();
-            updateHealthUI();
-            renderAllUI();
-        }
-
-        // ======================= 云端存档函数 =======================
-        async function loadFromCloud() {
-            if (!isLoggedIn || !cloudAvailable || !supabase) return false;
+        return false;
+    }
+    async function saveToCloud() {
+        if (!isLoggedIn || !cloudAvailable || !supabase) return;
+        saveQueue = saveQueue.then(async () => {
+            const snapshot = getGameDataSnapshot();
             try {
-                const { data, error } = await supabase
+                const { error } = await supabase
                     .from('player_saves')
-                    .select('game_data, updated_at')
+                    .upsert({ user_name: currentUser, game_data: snapshot, updated_at: snapshot.updated_at }, { onConflict: 'user_name' });
+                if (error) throw error;
+                console.log('云存档保存成功');
+            } catch(err) {
+                console.warn('云存档保存失败', err);
+            }
+        });
+        await saveQueue;
+    }
+    async function initCloudSync() {
+        if (!isLoggedIn) return;
+        const loaded = await loadFromCloud();
+        if (!loaded) await saveToCloud();
+    }
+    // ======================= 本地存储 =======================
+    function loadGameData() {
+        const raw = localStorage.getItem(getUserDataKey());
+        if (raw) {
+            try {
+                const data = JSON.parse(raw);
+                inventory = data.inventory || {};
+                health = data.health ?? 100;
+                maxHealth = data.maxHealth ?? 100;
+                dingStatus = data.dingStatus || DING_RECIPES.map((_,idx)=>({ unlocked: idx===0, timesScored:0 }));
+                totalScore = data.totalScore || 0;
+            } catch(e) { resetToDefault(); }
+        } else { resetToDefault(); }
+        if (health <= 0) triggerRebirth();
+        health = Math.min(health, maxHealth);
+        updateHealthUI();
+        saveGameData();
+    }
+    function resetToDefault() {
+        inventory = {};
+        ["自然金矿","辉银矿","孔雀石","赤铁矿","黄铁矿","锡矿石","辰砂矿","钙钛矿"].forEach(m=>{ inventory[m]=8; });
+        ["灵芝","人参","何首乌","雪莲","茯苓"].forEach(h=>{ inventory[h]=2; });
+        health = 100; maxHealth = 100;
+        dingStatus = DING_RECIPES.map((_,idx)=>({ unlocked: idx===0, timesScored:0 }));
+        totalScore = 0;
+    }
+    function saveGameData() {
+        if(!currentUser) return;
+        localStorage.setItem(getUserDataKey(), JSON.stringify({ inventory, health, maxHealth, dingStatus, totalScore }));
+        if (isLoggedIn && cloudAvailable) saveToCloud();
+        updateRanking();
+    }
+    // ======================= 排行榜 =======================
+    async function fetchCloudRanking() {
+        if (!cloudAvailable || !supabase || !isLoggedIn) { renderRankingLocal(); return; }
+        try {
+            const { data, error } = await supabase
+                .from('rankings')
+                .select('user_name, score, max_hp')
+                .order('score', { ascending: false })
+                .limit(8);
+            if (error) throw error;
+            const container = document.getElementById('rankList');
+            if (!container) return;
+            if (!data || data.length === 0) container.innerHTML = '<li>暂无全服数据，快去炼丹成为第一人！</li>';
+            else container.innerHTML = data.map((user, i) => `<li><span>${i+1}. ${escapeHtml(user.user_name)}</span><span>${user.score}分 (${user.max_hp}❤️)</span></li>`).join('');
+        } catch(err) { console.warn('拉取云端排行失败', err); renderRankingLocal(); }
+    }
+    function renderRankingLocal() {
+        const container = document.getElementById('rankList');
+        if(!container) return;
+        const allUsers = [];
+        for(let i=0;i<localStorage.length;i++){ const key=localStorage.key(i); if(key.startsWith('dandao_user_')){ try{ const data=JSON.parse(localStorage.getItem(key)); const userName=key.replace('dandao_user_',''); allUsers.push({name:userName, score:data.totalScore||0, maxHp:data.maxHealth||100}); }catch(e){} } }
+        allUsers.sort((a,b)=>b.score-a.score);
+        const topUsers=allUsers.slice(0,8);
+        container.innerHTML = topUsers.length ? topUsers.map((u,i)=>`<li><span>${i+1}. ${escapeHtml(u.name)}</span><span>${u.score}分 (${u.maxHp}❤️)</span></li>`).join('') : '<li>暂无丹道高手</li>';
+    }
+    async function updateRanking() {
+        if (isLoggedIn && cloudAvailable) {
+            try {
+                const { data: existing } = await supabase
+                    .from('rankings')
+                    .select('score, max_hp')
                     .eq('user_name', currentUser)
                     .maybeSingle();
-                if (error) throw error;
-                if (data && data.game_data) {
-                    restoreGameData(data.game_data);
-                    console.log('云存档加载成功', data.updated_at);
-                    return true;
-                }
-            } catch(err) {
-                console.warn('加载云存档失败', err);
-            }
-            return false;
-        }
-
-        async function saveToCloud() {
-            if (!isLoggedIn || !cloudAvailable || !supabase) return;
-            saveQueue = saveQueue.then(async () => {
-                const snapshot = getGameDataSnapshot();
-                try {
-                    const { error } = await supabase
-                        .from('player_saves')
-                        .upsert({ user_name: currentUser, game_data: snapshot, updated_at: snapshot.updated_at }, { onConflict: 'user_name' });
-                    if (error) throw error;
-                    console.log('云存档保存成功');
-                } catch(err) {
-                    console.warn('云存档保存失败', err);
-                }
-            });
-            await saveQueue;
-        }
-
-        async function initCloudSync() {
-            if (!isLoggedIn) return;
-            const loaded = await loadFromCloud();
-            if (!loaded) {
-                await saveToCloud();
-            }
-        }
-
-        // ======================= 本地存储（降级） =======================
-        function loadGameData() {
-            const raw = localStorage.getItem(getUserDataKey());
-            if (raw) {
-                try {
-                    const data = JSON.parse(raw);
-                    inventory = data.inventory || {};
-                    health = data.health ?? 100;
-                    maxHealth = data.maxHealth ?? 100;
-                    dingStatus = data.dingStatus || DING_RECIPES.map((_,idx)=>({ unlocked: idx===0, timesScored:0 }));
-                    totalScore = data.totalScore || 0;
-                } catch(e) { resetToDefault(); }
-            } else { resetToDefault(); }
-            if (health <= 0) triggerRebirth();
-            health = Math.min(health, maxHealth);
-            updateHealthUI();
-            saveGameData();
-        }
-        
-        function resetToDefault() {
-            inventory = {};
-            ["自然金矿","辉银矿","孔雀石","赤铁矿","黄铁矿","锡矿石","辰砂矿","钙钛矿"].forEach(m=>{ inventory[m]=8; });
-            ["灵芝","人参","何首乌","雪莲","茯苓"].forEach(h=>{ inventory[h]=2; });
-            health = 100;
-            maxHealth = 100;
-            dingStatus = DING_RECIPES.map((_,idx)=>({ unlocked: idx===0, timesScored:0 }));
-            totalScore = 0;
-        }
-        
-        function saveGameData() {
-            if(!currentUser) return;
-            localStorage.setItem(getUserDataKey(), JSON.stringify({ inventory, health, maxHealth, dingStatus, totalScore }));
-            if (isLoggedIn && cloudAvailable) {
-                saveToCloud();
-            }
-            updateRanking();
-        }
-        
-        // ======================= 排行榜 =======================
-        async function fetchCloudRanking() {
-            if (!cloudAvailable || !supabase || !isLoggedIn) {
-                renderRankingLocal();
-                return;
-            }
-            try {
-                const { data, error } = await supabase
-                    .from('rankings')
-                    .select('user_name, score, max_hp')
-                    .order('score', { ascending: false })
-                    .limit(8);
-                if (error) throw error;
-                const container = document.getElementById('rankList');
-                if (!container) return;
-                if (!data || data.length === 0) {
-                    container.innerHTML = '<li>暂无全服数据，快去炼丹成为第一人！</li>';
-                } else {
-                    container.innerHTML = data.map((user, i) => 
-                        `<li><span>${i+1}. ${escapeHtml(user.user_name)}</span><span>${user.score}分 (${user.max_hp}❤️)</span></li>`
-                    ).join('');
-                }
-            } catch(err) {
-                console.warn('拉取云端排行失败', err);
-                renderRankingLocal();
-            }
-        }
-
-        function renderRankingLocal() {
-            const container = document.getElementById('rankList');
-            if(!container) return;
-            const allUsers = [];
-            for(let i=0;i<localStorage.length;i++){
-                const key=localStorage.key(i);
-                if(key.startsWith('dandao_user_')){
-                    try{
-                        const data=JSON.parse(localStorage.getItem(key));
-                        const userName=key.replace('dandao_user_','');
-                        allUsers.push({name:userName, score:data.totalScore||0, maxHp:data.maxHealth||100});
-                    }catch(e){}
-                }
-            }
-            allUsers.sort((a,b)=>b.score-a.score);
-            const topUsers=allUsers.slice(0,8);
-            container.innerHTML = topUsers.length ? topUsers.map((u,i)=>`<li><span>${i+1}. ${escapeHtml(u.name)}</span><span>${u.score}分 (${u.maxHp}❤️)</span></li>`).join('') : '<li>暂无丹道高手</li>';
-        }
-
-        async function updateRanking() {
-            if (isLoggedIn && cloudAvailable) {
-                try {
-                    const { data: existing } = await supabase
+                const shouldUpload = !existing || existing.score < totalScore || existing.max_hp !== maxHealth;
+                if (shouldUpload) {
+                    const nextScore = existing ? Math.max(existing.score || 0, totalScore) : totalScore;
+                    await supabase
                         .from('rankings')
-                        .select('score')
-                        .eq('user_name', currentUser)
-                        .maybeSingle();
-                    if (!existing || existing.score < totalScore) {
-                        await supabase
-                            .from('rankings')
-                            .upsert({ user_name: currentUser, score: totalScore, max_hp: maxHealth, updated_at: new Date().toISOString() }, { onConflict: 'user_name' });
-                    }
-                } catch(e) { console.warn(e); }
-            }
-            renderRanking();
-        }
-
-        async function renderRanking() {
-            if (isLoggedIn && cloudAvailable) {
-                await fetchCloudRanking();
-            } else {
-                renderRankingLocal();
-            }
-        }
-
-        function triggerRebirth() {
-            if(!currentUser) return;
-            localStorage.removeItem(getUserDataKey());
-            resetToDefault();
-            saveGameData();
-            loadGameData();
-            renderAllUI();
-            showFeedback("⚰️ 毒发身亡，轮回重生！一切归零。", "mineFeedback");
-        }
-
-        function showFeedback(msg, elementId) {
-            const el = document.getElementById(elementId);
-            if(!el) return;
-            el.innerHTML = msg;
-            setTimeout(() => { if(el.innerHTML === msg) el.innerHTML = ''; }, 3500);
-        }
-
-        // ======================= 挖矿逻辑 =======================
-        function performMining() {
-            return new Promise((resolve) => {
-                if (!selectedTerrain || health <= 0) { resolve(false); return; }
-                const progressContainer = document.getElementById('miningProgressContainer');
-                const progressFill = document.getElementById('miningProgressFill');
-                const progressText = document.getElementById('miningProgressText');
-                progressContainer.classList.add('active');
-                progressFill.style.width = '0%';
-                const start = Date.now();
-                const interval = setInterval(() => {
-                    const elapsed = Date.now() - start;
-                    const percent = Math.min(100, (elapsed / MINE_DURATION) * 100);
-                    progressFill.style.width = `${percent}%`;
-                    progressText.textContent = `采掘中: ${Math.floor(percent)}%`;
-                    if (percent >= 100) clearInterval(interval);
-                }, 30);
-                const timer = setTimeout(() => {
-                    clearInterval(interval);
-                    const mineral = selectMineralByWeight(selectedTerrain.minerals);
-                    const amount = Math.floor(Math.random() * 3) + 1;
-                    if (mineral) inventory[mineral] = (inventory[mineral] || 0) + amount;
-                    let msg = `获得 ${mineral} x${amount}`;
-                    if (Math.random() < DANGER_PROB) {
-                        let damage = Math.floor(Math.random() * (DAMAGE_MAX-DAMAGE_MIN+1) + DAMAGE_MIN);
-                        health = Math.max(0, health - damage);
-                        msg += `  ⚠️ 遭遇矿难，损失 ${damage} 气血！`;
-                    }
-                    document.getElementById('mineFeedback').innerHTML = msg;
-                    updateHealthUI();
-                    saveGameData();
-                    renderInventory();
-                    if (health <= 0) triggerRebirth();
-                    progressContainer.classList.remove('active');
-                    resolve({ mineral, amount });
-                }, MINE_DURATION);
-                currentMiningTimer = timer;
-                currentProgressInterval = interval;
-            });
-        }
-
-        function selectMineralByWeight(minerals) {
-            let total = minerals.reduce((s,m)=>s+m.weight,0);
-            let rand = Math.random() * total;
-            let accum = 0;
-            for(let m of minerals) { accum += m.weight; if(rand <= accum) return m.name; }
-            return minerals[0]?.name;
-        }
-
-        function stopCurrentMining(resetAutoFlag = true) {
-            if (currentMiningTimer) { clearTimeout(currentMiningTimer); currentMiningTimer = null; }
-            if (currentProgressInterval) { clearInterval(currentProgressInterval); currentProgressInterval = null; }
-            document.getElementById('miningProgressContainer').classList.remove('active');
-            if (resetAutoFlag && autoMiningActive) {
-                autoMiningActive = false;
-                if (autoMiningInterval) { clearInterval(autoMiningInterval); autoMiningInterval = null; }
-                document.getElementById('autoMineBtn').style.display = 'inline-block';
-                document.getElementById('stopAutoMineBtn').style.display = 'none';
-                showFeedback('⏹️ 自动挖矿已停止。', 'autoFeedback');
-            }
-            isMining = false;
-            document.getElementById('mineBtn').disabled = !selectedTerrain;
-            if (selectedTerrain && targetMineral && terrainHasMineral(selectedTerrain, targetMineral)) {
-                document.getElementById('autoMineBtn').disabled = false;
-            } else {
-                document.getElementById('autoMineBtn').disabled = true;
-            }
-        }
-
-        async function startAutoMining() {
-            if (!selectedTerrain || autoMiningActive) return;
-            if (targetMineral && !terrainHasMineral(selectedTerrain, targetMineral)) {
-                showFeedback(`❌ 当前地形无法产出目标粗矿: ${targetMineral}`, 'autoFeedback'); return;
-            }
-            if (health <= AUTO_STOP_HEALTH) {
-                showFeedback(`⚠️ 生命值过低 (${health})，无法自动挖矿。`, 'autoFeedback'); return;
-            }
-            autoMiningActive = true;
-            document.getElementById('autoMineBtn').style.display = 'none';
-            document.getElementById('stopAutoMineBtn').style.display = 'inline-block';
-            document.getElementById('autoFeedback').innerHTML = '⚙️ 自动挖矿进行中...';
-            document.getElementById('mineBtn').disabled = true;
-
-            async function autoCycle() {
-                if (!autoMiningActive) return;
-                if (health <= AUTO_STOP_HEALTH || !selectedTerrain) {
-                    showFeedback(`🛑 生命值极低或未选地形，自动挖矿停止。`, 'autoFeedback');
-                    stopCurrentMining(true); return;
+                        .upsert({ user_name: currentUser, score: nextScore, max_hp: maxHealth, updated_at: new Date().toISOString() }, { onConflict: 'user_name' });
                 }
-                isMining = true;
-                const result = await performMining();
-                isMining = false;
-                if (health <= 0) { stopCurrentMining(true); return; }
-                if (targetMineral && result && result.mineral === targetMineral) {
-                    showFeedback(`🎉 挖到目标粗矿 ${targetMineral}！自动挖矿完成。`, 'autoFeedback');
-                    stopCurrentMining(true); return;
-                }
-                if (autoMiningActive) autoMiningInterval = setTimeout(autoCycle, 500);
-            }
-            autoCycle();
+            } catch(e) { console.warn(e); }
         }
-
-        function terrainHasMineral(terrain, mineral) { return terrain.minerals.some(m => m.name === mineral); }
-
-        async function manualMine() {
-            if (isMining) return;
-            if (!selectedTerrain) { alert("请先选择地形"); return; }
-            if (health <= 0) return;
+        renderRanking();
+    }
+    async function renderRanking() { if (isLoggedIn && cloudAvailable) await fetchCloudRanking(); else renderRankingLocal(); }
+    function triggerRebirth() {
+        if(!currentUser) return;
+        localStorage.removeItem(getUserDataKey());
+        resetToDefault(); saveGameData(); loadGameData(); renderAllUI();
+        showFeedback("⚰️ 毒发身亡，轮回重生！一切归零。", "mineFeedback");
+    }
+    function showFeedback(msg, elementId) { const el = document.getElementById(elementId); if(el) el.innerHTML = msg; setTimeout(() => { if(el && el.innerHTML === msg) el.innerHTML = ''; }, 3500); }
+    // ======================= 挖矿逻辑 =======================
+    function performMining() {
+        return new Promise((resolve) => {
+            if (!selectedTerrain || health <= 0) { resolve(false); return; }
+            const pc = document.getElementById('miningProgressContainer');
+            const pf = document.getElementById('miningProgressFill');
+            const pt = document.getElementById('miningProgressText');
+            pc.classList.add('active'); pf.style.width = '0%';
+            const start = Date.now();
+            const interval = setInterval(() => {
+                const elapsed = Date.now() - start;
+                const percent = Math.min(100, (elapsed / MINE_DURATION) * 100);
+                pf.style.width = `${percent}%`;
+                pt.textContent = `采掘中: ${Math.floor(percent)}%`;
+                if (percent >= 100) clearInterval(interval);
+            }, 30);
+            const timer = setTimeout(() => {
+                clearInterval(interval);
+                const mineral = selectMineralByWeight(selectedTerrain.minerals);
+                const amount = Math.floor(Math.random() * 3) + 1;
+                if (mineral) inventory[mineral] = (inventory[mineral] || 0) + amount;
+                let msg = `获得 ${mineral} x${amount}`;
+                if (Math.random() < DANGER_PROB) {
+                    let damage = Math.floor(Math.random() * (DAMAGE_MAX-DAMAGE_MIN+1) + DAMAGE_MIN);
+                    health = Math.max(0, health - damage);
+                    msg += `  ⚠️ 遭遇矿难，损失 ${damage} 气血！`;
+                }
+                document.getElementById('mineFeedback').innerHTML = msg;
+                updateHealthUI(); saveGameData(); renderInventory();
+                if (health <= 0) triggerRebirth();
+                pc.classList.remove('active');
+                resolve({ mineral, amount });
+            }, MINE_DURATION);
+            currentMiningTimer = timer; currentProgressInterval = interval;
+        });
+    }
+    function selectMineralByWeight(minerals) {
+        let total = minerals.reduce((s,m)=>s+m.weight,0);
+        let rand = Math.random() * total;
+        let accum = 0;
+        for(let m of minerals) { accum += m.weight; if(rand <= accum) return m.name; }
+        return minerals[0]?.name;
+    }
+    function stopCurrentMining(resetAutoFlag = true) {
+        if (currentMiningTimer) clearTimeout(currentMiningTimer);
+        if (currentProgressInterval) clearInterval(currentProgressInterval);
+        document.getElementById('miningProgressContainer').classList.remove('active');
+        if (resetAutoFlag && autoMiningActive) {
+            autoMiningActive = false;
+            if (autoMiningInterval) clearInterval(autoMiningInterval);
+            document.getElementById('autoMineBtn').style.display = 'inline-block';
+            document.getElementById('stopAutoMineBtn').style.display = 'none';
+            showFeedback('⏹️ 自动挖矿已停止。', 'autoFeedback');
+        }
+        isMining = false;
+        document.getElementById('mineBtn').disabled = !selectedTerrain;
+        if (selectedTerrain && targetMineral && terrainHasMineral(selectedTerrain, targetMineral)) document.getElementById('autoMineBtn').disabled = false;
+        else document.getElementById('autoMineBtn').disabled = true;
+    }
+    async function startAutoMining() {
+        if (!selectedTerrain || autoMiningActive) return;
+        if (targetMineral && !terrainHasMineral(selectedTerrain, targetMineral)) { showFeedback(`❌ 当前地形无法产出目标粗矿: ${targetMineral}`, 'autoFeedback'); return; }
+        if (health <= AUTO_STOP_HEALTH) { showFeedback(`⚠️ 生命值过低 (${health})，无法自动挖矿。`, 'autoFeedback'); return; }
+        autoMiningActive = true;
+        document.getElementById('autoMineBtn').style.display = 'none';
+        document.getElementById('stopAutoMineBtn').style.display = 'inline-block';
+        document.getElementById('autoFeedback').innerHTML = '⚙️ 自动挖矿进行中...';
+        document.getElementById('mineBtn').disabled = true;
+        async function autoCycle() {
+            if (!autoMiningActive) return;
+            if (health <= AUTO_STOP_HEALTH || !selectedTerrain) { showFeedback(`🛑 生命值极低或未选地形，自动挖矿停止。`, 'autoFeedback'); stopCurrentMining(true); return; }
             isMining = true;
-            document.getElementById('mineBtn').disabled = true;
-            document.getElementById('autoMineBtn').disabled = true;
-            await performMining();
+            const result = await performMining();
             isMining = false;
-            document.getElementById('mineBtn').disabled = !selectedTerrain;
-            if (selectedTerrain && targetMineral && terrainHasMineral(selectedTerrain, targetMineral)) {
-                document.getElementById('autoMineBtn').disabled = false;
+            if (health <= 0) { stopCurrentMining(true); return; }
+            if (targetMineral && result && result.mineral === targetMineral) { showFeedback(`🎉 挖到目标粗矿 ${targetMineral}！自动挖矿完成。`, 'autoFeedback'); stopCurrentMining(true); return; }
+            if (autoMiningActive) autoMiningInterval = setTimeout(autoCycle, 500);
+        }
+        autoCycle();
+    }
+    function terrainHasMineral(terrain, mineral) { return terrain.minerals.some(m => m.name === mineral); }
+    async function manualMine() {
+        if (isMining) return;
+        if (!selectedTerrain) { alert("请先选择地形"); return; }
+        if (health <= 0) return;
+        isMining = true;
+        document.getElementById('mineBtn').disabled = true;
+        document.getElementById('autoMineBtn').disabled = true;
+        await performMining();
+        isMining = false;
+        document.getElementById('mineBtn').disabled = !selectedTerrain;
+        if (selectedTerrain && targetMineral && terrainHasMineral(selectedTerrain, targetMineral)) document.getElementById('autoMineBtn').disabled = false;
+    }
+    function selectTerrain(terrain) {
+        if (isMining) { alert("挖矿进行中，请稍后"); return; }
+        selectedTerrain = terrain;
+        document.getElementById('mineBtn').disabled = false;
+        document.getElementById('mineBtn').innerText = `⛏️ 前往 ${terrain.name} 采掘`;
+        if (targetMineral && terrainHasMineral(terrain, targetMineral)) { document.getElementById('autoMineBtn').disabled = false; document.getElementById('autoFeedback').innerHTML = ''; }
+        else { document.getElementById('autoMineBtn').disabled = true; if (targetMineral) document.getElementById('autoFeedback').innerHTML = `⚠️ 当前地形无法产出 ${targetMineral}`; }
+    }
+    function populateTargetSelect() {
+        const allMinerals = new Set();
+        TERRAINS.forEach(t => t.minerals.forEach(m => allMinerals.add(m.name)));
+        const sorted = Array.from(allMinerals).sort();
+        const select = document.getElementById('targetMineralSelect');
+        select.innerHTML = '<option value="">-- 不指定目标 (普通挖矿) --</option>' + sorted.map(m => `<option value="${m}">${m}</option>`).join('');
+        select.addEventListener('change', (e) => {
+            targetMineral = e.target.value;
+            if (selectedTerrain && targetMineral && terrainHasMineral(selectedTerrain, targetMineral)) { document.getElementById('autoMineBtn').disabled = false; document.getElementById('autoFeedback').innerHTML = ''; }
+            else { document.getElementById('autoMineBtn').disabled = true; if (selectedTerrain && targetMineral) document.getElementById('autoFeedback').innerHTML = `⚠️ 当前地形无法产出 ${targetMineral}`; }
+        });
+    }
+    function renderTerrain() {
+        const container = document.getElementById('terrainGrid');
+        if(!container) return;
+        container.innerHTML = TERRAINS.map(t=>`<div class="terrain-card" data-terrain='${JSON.stringify(t)}'><div class="terrain-name">${t.name}</div><div class="mineral-list">${t.minerals.map(m=>m.name).join(', ')}</div></div>`).join('');
+        document.querySelectorAll('.terrain-card').forEach(card=>{ const terrain=JSON.parse(card.dataset.terrain); card.addEventListener('click',()=>selectTerrain(terrain)); });
+    }
+    // ======================= 物品与乾坤袋 =======================
+    function renderInventory() {
+        const container = document.getElementById('inventoryList');
+        if (container) {
+            const items = Object.entries(inventory).filter(([_,c]) => c>0);
+            if(items.length === 0) container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:2rem;">🎒 空空如也</div>';
+            else {
+                container.innerHTML = items.map(([name, count]) => {
+                    const info = ITEM_CATALOG[name] || { rarity:"未知", desc:"", source:"", hpEffect:0, maxHpEffect:0 };
+                    const isDanger = info.hpEffect < 0;
+                    const effectText = info.maxHpEffect > 0 ? `最大气血+${info.maxHpEffect}` : (info.hpEffect > 0 ? `气血+${info.hpEffect}` : `气血${info.hpEffect}`);
+                    return `<div class="inv-card"><div class="inv-header"><div class="inv-name">${name}</div><div class="inv-qty">${count}</div></div><div class="inv-meta"><span class="inv-tag">${info.rarity}</span><span class="inv-tag">${info.source}</span><span class="inv-tag">${effectText}</span></div><div class="inv-desc">${info.desc}</div><div class="inv-action"><button class="${isDanger?'btn-consume danger':'btn-consume'}" onclick="consumeItem('${name}')">${isDanger?'强行生吞':'服用'}</button></div></div>`;
+                }).join('');
             }
         }
-
-        function selectTerrain(terrain) {
-            if (isMining) { alert("挖矿进行中，请稍后"); return; }
-            selectedTerrain = terrain;
-            document.getElementById('mineBtn').disabled = false;
-            document.getElementById('mineBtn').innerText = `⛏️ 前往 ${terrain.name} 采掘`;
-            if (targetMineral && terrainHasMineral(terrain, targetMineral)) {
-                document.getElementById('autoMineBtn').disabled = false;
-                document.getElementById('autoFeedback').innerHTML = '';
-            } else {
-                document.getElementById('autoMineBtn').disabled = true;
-                if (targetMineral) document.getElementById('autoFeedback').innerHTML = `⚠️ 当前地形无法产出 ${targetMineral}`;
-            }
+        const herbDiv = document.getElementById('herbInventory');
+        if(herbDiv){
+            const herbsOwned = ["灵芝","人参","何首乌","雪莲","茯苓"].filter(h => inventory[h] > 0);
+            herbDiv.innerHTML = herbsOwned.length ? herbsOwned.map(h=>`<div class="herb-item"><span>🌿 ${h} x${inventory[h]}</span></div>`).join('') : '<div>暂无药草</div>';
         }
-
-        function populateTargetSelect() {
-            const allMinerals = new Set();
-            TERRAINS.forEach(t => t.minerals.forEach(m => allMinerals.add(m.name)));
-            const sorted = Array.from(allMinerals).sort();
-            const select = document.getElementById('targetMineralSelect');
-            select.innerHTML = '<option value="">-- 不指定目标 (普通挖矿) --</option>' + sorted.map(m => `<option value="${m}">${m}</option>`).join('');
-            select.addEventListener('change', (e) => {
-                targetMineral = e.target.value;
-                if (selectedTerrain && targetMineral && terrainHasMineral(selectedTerrain, targetMineral)) {
-                    document.getElementById('autoMineBtn').disabled = false;
-                    document.getElementById('autoFeedback').innerHTML = '';
-                } else {
-                    document.getElementById('autoMineBtn').disabled = true;
-                    if (selectedTerrain && targetMineral) document.getElementById('autoFeedback').innerHTML = `⚠️ 当前地形无法产出 ${targetMineral}`;
-                }
-            });
+        const drugDiv = document.getElementById('drugRecipes');
+        if(drugDiv){
+            const DRUG_RECIPES = [
+                { name:"培元膏", required:{ "灵芝":2,"人参":1 }, heal:40 },
+                { name:"续命丹", required:{ "雪莲":1,"何首乌":2,"茯苓":2 }, heal:70 },
+                { name:"九转还魂散", required:{ "人参":3,"灵芝":2,"雪莲":1 }, heal:100 }
+            ];
+            drugDiv.innerHTML = DRUG_RECIPES.map(drug=>`<div class="drug-item"><div><b>💊 ${drug.name}</b><br><span style="font-size:0.7rem;">需: ${Object.entries(drug.required).map(([m,c])=>`${m}x${c}`).join(', ')}</span></div><button class="make-btn" data-drug="${drug.name}">炼制存入</button></div>`).join('');
+            document.querySelectorAll('[data-drug]').forEach(btn=>{ const d=DRUG_RECIPES.find(x=>x.name===btn.dataset.drug); if(d) btn.addEventListener('click',()=>makeDrug(d)); });
         }
-
-        function renderTerrain(){
-            const container = document.getElementById('terrainGrid');
-            if(!container) return;
-            container.innerHTML = TERRAINS.map(t=>`<div class="terrain-card" data-terrain='${JSON.stringify(t)}'><div class="terrain-name">${t.name}</div><div class="mineral-list">${t.minerals.map(m=>m.name).join(', ')}</div></div>`).join('');
-            document.querySelectorAll('.terrain-card').forEach(card=>{ const terrain=JSON.parse(card.dataset.terrain); card.addEventListener('click',()=>selectTerrain(terrain)); });
-        }
-
-        // ======================= 物品与乾坤袋逻辑 =======================
-        function renderInventory() {
-            const container = document.getElementById('inventoryList');
-            if (container) {
-                const items = Object.entries(inventory).filter(([_,c]) => c>0);
-                if(items.length === 0) {
-                    container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:2rem;">🎒 空空如也</div>';
-                } else {
-                    container.innerHTML = items.map(([name, count]) => {
-                        const info = ITEM_CATALOG[name] || { rarity:"未知", desc:"", source:"", hpEffect:0, maxHpEffect:0 };
-                        const isDanger = info.hpEffect < 0;
-                        const btnClass = isDanger ? "btn-consume danger" : "btn-consume";
-                        const effectText = info.maxHpEffect > 0 ? `最大气血+${info.maxHpEffect}` : (info.hpEffect > 0 ? `气血+${info.hpEffect}` : `气血${info.hpEffect}`);
-                        return `<div class="inv-card"><div class="inv-header"><div class="inv-name">${name}</div><div class="inv-qty">${count}</div></div><div class="inv-meta"><span class="inv-tag">${info.rarity}</span><span class="inv-tag">${info.source}</span><span class="inv-tag">${effectText}</span></div><div class="inv-desc">${info.desc}</div><div class="inv-action"><button class="${btnClass}" onclick="consumeItem('${name}')">${isDanger?'强行生吞':'服用'}</button></div></div>`;
-                    }).join('');
-                }
-            }
-
-            const herbDiv = document.getElementById('herbInventory');
-            if(herbDiv){
-                const herbsOwned = ["灵芝","人参","何首乌","雪莲","茯苓"].filter(h => inventory[h] > 0);
-                herbDiv.innerHTML = herbsOwned.length ? herbsOwned.map(h=>`<div class="herb-item"><span>🌿 ${h} x${inventory[h]}</span></div>`).join('') : '<div>暂无药草</div>';
-            }
-            
-            const drugDiv = document.getElementById('drugRecipes');
-            if(drugDiv){
-                const DRUG_RECIPES = [
-                    { name:"培元膏", required:{ "灵芝":2,"人参":1 }, heal:40 },
-                    { name:"续命丹", required:{ "雪莲":1,"何首乌":2,"茯苓":2 }, heal:70 },
-                    { name:"九转还魂散", required:{ "人参":3,"灵芝":2,"雪莲":1 }, heal:100 }
-                ];
-                drugDiv.innerHTML = DRUG_RECIPES.map(drug=>`<div class="drug-item"><div><b>💊 ${drug.name}</b><br><span style="font-size:0.7rem;">需: ${Object.entries(drug.required).map(([m,c])=>`${m}x${c}`).join(', ')}</span></div><button class="make-btn" data-drug="${drug.name}">炼制存入</button></div>`).join('');
-                document.querySelectorAll('[data-drug]').forEach(btn=>{ const d=DRUG_RECIPES.find(x=>x.name===btn.dataset.drug); if(d) btn.addEventListener('click',()=>makeDrug(d)); });
-            }
-        }
-
-        function makeDrug(drug){
-            for(let [mat,need] of Object.entries(drug.required)) if((inventory[mat]||0)<need){ showFeedback(`❌ 缺少 ${mat} x${need}`, 'pharmacyFeedback'); return; }
-            for(let [mat,need] of Object.entries(drug.required)){ inventory[mat]-=need; if(inventory[mat]===0) delete inventory[mat]; }
-            inventory[drug.name] = (inventory[drug.name] || 0) + 1;
-            saveGameData(); renderInventory(); showFeedback(`✨ 成功炼制【${drug.name}】，已存入乾坤袋！`, 'pharmacyFeedback');
-        }
-
-        window.consumeItem = function(itemName) {
-            const info = ITEM_CATALOG[itemName] || { hpEffect:0, maxHpEffect:0 };
-            if(!inventory[itemName]) return;
-            inventory[itemName]--;
-            if(inventory[itemName]===0) delete inventory[itemName];
-            let msg = `服用了 ${itemName}`;
-            if(info.maxHpEffect > 0) {
-                maxHealth += info.maxHpEffect;
-                health += info.maxHpEffect;
-                msg += `，最大气血+${info.maxHpEffect}`;
-            } else if(info.hpEffect > 0) {
-                health = Math.min(maxHealth, health + info.hpEffect);
-                msg += `，恢复+${info.hpEffect}`;
-            } else if(info.hpEffect < 0) {
-                health += info.hpEffect;
-                msg += `，损失 ${Math.abs(info.hpEffect)} 气血`;
-            }
-            updateHealthUI(); saveGameData(); renderInventory(); showFeedback(msg, 'bagFeedback');
-            if(health <= 0) triggerRebirth();
-        };
-
-        // ========== 鼎炼系统 ==========
-        function isRecipeUnlocked(recipe) {
-            if (recipe.type === "smelt") return true;
-            const idx = DING_RECIPES.findIndex(r => r.id === recipe.id);
-            return dingStatus[idx]?.unlocked || false;
-        }
-
-        function getRecipeStatus(recipe) {
-            if (recipe.type === "smelt") return { unlocked: true, timesScored: 0 };
-            const idx = DING_RECIPES.findIndex(r => r.id === recipe.id);
-            return dingStatus[idx] || { unlocked: false, timesScored: 0 };
-        }
-
-        function renderRecipeList() {
-            const container = document.getElementById('recipeList');
-            if (!container) return;
-            container.innerHTML = ALL_RECIPES.map(recipe => {
-                const status = getRecipeStatus(recipe);
-                const locked = !status.unlocked;
-                const isSelected = currentRecipe && currentRecipe.id === recipe.id;
-                const timesText = (recipe.type === "ding" && status.timesScored > 0) ? ` (${status.timesScored}/${MAX_SCORE_TIMES})` : '';
-                return `
-                    <div class="recipe-item ${locked ? 'locked' : ''} ${isSelected ? 'selected' : ''}" data-id="${recipe.id}">
-                        <div class="recipe-name">${recipe.name} ${locked ? '🔒' : '🔥'}${timesText}</div>
-                        <div class="recipe-desc">${Object.keys(recipe.req).join('+')} → ${Object.keys(recipe.out).join(',')} | ${recipe.timeMin}-${recipe.timeMax}秒</div>
-                    </div>
-                `;
-            }).join('');
-            document.querySelectorAll('.recipe-item').forEach(el => {
-                const id = el.dataset.id;
-                el.addEventListener('click', () => {
-                    if (isRefining) return;
-                    const recipe = ALL_RECIPES.find(r => r.id === id);
-                    if (recipe && getRecipeStatus(recipe).unlocked) {
-                        currentRecipe = recipe;
-                        renderRecipeDetail();
-                        document.querySelectorAll('.recipe-item').forEach(i => i.classList.remove('selected'));
-                        el.classList.add('selected');
-                    }
-                });
-            });
-            if (!currentRecipe) {
-                const firstUnlocked = ALL_RECIPES.find(r => getRecipeStatus(r).unlocked);
-                if (firstUnlocked) currentRecipe = firstUnlocked;
-                renderRecipeDetail();
-            }
-        }
-
-        function renderRecipeDetail() {
-            if (!currentRecipe) return;
-            const status = getRecipeStatus(currentRecipe);
-            const reqStr = Object.entries(currentRecipe.req).map(([mat, need]) => {
-                const have = inventory[mat] || 0;
-                const enough = have >= need;
-                return `${mat} <span style="${enough ? 'color: var(--heal);' : 'color: var(--danger);'}">${have}/${need}</span>`;
-            }).join(' · ');
-            const outStr = Object.entries(currentRecipe.out).map(([mat, amt]) => `${mat}×${amt}`).join(', ');
-            let extraInfo = '';
-            if (currentRecipe.type === "ding") {
-                extraInfo = `<br>🏅 积分: ${currentRecipe.baseScore} (已记分 ${status.timesScored}/${MAX_SCORE_TIMES})<br>✨ 成丹效果: 最大气血+${currentRecipe.maxHpIncrease}`;
-            } else {
-                extraInfo = `<br>🔥 提纯产物: ${outStr}`;
-            }
-            document.getElementById('selectedRecipeInfo').innerHTML = `
-                <h4>📜 ${currentRecipe.name} 配方</h4>
-                <div class="material-requirements">${reqStr}</div>
-                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-                    ⏱️ 火候区间: ${currentRecipe.timeMin}秒 ~ ${currentRecipe.timeMax}秒${extraInfo}
-                </div>
+    }
+    function makeDrug(drug){
+        for(let [mat,need] of Object.entries(drug.required)) if((inventory[mat]||0)<need){ showFeedback(`❌ 缺少 ${mat} x${need}`, 'pharmacyFeedback'); return; }
+        for(let [mat,need] of Object.entries(drug.required)){ inventory[mat]-=need; if(inventory[mat]===0) delete inventory[mat]; }
+        inventory[drug.name] = (inventory[drug.name] || 0) + 1;
+        saveGameData(); renderInventory(); showFeedback(`✨ 成功炼制【${drug.name}】，已存入乾坤袋！`, 'pharmacyFeedback');
+    }
+    window.consumeItem = function(itemName) {
+        const info = ITEM_CATALOG[itemName] || { hpEffect:0, maxHpEffect:0 };
+        if(!inventory[itemName]) return;
+        inventory[itemName]--;
+        if(inventory[itemName]===0) delete inventory[itemName];
+        let msg = `服用了 ${itemName}`;
+        if(info.maxHpEffect > 0) { maxHealth += info.maxHpEffect; health += info.maxHpEffect; msg += `，最大气血+${info.maxHpEffect}`; }
+        else if(info.hpEffect > 0) { health = Math.min(maxHealth, health + info.hpEffect); msg += `，恢复+${info.hpEffect}`; }
+        else if(info.hpEffect < 0) { health += info.hpEffect; msg += `，损失 ${Math.abs(info.hpEffect)} 气血`; }
+        updateHealthUI(); saveGameData(); renderInventory(); showFeedback(msg, 'bagFeedback');
+        if(health <= 0) triggerRebirth();
+    };
+    // ======================= 炼丹炉核心（新布局，鼎居中放大） =======================
+    function isRecipeUnlocked(recipe) {
+        if (recipe.type === "smelt") return true;
+        const idx = DING_RECIPES.findIndex(r => r.id === recipe.id);
+        return dingStatus[idx]?.unlocked || false;
+    }
+    function getRecipeStatus(recipe) {
+        if (recipe.type === "smelt") return { unlocked: true, timesScored: 0 };
+        const idx = DING_RECIPES.findIndex(r => r.id === recipe.id);
+        return dingStatus[idx] || { unlocked: false, timesScored: 0 };
+    }
+    function renderRecipeList() {
+        const container = document.getElementById('recipeList');
+        if (!container) return;
+        container.innerHTML = '';
+        ALL_RECIPES.forEach(recipe => {
+            const status = getRecipeStatus(recipe);
+            const locked = !status.unlocked;
+            const div = document.createElement('div');
+            div.className = `recipe-item ${locked ? 'locked' : ''}`;
+            div.innerHTML = `
+                <div class="recipe-name">${recipe.name} ${locked ? '🔒' : '🔥'}</div>
+                <div class="recipe-desc">${Object.keys(recipe.req).join('+')} → ${Object.keys(recipe.out).join(',')}</div>
+                <div class="recipe-materials">火候: ${recipe.timeMin}-${recipe.timeMax}秒</div>
             `;
-            const canCraft = Object.entries(currentRecipe.req).every(([mat, need]) => (inventory[mat] || 0) >= need);
-            document.getElementById('refineBtn').disabled = !canCraft || isRefining;
-        }
-
-        function startRefine() {
-            if (isRefining) return;
-            if (!currentRecipe) return;
-            const status = getRecipeStatus(currentRecipe);
-            if (!status.unlocked) return;
-            for (let [mat, need] of Object.entries(currentRecipe.req)) {
-                if ((inventory[mat] || 0) < need) {
-                    showFeedback(`❌ 缺少材料: ${mat} x${need}`, "refineFeedback");
+            div.addEventListener('click', () => {
+                if (locked) {
+                    showFeedback(`配方未解锁，请先炼制前置神丹。`, 'refineFeedback');
                     return;
                 }
-            }
-            isRefining = true;
-            refineStartTime = Date.now();
-            currentRefineTime = 0;
-            document.getElementById('refineTimer').classList.add('active');
-            document.getElementById('refineBtn').style.display = 'none';
-            document.getElementById('stopRefineBtn').style.display = 'block';
-            document.getElementById('cancelRefineBtn').style.display = 'block';
-            refineTimerInterval = setInterval(updateRefineTimer, 100);
-            showFeedback(`🔥 炉火已起！请在 ${currentRecipe.timeMin}-${currentRecipe.timeMax}秒 之间停火。`, "refineFeedback");
+                selectedBookRecipe = recipe;
+                updateRecipeDetailPanel();
+            });
+            container.appendChild(div);
+        });
+    }
+    function updateRecipeDetailPanel() {
+        const panel = document.getElementById('recipeDetailContent');
+        if (!panel) return;
+        if (!selectedBookRecipe) {
+            panel.innerHTML = '点击左侧丹方查看详情';
+            return;
         }
-
-        function updateRefineTimer() {
-            if (!isRefining) return;
-            const now = Date.now();
-            currentRefineTime = (now - refineStartTime) / 1000;
-            const timerText = document.getElementById('timerText');
-            const timerProgress = document.getElementById('timerProgress');
-            const timerHint = document.getElementById('timerHint');
-            timerText.textContent = `当前火候: ${currentRefineTime.toFixed(1)}秒`;
-            const progressPercent = Math.min(100, (currentRefineTime / currentRecipe.timeMax) * 100);
-            timerProgress.style.width = `${progressPercent}%`;
-            if (currentRefineTime < currentRecipe.timeMin) {
-                timerHint.textContent = `火候未到... (需 ${currentRecipe.timeMin}-${currentRecipe.timeMax}秒)`;
-                timerHint.className = "timer-hint timer-warning";
-            } else if (currentRefineTime >= currentRecipe.timeMin && currentRefineTime <= currentRecipe.timeMax) {
-                timerHint.textContent = `✅ 药香四溢！正是停火时机！`;
-                timerHint.className = "timer-hint timer-perfect";
-            } else {
-                timerHint.textContent = `⚠️ 火候已过，即将焦糊！`;
-                timerHint.className = "timer-hint timer-danger";
-            }
-            if (currentRefineTime > currentRecipe.timeMax + 3) {
-                completeRefine(false);
-            }
-        }
-
-        function stopRefine() {
-            if (isRefining) completeRefine(true);
-        }
-
-        function cancelRefine() {
-            if (!isRefining) return;
-            if (confirm("中断将损失一半材料，确定吗？")) {
-                for (let [mat, need] of Object.entries(currentRecipe.req)) {
-                    const loss = Math.ceil(need / 2);
-                    if (inventory[mat] >= loss) {
-                        inventory[mat] -= loss;
-                        if (inventory[mat] === 0) delete inventory[mat];
-                    }
-                }
-                showFeedback(`💥 中断炼制，损失部分材料。`, "refineFeedback");
-                completeRefine(false);
-            }
-        }
-
-        function completeRefine(success) {
-            if (!isRefining) return;
-            clearInterval(refineTimerInterval);
-            const recipe = currentRecipe;
+        const recipe = selectedBookRecipe;
+        const reqStr = Object.entries(recipe.req).map(([mat, need]) => {
+            const have = inventory[mat] || 0;
+            const enough = have >= need ? '✅' : '❌';
+            return `${mat} ${need} (持有: ${have}) ${enough}`;
+        }).join('<br>');
+        const outStr = Object.entries(recipe.out).map(([mat, amt]) => `${mat} ×${amt}`).join('、');
+        let extra = '';
+        if (recipe.type === 'ding') {
             const status = getRecipeStatus(recipe);
-            const isPerfect = success && (currentRefineTime >= recipe.timeMin && currentRefineTime <= recipe.timeMax);
-            
-            if (isPerfect) {
-                for (let [mat, need] of Object.entries(recipe.req)) {
-                    inventory[mat] -= need;
-                    if (inventory[mat] === 0) delete inventory[mat];
-                }
-                for (let [mat, amt] of Object.entries(recipe.out)) {
-                    inventory[mat] = (inventory[mat] || 0) + amt;
-                }
-                if (recipe.type === "ding") {
-                    const idx = DING_RECIPES.findIndex(r => r.id === recipe.id);
-                    if (status.timesScored < MAX_SCORE_TIMES) {
-                        totalScore += recipe.baseScore;
-                        dingStatus[idx].timesScored++;
-                    }
-                    if (idx + 1 < DING_RECIPES.length && !dingStatus[idx+1].unlocked) {
-                        dingStatus[idx+1].unlocked = true;
-                        showFeedback(`✨ 解锁新配方：${DING_RECIPES[idx+1].name}！`, "refineFeedback");
-                    }
-                    showFeedback(`🎉 成功炼制【${recipe.name}】！获得 ${recipe.baseScore} 积分，神丹已存入乾坤袋。`, "refineFeedback");
-                } else {
-                    showFeedback(`✨ 提纯成功！获得 ${Object.keys(recipe.out).join(',')}。`, "refineFeedback");
-                }
-            } else {
-                for (let [mat, need] of Object.entries(recipe.req)) {
-                    if (inventory[mat] >= need) {
-                        inventory[mat] -= need;
-                        if (inventory[mat] === 0) delete inventory[mat];
-                    }
-                }
-                showFeedback(`❌ 炼制失败！材料尽毁。`, "refineFeedback");
+            extra = `<br>🏅 积分: ${recipe.baseScore} (已记分 ${status.timesScored}/${MAX_SCORE_TIMES})<br>✨ 成丹效果: 最大气血+${recipe.maxHpIncrease}`;
+        }
+        panel.innerHTML = `
+            <div style="font-weight:bold; font-size:1rem;">${recipe.name}</div>
+            <div style="margin-top:0.5rem;"><strong>所需材料：</strong><br>${reqStr}</div>
+            <div><strong>产出：</strong> ${outStr}</div>
+            <div><strong>火候区间：</strong> ${recipe.timeMin} ~ ${recipe.timeMax} 秒${extra}</div>
+            <div style="margin-top:0.8rem; font-size:0.75rem; color:var(--text-dim);">请从右侧「从乾坤袋添加材料」手动投入材料至材料槽。</div>
+        `;
+    }
+    function matchRecipeFromMaterials() {
+        for (let recipe of ALL_RECIPES) {
+            if (!isRecipeUnlocked(recipe)) continue;
+            const reqKeys = Object.keys(recipe.req);
+            const slotKeys = Object.keys(currentSlottedMaterials);
+            if (reqKeys.length !== slotKeys.length) continue;
+            let match = true;
+            for (let [mat, need] of Object.entries(recipe.req)) {
+                if (currentSlottedMaterials[mat] !== need) { match = false; break; }
             }
-            resetRefineUI();
-            saveGameData();
-            renderAllUI();
+            if (match) return recipe;
         }
-
-        function resetRefineUI() {
-            isRefining = false;
-            if (refineTimerInterval) clearInterval(refineTimerInterval);
-            refineTimerInterval = null;
-            document.getElementById('refineTimer').classList.remove('active');
-            document.getElementById('refineBtn').style.display = 'block';
-            document.getElementById('stopRefineBtn').style.display = 'none';
-            document.getElementById('cancelRefineBtn').style.display = 'none';
-            renderRecipeDetail();
-        }
-
-        // ========== 其他UI ==========
-        function updateHealthUI(){ 
-            const fill = document.getElementById('healthFill'); if(fill) fill.style.width = `${(health/maxHealth)*100}%`; 
-            const hpSpan = document.getElementById('hpText'); if(hpSpan) hpSpan.innerText = health; 
-            const maxSpan = document.getElementById('maxHpText'); if(maxSpan) maxSpan.textContent = `/${maxHealth}`;
-        }
-        function updateScoreUI(){ 
-            const span = document.getElementById('scoreDisplay'); if(span) span.innerText = `🏆 九鼎积分: ${totalScore}`; 
-            renderRanking(); 
-        }
-        function renderAllUI(){ renderInventory(); renderRecipeList(); updateScoreUI(); renderRanking(); }
-
-        // ======================= 智慧老人挑战逻辑（难度等级系统） =======================
-        // 按难度分组
-        function groupQuestionsByDifficulty(questions) {
-            const groups = {1:[], 2:[], 3:[], 4:[], 5:[]};
-            for (let q of questions) {
-                const d = q.difficulty;
-                if (d >= 1 && d <= 5) groups[d].push(q);
+        return null;
+    }
+    function renderMaterialSlot() {
+        const container = document.getElementById('slotItems');
+        if (!container) return;
+        if (Object.keys(currentSlottedMaterials).length === 0) {
+            container.innerHTML = '<div style="color: var(--text-dim);">暂无材料，请从下方添加</div>';
+        } else {
+            let html = '';
+            for (let [mat, qty] of Object.entries(currentSlottedMaterials)) {
+                html += `<div class="slot-item">${mat} x${qty} <button class="remove-item" data-material="${mat}">✖</button></div>`;
             }
-            return groups;
-        }
-
-        // 从指定难度组中随机抽取一道题
-        function getRandomQuestionFromGroup(group) {
-            if (!group.length) return null;
-            const idx = Math.floor(Math.random() * group.length);
-            return { ...group[idx] };
-        }
-
-        // 为一道题生成选项（正确选项 + 随机3个干扰项，随机排序）
-        function generateOptionsForQuestion(q) {
-            const distPool = q.distractors || [];
-            let candidates = distPool.filter(d => d !== q.correct);
-            // 随机取3个
-            const shuffled = [...candidates];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            const selectedDistractors = shuffled.slice(0, 3);
-            const opts = [q.correct, ...selectedDistractors];
-            // 随机排序
-            for (let i = opts.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [opts[i], opts[j]] = [opts[j], opts[i]];
-            }
-            return opts;
-        }
-
-        // 准备挑战：从各难度组中随机抽取1题（共5题）
-        function prepareChallenge() {
-            if (!loadedQuizQuestions.length) return false;
-            const groups = groupQuestionsByDifficulty(loadedQuizQuestions);
-            currentChallengeQuestions = [];
-            for (let d = 1; d <= 5; d++) {
-                const group = groups[d];
-                if (!group.length) {
-                    console.warn(`难度 ${d} 没有题目，使用默认题目`);
-                    // 备用题目（防止数据不完整）
-                    const fallback = {
-                        difficulty: d,
-                        title: "化学元素谜题",
-                        text: "请补充该难度的题目。",
-                        correct: "未知",
-                        distractors: ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S"]
-                    };
-                    currentChallengeQuestions.push({
-                        title: fallback.title,
-                        text: fallback.text,
-                        correct: fallback.correct,
-                        options: generateOptionsForQuestion(fallback)
-                    });
-                } else {
-                    const q = getRandomQuestionFromGroup(group);
-                    if (q) {
-                        currentChallengeQuestions.push({
-                            title: q.title,
-                            text: q.text,
-                            correct: q.correct,
-                            options: generateOptionsForQuestion(q)
-                        });
-                    }
-                }
-            }
-            return true;
-        }
-
-        // 加载外部 JSON 题库，失败时使用内嵌默认题库
-        async function loadQuizQuestions() {
-            try {
-                const response = await fetch('quiz_questions.json');
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    loadedQuizQuestions = data;
-                    console.log('题库加载成功，共', loadedQuizQuestions.length, '题');
-                } else {
-                    throw new Error('题库数据无效');
-                }
-            } catch (err) {
-                console.warn('加载外部题库失败，使用内嵌默认题库', err);
-                // 内嵌默认题库（每个难度至少3题）
-                loadedQuizQuestions = [
-                    { difficulty:1, title:"消毒水的秘密", text:"我是消毒水中常见的成分，稀释后可用于伤口消毒，但纯品剧毒，误服可致命。我的水溶液呈棕色，且易升华。我是？", correct:"碘", distractors:["氯气","汞","溴","氟气","过氧化氢","高锰酸钾","乙醇","甲醛","苯酚","臭氧","二氧化氯","次氯酸钠","氢氧化钠","氨水","醋酸","硫酸","硝酸","盐酸","碳酸"] },
-                    { difficulty:1, title:"地壳中的王者", text:"我是地壳中含量最多的金属元素，也是人体必需的微量元素之一。我的单质呈银白色，常用于制造飞机和日用品。我是？", correct:"铝", distractors:["铁","铜","镁","钙","钠","钾","锌","钛","铬","锰","镍","钴","锡","铅","铍","锶","钡","镓","铟"] },
-                    { difficulty:1, title:"蓝紫色的火焰", text:"我是一种非金属单质，在空气中燃烧发出明亮的蓝紫色火焰，生成有刺激性气味的气体。我是？", correct:"硫", distractors:["碳","磷","氢气","氮气","氧气","氯气","硅","硒","碲","硼","钠","镁","铝","钾","钙","铁","铜","锌","银"] },
-                    { difficulty:2, title:"烧碱的真面目", text:"我是常见的干燥剂，与水反应放出大量热，能使酚酞变红。我的水溶液俗称“烧碱”。我是？", correct:"氢氧化钠", distractors:["氧化钙","氢氧化钙","氯化钠","碳酸钠","碳酸氢钠","硫酸钠","硝酸钠","氢氧化钾","氢氧化锂","氢氧化钡","浓硫酸","无水氯化钙","硅胶","分子筛","氧化铝","五氧化二磷","碱石灰","氢氧化镁","氢氧化铝"] },
-                    { difficulty:2, title:"胃里的强酸", text:"我是胃酸的主要成分，能帮助消化，但浓度过高会腐蚀胃黏膜。我的化学式是HCl。我是？", correct:"盐酸", distractors:["硫酸","硝酸","醋酸","磷酸","氢氟酸","氢溴酸","氢碘酸","高氯酸","氯酸","亚硫酸","草酸","柠檬酸","乳酸","苹果酸","酒石酸","碳酸","硅酸","硼酸","甲酸"] },
-                    { difficulty:2, title:"轻于水的金属", text:"我是最轻的金属，密度比水还小，与水剧烈反应生成氢气。我的化合物常用于治疗躁郁症。我是？", correct:"锂", distractors:["钠","钾","镁","钙","铍","铝","铷","铯","钡","锶","钛","锌","铁","铜","银","金","铂","铅","锡"] },
-                    { difficulty:3, title:"霓虹灯的光源", text:"我是常见的惰性气体，在霓虹灯中发出橙红色光，常用于制造“氖灯”。我的原子序数是10。我是？", correct:"氖", distractors:["氦","氩","氪","氙","氡","氮","氧","氟","氯","氢","碳","硫","磷","硅","硼","铝","钠","镁","钙"] },
-                    { difficulty:3, title:"甲状腺的朋友", text:"我是人体必需的微量元素，缺乏会导致甲状腺肿大。加碘食盐中添加的就是我的钾盐。我是？", correct:"碘", distractors:["铁","锌","硒","氟","铜","锰","钴","钼","铬","氯","钠","钾","钙","镁","磷","硫","硅","硼","铝"] },
-                    { difficulty:3, title:"血红蛋白的核心", text:"我是地壳中含量第二多的金属元素，也是血红蛋白的核心。我的单质是银白色，容易被磁铁吸引。我是？", correct:"铁", distractors:["铝","铜","镁","钙","钠","钾","锌","钛","铬","锰","镍","钴","锡","铅","金","银","铂","镉","汞"] },
-                    { difficulty:4, title:"芯片的基石", text:"我是常见的半导体材料，广泛应用于芯片制造。我的单质是银灰色脆性固体，地壳中含量仅次于氧。我是？", correct:"硅", distractors:["锗","砷","镓","铟","磷","硫","碳","硼","铝","铁","铜","锌","银","金","铂","钛","铬","锰","钴"] },
-                    { difficulty:4, title:"最硬的天然物质", text:"我是自然界最硬的物质，由碳原子组成，常用于切割和打磨。我是？", correct:"金刚石", distractors:["石墨","石英","刚玉","碳化硅","立方氮化硼","莫桑石","红宝石","蓝宝石","水晶","玛瑙","翡翠","和田玉","岫玉","独山玉","绿松石","青金石","孔雀石","萤石","方解石"] },
-                    { difficulty:4, title:"温室效应的推手", text:"我是导致温室效应的主要气体之一，由碳和氧组成。我是？", correct:"二氧化碳", distractors:["甲烷","一氧化碳","水蒸气","氟利昂","臭氧","氮氧化物","二氧化硫","硫化氢","氨气","氯气","氢气","氧气","氮气","氩气","氦气","氖气","氪气","氙气","氡气"] },
-                    { difficulty:5, title:"银光闪闪的液态金属", text:"我是常温下唯一的液态金属，剧毒，曾用于体温计。我是？", correct:"汞", distractors:["镓","铯","钫","钠","钾","铷","锂","钙","镁","铝","锌","铁","铜","银","金","铂","铅","锡","铬"] },
-                    { difficulty:5, title:"最强的氧化剂", text:"我是元素周期表中电负性最强的元素，能与几乎所有物质反应，包括稀有气体。我是？", correct:"氟", distractors:["氯","溴","碘","氧","氮","碳","硫","磷","氢","氦","氖","氩","氪","氙","氡","钠","镁","铝","硅"] },
-                    { difficulty:5, title:"放射性元素的发现者", text:"我是居里夫人发现的放射性元素，用于治疗癌症，化学符号是Ra。我是？", correct:"镭", distractors:["铀","钚","钋","氡","锕","钍","镤","锎","锿","镄","钔","锘","铹","𬬻","𬭊","𬭳","𬭛","𬭶","鿏"] }
-                ];
-            }
-            challengeReady = true;
-            document.getElementById('challengeBtn').disabled = (challengeCooldown > 0);
-            if (challengeCooldown === 0) document.getElementById('challengeBtn').innerText = '🧪 开始挑战';
-            else document.getElementById('challengeBtn').innerText = '🧪 开始挑战 (冷却中)';
-        }
-
-        // 冷却相关函数
-        function loadChallengeCooldown() {
-            const key = `challenge_cooldown_${currentUser}`;
-            const lastTimestamp = localStorage.getItem(key);
-            if (lastTimestamp) {
-                const elapsed = (Date.now() - parseInt(lastTimestamp)) / 1000;
-                if (elapsed < 600) {
-                    challengeCooldown = 600 - elapsed;
-                } else {
-                    challengeCooldown = 0;
-                    localStorage.removeItem(key);
-                }
-            } else {
-                challengeCooldown = 0;
-            }
-            updateCooldownDisplay();
-            if (challengeCooldown > 0) {
-                startCooldownTimer();
-                document.getElementById('challengeBtn').disabled = true;
-            } else {
-                document.getElementById('challengeBtn').disabled = !challengeReady;
-            }
-        }
-
-        function startCooldownTimer() {
-            if (challengeInterval) clearInterval(challengeInterval);
-            challengeInterval = setInterval(() => {
-                if (challengeCooldown > 0) {
-                    challengeCooldown--;
-                    updateCooldownDisplay();
-                    if (challengeCooldown <= 0) {
-                        clearInterval(challengeInterval);
-                        challengeInterval = null;
-                        document.getElementById('challengeBtn').disabled = !challengeReady;
-                        document.getElementById('cooldownText').innerHTML = '';
-                        localStorage.removeItem(`challenge_cooldown_${currentUser}`);
-                    }
-                }
-            }, 1000);
-        }
-
-        function updateCooldownDisplay() {
-            const cooldownDiv = document.getElementById('cooldownText');
-            if (challengeCooldown > 0) {
-                const minutes = Math.floor(challengeCooldown / 60);
-                const seconds = Math.floor(challengeCooldown % 60);
-                cooldownDiv.innerHTML = `⏳ 下次挑战: ${minutes}分${seconds}秒`;
-            } else {
-                cooldownDiv.innerHTML = '';
-            }
-        }
-
-        function startChallenge() {
-            if (!challengeReady) {
-                alert("题目还在加载中，请稍后再试。");
-                return;
-            }
-            if (challengeCooldown > 0) {
-                alert("智慧老人正在休息，请稍后再来挑战。");
-                return;
-            }
-            if (isQuizActive) return;
-            if (!prepareChallenge()) {
-                alert("题库数据异常，无法开始挑战。");
-                return;
-            }
-            isQuizActive = true;
-            currentQuizIndex = 0;
-            quizScore = 0;
-            showNextQuestion();
-        }
-
-        function showNextQuestion() {
-            if (currentQuizIndex >= currentChallengeQuestions.length) {
-                endChallenge();
-                return;
-            }
-            const q = currentChallengeQuestions[currentQuizIndex];
-            // 显示标题和问题（带难度提示）
-            const difficultyStars = "⭐".repeat(currentQuizIndex+1);
-            document.getElementById('quizQuestion').innerHTML = `<strong>【难度 ${currentQuizIndex+1}】${q.title}</strong><br>${q.text}`;
-            const optionsDiv = document.getElementById('quizOptions');
-            optionsDiv.innerHTML = '';
-            q.options.forEach(opt => {
-                const btn = document.createElement('div');
-                btn.className = 'quiz-option';
-                btn.innerText = opt;
-                btn.addEventListener('click', () => checkAnswer(opt));
-                optionsDiv.appendChild(btn);
-            });
-            document.getElementById('quizProgress').innerText = `第 ${currentQuizIndex+1} / ${currentChallengeQuestions.length} 题`;
-            document.getElementById('quizArea').style.display = 'block';
-        }
-
-        function checkAnswer(selected) {
-            const q = currentChallengeQuestions[currentQuizIndex];
-            if (selected === q.correct) {
-                quizScore++;
-                showFeedback(`✅ 回答正确！`, 'pharmacyFeedback');
-            } else {
-                showFeedback(`❌ 回答错误！正确答案是 ${q.correct}。`, 'pharmacyFeedback');
-            }
-            currentQuizIndex++;
-            setTimeout(() => {
-                if (currentQuizIndex < currentChallengeQuestions.length) {
-                    showNextQuestion();
-                } else {
-                    endChallenge();
-                }
-            }, 1000);
-        }
-
-        function endChallenge() {
-            isQuizActive = false;
-            document.getElementById('quizArea').style.display = 'none';
-            const rewardCount = quizScore;
-            if (rewardCount > 0) {
-                showRewardModal(rewardCount);
-            } else {
-                showFeedback(`🧙‍♂️ 智慧老人摇摇头：“一道题都没答对，回去多读书吧。”`, 'pharmacyFeedback');
-            }
-            // 设置冷却
-            challengeCooldown = 600;
-            const key = `challenge_cooldown_${currentUser}`;
-            localStorage.setItem(key, Date.now().toString());
-            updateCooldownDisplay();
-            startCooldownTimer();
-            document.getElementById('challengeBtn').disabled = true;
-        }
-
-        function showRewardModal(rewardCount) {
-            const modal = document.getElementById('rewardModal');
-            document.getElementById('correctCount').innerText = quizScore;
-            document.getElementById('rewardCount').innerText = rewardCount;
-            let remaining = rewardCount;
-            document.getElementById('rewardRemain').innerText = `还可选择 ${remaining} 件`;
-            const container = document.getElementById('rewardItemsList');
-            container.innerHTML = '';
-            REWARD_ITEMS.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'reward-item';
-                div.innerText = item;
-                div.addEventListener('click', () => {
-                    if (remaining <= 0) {
-                        alert("你已经选完了所有宝物！");
-                        return;
-                    }
-                    inventory[item] = (inventory[item] || 0) + 1;
-                    remaining--;
-                    document.getElementById('rewardRemain').innerText = `还可选择 ${remaining} 件`;
-                    saveGameData();
-                    renderInventory();
-                    showFeedback(`✨ 获得了 ${item} x1`, 'pharmacyFeedback');
-                    if (remaining <= 0) {
-                        modal.classList.remove('active');
-                        alert("感谢你的智慧！宝物已收入乾坤袋。");
+            container.innerHTML = html;
+            document.querySelectorAll('.remove-item').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const material = btn.dataset.material;
+                    if (material && currentSlottedMaterials[material]) {
+                        delete currentSlottedMaterials[material];
+                        renderMaterialSlot();
+                        updateInventoryForAdding();
+                        currentRecipe = matchRecipeFromMaterials();
+                        renderRecipeDetailForMatch();
+                        document.getElementById('refineBtn').disabled = (currentRecipe === null);
+                        if (currentRecipe === null) showFeedback("⚠️ 当前材料不匹配任何丹方！若点火将直接炸炉。", "refineFeedback");
+                        else showFeedback(`✅ 匹配到配方：${currentRecipe.name}，可点火炼制。`, "refineFeedback");
                     }
                 });
-                container.appendChild(div);
             });
-            modal.classList.add('active');
         }
-
-        function closeRewardModal() {
-            document.getElementById('rewardModal').classList.remove('active');
+    }
+    function updateInventoryForAdding() {
+        const container = document.getElementById('inventoryForAdding');
+        if (!container) return;
+        const items = Object.entries(inventory).filter(([_,c]) => c>0);
+        if (items.length === 0) { container.innerHTML = '<div>背包为空，请先去挖矿或采药</div>'; return; }
+        let html = '';
+        for (let [name, count] of items) {
+            html += `<div class="inv-item-btn" data-material="${name}">${name} x${count}</div>`;
         }
-
-        // ======================= 初始化 Supabase 与登录状态 =======================
-        function initSupabase() {
-            try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                supabase.from('feedbacks').select('count', { count: 'exact', head: true })
-                    .then(() => {
-                        cloudAvailable = true;
-                        console.log('云服务可用');
-                        if (isLoggedIn) {
-                            initCloudSync();
-                        }
-                    })
-                    .catch(err => {
-                        console.warn('云服务不可用，降级本地', err);
-                        cloudAvailable = false;
-                    });
-            } catch(e) {
-                console.warn('Supabase 初始化失败', e);
-                cloudAvailable = false;
-            }
-        }
-
-        function loadUserFromMainPage() {
-            const mainUser = localStorage.getItem('iodine_current_user');
-            if (mainUser && mainUser !== 'null') {
-                currentUser = mainUser;
-                isLoggedIn = true;
-                document.getElementById('userInfoArea').innerHTML = `<span>🧪 ${escapeHtml(currentUser)}</span><div class="health-bar"><div class="health-fill" id="healthFill"></div></div><span id="hpText">100</span><span id="maxHpText">/100</span>`;
-                return true;
-            } else {
-                const guestId = '访客_' + Math.floor(Math.random() * 10000);
-                currentUser = guestId;
-                isLoggedIn = false;
-                document.getElementById('userInfoArea').innerHTML = `<span>👤 ${escapeHtml(currentUser)} (访客)</span><div class="health-bar"><div class="health-fill" id="healthFill"></div></div><span id="hpText">100</span><span id="maxHpText">/100</span>`;
-                return true;
-            }
-        }
-
-        function initTheme() {
-            const isDark = localStorage.getItem('dandao_theme') === 'dark';
-            if(isDark) document.body.classList.add('dark');
-            const btn = document.getElementById('darkModeToggle');
+        container.innerHTML = html;
+        document.querySelectorAll('.inv-item-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.body.classList.toggle('dark');
-                localStorage.setItem('dandao_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-                btn.innerText = document.body.classList.contains('dark') ? '☀️ 丹房光明' : '🌙 丹房幽暗';
+                const material = btn.dataset.material;
+                if (inventory[material] && inventory[material] > 0) {
+                    currentSlottedMaterials[material] = (currentSlottedMaterials[material] || 0) + 1;
+                    inventory[material]--;
+                    if (inventory[material] === 0) delete inventory[material];
+                    renderMaterialSlot();
+                    updateInventoryForAdding();
+                    renderInventory();
+                    currentRecipe = matchRecipeFromMaterials();
+                    renderRecipeDetailForMatch();
+                    document.getElementById('refineBtn').disabled = (currentRecipe === null);
+                    if (currentRecipe === null) showFeedback("⚠️ 当前材料不匹配任何丹方！", "refineFeedback");
+                    else showFeedback(`✅ 匹配到配方：${currentRecipe.name}`, "refineFeedback");
+                    saveGameData();
+                }
             });
-            btn.innerText = isDark ? '☀️ 丹房光明' : '🌙 丹房幽暗';
+        });
+    }
+    function clearMaterialSlot() {
+        for (let [mat, qty] of Object.entries(currentSlottedMaterials)) {
+            inventory[mat] = (inventory[mat] || 0) + qty;
         }
-
-        function initTabs(){
-            document.querySelectorAll('.tab-btn').forEach(btn=>{
-                btn.addEventListener('click',()=>{
-                    const target=btn.dataset.tab;
-                    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-                    btn.classList.add('active');
-                    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-                    document.getElementById(`tab-${target}`).classList.add('active');
-                });
+        currentSlottedMaterials = {};
+        currentRecipe = null;
+        renderMaterialSlot();
+        updateInventoryForAdding();
+        renderInventory();
+        renderRecipeDetailForMatch();
+        document.getElementById('refineBtn').disabled = true;
+        showFeedback("材料已清空并返还背包。", "refineFeedback");
+        saveGameData();
+    }
+    function renderRecipeDetailForMatch() {
+        const container = document.getElementById('selectedRecipeInfo');
+        if (!container) return;
+        if (currentRecipe) {
+            const reqStr = Object.entries(currentRecipe.req).map(([mat, need]) => `${mat} ${need}`).join(' · ');
+            const outStr = Object.entries(currentRecipe.out).map(([mat, amt]) => `${mat}×${amt}`).join(', ');
+            const status = getRecipeStatus(currentRecipe);
+            let extra = '';
+            if (currentRecipe.type === "ding") {
+                extra = `<br>🏅 积分: ${currentRecipe.baseScore} (已记分 ${status.timesScored}/${MAX_SCORE_TIMES})<br>✨ 成丹效果: 最大气血+${currentRecipe.maxHpIncrease}`;
+            } else {
+                extra = `<br>🔥 提纯产物: ${outStr}`;
+            }
+            container.innerHTML = `<h4>📜 当前匹配：${currentRecipe.name}</h4><div class="material-requirements">${reqStr}</div><div style="margin-top: 0.5rem;">⏱️ 火候区间: ${currentRecipe.timeMin}秒 ~ ${currentRecipe.timeMax}秒${extra}</div>`;
+        } else {
+            container.innerHTML = `<h4>📜 未匹配丹方</h4><div class="material-requirements">当前材料组合不匹配任何配方，点火将直接炸炉！</div>`;
+        }
+    }
+    function startRefine() {
+        if (isRefining) return;
+        if (!currentRecipe && Object.keys(currentSlottedMaterials).length > 0) {
+            if (confirm("材料配比错误，点火将直接炸炉！确定要尝试吗？")) {
+                currentSlottedMaterials = {};
+                renderMaterialSlot();
+                updateInventoryForAdding();
+                renderInventory();
+                showFeedback("💥 配比错误！炸炉了！全部材料化为灰烬。", "refineFeedback");
+                saveGameData();
+            }
+            return;
+        }
+        if (!currentRecipe) { showFeedback("请先放入材料并匹配丹方。", "refineFeedback"); return; }
+        const status = getRecipeStatus(currentRecipe);
+        if (!status.unlocked) return;
+        for (let [mat, need] of Object.entries(currentRecipe.req)) {
+            if (currentSlottedMaterials[mat] !== need) { showFeedback("材料数量不匹配配方，请重新检查。", "refineFeedback"); return; }
+        }
+        isRefining = true;
+        refineStartTime = Date.now();
+        currentRefineTime = 0;
+        document.getElementById('refineTimer').style.display = 'block';
+        document.getElementById('refineBtn').style.display = 'none';
+        document.getElementById('stopRefineBtn').style.display = 'inline-block';
+        document.getElementById('cancelRefineBtn').style.display = 'inline-block';
+        refineTimerInterval = setInterval(updateRefineTimer, 100);
+        showFeedback(`🔥 炉火已起！请在 ${currentRecipe.timeMin}-${currentRecipe.timeMax}秒 之间停火。`, "refineFeedback");
+    }
+    function updateRefineTimer() {
+        if (!isRefining) return;
+        const now = Date.now();
+        currentRefineTime = (now - refineStartTime) / 1000;
+        document.getElementById('timerText').textContent = `当前火候: ${currentRefineTime.toFixed(1)}秒`;
+        const progressPercent = Math.min(100, (currentRefineTime / currentRecipe.timeMax) * 100);
+        document.getElementById('timerProgress').style.width = `${progressPercent}%`;
+        const timerHint = document.getElementById('timerHint');
+        if (currentRefineTime < currentRecipe.timeMin) { timerHint.textContent = `火候未到... (需 ${currentRecipe.timeMin}-${currentRecipe.timeMax}秒)`; timerHint.className = "timer-hint timer-warning"; }
+        else if (currentRefineTime >= currentRecipe.timeMin && currentRefineTime <= currentRecipe.timeMax) { timerHint.textContent = `✅ 药香四溢！正是停火时机！`; timerHint.className = "timer-hint timer-perfect"; }
+        else { timerHint.textContent = `⚠️ 火候已过，即将焦糊！`; timerHint.className = "timer-hint timer-danger"; }
+        if (currentRefineTime > currentRecipe.timeMax + 3) completeRefine(false);
+    }
+    function stopRefine() { if (isRefining) completeRefine(true); }
+    function cancelRefine() {
+        if (!isRefining) return;
+        if (confirm("中断将损失一半材料，确定吗？")) {
+            for (let [mat, qty] of Object.entries(currentSlottedMaterials)) {
+                const loss = Math.ceil(qty / 2);
+                currentSlottedMaterials[mat] = qty - loss;
+                if (currentSlottedMaterials[mat] <= 0) delete currentSlottedMaterials[mat];
+            }
+            showFeedback(`💥 中断炼制，损失一半材料。`, "refineFeedback");
+            completeRefine(false);
+        }
+    }
+    function completeRefine(success) {
+        if (!isRefining) return;
+        clearInterval(refineTimerInterval);
+        const recipe = currentRecipe;
+        const status = getRecipeStatus(recipe);
+        let isPerfect = false, isExploded = false;
+        if (success && recipe && (currentRefineTime >= recipe.timeMin && currentRefineTime <= recipe.timeMax)) {
+            const rand = Math.random();
+            if (rand < 0.1) isExploded = true;
+            else isPerfect = true;
+        }
+        if (isPerfect) {
+            for (let [mat, need] of Object.entries(recipe.req)) delete currentSlottedMaterials[mat];
+            for (let [mat, amt] of Object.entries(recipe.out)) inventory[mat] = (inventory[mat] || 0) + amt;
+            if (recipe.type === "ding") {
+                const idx = DING_RECIPES.findIndex(r => r.id === recipe.id);
+                if (status.timesScored < MAX_SCORE_TIMES) { totalScore += recipe.baseScore; dingStatus[idx].timesScored++; }
+                if (idx + 1 < DING_RECIPES.length && !dingStatus[idx+1].unlocked) { dingStatus[idx+1].unlocked = true; showFeedback(`✨ 解锁新配方：${DING_RECIPES[idx+1].name}！`, "refineFeedback"); }
+                showFeedback(`🎉 成功炼制【${recipe.name}】！获得 ${recipe.baseScore} 积分，神丹已存入乾坤袋。`, "refineFeedback");
+            } else {
+                showFeedback(`✨ 提纯成功！获得 ${Object.keys(recipe.out).join(',')}。`, "refineFeedback");
+            }
+        } else if (isExploded) {
+            currentSlottedMaterials = {};
+            showFeedback(`💥 炸炉了！材料全部化为灰烬。`, "refineFeedback");
+        } else {
+            currentSlottedMaterials = {};
+            showFeedback(`❌ 炼制失败！材料尽毁。`, "refineFeedback");
+        }
+        resetRefineUI();
+        saveGameData();
+        renderAllUI();
+        renderMaterialSlot();
+        updateInventoryForAdding();
+        currentRecipe = matchRecipeFromMaterials();
+        renderRecipeDetailForMatch();
+        document.getElementById('refineBtn').disabled = (currentRecipe === null);
+    }
+    function resetRefineUI() {
+        isRefining = false;
+        if (refineTimerInterval) clearInterval(refineTimerInterval);
+        refineTimerInterval = null;
+        document.getElementById('refineTimer').style.display = 'none';
+        document.getElementById('refineBtn').style.display = 'inline-block';
+        document.getElementById('stopRefineBtn').style.display = 'none';
+        document.getElementById('cancelRefineBtn').style.display = 'none';
+    }
+    // ======================= 其他UI =======================
+    function updateHealthUI() {
+        const fill = document.getElementById('healthFill'); if(fill) fill.style.width = `${(health/maxHealth)*100}%`;
+        const hpSpan = document.getElementById('hpText'); if(hpSpan) hpSpan.innerText = health;
+        const maxSpan = document.getElementById('maxHpText'); if(maxSpan) maxSpan.textContent = `/${maxHealth}`;
+    }
+    function updateScoreUI() {
+        const span = document.getElementById('scoreDisplay'); if(span) span.innerText = `🏆 九鼎积分: ${totalScore}`;
+        renderRanking();
+    }
+    function renderAllUI() {
+        renderInventory();
+        renderMaterialSlot();
+        updateInventoryForAdding();
+        renderRecipeList();
+        renderRecipeDetailForMatch();
+        updateRecipeDetailPanel();
+        updateScoreUI();
+        renderRanking();
+    }
+    // ======================= 智慧老人挑战逻辑 =======================
+    function groupQuestionsByDifficulty(questions) { const groups = {1:[],2:[],3:[],4:[],5:[]}; for(let q of questions){ const d=q.difficulty; if(d>=1&&d<=5) groups[d].push(q); } return groups; }
+    function getRandomQuestionFromGroup(group){ if(!group.length) return null; const idx=Math.floor(Math.random()*group.length); return {...group[idx]}; }
+    function generateOptionsForQuestion(q){
+        const distPool=q.distractors||[];
+        let candidates=distPool.filter(d=>d!==q.correct);
+        const shuffled=[...candidates]; for(let i=shuffled.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]; }
+        const selectedDistractors=shuffled.slice(0,3);
+        const opts=[q.correct,...selectedDistractors];
+        for(let i=opts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
+        return opts;
+    }
+    function prepareChallenge(){
+        if(!loadedQuizQuestions.length) return false;
+        const groups=groupQuestionsByDifficulty(loadedQuizQuestions);
+        currentChallengeQuestions=[];
+        for(let d=1;d<=5;d++){
+            const group=groups[d];
+            if(!group.length){
+                const fallback={ difficulty:d, title:"化学元素谜题", text:"请补充该难度的题目。", correct:"未知", distractors:["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S"] };
+                currentChallengeQuestions.push({ title:fallback.title, text:fallback.text, correct:fallback.correct, options:generateOptionsForQuestion(fallback) });
+            }else{
+                const q=getRandomQuestionFromGroup(group);
+                if(q) currentChallengeQuestions.push({ title:q.title, text:q.text, correct:q.correct, options:generateOptionsForQuestion(q) });
+            }
+        }
+        return true;
+    }
+    async function loadQuizQuestions(){
+        try{
+            const response=await fetch('quiz_questions.json');
+            if(!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data=await response.json();
+            if(Array.isArray(data)&&data.length>0) loadedQuizQuestions=data;
+            else throw new Error('题库数据无效');
+        }catch(err){
+            console.warn('加载外部题库失败，使用内嵌默认题库',err);
+            loadedQuizQuestions=[
+                { difficulty:1, title:"消毒水的秘密", text:"我是消毒水中常见的成分，稀释后可用于伤口消毒，但纯品剧毒，误服可致命。我的水溶液呈棕色，且易升华。我是？", correct:"碘", distractors:["氯气","汞","溴","氟气","过氧化氢","高锰酸钾","乙醇","甲醛","苯酚","臭氧","二氧化氯","次氯酸钠","氢氧化钠","氨水","醋酸","硫酸","硝酸","盐酸","碳酸"] },
+                { difficulty:1, title:"地壳中的王者", text:"我是地壳中含量最多的金属元素，也是人体必需的微量元素之一。我的单质呈银白色，常用于制造飞机和日用品。我是？", correct:"铝", distractors:["铁","铜","镁","钙","钠","钾","锌","钛","铬","锰","镍","钴","锡","铅","铍","锶","钡","镓","铟"] },
+                { difficulty:1, title:"蓝紫色的火焰", text:"我是一种非金属单质，在空气中燃烧发出明亮的蓝紫色火焰，生成有刺激性气味的气体。我是？", correct:"硫", distractors:["碳","磷","氢气","氮气","氧气","氯气","硅","硒","碲","硼","钠","镁","铝","钾","钙","铁","铜","锌","银"] },
+                { difficulty:2, title:"烧碱的真面目", text:"我是常见的干燥剂，与水反应放出大量热，能使酚酞变红。我的水溶液俗称“烧碱”。我是？", correct:"氢氧化钠", distractors:["氧化钙","氢氧化钙","氯化钠","碳酸钠","碳酸氢钠","硫酸钠","硝酸钠","氢氧化钾","氢氧化锂","氢氧化钡","浓硫酸","无水氯化钙","硅胶","分子筛","氧化铝","五氧化二磷","碱石灰","氢氧化镁","氢氧化铝"] },
+                { difficulty:2, title:"胃里的强酸", text:"我是胃酸的主要成分，能帮助消化，但浓度过高会腐蚀胃黏膜。我的化学式是HCl。我是？", correct:"盐酸", distractors:["硫酸","硝酸","醋酸","磷酸","氢氟酸","氢溴酸","氢碘酸","高氯酸","氯酸","亚硫酸","草酸","柠檬酸","乳酸","苹果酸","酒石酸","碳酸","硅酸","硼酸","甲酸"] },
+                { difficulty:2, title:"轻于水的金属", text:"我是最轻的金属，密度比水还小，与水剧烈反应生成氢气。我的化合物常用于治疗躁郁症。我是？", correct:"锂", distractors:["钠","钾","镁","钙","铍","铝","铷","铯","钡","锶","钛","锌","铁","铜","银","金","铂","铅","锡"] },
+                { difficulty:3, title:"霓虹灯的光源", text:"我是常见的惰性气体，在霓虹灯中发出橙红色光，常用于制造“氖灯”。我的原子序数是10。我是？", correct:"氖", distractors:["氦","氩","氪","氙","氡","氮","氧","氟","氯","氢","碳","硫","磷","硅","硼","铝","钠","镁","钙"] },
+                { difficulty:3, title:"甲状腺的朋友", text:"我是人体必需的微量元素，缺乏会导致甲状腺肿大。加碘食盐中添加的就是我的钾盐。我是？", correct:"碘", distractors:["铁","锌","硒","氟","铜","锰","钴","钼","铬","氯","钠","钾","钙","镁","磷","硫","硅","硼","铝"] },
+                { difficulty:3, title:"血红蛋白的核心", text:"我是地壳中含量第二多的金属元素，也是血红蛋白的核心。我的单质是银白色，容易被磁铁吸引。我是？", correct:"铁", distractors:["铝","铜","镁","钙","钠","钾","锌","钛","铬","锰","镍","钴","锡","铅","金","银","铂","镉","汞"] },
+                { difficulty:4, title:"芯片的基石", text:"我是常见的半导体材料，广泛应用于芯片制造。我的单质是银灰色脆性固体，地壳中含量仅次于氧。我是？", correct:"硅", distractors:["锗","砷","镓","铟","磷","硫","碳","硼","铝","铁","铜","锌","银","金","铂","钛","铬","锰","钴"] },
+                { difficulty:4, title:"最硬的天然物质", text:"我是自然界最硬的物质，由碳原子组成，常用于切割和打磨。我是？", correct:"金刚石", distractors:["石墨","石英","刚玉","碳化硅","立方氮化硼","莫桑石","红宝石","蓝宝石","水晶","玛瑙","翡翠","和田玉","岫玉","独山玉","绿松石","青金石","孔雀石","萤石","方解石"] },
+                { difficulty:4, title:"温室效应的推手", text:"我是导致温室效应的主要气体之一，由碳和氧组成。我是？", correct:"二氧化碳", distractors:["甲烷","一氧化碳","水蒸气","氟利昂","臭氧","氮氧化物","二氧化硫","硫化氢","氨气","氯气","氢气","氧气","氮气","氩气","氦气","氖气","氪气","氙气","氡气"] },
+                { difficulty:5, title:"银光闪闪的液态金属", text:"我是常温下唯一的液态金属，剧毒，曾用于体温计。我是？", correct:"汞", distractors:["镓","铯","钫","钠","钾","铷","锂","钙","镁","铝","锌","铁","铜","银","金","铂","铅","锡","铬"] },
+                { difficulty:5, title:"最强的氧化剂", text:"我是元素周期表中电负性最强的元素，能与几乎所有物质反应，包括稀有气体。我是？", correct:"氟", distractors:["氯","溴","碘","氧","氮","碳","硫","磷","氢","氦","氖","氩","氪","氙","氡","钠","镁","铝","硅"] },
+                { difficulty:5, title:"放射性元素的发现者", text:"我是居里夫人发现的放射性元素，用于治疗癌症，化学符号是Ra。我是？", correct:"镭", distractors:["铀","钚","钋","氡","锕","钍","镤","锎","锿","镄","钔","锘","铹","𬬻","𬭊","𬭳","𬭛","𬭶","鿏"] }
+            ];
+        }
+        challengeReady=true;
+        document.getElementById('challengeBtn').disabled=(challengeCooldown>0);
+        if(challengeCooldown===0) document.getElementById('challengeBtn').innerText='🧪 开始挑战';
+        else document.getElementById('challengeBtn').innerText='🧪 开始挑战 (冷却中)';
+    }
+    function loadChallengeCooldown(){
+        const key=`challenge_cooldown_${currentUser}`;
+        const lastTimestamp=localStorage.getItem(key);
+        if(lastTimestamp){
+            const elapsed=(Date.now()-parseInt(lastTimestamp))/1000;
+            if(elapsed<600) challengeCooldown=600-elapsed;
+            else{ challengeCooldown=0; localStorage.removeItem(key); }
+        }else challengeCooldown=0;
+        updateCooldownDisplay();
+        if(challengeCooldown>0){ startCooldownTimer(); document.getElementById('challengeBtn').disabled=true; }
+        else document.getElementById('challengeBtn').disabled=!challengeReady;
+    }
+    function startCooldownTimer(){
+        if(challengeInterval) clearInterval(challengeInterval);
+        challengeInterval=setInterval(()=>{
+            if(challengeCooldown>0){
+                challengeCooldown--;
+                updateCooldownDisplay();
+                if(challengeCooldown<=0){ clearInterval(challengeInterval); challengeInterval=null; document.getElementById('challengeBtn').disabled=!challengeReady; document.getElementById('cooldownText').innerHTML=''; localStorage.removeItem(`challenge_cooldown_${currentUser}`); }
+            }
+        },1000);
+    }
+    function updateCooldownDisplay(){
+        const cooldownDiv=document.getElementById('cooldownText');
+        if(challengeCooldown>0){ const minutes=Math.floor(challengeCooldown/60); const seconds=Math.floor(challengeCooldown%60); cooldownDiv.innerHTML=`⏳ 下次挑战: ${minutes}分${seconds}秒`; }
+        else cooldownDiv.innerHTML='';
+    }
+    function startChallenge(){
+        if(!challengeReady){ alert("题目还在加载中，请稍后再试。"); return; }
+        if(challengeCooldown>0){ alert("智慧老人正在休息，请稍后再来挑战。"); return; }
+        if(isQuizActive) return;
+        if(!prepareChallenge()){ alert("题库数据异常，无法开始挑战。"); return; }
+        isQuizActive=true; currentQuizIndex=0; quizScore=0;
+        showNextQuestion();
+    }
+    function showNextQuestion(){
+        if(currentQuizIndex>=currentChallengeQuestions.length){ endChallenge(); return; }
+        const q=currentChallengeQuestions[currentQuizIndex];
+        document.getElementById('quizQuestion').innerHTML=`<strong>【难度 ${currentQuizIndex+1}】${q.title}</strong><br>${q.text}`;
+        const optionsDiv=document.getElementById('quizOptions'); optionsDiv.innerHTML='';
+        q.options.forEach(opt=>{ const btn=document.createElement('div'); btn.className='quiz-option'; btn.innerText=opt; btn.addEventListener('click',()=>checkAnswer(opt)); optionsDiv.appendChild(btn); });
+        document.getElementById('quizProgress').innerText=`第 ${currentQuizIndex+1} / ${currentChallengeQuestions.length} 题`;
+        document.getElementById('quizArea').style.display='block';
+    }
+    function checkAnswer(selected){
+        const q=currentChallengeQuestions[currentQuizIndex];
+        if(selected===q.correct){ quizScore++; showFeedback(`✅ 回答正确！`, 'pharmacyFeedback'); }
+        else{ showFeedback(`❌ 回答错误！正确答案是 ${q.correct}。`, 'pharmacyFeedback'); }
+        currentQuizIndex++;
+        setTimeout(()=>{ if(currentQuizIndex<currentChallengeQuestions.length) showNextQuestion(); else endChallenge(); },1000);
+    }
+    function endChallenge(){
+        isQuizActive=false;
+        document.getElementById('quizArea').style.display='none';
+        const rewardCount=quizScore;
+        if(rewardCount>0) showRewardModal(rewardCount);
+        else showFeedback(`🧙‍♂️ 智慧老人摇摇头：“一道题都没答对，回去多读书吧。”`, 'pharmacyFeedback');
+        challengeCooldown=600;
+        const key=`challenge_cooldown_${currentUser}`;
+        localStorage.setItem(key,Date.now().toString());
+        updateCooldownDisplay();
+        startCooldownTimer();
+        document.getElementById('challengeBtn').disabled=true;
+    }
+    function showRewardModal(rewardCount){
+        const modal=document.getElementById('rewardModal');
+        document.getElementById('correctCount').innerText=quizScore;
+        document.getElementById('rewardCount').innerText=rewardCount;
+        let remaining=rewardCount;
+        document.getElementById('rewardRemain').innerText=`还可选择 ${remaining} 件`;
+        const container=document.getElementById('rewardItemsList'); container.innerHTML='';
+        REWARD_ITEMS.forEach(item=>{
+            const div=document.createElement('div'); div.className='reward-item'; div.innerText=item;
+            div.addEventListener('click',()=>{
+                if(remaining<=0){ alert("你已经选完了所有宝物！"); return; }
+                inventory[item]=(inventory[item]||0)+1;
+                remaining--;
+                document.getElementById('rewardRemain').innerText=`还可选择 ${remaining} 件`;
+                saveGameData(); renderInventory();
+                showFeedback(`✨ 获得了 ${item} x1`, 'pharmacyFeedback');
+                if(remaining<=0){ modal.classList.remove('active'); alert("感谢你的智慧！宝物已收入乾坤袋。"); }
             });
+            container.appendChild(div);
+        });
+        modal.classList.add('active');
+    }
+    function closeRewardModal(){ document.getElementById('rewardModal').classList.remove('active'); }
+    // ======================= 初始化 Supabase 与登录 =======================
+    function initSupabase(){
+        try{
+            supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+            supabase.from('feedbacks').select('count',{count:'exact',head:true}).then(()=>{ cloudAvailable=true; console.log('云服务可用'); if(isLoggedIn) initCloudSync(); }).catch(err=>{ console.warn('云服务不可用，降级本地',err); cloudAvailable=false; });
+        }catch(e){ console.warn('Supabase 初始化失败',e); cloudAvailable=false; }
+    }
+    function loadUserFromMainPage(){
+        const mainUser=localStorage.getItem('iodine_current_user');
+        if(mainUser && mainUser!=='null'){
+            currentUser=mainUser; isLoggedIn=true;
+            document.getElementById('userInfoArea').innerHTML=`<span>🧪 ${escapeHtml(currentUser)}</span><div class="health-bar"><div class="health-fill" id="healthFill"></div></div><span id="hpText">100</span><span id="maxHpText">/100</span>`;
+        }else{
+            const guestId='访客_'+Math.floor(Math.random()*10000);
+            currentUser=guestId; isLoggedIn=false;
+            document.getElementById('userInfoArea').innerHTML=`<span>👤 ${escapeHtml(currentUser)} (访客)</span><div class="health-bar"><div class="health-fill" id="healthFill"></div></div><span id="hpText">100</span><span id="maxHpText">/100</span>`;
         }
-
-        // ======================= 主入口 =======================
+    }
+    function initTheme(){
+        const isDark=localStorage.getItem('dandao_theme')==='dark';
+        if(isDark) document.body.classList.add('dark');
+        const btn=document.getElementById('darkModeToggle');
+        btn.addEventListener('click',()=>{ document.body.classList.toggle('dark'); localStorage.setItem('dandao_theme',document.body.classList.contains('dark')?'dark':'light'); btn.innerText=document.body.classList.contains('dark')?'☀️ 丹房光明':'🌙 丹房幽暗'; });
+        btn.innerText=isDark?'☀️ 丹房光明':'🌙 丹房幽暗';
+    }
+    function initTabs(){
+        document.querySelectorAll('.tab-btn').forEach(btn=>{
+            btn.addEventListener('click',()=>{
+                const target=btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+                document.getElementById(`tab-${target}`).classList.add('active');
+            });
+        });
+    }
+    function initRankFloat() {
+        const toggleBtn = document.getElementById('rankToggleBtn');
+        const panel = document.getElementById('rankFloatPanel');
+        if (!toggleBtn || !panel) return;
+        toggleBtn.addEventListener('click', () => {
+            const isOpen = panel.classList.toggle('active');
+            toggleBtn.textContent = isOpen ? '❌ 关闭排行' : '🏆 九鼎排行';
+        });
+        document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            if (!panel.classList.contains('active')) return;
+            if (panel.contains(target) || toggleBtn.contains(target)) return;
+            panel.classList.remove('active');
+            toggleBtn.textContent = '🏆 九鼎排行';
+        });
+    }
+    // ======================= 主入口 =======================
+    function main() {
         loadUserFromMainPage();
         loadGameData();
         renderTerrain();
@@ -1486,19 +1357,19 @@
         document.getElementById('refineBtn').addEventListener('click', startRefine);
         document.getElementById('stopRefineBtn').addEventListener('click', stopRefine);
         document.getElementById('cancelRefineBtn').addEventListener('click', cancelRefine);
+        document.getElementById('clearSlotBtn').addEventListener('click', clearMaterialSlot);
         initTabs();
+        initRankFloat();
         initTheme();
         initSupabase();
-        setInterval(() => saveGameData(), 10000);
-        
-        // 智慧老人挑战按钮事件
+        setInterval(()=>saveGameData(),10000);
+        setInterval(()=>updateRanking(),RANK_UPLOAD_INTERVAL);
         document.getElementById('challengeBtn').addEventListener('click', startChallenge);
         document.getElementById('closeRewardBtn').addEventListener('click', closeRewardModal);
-        // 加载题库（异步）
-        loadQuizQuestions().then(() => {
-            loadChallengeCooldown();
-        });
-    });
+        loadQuizQuestions().then(()=>{ loadChallengeCooldown(); });
+    }
+    main();
+})();
 </script>
 </body>
 </html>

@@ -35,6 +35,10 @@
         button{background:var(--accent);color:#0a1a2a;border:none;padding:0.5rem 1.2rem;border-radius:2rem;font-weight:bold;cursor:pointer;transition:0.1s}
         button:hover{transform:scale(0.97);background:var(--accent-light)}
         .rank-btn{background:var(--heal);color:white}
+        .boss-btn{background:#a33dd9;color:#fff;display:none}
+        .boss-btn.show{display:inline-block}
+        .boss-btn:disabled{opacity:0.7;cursor:not-allowed}
+
         .game-message{text-align:center;margin-top:0.8rem;font-size:0.85rem;color:var(--accent-light)}
         footer{text-align:center;font-size:0.7rem;margin-top:1rem;color:var(--text-dim)}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);justify-content:center;align-items:center;z-index:1000}
@@ -72,6 +76,7 @@
         <div class="controls">
             <div class="controls-left">
                 <button id="restartBtn">🔄 重新开局</button>
+                <button id="challengeBossBtn" class="boss-btn">👑 挑战Boss</button>
             </div>
             <button id="rankBtn" class="rank-btn">📊 排行榜</button>
         </div>
@@ -79,6 +84,34 @@
         <footer>🧪 碳产电子球 · 氢氧攻击 · 氟毒气 · 硅地刺 · 镁穿透 · 氦氖防御 · 铝自爆（清除自身及右侧两格僵尸）<br>🔥 磷为范围技能，点击磷卡片后点击草地，清除3x3范围僵尸。<br>✨ 地刺不阻挡僵尸，但会持续攻击同一格的僵尸。积分已同步独立排行榜。<br>🔧 点击铲子模式，再点击植物可铲除并返还一半电子。</footer>
     </div>
 </div>
+
+<!-- ===== ADMIN DEBUG UI START (可整段删除) ===== -->
+<div id="adminDebugPanel" class="admin-debug-panel">
+    <div class="admin-debug-title">🛠️ 管理员调试</div>
+    <label class="admin-debug-item">
+        <input type="checkbox" id="adminDebugEnabled">
+        <span>启用管理员调试</span>
+    </label>
+    <label class="admin-debug-item">
+        <input type="checkbox" id="adminFreePlace" disabled>
+        <span>植物无视电子放置</span>
+    </label>
+    <label class="admin-debug-item">
+        <input type="checkbox" id="adminIgnoreCooldown" disabled>
+        <span>元素无视冷却放置</span>
+    </label>
+    <div class="admin-debug-input">
+        <span>分数:</span>
+        <input type="number" id="adminScoreInput" value="0" min="0" disabled>
+        <button id="adminSetScoreBtn" disabled>设置</button>
+    </div>
+    <div class="admin-debug-input">
+        <span>时间:</span>
+        <input type="number" id="adminTimeInput" value="0" min="0" step="0.1" disabled>
+        <button id="adminSetTimeBtn" disabled>设置</button>
+    </div>
+</div>
+<!-- ===== ADMIN DEBUG UI END ===== -->
 
 <!-- 元素图鉴模态框 -->
 <div id="guideModal" class="modal">
@@ -197,30 +230,104 @@
         const COLS = 9;
         const ROWS = 5;
         const EXTRA_RIGHT = 100;
-        canvas.width = COLS * 100 + EXTRA_RIGHT;
-        canvas.height = ROWS * 100;
         const CELL_W = 100;
         const CELL_H = 100;
+        const BOSS_TRIGGER_SCORE = 10;
+        const BOSS_MAX_HP = 200000;
+        const BOSS_ARENA_WIDTH = 420;
+        const BOSS_PARAMS = {
+            prepDurationMs: 3 * 60 * 1000,
+            battleAbsorbIntervalMs: 6000,
+            battleAbsorbChance: 0.4,
+            skillCycleSec: 4.0,
+            absorbToHpFactor: 12,
+            absorbToCorpseDivisor: 30,
+            absorbToCorpseMin: 15,
+            vortex: {
+                minCorpseCost: 500,
+                maxCorpseCost: 4000,
+                costRatio: 0.35,
+                hitDamagePerSec: 500,
+                defenseBonus: 1.3,
+                reductionBonus: 1.15,
+                tickSec: 1.0,
+                visualSpeed: 360,
+                visualMaxRadius: 1600
+            },
+            domain: {
+                radiusCells: 7,
+                durationSec: 10,
+                cooldownSec: 5,
+                minPool: 3,
+                spawnRate: 0.25,
+                minSpawn: 1
+            },
+            oxidation: {
+                gain: { oxygen: 2, fluorine: 3 },
+                minCost: 8,
+                maxCost: 60,
+                procChance: 0.45,
+                antiDefenseReductionBonus: 1.8,
+                antiReductionBonus: 5.0
+            },
+            reduction: {
+                gain: { magnesium: 3, phosphorus: 2, silicon: 2, hydrogen: 2 },
+                minCost: 8,
+                maxCost: 60,
+                procChance: 0.45,
+                antiOxidationBonus: 1.8
+            },
+            ironArmor: {
+                initial: 20,
+                gainPerDefensePlantEaten: 6,
+                minCost: 18,
+                maxCost: 120,
+                radiusCells: 10,
+                antiDefenseBonus: 1.25,
+                damageMultiplier: 0.5
+            },
+            ironCannon: {
+                baseCost: 1, // 基础消耗1铁数
+                damage: 35, // 基础伤害
+                lifetime: 10, // 子弹存在时间
+                extraTimeMultiplier: 2, // 每额外消耗1铁数增加的存在时间倍数
+                extraDamageMultiplier: 1.5 // 每额外消耗1铁数增加的伤害倍数
+            },
+            soulSwap: {
+                minCost: 50,
+                maxCost: 200,
+                radiusCells: 13,
+                targetCount: 3,
+                cooldownSec: 20
+            },
+            initialOxidation: 20,
+            initialReduction: 20
+        };
+        const BOSS_PREP_DURATION = BOSS_PARAMS.prepDurationMs;
+        canvas.width = COLS * CELL_W + EXTRA_RIGHT;
+        canvas.height = ROWS * CELL_H;
 
         // 元素库
         const ELEMENTS = {
             carbon: { name: "碳", symbol: "C", cost: 50, role: "sunflower", produceInterval: 10.0, produceAmount: 25, desc: "每10秒产生一个电子球", color: "#6b8e23", health: 300, damage: 0, isRanged: false, cd: 7.5 },
             hydrogen: { name: "氢", symbol: "H", cost: 100, role: "peashooter", damage: 25, cooldown: 0.8, desc: "单发豌豆", color: "#5a9ac0", health: 300, isRanged: true, cd: 7.5 },
             oxygen: { name: "氧", symbol: "O", cost: 150, role: "repeater", damage: 20, cooldown: 0.4, desc: "双发豌豆", color: "#4682b4", health: 300, isRanged: true, cd: 7.5 },
-            fluorine: { name: "氟", symbol: "F", cost: 175, role: "poison", damage: 15, cooldown: 0.6, poison: true, desc: "毒气持续伤害", color: "#8fbc8f", health: 300, isRanged: true, cd: 7.5 },
+            fluorine: { name: "氟", symbol: "F", cost: 175, role: "poison", damage: 20, cooldown: 0.4, poison: true, desc: "强力毒气持续伤害", color: "#8fbc8f", health: 300, isRanged: true, cd: 7.5 },
             silicon: { name: "硅", symbol: "Si", cost: 75, role: "spikeweed", damage: 25, cooldown: 1.2, desc: "地刺，不阻挡僵尸，持续伤害同一格的僵尸", color: "#b0a070", health: 300, isRanged: false, isSpikeweed: true, cd: 7.5 },
             phosphorus: { name: "磷", symbol: "P", cost: 200, role: "skill", skillRadius: 1, damage: 9999, desc: "范围技能，清除3x3范围内所有僵尸", color: "#e67e22", isSkill: true, cd: 50 },
             magnesium: { name: "镁", symbol: "Mg", cost: 160, role: "pierce", damage: 30, cooldown: 1.0, pierce: true, desc: "穿透射击，子弹无限穿透直到离开屏幕", color: "#d4af37", health: 300, isRanged: true, cd: 7.5 },
             helium: { name: "氦", symbol: "He", cost: 50, role: "wallnut", health: 4000, desc: "坚果墙", color: "#a0522d", cd: 15 },
             neon: { name: "氖", symbol: "Ne", cost: 100, role: "tallnut", health: 6000, desc: "高坚果", color: "#cd853f", cd: 25 },
-            aluminum: { name: "铝", symbol: "Al", cost: 125, role: "explodenut", health: 3000, explosionDamage: 300, desc: "自爆坚果，死亡时清除自身及右侧两格僵尸", color: "#b0c4de", cd: 20 }
+            aluminum: { name: "铝", symbol: "Al", cost: 125, role: "explodenut", health: 3000, explosionDamage: 300, desc: "自爆坚果，死亡时清除自身及右侧两格僵尸", color: "#b0c4de", cd: 20 },
+            iron: { name: "铁", symbol: "Fe", cost: 250, role: "homing", damage: 35, cooldown: 1.5, homing: true, desc: "智能追踪子弹，跨路攻击最近的僵尸", color: "#C0C0C0", health: 300, isRanged: true, cd: 15 },
+            sodium: { name: "钠", symbol: "Na", cost: 180, role: "bomb", damage: 40, cooldown: 1.0, bomb: true, desc: "炸弹攻击，对范围内的僵尸造成爆炸伤害", color: "#ff6347", health: 300, isRanged: true, cd: 7.5 }
         };
         for (let key in ELEMENTS) {
             if (!ELEMENTS[key].health && ELEMENTS[key].role !== 'wallnut' && ELEMENTS[key].role !== 'tallnut' && ELEMENTS[key].role !== 'explodenut' && !ELEMENTS[key].isSkill) {
                 ELEMENTS[key].health = 300;
             }
         }
-        const elementOrder = ['carbon','hydrogen','oxygen','fluorine','silicon','phosphorus','magnesium','helium','neon','aluminum'];
+        const elementOrder = ['carbon','hydrogen','oxygen','fluorine','silicon','phosphorus','magnesium','helium','neon','aluminum','iron','sodium'];
 
         // 游戏状态
         let essence = 200;
@@ -244,6 +351,51 @@
         const ELECTRON_VALUE = 25;
 
         let flyAnimations = [];
+        let bossState = 'inactive'; // inactive | prep | battle
+        let bossArenaExpanded = false;
+        let bossPrepStartTime = 0;
+        let bossButtonUnlocked = false;
+        let lastBossTickTime = 0;
+        let bossSoulSwapTimer = 0;
+        let bossSkillTimer = 0;
+        let bossSoulSwap = null;
+        let bossVortex = null;
+        let bossDomain = null;
+        let bossShockwaves = [];
+        let bossCooldowns = { domain: 0, soulSwap: 0 };
+        const BOSS_SKILL_BANNER_STYLES = {
+            default: { fill: "rgba(250,235,255,0.98)", stroke: "rgba(30,0,45,0.95)", glow: "#d9b3ff", scaleBoost: 0.06 },
+            vortex: { fill: "rgba(238,210,255,0.98)", stroke: "rgba(56,12,82,0.95)", glow: "#c78dff", scaleBoost: 0.09 },
+            domain: { fill: "rgba(224,188,255,0.98)", stroke: "rgba(42,0,68,0.95)", glow: "#b666ff", scaleBoost: 0.08 },
+            oxidation: { fill: "rgba(255,220,170,0.98)", stroke: "rgba(100,40,0,0.95)", glow: "#ff9f4a", scaleBoost: 0.07 },
+            reduction: { fill: "rgba(180,245,255,0.98)", stroke: "rgba(0,58,82,0.95)", glow: "#66ddff", scaleBoost: 0.07 },
+            iron: { fill: "rgba(228,236,255,0.98)", stroke: "rgba(40,50,86,0.95)", glow: "#a7b8ff", scaleBoost: 0.08 }
+        };
+        let bossSkillBanner = { text: "", style: "default", startTime: 0, durationMs: 2200 };
+        // ===== ADMIN DEBUG LOGIC START (可整段删除) =====
+        const adminDebug = {
+            enabled: false,
+            freePlaceIgnoreEssence: false,
+            ignoreElementCooldown: false,
+            controlScore: false,
+            controlTime: false
+        };
+        // ===== ADMIN DEBUG LOGIC END =====
+        const bossData = {
+            name: "BOSS·元素之主-死灵法师",
+            hp: 1,
+            maxHp: BOSS_MAX_HP,
+            x: canvas.width - 130,
+            y: canvas.height / 2,
+            corpseValue: 0,
+            oxidation: 0,
+            reduction: 0,
+            ironArmor: 0,
+            ironCount: 0,
+            absorbList: {
+                Basic: 0, Armored: 0, Fast: 0, Explosive: 0, Runner: 0, Jumper: 0, Giant: 0, Healer: 0
+            }
+        };
 
         // 冷却系统 - 持久化存储
         let elementCooldowns = {};
@@ -291,6 +443,46 @@
             }
         }
 
+        // 火焰爆炸特效
+        function addFireExplosion(x, y) {
+            // 创建火焰波浪效果
+            for (let i = 0; i < 20; i++) {
+                const angle = (i / 20) * Math.PI * 2;
+                const speed = 100 + Math.random() * 50;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                particles.push(new Particle(x, y, vx, vy, "#ff4500", 4 + Math.random() * 2, 0.8));
+            }
+            // 添加火花
+            for (let i = 0; i < 10; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 150 + Math.random() * 100;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                particles.push(new Particle(x, y, "#ffff00", 2, 0.6));
+            }
+        }
+
+        // 冰霜爆炸特效
+        function addFrostExplosion(x, y) {
+            // 创建冰晶扩散效果
+            for (let i = 0; i < 25; i++) {
+                const angle = (i / 25) * Math.PI * 2;
+                const speed = 80 + Math.random() * 40;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                particles.push(new Particle(x, y, vx, vy, "#00bfff", 3 + Math.random() * 2, 1.0));
+            }
+            // 添加冰花
+            for (let i = 0; i < 12; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 120 + Math.random() * 80;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                particles.push(new Particle(x, y, vx, vy, "#e0ffff", 1.5, 0.7));
+            }
+        }
+
         // 僵尸类型定义 - 增加 attackDamage 字段
         const ZOMBIE_TYPES = {
             Basic: { name: "Basic", color: "#4a6e3a", hpBase: 300, speedBase: 30, rewardScore: 10, unlockTime: 0, attackDamage: 10 },
@@ -306,7 +498,7 @@
         let bullets = [];
 
         class Bullet {
-            constructor(x, y, targetZombie, damage, type, color, isPierce = false) {
+            constructor(x, y, targetZombie, damage, type, color, isPierce = false, originRow = null) {
                 this.x = x; this.y = y; this.target = targetZombie; this.damage = damage; this.type = type;
                 this.color = color;
                 this.speed = 5; 
@@ -316,13 +508,279 @@
                 this.lastX = x;
                 this.lastY = y;
                 this.trailTimer = 0;
+                this.originRow = originRow; // 铁元素子弹的发射行
+                this.lifetime = 0; // 生存时间
+                this.moveDirection = 1; // 移动方向，1向右，-1向左
+                this.moveSpeed = 3; // 铁元素子弹的移动速度
+                this.gravity = 0; // 重力加速度（用于钠子弹）
+                this.velocityY = 0; // 垂直速度（用于钠子弹）
+                // 铁元素智能追踪属性
+                this.velocityX = 0; // X轴速度
+                this.velocityY = 0; // Y轴速度
+                this.acceleration = 0.3; // 加速度
+                this.maxSpeed = 8; // 最大速度
+                this.state = 'searching'; // searching, accelerating, decelerating
+                this.attackTimer = 0; // 攻击锁定计时器
+                this.lockedTarget = null; // 当前锁定的目标
             }
             update(deltaTime) {
-                if (!this.isPierce && (!this.target || this.target.hp <= 0)) {
-                    this.active = false;
-                    return;
-                }
-                if (this.isPierce) {
+                this.lifetime += deltaTime;
+                
+                if (this.type === 'iron') {
+                    // 铁元素智能追踪子弹：跨路攻击最近的僵尸
+                    if (this.lifetime > 10) {
+                        this.active = false;
+                        return;
+                    }
+                    
+                    this.attackTimer -= deltaTime;
+                    
+                    // 状态机逻辑
+                    if (this.state === 'searching') {
+                        // 寻找最近的僵尸
+                        let nearestZombie = null;
+                        let minDistance = Infinity;
+                        
+                        for (let z of zombies) {
+                            if (z.hp <= 0) continue;
+                            const dx = z.x - this.x;
+                            const dy = z.y - this.y;
+                            const distance = Math.hypot(dx, dy);
+                            
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                nearestZombie = z;
+                            }
+                        }
+                        
+                        if (nearestZombie) {
+                            this.lockedTarget = nearestZombie;
+                            this.state = 'accelerating';
+                            this.attackTimer = 2.0; // 锁定目标2秒
+                        }
+                        
+                    } else if (this.state === 'accelerating') {
+                        // 向目标加速
+                        if (!this.lockedTarget || this.lockedTarget.hp <= 0) {
+                            this.state = 'searching';
+                            this.lockedTarget = null;
+                            this.velocityX = 0;
+                            this.velocityY = 0;
+                            return;
+                        }
+                        
+                        const dx = this.lockedTarget.x - this.x;
+                        const dy = this.lockedTarget.y - this.y;
+                        const distance = Math.hypot(dx, dy);
+                        
+                        if (distance < 15) {
+                            // 击中目标
+                            this.lockedTarget.hp -= this.damage;
+                            addParticles(this.x, this.y, this.color, 15);
+                            
+                            // 获得反向加速度
+                            const impactForce = 6;
+                            this.velocityX = -Math.sign(dx) * impactForce;
+                            this.velocityY = -Math.sign(dy) * impactForce;
+                            this.state = 'decelerating';
+                        } else {
+                            // 加速向目标移动
+                            const accelX = (dx / distance) * this.acceleration;
+                            const accelY = (dy / distance) * this.acceleration;
+                            
+                            this.velocityX += accelX;
+                            this.velocityY += accelY;
+                            
+                            // 限制最大速度
+                            const speed = Math.hypot(this.velocityX, this.velocityY);
+                            if (speed > this.maxSpeed) {
+                                this.velocityX = (this.velocityX / speed) * this.maxSpeed;
+                                this.velocityY = (this.velocityY / speed) * this.maxSpeed;
+                            }
+                        }
+                        
+                    } else if (this.state === 'decelerating') {
+                        // 减速直到停止
+                        const deceleration = 0.4;
+                        
+                        // 逐渐减速
+                        if (Math.abs(this.velocityX) > 0.1) {
+                            this.velocityX -= Math.sign(this.velocityX) * deceleration;
+                        } else {
+                            this.velocityX = 0;
+                        }
+                        
+                        if (Math.abs(this.velocityY) > 0.1) {
+                            this.velocityY -= Math.sign(this.velocityY) * deceleration;
+                        } else {
+                            this.velocityY = 0;
+                        }
+                        
+                        // 如果速度接近零，重新开始搜索
+                        if (Math.abs(this.velocityX) < 0.1 && Math.abs(this.velocityY) < 0.1) {
+                            this.state = 'searching';
+                            this.lockedTarget = null;
+                        }
+                    }
+                    
+                    // 应用速度
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+                    
+                    // 防止飞出屏幕
+                    if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
+                        this.active = false;
+                    }
+                } else if (this.type === 'ironCannon') {
+                    // 铁砂大炮子弹：攻击植物的智能追踪弹
+                    if (this.lifetime <= 0) {
+                        this.active = false;
+                        return;
+                    }
+                    
+                    this.attackTimer -= deltaTime;
+                    
+                    // 状态机逻辑
+                    if (this.state === 'gathering') {
+                        // 聚集状态：从小铁球聚集形成巨大铁球
+                        this.gatherProgress += deltaTime;
+                        const progress = Math.min(1, this.gatherProgress / this.gatherTime);
+                        
+                        // 大小从0增长到最大
+                        this.size = this.maxSize * progress;
+                        
+                        // 在聚集期间，创建小铁球聚集效果
+                        if (this.gatherProgress % 0.1 < deltaTime) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const distance = 100 + Math.random() * 50;
+                            const smallBullet = new Bullet(
+                                bossData.x + Math.cos(angle) * distance,
+                                bossData.y + Math.sin(angle) * distance,
+                                null, 0, 'smallIron', "#C0C0C0", false
+                            );
+                            smallBullet.targetX = bossData.x;
+                            smallBullet.targetY = bossData.y;
+                            smallBullet.speed = 200; // 快速飞向Boss
+                            bullets.push(smallBullet);
+                        }
+                        
+                        // 聚集完成后进入搜索状态
+                        if (progress >= 1) {
+                            this.state = 'searching';
+                        }
+                        
+                    } else if (this.state === 'searching') {
+                        // 寻找最近的植物
+                        let nearestPlant = null;
+                        let minDistance = Infinity;
+                        
+                        for (let elem of elements) {
+                            if (elem.health <= 0) continue;
+                            const dx = elem.x - this.x;
+                            const dy = elem.y - this.y;
+                            const distance = Math.hypot(dx, dy);
+                            
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                nearestPlant = elem;
+                            }
+                        }
+                        
+                        if (nearestPlant) {
+                            this.lockedTarget = nearestPlant;
+                            this.state = 'accelerating';
+                            this.attackTimer = 2.0; // 锁定目标2秒
+                        }
+                        
+                    } else if (this.state === 'accelerating') {
+                        // 向目标加速
+                        if (!this.lockedTarget || this.lockedTarget.health <= 0) {
+                            this.state = 'searching';
+                            this.lockedTarget = null;
+                            this.velocityX = 0;
+                            this.velocityY = 0;
+                            return;
+                        }
+                        
+                        const dx = this.lockedTarget.x - this.x;
+                        const dy = this.lockedTarget.y - this.y;
+                        const distance = Math.hypot(dx, dy);
+                        
+                        if (distance < 15) {
+                            // 击中目标植物
+                            applyDamageToElement(this.lockedTarget, this.damage, 'ironCannon');
+                            addParticles(this.x, this.y, this.color, 15);
+                            
+                            // 获得反向加速度
+                            const impactForce = 6;
+                            this.velocityX = -Math.sign(dx) * impactForce;
+                            this.velocityY = -Math.sign(dy) * impactForce;
+                            this.state = 'decelerating';
+                        } else {
+                            // 加速向目标移动
+                            const accelX = (dx / distance) * this.acceleration;
+                            const accelY = (dy / distance) * this.acceleration;
+                            
+                            this.velocityX += accelX;
+                            this.velocityY += accelY;
+                            
+                            // 限制最大速度
+                            const speed = Math.hypot(this.velocityX, this.velocityY);
+                            if (speed > this.maxSpeed) {
+                                this.velocityX = (this.velocityX / speed) * this.maxSpeed;
+                                this.velocityY = (this.velocityY / speed) * this.maxSpeed;
+                            }
+                        }
+                        
+                    } else if (this.state === 'decelerating') {
+                        // 减速直到停止
+                        const deceleration = 0.4;
+                        
+                        // 逐渐减速
+                        if (Math.abs(this.velocityX) > 0.1) {
+                            this.velocityX -= Math.sign(this.velocityX) * deceleration;
+                        } else {
+                            this.velocityX = 0;
+                        }
+                        
+                        if (Math.abs(this.velocityY) > 0.1) {
+                            this.velocityY -= Math.sign(this.velocityY) * deceleration;
+                        } else {
+                            this.velocityY = 0;
+                        }
+                        
+                        // 如果速度接近零，重新开始搜索
+                        if (Math.abs(this.velocityX) < 0.1 && Math.abs(this.velocityY) < 0.1) {
+                            this.state = 'searching';
+                            this.lockedTarget = null;
+                        }
+                    }
+                    
+                    // 应用速度
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+                    
+                    // 防止飞出屏幕
+                    if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
+                        this.active = false;
+                    }
+                } else if (this.type === 'smallIron') {
+                    // 小铁球：飞向Boss聚集形成大铁球
+                    const dx = this.targetX - this.x;
+                    const dy = this.targetY - this.y;
+                    const distance = Math.hypot(dx, dy);
+                    
+                    if (distance < 5) {
+                        // 到达Boss位置，消失
+                        this.active = false;
+                    } else {
+                        // 向Boss移动
+                        const step = Math.min(this.speed * deltaTime, distance);
+                        const angle = Math.atan2(dy, dx);
+                        this.x += Math.cos(angle) * step;
+                        this.y += Math.sin(angle) * step;
+                    }
+                } else if (this.isPierce) {
                     const step = this.speed;
                     this.x += step;
                     for (let z of zombies) {
@@ -338,7 +796,47 @@
                     if (this.x > canvas.width + 100 || this.x < -100) {
                         this.active = false;
                     }
+                } else if (this.type === 'bomb') {
+                    // 钠元素炸弹：拥有重力加速度，碰到地面爆炸
+                    // 应用重力
+                    this.velocityY += this.gravity;
+                    this.y += this.velocityY;
+                    
+                    // 水平移动（缓慢向目标方向）
+                    if (this.target && this.target.hp > 0) {
+                        const dx = this.target.x - this.x;
+                        const horizontalSpeed = 2; // 水平移动速度
+                        if (Math.abs(dx) > 5) {
+                            this.x += Math.sign(dx) * Math.min(horizontalSpeed, Math.abs(dx) * 0.1);
+                        }
+                    }
+                    
+                    // 检测地面碰撞（发射时的行底部）
+                    const groundY = this.originRow * CELL_H + CELL_H - 10;
+                    if (this.y >= groundY) {
+                        // 炸弹爆炸，造成范围伤害
+                        for (let z of zombies) {
+                            const bombDx = z.x - this.x, bombDy = z.y - this.y;
+                            const bombDist = Math.hypot(bombDx, bombDy);
+                            if (bombDist < 80) { // 扩大爆炸范围
+                                z.hp -= this.damage;
+                                addParticles(z.x, z.y, this.color, 20);
+                            }
+                        }
+                        addParticles(this.x, this.y, this.color, 30);
+                        this.active = false;
+                        return;
+                    }
+                    
+                    // 防止飞出屏幕
+                    if (this.x < -50 || this.x > canvas.width + 50 || this.y > canvas.height + 50) {
+                        this.active = false;
+                    }
                 } else {
+                    if (!this.target || this.target.hp <= 0) {
+                        this.active = false;
+                        return;
+                    }
                     const dx = this.target.x - this.x, dy = this.target.y - this.y;
                     const dist = Math.hypot(dx, dy);
                     if (dist < 8) {
@@ -360,14 +858,40 @@
                 }
             }
             draw(ctx) {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 6, 0, 2*Math.PI);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = this.color;
-                ctx.fill();
-                ctx.shadowBlur = 0;
+                if (this.type === 'ironCannon') {
+                    // 巨大铁球的特殊渲染
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    
+                    // 添加金属光泽效果
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "#FFFFFF";
+                    ctx.beginPath();
+                    ctx.arc(this.x - this.size * 0.3, this.y - this.size * 0.3, this.size * 0.4, 0, 2 * Math.PI);
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+                    ctx.fill();
+                    
+                    ctx.restore();
+                } else if (this.type === 'smallIron') {
+                    // 小铁球的渲染
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 3, 0, 2 * Math.PI);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                } else {
+                    // 默认子弹渲染
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 6, 0, 2*Math.PI);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
             }
         }
 
@@ -380,7 +904,7 @@
                 this.slowed = 0; this.poisoned = 0;
                 this.width = ZOMBIE_TYPES[type]?.width || 50;
                 this.height = ZOMBIE_TYPES[type]?.height || 70;
-                this.jumpRemaining = 2;
+                this.jumpRemaining = 1;
                 this.jumpCooldownTimer = 0;
                 this.healTimer = 0;
                 this.attackTimer = 0;
@@ -393,9 +917,7 @@
                 
                 if (this.jumpCooldownTimer > 0) {
                     this.jumpCooldownTimer -= deltaTime;
-                    if (this.jumpCooldownTimer <= 0) {
-                        this.jumpRemaining = 2;
-                    }
+                    if (this.jumpCooldownTimer <= 0) this.jumpRemaining = 1;
                 }
                 
                 const col = Math.floor(this.x / CELL_W);
@@ -404,32 +926,38 @@
                     if (elem && elem.health > 0) {
                         if (this.type === 'Jumper') {
                             if (this.jumpRemaining > 0 && this.jumpCooldownTimer <= 0 && !elem.data.isSpikeweed) {
-                                this.x = (col - 1) * CELL_W + CELL_W/2;
-                                this.jumpRemaining--;
-                                if (this.jumpRemaining <= 0) {
-                                    this.jumpCooldownTimer = 10.0;
-                                }
-                                return;
-                            } else {
-                                if (this.attackTimer <= 0) {
-                                    const wasAlive = elem.health > 0;
-                                    elem.health -= this.attackDamage;  // 使用动态攻击伤害
-                                    this.attackTimer = 0.5;
-                                    if (wasAlive && elem.health <= 0) {
-                                        if (elem.data.role === 'explodenut') {
-                                            triggerAluminumExplosion(elem);
-                                        }
-                                        const idx = elements.findIndex(e => e === elem);
-                                        if (idx !== -1) elements.splice(idx,1);
-                                        gridElements[this.row][col] = null;
-                                        addParticles(elem.x, elem.y, elem.data.color, 15);
+                                const behindCol = col - 1;
+                                if (behindCol >= 0) {
+                                    const behindElem = gridElements[this.row]?.[behindCol];
+                                    if (!behindElem) {
+                                        this.x = behindCol * CELL_W + CELL_W / 2;
+                                    } else {
+                                        this.x = behindElem.x;
                                     }
-                                } else {
-                                    this.attackTimer -= deltaTime;
-                                }
-                                if (!elem.data.isSpikeweed) {
+                                    this.jumpRemaining--;
+                                    if (this.jumpRemaining <= 0) this.jumpCooldownTimer = 10.0;
                                     return;
                                 }
+                            }
+                            if (this.attackTimer <= 0) {
+                                const wasAlive = elem.health > 0;
+                                elem.health -= this.attackDamage;  // 使用动态攻击伤害
+                                this.attackTimer = 0.5;
+                                if (wasAlive && elem.health <= 0) {
+                                    onPlantEatenByZombie(elem);
+                                    if (elem.data.role === 'explodenut') {
+                                        triggerAluminumExplosion(elem);
+                                    }
+                                    const idx = elements.findIndex(e => e === elem);
+                                    if (idx !== -1) elements.splice(idx,1);
+                                    gridElements[this.row][col] = null;
+                                    addParticles(elem.x, elem.y, elem.data.color, 15);
+                                }
+                            } else {
+                                this.attackTimer -= deltaTime;
+                            }
+                            if (!elem.data.isSpikeweed) {
+                                return;
                             }
                         } else {
                             if (this.attackTimer <= 0) {
@@ -437,6 +965,7 @@
                                 elem.health -= this.attackDamage;  // 使用动态攻击伤害
                                 this.attackTimer = 0.5;
                                 if (wasAlive && elem.health <= 0) {
+                                    onPlantEatenByZombie(elem);
                                     if (elem.data.role === 'explodenut') {
                                         triggerAluminumExplosion(elem);
                                     }
@@ -551,11 +1080,79 @@
                 let poison = this.data.role === 'poison';
                 let bulletColor = this.data.color;
                 const isPierce = (this.data.role === 'pierce');
+                const isHoming = (this.data.role === 'homing');
+                const isBomb = (this.data.role === 'bomb');
+                
                 if (isPierce) {
                     bullets.push(new Bullet(this.x, this.y, null, dmg, poison ? 'poison' : 'normal', bulletColor, true));
+                } else if (isHoming) {
+                    // 铁元素：发射穿透子弹，在3路范围内来回穿梭30秒
+                    bullets.push(new Bullet(this.x, this.y, null, dmg, 'iron', bulletColor, false));
+                } else if (isBomb) {
+                    // 钠元素：炸弹攻击 - 精确抛物线计算
+                    const bombBullet = new Bullet(this.x, this.y, shootTarget, dmg, 'bomb', bulletColor, false);
+                    bombBullet.gravity = 0.15; // 进一步减小重力加速度
+                    
+                    // 计算精确的抛物线轨迹
+                    if (shootTarget) {
+                        const targetX = shootTarget.x;
+                        const targetY = shootTarget.y + 18; // 目标中心点
+                        const startX = this.x + 18; // 发射点中心
+                        const startY = this.y + 18;
+                        
+                        // 考虑僵尸的移动速度
+                        const zombieSpeed = shootTarget.speed || 0;
+                        const distance = Math.abs(targetX - startX);
+                        
+                        // 估算飞行时间（基于距离和僵尸速度）
+                        const estimatedTime = Math.max(0.5, distance / 150 + Math.abs(targetY - startY) / 100);
+                        
+                        // 预测僵尸在飞行时间后的位置
+                        const predictedX = targetX + zombieSpeed * estimatedTime * (targetX > startX ? -1 : 1);
+                        const dx = predictedX - startX;
+                        const dy = targetY - startY;
+                        
+                        // 使用二元抛物线方程求解
+                        // dy = vy0 * t - 0.5 * g * t²
+                        // dx = vx0 * t
+                        // 其中 t = dx / vx0
+                        
+                        // 求解二次方程：0.5 * g * t² - vy0 * t + dy = 0
+                        // 其中 t = dx / vx0
+                        
+                        // 使用精确的抛物线计算
+                        const g = bombBullet.gravity;
+                        
+                        // 根据距离选择合适的水平速度
+                        const horizontalDistance = Math.abs(dx);
+                        const vx0 = Math.max(2, Math.min(5, horizontalDistance / 25)); // 2-5之间的速度，根据距离调整
+                        const direction = dx > 0 ? 1 : -1;
+                        bombBullet.velocityX = vx0 * direction;
+                        
+                        // 计算飞行时间
+                        const t = horizontalDistance / vx0;
+                        
+                        // 计算所需的垂直速度：vy0 = (dy + 0.5 * g * t²) / t
+                        const vy0 = (dy + 0.5 * g * t * t) / t;
+                        
+                        // 确保是向上抛出，如果计算结果不合适，使用默认值
+                        if (vy0 >= 0 || isNaN(vy0)) {
+                            bombBullet.velocityY = -Math.max(2, Math.abs(dy) / 20);
+                        } else {
+                            bombBullet.velocityY = vy0;
+                        }
+                    } else {
+                        // 没有目标时的默认行为
+                        bombBullet.velocityY = -3;
+                        bombBullet.velocityX = 2;
+                    }
+                    
+                    bombBullet.originRow = this.row; // 记录发射时的行号
+                    bullets.push(bombBullet);
                 } else {
                     bullets.push(new Bullet(this.x, this.y, shootTarget, dmg, poison ? 'poison' : 'normal', bulletColor, false));
                 }
+                
                 if (this.data.role === 'repeater') {
                     bullets.push(new Bullet(this.x, this.y, shootTarget, dmg, poison ? 'poison' : 'normal', bulletColor, false));
                 }
@@ -581,13 +1178,547 @@
         }
 
         function initGrid() { gridElements = Array(ROWS).fill().map(() => Array(COLS).fill(null)); elements = []; }
+        function updateBossPosition() {
+            bossData.x = canvas.width - 140;
+            bossData.y = canvas.height / 2;
+        }
+        function showBossSkillBanner(text, style = "default") {
+            bossSkillBanner.text = text;
+            bossSkillBanner.style = style;
+            bossSkillBanner.startTime = performance.now();
+        }
+        function updateCanvasForBossArena() {
+            canvas.width = COLS * CELL_W + EXTRA_RIGHT + (bossArenaExpanded ? BOSS_ARENA_WIDTH : 0);
+            canvas.height = ROWS * CELL_H;
+            updateBossPosition();
+        }
+        function updateBossButton() {
+            const btn = document.getElementById('challengeBossBtn');
+            if (!btn) return;
+            if (!bossButtonUnlocked && totalScore >= BOSS_TRIGGER_SCORE) {
+                bossButtonUnlocked = true;
+                btn.classList.add('show');
+                btn.disabled = false;
+                document.getElementById('gameMessage').innerHTML = "👑 你已达到 1000 分！可点击“挑战Boss”进入Boss战准备阶段。";
+            }
+        }
+        function isDefensePlant(elem) {
+            return !!elem && (elem.data.role === 'wallnut' || elem.data.role === 'tallnut' || elem.data.role === 'explodenut');
+        }
+        function isOxidationPlant(elem) {
+            return !!elem && (elem.type === 'oxygen' || elem.type === 'fluorine');
+        }
+        function isReductionPlant(elem) {
+            return !!elem && (elem.type === 'magnesium' || elem.type === 'phosphorus' || elem.type === 'silicon' || elem.type === 'hydrogen' || elem.type === 'iron' || elem.type === 'sodium');
+        }
+        function isOxidationSpecialTarget(elem) {
+            return !!elem && (elem.type === 'carbon' || elem.type === 'hydrogen' || elem.type === 'silicon' || elem.type === 'magnesium' || elem.type === 'aluminum');
+        }
+        function isReductionSpecialTarget(elem) {
+            return !!elem && (elem.type === 'oxygen' || elem.type === 'fluorine' || elem.type === 'carbon' || elem.type === 'silicon');
+        }
+        function isHeliumNeon(elem) {
+            return !!elem && (elem.type === 'helium' || elem.type === 'neon');
+        }
+        function applyDamageToElement(elem, damage, damageSource = 'other') {
+            if (!elem || elem.health <= 0) return false;
+            const wasAlive = elem.health > 0;
+            elem.health -= damage;
+            if (wasAlive && elem.health <= 0) {
+                // 只有被僵尸吃掉或以魂换魂时才增加数值
+                if (damageSource === 'zombie' || damageSource === 'soulSwap') {
+                    if (elem.type === 'oxygen') bossData.oxidation += BOSS_PARAMS.oxidation.gain.oxygen;
+                    else if (elem.type === 'fluorine') bossData.oxidation += BOSS_PARAMS.oxidation.gain.fluorine;
+                    else if (elem.type === 'magnesium') bossData.reduction += BOSS_PARAMS.reduction.gain.magnesium;
+                    else if (elem.type === 'phosphorus') bossData.reduction += BOSS_PARAMS.reduction.gain.phosphorus;
+                    else if (elem.type === 'silicon') bossData.reduction += BOSS_PARAMS.reduction.gain.silicon;
+                    else if (elem.type === 'hydrogen') bossData.reduction += BOSS_PARAMS.reduction.gain.hydrogen;
+                    // 铁元素死亡时增加铁数
+                    if (elem.type === 'iron') {
+                        bossData.ironCount += 1;
+                    }
+                    if (isDefensePlant(elem)) {
+                        bossData.ironArmor += BOSS_PARAMS.ironArmor.gainPerDefensePlantEaten;
+                    }
+                }
+                if (elem.data.role === 'explodenut') triggerAluminumExplosion(elem);
+                const idx = elements.findIndex(e => e === elem);
+                if (idx !== -1) elements.splice(idx, 1);
+                gridElements[elem.row][elem.col] = null;
+                addParticles(elem.x, elem.y, elem.data.color, 15);
+                return true;
+            }
+            return false;
+        }
+        function onPlantEatenByZombie(elem) {
+            // 数值增加逻辑已移至applyDamageToElement函数中
+            // 这里只处理其他逻辑（如爆炸等）
+        }
+        function absorbZombieToBoss(zombie) {
+            const hpGain = Math.max(120, Math.floor(zombie.maxHp * BOSS_PARAMS.absorbToHpFactor));
+            bossData.hp = Math.min(bossData.maxHp, bossData.hp + hpGain);
+            const corpseGain = Math.max(BOSS_PARAMS.absorbToCorpseMin, Math.floor(zombie.maxHp / BOSS_PARAMS.absorbToCorpseDivisor));
+            bossData.corpseValue += corpseGain;
+            bossData.absorbList[zombie.type] = (bossData.absorbList[zombie.type] || 0) + 1;
+        }
+        function updateZombieTowardBoss(z, deltaTime) {
+            const moveSpeed = (z.speed / 60) * 1.25;
+            const dx = bossData.x - z.x;
+            const dy = bossData.y - z.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 18) {
+                absorbZombieToBoss(z);
+                addParticles(z.x, z.y, "#a33dd9", 16);
+                return true;
+            }
+            if (dist > 0.001) {
+                const step = Math.min(moveSpeed, dist);
+                z.x += (dx / dist) * step;
+                z.y += (dy / dist) * step;
+            }
+            if (z.poisoned > 0) { z.hp -= 2; z.poisoned--; }
+            return false;
+        }
+        function startBossChallenge() {
+            if (!bossButtonUnlocked || bossState !== 'inactive' || gameOver) return;
+            bossState = 'prep';
+            bossArenaExpanded = true;
+            bossPrepStartTime = performance.now();
+            bossData.hp = 1;
+            bossData.corpseValue = 0;
+            bossData.oxidation = BOSS_PARAMS.initialOxidation;
+            bossData.reduction = BOSS_PARAMS.initialReduction;
+            bossData.ironArmor = BOSS_PARAMS.ironArmor.initial;
+            for (let key in bossData.absorbList) bossData.absorbList[key] = 0;
+            bossVortex = null;
+            bossDomain = null;
+            bossShockwaves = [];
+            bossCooldowns.domain = 0;
+            bossCooldowns.soulSwap = 0;
+            bossSkillBanner.text = "";
+            bossSkillBanner.startTime = 0;
+            bossSkillTimer = 0;
+            bossSoulSwapTimer = 0;
+            lastBossTickTime = performance.now();
+            updateCanvasForBossArena();
+            const btn = document.getElementById('challengeBossBtn');
+            btn.disabled = true;
+            btn.innerText = "👑 Boss准备中";
+            document.getElementById('gameMessage').innerHTML = "⚠️ Boss战准备开始！你有 3 分钟布阵。期间僵尸将被死灵法师吸收并强化Boss。";
+        }
+        function updateBossProjectiles(delta) {
+            if (!bossVortex) return;
+            if (bossVortex.tickTimer > 0) bossVortex.tickTimer -= delta;
+            if (bossVortex.tickTimer > 0) return;
+            bossVortex.tickTimer = BOSS_PARAMS.vortex.tickSec;
+            bossShockwaves.push({
+                x: bossData.x,
+                y: bossData.y,
+                radius: 40,
+                maxRadius: BOSS_PARAMS.vortex.visualMaxRadius,
+                speed: BOSS_PARAMS.vortex.visualSpeed * 1.2, // 强化视觉速度
+                alpha: 0.95,
+                color: "rgba(186,120,255,0.95)",
+                lineWidth: 8 // 强化视觉线宽
+            });
+            for (let row = 0; row < ROWS; row++) {
+                const rowElems = elements
+                    .filter(elem => elem.row === row && elem.x <= bossData.x)
+                    .sort((a, b) => b.x - a.x)
+                    .slice(0, 2);
+                if (rowElems.length === 0) continue;
+                for (let target of rowElems) {
+                    let dmg = target.maxHealth * 0.2; // 固定伤害：目标元素最大生命值的20%
+                    if (isDefensePlant(target)) dmg *= BOSS_PARAMS.vortex.defenseBonus;
+                    if (isReductionPlant(target)) dmg *= BOSS_PARAMS.vortex.reductionBonus;
+                    applyDamageToElement(target, dmg, 'vortex');
+                    bossVortex.remainingDamage -= Math.floor(dmg);
+                    addParticles(target.x, target.y, "#b83bff", 12); // 强化粒子数量
+                    if (bossVortex.remainingDamage <= 0) {
+                        bossVortex = null;
+                        return;
+                    }
+                }
+            }
+        }
+        function castVortexSkill() {
+            if (bossData.corpseValue < BOSS_PARAMS.vortex.minCorpseCost || bossVortex) return false;
+            // 计算预期的总伤害（假设攻击所有可能的元素）
+            let totalExpectedDamage = 0;
+            for (let row = 0; row < ROWS; row++) {
+                const rowElems = elements
+                    .filter(elem => elem.row === row && elem.x <= bossData.x)
+                    .sort((a, b) => b.x - a.x)
+                    .slice(0, 2);
+                for (let target of rowElems) {
+                    let dmg = target.maxHealth * 0.2;
+                    if (isDefensePlant(target)) dmg *= BOSS_PARAMS.vortex.defenseBonus;
+                    if (isReductionPlant(target)) dmg *= BOSS_PARAMS.vortex.reductionBonus;
+                    totalExpectedDamage += dmg;
+                }
+            }
+            const requiredCorpseValue = Math.ceil(totalExpectedDamage / 4); // 消耗 = 总伤害 / 4
+            const spend = Math.min(
+                BOSS_PARAMS.vortex.maxCorpseCost,
+                Math.max(BOSS_PARAMS.vortex.minCorpseCost, requiredCorpseValue)
+            );
+            if (bossData.corpseValue < spend) return false;
+            bossData.corpseValue -= spend;
+            bossVortex = { remainingDamage: totalExpectedDamage, tickTimer: 0.15 }; // 强化漩涡频率
+            document.getElementById('gameMessage').innerHTML = `🌀 极之番·漩涡发动！消耗尸值 ${spend}。`;
+            showBossSkillBanner("极之番·漩涡", "vortex");
+            return true;
+        }
+        function castDomainSkill() {
+            const pool = Object.values(bossData.absorbList).reduce((a, b) => a + b, 0);
+            if (pool < BOSS_PARAMS.domain.minPool || bossCooldowns.domain > 0 || bossDomain) return false;
+            const radiusPx = BOSS_PARAMS.domain.radiusCells * CELL_W;
+            const targetPlants = elements.filter(e => Math.hypot(e.x - bossData.x, e.y - bossData.y) <= radiusPx);
+            if (targetPlants.length === 0) return false;
+            const typeKeys = Object.keys(bossData.absorbList).filter(k => bossData.absorbList[k] > 0);
+            const spawnCount = Math.min(targetPlants.length, Math.max(BOSS_PARAMS.domain.minSpawn, Math.floor(pool * BOSS_PARAMS.domain.spawnRate)));
+            for (let i = 0; i < spawnCount; i++) {
+                const target = targetPlants[Math.floor(Math.random() * targetPlants.length)];
+                const type = typeKeys[Math.floor(Math.random() * typeKeys.length)];
+                if (!type) break;
+                const typeData = ZOMBIE_TYPES[type];
+                const z = new Zombie(target.row, type, typeData.hpBase, typeData.speedBase, typeData.rewardScore, target.x + 18);
+                zombies.push(z);
+                bossData.absorbList[type]--;
+                if (bossData.absorbList[type] <= 0) {
+                    const idx = typeKeys.indexOf(type);
+                    if (idx !== -1) typeKeys.splice(idx, 1);
+                }
+                addParticles(z.x, z.y, "#7e2b9f", 10);
+                if (typeKeys.length === 0) break;
+            }
+            bossDomain = { radiusPx, remain: BOSS_PARAMS.domain.durationSec, tickTimer: 1.0 };
+            bossCooldowns.domain = BOSS_PARAMS.domain.cooldownSec;
+            document.getElementById('gameMessage').innerHTML = "🧿 领域展开·尸横遍野！";
+            showBossSkillBanner("领域展开·尸横遍野", "domain");
+            return true;
+        }
+        function castOxidationSkill() {
+            if (bossData.oxidation < BOSS_PARAMS.oxidation.minCost) return false;
+            const spend = Math.min(BOSS_PARAMS.oxidation.maxCost, bossData.oxidation);
+            bossData.oxidation -= spend;
+            const damage = spend;
+            let hit = false;
+            for (let i = elements.length - 1; i >= 0; i--) {
+                const elem = elements[i];
+                if (Math.random() > BOSS_PARAMS.oxidation.procChance) continue;
+                let finalDmg = damage;
+                if (isOxidationSpecialTarget(elem)) {
+                    if (isDefensePlant(elem) || isReductionPlant(elem)) finalDmg *= BOSS_PARAMS.oxidation.antiDefenseReductionBonus;
+                    if (isReductionPlant(elem)) finalDmg *= BOSS_PARAMS.oxidation.antiReductionBonus;
+                } else if (isHeliumNeon(elem)) {
+                    finalDmg *= 0.5;
+                }
+                applyDamageToElement(elem, finalDmg, 'oxidation');
+                hit = true;
+                // 火焰攻击特效：添加更多火红粒子和爆炸效果
+                addParticles(elem.x, elem.y, "#ff4500", 12); // 火红粒子
+                addParticles(elem.x, elem.y, "#ff8a00", 8);  // 橙色粒子
+                addParticles(elem.x, elem.y, "#ffff00", 4);  // 黄色火花
+                // 添加火焰爆炸动画
+                addFireExplosion(elem.x, elem.y);
+            }
+            if (hit) document.getElementById('gameMessage').innerHTML = `🔥 氧化·灶，消耗 ${spend} 氧化数。`;
+            if (hit) showBossSkillBanner("氧化·灶", "oxidation");
+            return hit;
+        }
+        function castReductionSkill() {
+            if (bossData.reduction < BOSS_PARAMS.reduction.minCost) return false;
+            const spend = Math.min(BOSS_PARAMS.reduction.maxCost, bossData.reduction);
+            bossData.reduction -= spend;
+            const damage = spend;
+            let hit = false;
+            for (let i = elements.length - 1; i >= 0; i--) {
+                const elem = elements[i];
+                if (Math.random() > BOSS_PARAMS.reduction.procChance) continue;
+                let finalDmg = damage;
+                if (isReductionSpecialTarget(elem)) {
+                    if (isOxidationPlant(elem) || elem.type === 'carbon' || elem.type === 'silicon') finalDmg *= BOSS_PARAMS.reduction.antiOxidationBonus;
+                } else if (isHeliumNeon(elem)) {
+                    finalDmg *= 0.5;
+                }
+                applyDamageToElement(elem, finalDmg, 'reduction');
+                hit = true;
+                // 冰霜攻击特效：添加更多冰蓝粒子和冰晶效果
+                addParticles(elem.x, elem.y, "#00bfff", 12); // 深蓝冰粒子
+                addParticles(elem.x, elem.y, "#44d9ff", 8);  // 亮蓝粒子
+                addParticles(elem.x, elem.y, "#e0ffff", 4);  // 冰白粒子
+                // 添加冰霜爆炸动画
+                addFrostExplosion(elem.x, elem.y);
+            }
+            if (hit) document.getElementById('gameMessage').innerHTML = `💧 还原·淽，消耗 ${spend} 还原数。`;
+            if (hit) showBossSkillBanner("还原·淽", "reduction");
+            return hit;
+        }
+        function castIronQuakeSkill() {
+            if (bossData.ironArmor < BOSS_PARAMS.ironArmor.minCost) return false;
+            const spend = Math.min(BOSS_PARAMS.ironArmor.maxCost, bossData.ironArmor);
+            bossData.ironArmor -= spend;
+            const radiusPx = BOSS_PARAMS.ironArmor.radiusCells * CELL_W;
+            let hit = false;
+            for (let i = elements.length - 1; i >= 0; i--) {
+                const elem = elements[i];
+                const dist = Math.hypot(elem.x - bossData.x, elem.y - bossData.y);
+                if (dist > radiusPx) continue;
+                let dmg = spend * BOSS_PARAMS.ironArmor.damageMultiplier;
+                if (isDefensePlant(elem)) dmg *= BOSS_PARAMS.ironArmor.antiDefenseBonus;
+                applyDamageToElement(elem, dmg, 'ironQuake');
+                addParticles(elem.x, elem.y, "#b0c4de", 10);
+                hit = true;
+            }
+            bossShockwaves.push({
+                x: bossData.x,
+                y: bossData.y,
+                radius: 60,
+                maxRadius: radiusPx,
+                speed: 560,
+                alpha: 0.95,
+                color: "rgba(200,220,255,0.95)",
+                lineWidth: 8
+            });
+            if (hit) document.getElementById('gameMessage').innerHTML = `🛡️ 铁甲震荡波！消耗铁甲值 ${spend}。`;
+            if (hit) showBossSkillBanner("铁甲震荡波", "iron");
+            return hit;
+        }
+        function castSoulSwapSkill() {
+            if (bossData.corpseValue < BOSS_PARAMS.soulSwap.minCost || bossCooldowns.soulSwap > 0 || bossSoulSwap) return false;
+            const radiusPx = BOSS_PARAMS.soulSwap.radiusCells * CELL_W;
+            const targetPlants = elements.filter(e => Math.hypot(e.x - bossData.x, e.y - bossData.y) <= radiusPx);
+            if (targetPlants.length < BOSS_PARAMS.soulSwap.targetCount) return false;
+            
+            // 智能选择目标：优先级排序
+            // 1. 铁元素（提供铁数）优先级最高
+            // 2. 其他还原性元素
+            // 3. 氧化性元素
+            // 4. 其他元素
+            const priorityOrder = ['iron', 'magnesium', 'phosphorus', 'silicon', 'hydrogen', 'oxygen', 'fluorine'];
+            
+            targetPlants.sort((a, b) => {
+                const aPriority = priorityOrder.indexOf(a.type);
+                const bPriority = priorityOrder.indexOf(b.type);
+                const aValidPriority = aPriority === -1 ? 999 : aPriority;
+                const bValidPriority = bPriority === -1 ? 999 : bPriority;
+                return aValidPriority - bValidPriority;
+            });
+            
+            const targets = targetPlants.slice(0, BOSS_PARAMS.soulSwap.targetCount);
+            
+            // 计算总消耗
+            let totalCost = 0;
+            for (let target of targets) {
+                totalCost += Math.floor(target.health);
+            }
+            
+            if (bossData.corpseValue < totalCost) return false;
+            
+            // 启动灵魂交换
+            bossSoulSwap = {
+                targets: targets,
+                duration: 3.0, // 3秒换魂时间
+                elapsed: 0,
+                totalCost: totalCost,
+                chains: [] // 存储链条数据
+            };
+            
+            // 初始化每个目标的链条
+            for (let target of targets) {
+                bossSoulSwap.chains.push({
+                    target: target,
+                    crimsonOffset: 0, // 猩红色链条偏移
+                    soulOffset: 0     // 灵魂蓝色链条偏移
+                });
+            }
+            
+            bossData.corpseValue -= totalCost;
+            bossCooldowns.soulSwap = BOSS_PARAMS.soulSwap.cooldownSec;
+            document.getElementById('gameMessage').innerHTML = `👻 以魂换魂！消耗尸值 ${totalCost}，开始灵魂交换仪式。`;
+            showBossSkillBanner("以魂换魂", "soulSwap");
+            return true;
+        }
+        function castIronCannonSkill() {
+            if (bossData.ironCount < BOSS_PARAMS.ironCannon.baseCost) return false;
+            
+            // AI智能选择：计算最优的额外消耗
+            let extraIron = 0;
+            let bestScore = 0;
+            const maxExtra = Math.min(5, bossData.ironCount - BOSS_PARAMS.ironCannon.baseCost); // 最多额外消耗5个铁数
+            
+            for (let extra = 0; extra <= maxExtra; extra++) {
+                const totalIron = BOSS_PARAMS.ironCannon.baseCost + extra;
+                const lifetime = BOSS_PARAMS.ironCannon.lifetime * (1 + extra * BOSS_PARAMS.ironCannon.extraTimeMultiplier);
+                const damage = BOSS_PARAMS.ironCannon.damage * Math.pow(BOSS_PARAMS.ironCannon.extraDamageMultiplier, extra);
+                
+                // 评分标准：伤害 * 存在时间 + 元素数量权重
+                const score = damage * lifetime + elements.length * 10;
+                if (score > bestScore) {
+                    bestScore = score;
+                    extraIron = extra;
+                }
+            }
+            
+            const totalIronCost = BOSS_PARAMS.ironCannon.baseCost + extraIron;
+            const finalDamage = BOSS_PARAMS.ironCannon.damage * Math.pow(BOSS_PARAMS.ironCannon.extraDamageMultiplier, extraIron);
+            const finalLifetime = BOSS_PARAMS.ironCannon.lifetime * (1 + extraIron * BOSS_PARAMS.ironCannon.extraTimeMultiplier);
+            
+            bossData.ironCount -= totalIronCost;
+            
+            // 创建2*2巨大铁球：先创建聚集动画
+            const ironBall = new Bullet(bossData.x, bossData.y, null, finalDamage, 'ironCannon', "#C0C0C0", false);
+            ironBall.lifetime = finalLifetime;
+            ironBall.state = 'gathering'; // 新增聚集状态
+            ironBall.gatherTime = 1.5; // 聚集时间1.5秒
+            ironBall.gatherProgress = 0;
+            ironBall.size = 0; // 初始大小为0
+            ironBall.maxSize = CELL_W * 2; // 最终大小为2*2格
+            ironBall.lockedTarget = null;
+            ironBall.velocityX = 0;
+            ironBall.velocityY = 0;
+            ironBall.acceleration = 0.3;
+            ironBall.maxSpeed = 8;
+            ironBall.attackTimer = 0;
+            
+            bullets.push(ironBall);
+            
+            document.getElementById('gameMessage').innerHTML = `🔫 铁砂大炮！消耗铁数 ${totalIronCost}，发射智能追踪弹（伤害${finalDamage}，持续${finalLifetime.toFixed(1)}秒）。`;
+            showBossSkillBanner("铁砂大炮", "iron");
+            return true;
+        }
+        function bossTakeDamageFromBullets() {
+            if (bossState === 'inactive') return;
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                const dist = Math.hypot(b.x - bossData.x, b.y - bossData.y);
+                if (dist <= 52) {
+                    bossData.hp = Math.max(0, bossData.hp - b.damage);
+                    addParticles(bossData.x, bossData.y, "#ffe3ff", 4);
+                    if (!b.isPierce) bullets.splice(i, 1);
+                }
+            }
+        }
+        function bossBattleTick(now, delta) {
+            if (bossState !== 'battle') return;
+            if (!lastBossTickTime) lastBossTickTime = now;
+            if (bossCooldowns.domain > 0) bossCooldowns.domain = Math.max(0, bossCooldowns.domain - delta);
+            if (bossCooldowns.soulSwap > 0) bossCooldowns.soulSwap = Math.max(0, bossCooldowns.soulSwap - delta);
+            if (bossDomain) {
+                bossDomain.remain -= delta;
+                bossDomain.tickTimer -= delta;
+                if (bossDomain.tickTimer <= 0) {
+                    bossDomain.tickTimer += 1.0;
+                    const targetPlants = elements.filter(e => Math.hypot(e.x - bossData.x, e.y - bossData.y) <= bossDomain.radiusPx);
+                    if (targetPlants.length > 0) {
+                        const typeKeys = Object.keys(bossData.absorbList).filter(k => bossData.absorbList[k] > 0);
+                        for (let target of targetPlants) {
+                            if (typeKeys.length === 0) break; // 如果没有可用的吸收类型，停止生成
+                            const type = typeKeys[Math.floor(Math.random() * typeKeys.length)];
+                            const typeData = ZOMBIE_TYPES[type];
+                            const z = new Zombie(target.row, type, typeData.hpBase, typeData.speedBase, typeData.rewardScore, target.x + 18);
+                            zombies.push(z);
+                            bossData.absorbList[type]--; // 消耗吸收列表中的数量
+                            if (bossData.absorbList[type] <= 0) {
+                                const idx = typeKeys.indexOf(type);
+                                if (idx !== -1) typeKeys.splice(idx, 1);
+                            }
+                            addParticles(z.x, z.y, "#7e2b9f", 6);
+                        }
+                    }
+                }
+                if (bossDomain.remain <= 0) bossDomain = null;
+            }
+            if (bossSoulSwap) {
+                bossSoulSwap.elapsed += delta;
+                
+                // 更新链条偏移
+                for (let chain of bossSoulSwap.chains) {
+                    chain.crimsonOffset += delta * 2; // 猩红色链条偏移速度
+                    chain.soulOffset += delta * 1.5; // 灵魂蓝色链条偏移速度
+                }
+                
+                // 均匀消耗生命值
+                const progress = bossSoulSwap.elapsed / bossSoulSwap.duration;
+                for (let chain of bossSoulSwap.chains) {
+                    const target = chain.target;
+                    if (target.health > 0) {
+                        const damagePerSecond = target.health / bossSoulSwap.duration;
+                        const damageThisFrame = damagePerSecond * delta;
+                        applyDamageToElement(target, damageThisFrame, 'soulSwap');
+                    }
+                }
+                
+                // 检查是否完成
+                if (bossSoulSwap.elapsed >= bossSoulSwap.duration) {
+                    // 最终杀死所有目标
+                    for (let chain of bossSoulSwap.chains) {
+                        const target = chain.target;
+                        if (target.health > 0) {
+                            applyDamageToElement(target, target.health, 'soulSwap');
+                            addParticles(target.x, target.y, "#8b0000", 15);
+                        }
+                    }
+                    const totalCost = bossSoulSwap.totalCost;
+                    bossSoulSwap = null;
+                    document.getElementById('gameMessage').innerHTML = `👻 以魂换魂完成！获得 ${totalCost} 尸值。`;
+                }
+            }
+            for (let i = bossShockwaves.length - 1; i >= 0; i--) {
+                const w = bossShockwaves[i];
+                w.radius += w.speed * delta;
+                w.alpha = Math.max(0, w.alpha - delta * 0.7);
+                if (w.radius >= w.maxRadius || w.alpha <= 0) bossShockwaves.splice(i, 1);
+            }
+            updateBossProjectiles(delta);
+            if (now - lastBossTickTime >= BOSS_PARAMS.battleAbsorbIntervalMs && zombies.length > 0) {
+                lastBossTickTime = now;
+                if (Math.random() < BOSS_PARAMS.battleAbsorbChance) {
+                    const idx = Math.floor(Math.random() * zombies.length);
+                    const z = zombies[idx];
+                    absorbZombieToBoss(z);
+                    addParticles(z.x, z.y, "#a33dd9", 14);
+                    zombies.splice(idx, 1);
+                }
+            }
+            bossSkillTimer += delta;
+            if (bossSkillTimer >= BOSS_PARAMS.skillCycleSec && !bossSoulSwap) {
+                bossSkillTimer = 0;
+                const skillOrder = [castVortexSkill, castDomainSkill, castOxidationSkill, castReductionSkill, castIronQuakeSkill, castSoulSwapSkill, castIronCannonSkill];
+                for (let cast of skillOrder) {
+                    if (cast()) break;
+                }
+            }
+            // 主动触发以魂换魂技能
+            bossSoulSwapTimer += delta;
+            if (bossSoulSwapTimer >= 30.0) { // 每30秒尝试一次
+                bossSoulSwapTimer = 0;
+                if (castSoulSwapSkill()) {
+                    // 成功触发
+                }
+            }
+        }
         function updateUI() {
             document.getElementById('essence').innerText = Math.floor(essence);
             document.getElementById('score').innerText = totalScore;
             if (gameStartTime) {
                 const elapsed = (performance.now() - gameStartTime) / 1000;
                 document.getElementById('gameTime').innerText = elapsed.toFixed(1);
+                // ===== ADMIN DEBUG UI UPDATE START (可整段删除) =====
+                const adminTimeInputEl = document.getElementById('adminTimeInput');
+                if (adminTimeInputEl) {
+                    adminTimeInputEl.value = elapsed.toFixed(1);
+                }
+                // ===== ADMIN DEBUG UI UPDATE END =====
             }
+            // ===== ADMIN DEBUG UI UPDATE START (可整段删除) =====
+            const adminScoreInputEl = document.getElementById('adminScoreInput');
+            if (adminScoreInputEl) {
+                adminScoreInputEl.value = totalScore;
+            }
+            // ===== ADMIN DEBUG UI UPDATE END =====
+            updateBossButton();
         }
 
         function spawnElectronAt(x, y) {
@@ -823,6 +1954,12 @@
             const elapsed = (now - gameStartTime) / 1000;
             if (elapsed < 60) return;
             let baseInterval = Math.max(0.8, 2.5 - totalScore / 500);
+            
+            // Boss准备阶段大幅增加僵尸生成
+            if (bossState === 'prep') {
+                baseInterval = Math.max(0.1, baseInterval / 10); // 生成速度提高10倍
+            }
+            
             if (!lastZombieSpawnTime) lastZombieSpawnTime = now;
             if (now - lastZombieSpawnTime >= baseInterval * 1000) {
                 lastZombieSpawnTime = now;
@@ -841,7 +1978,12 @@
                 const speed = Math.min(200, typeData.speedBase + extraSpeed);
                 const rewardScore = typeData.rewardScore;
                 const row = Math.floor(Math.random() * ROWS);
-                const startX = canvas.width - EXTRA_RIGHT/2 - 20;
+                let startX = canvas.width - EXTRA_RIGHT/2 - 20;
+                if (bossState === 'prep' && bossArenaExpanded) {
+                    const bossAreaLeft = COLS * CELL_W + EXTRA_RIGHT + 20;
+                    const bossAreaRight = canvas.width - 40;
+                    startX = bossAreaLeft + Math.random() * Math.max(0, bossAreaRight - bossAreaLeft);
+                }
                 const zombie = new Zombie(row, chosenType, hp, speed, rewardScore, startX);
                 zombies.push(zombie);
             }
@@ -875,17 +2017,19 @@
             const elemData = ELEMENTS[selectedElement];
             if (elemData.isSkill) return false;
             const cost = elemData.cost;
-            if (essence < cost) { document.getElementById('gameMessage').innerHTML = `❌ 电子不足，需要 ${cost} 电子！`; return false; }
-            if (isElementOnCooldown(selectedElement)) {
+            const canIgnoreEssence = adminDebug.enabled && adminDebug.freePlaceIgnoreEssence;
+            const canIgnoreCooldown = adminDebug.enabled && adminDebug.ignoreElementCooldown;
+            if (!canIgnoreEssence && essence < cost) { document.getElementById('gameMessage').innerHTML = `❌ 电子不足，需要 ${cost} 电子！`; return false; }
+            if (!canIgnoreCooldown && isElementOnCooldown(selectedElement)) {
                 document.getElementById('gameMessage').innerHTML = `⏳ 元素 ${elemData.name} 冷却中，请稍后再放。`;
                 return false;
             }
-            essence -= cost;
+            if (!canIgnoreEssence) essence -= cost;
             const newElem = new ElementObj(selectedElement, row, col);
             gridElements[row][col] = newElem;
             elements.push(newElem);
             updateUI();
-            startElementCooldown(selectedElement, elemData.cd);
+            if (!canIgnoreCooldown) startElementCooldown(selectedElement, elemData.cd);
             addParticles(newElem.x, newElem.y, elemData.color, 12);
             return true;
         }
@@ -951,6 +2095,14 @@
             let delta = Math.min(0.033, (now - lastFrame) / 1000);
             if (delta <= 0) { lastFrame = now; requestAnimationFrame(gameUpdate); return; }
             lastFrame = now;
+            if (bossState === 'prep') {
+                const prepElapsed = now - bossPrepStartTime;
+                if (prepElapsed >= BOSS_PREP_DURATION) {
+                    bossState = 'battle';
+                    bossData.hp = bossData.maxHp;
+                    document.getElementById('gameMessage').innerHTML = "☠️ Boss战正式开始！BOSS·元素之主-死灵法师 已进入满血状态。";
+                }
+            }
 
             updateCooldowns(now);
             trySpawnElectron(now);
@@ -960,10 +2112,20 @@
 
             for (let elem of elements) elem.update(delta);
             for (let i=bullets.length-1; i>=0; i--) { bullets[i].update(delta); if (!bullets[i].active) bullets.splice(i,1); }
+            bossTakeDamageFromBullets();
+            bossBattleTick(now, delta);
 
             for (let i=zombies.length-1; i>=0; i--) {
                 const z = zombies[i];
-                z.update(delta);
+                if (bossState === 'prep') {
+                    const absorbed = updateZombieTowardBoss(z, delta);
+                    if (absorbed) {
+                        zombies.splice(i,1);
+                        continue;
+                    }
+                } else {
+                    z.update(delta);
+                }
                 if (z.x + z.width/2 <= 0) {
                     gameOver = true;
                     document.getElementById('gameMessage').innerHTML = "💀 游戏结束！";
@@ -1038,16 +2200,241 @@
             for (let i = 0; i <= ROWS; i++) {
                 ctx.beginPath();
                 ctx.moveTo(0, i*CELL_H);
-                ctx.lineTo(canvas.width - EXTRA_RIGHT, i*CELL_H);
+                ctx.lineTo(COLS * CELL_W, i*CELL_H);
                 ctx.stroke();
             }
             ctx.fillStyle = "#1a3a2a";
-            ctx.fillRect(canvas.width - EXTRA_RIGHT, 0, EXTRA_RIGHT, canvas.height);
+            ctx.fillRect(COLS * CELL_W, 0, canvas.width - COLS * CELL_W, canvas.height);
             ctx.strokeStyle = "#5a7a4a";
-            ctx.strokeRect(canvas.width - EXTRA_RIGHT, 0, EXTRA_RIGHT, canvas.height);
+            ctx.strokeRect(COLS * CELL_W, 0, canvas.width - COLS * CELL_W, canvas.height);
+            if (bossArenaExpanded) {
+                ctx.save();
+                ctx.fillStyle = "rgba(20, 8, 35, 0.55)";
+                ctx.fillRect(canvas.width - BOSS_ARENA_WIDTH, 0, BOSS_ARENA_WIDTH, canvas.height);
+                ctx.strokeStyle = "#a33dd9";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(canvas.width - BOSS_ARENA_WIDTH, 0);
+                ctx.lineTo(canvas.width - BOSS_ARENA_WIDTH, canvas.height);
+                ctx.stroke();
+                ctx.font = "bold 20px sans-serif";
+                ctx.fillStyle = "#d8b0ff";
+                ctx.fillText("BOSS 场地", canvas.width - BOSS_ARENA_WIDTH + 20, 30);
+                ctx.restore();
+            }
             
             for (let elem of elements) elem.draw(ctx);
             for (let z of zombies) z.draw(ctx);
+            if (bossState !== 'inactive') {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(bossData.x, bossData.y, 45, 0, Math.PI * 2);
+                ctx.fillStyle = "#4b1f64";
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = "#d8b0ff";
+                ctx.stroke();
+                ctx.fillStyle = "#f5e6ff";
+                ctx.font = "bold 14px sans-serif";
+                ctx.fillText("死灵法师", bossData.x - 36, bossData.y + 5);
+                ctx.restore();
+
+                const percent = Math.max(0, Math.min(1, bossData.hp / bossData.maxHp));
+                const barW = Math.min(500, canvas.width - 120);
+                const barX = (canvas.width - barW) / 2;
+                const barY = 12;
+                ctx.fillStyle = "#2d163f";
+                ctx.fillRect(barX, barY, barW, 22);
+                ctx.fillStyle = "#b83bff";
+                ctx.fillRect(barX, barY, barW * percent, 22);
+                ctx.strokeStyle = "#f0c9ff";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, barY, barW, 22);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 14px sans-serif";
+                ctx.fillText(`BOSS·元素之主-死灵法师  HP ${Math.floor(bossData.hp)} / ${bossData.maxHp}`, barX + 8, barY + 16);
+                ctx.fillStyle = "#f3d9ff";
+                ctx.font = "bold 12px sans-serif";
+                ctx.fillText(`尸值:${bossData.corpseValue}  氧化:${bossData.oxidation}  还原:${bossData.reduction}  铁甲:${bossData.ironArmor}  铁数:${bossData.ironCount}`, barX + 8, barY + 36);
+                const absorbedTotal = Object.values(bossData.absorbList).reduce((a, b) => a + b, 0);
+                ctx.fillText(`吸收僵尸:${absorbedTotal}  [B:${bossData.absorbList.Basic} A:${bossData.absorbList.Armored} F:${bossData.absorbList.Fast} E:${bossData.absorbList.Explosive} R:${bossData.absorbList.Runner} J:${bossData.absorbList.Jumper} G:${bossData.absorbList.Giant} H:${bossData.absorbList.Healer}]`, barX + 8, barY + 52);
+                if (bossState === 'prep') {
+                    const remainSec = Math.max(0, Math.ceil((BOSS_PREP_DURATION - (performance.now() - bossPrepStartTime)) / 1000));
+                    ctx.fillStyle = "#ffd8ff";
+                    ctx.font = "bold 13px sans-serif";
+                    ctx.fillText(`准备时间剩余：${remainSec}s`, barX + barW - 140, barY + 68);
+                }
+                if (bossVortex) {
+                    ctx.fillStyle = "#d6a6ff";
+                    ctx.fillText(`漩涡剩余伤害: ${Math.max(0, Math.floor(bossVortex.remainingDamage))}`, barX + barW - 170, barY + 36);
+                }
+                if (bossCooldowns.domain > 0) {
+                    ctx.fillStyle = "#d6a6ff";
+                    ctx.fillText(`领域冷却: ${bossCooldowns.domain.toFixed(1)}s`, barX + barW - 150, barY + 52);
+                }
+                if (bossCooldowns.soulSwap > 0) {
+                    ctx.fillStyle = "#ff6b6b";
+                    ctx.fillText(`魂换冷却: ${bossCooldowns.soulSwap.toFixed(1)}s`, barX + barW - 150, barY + 68);
+                }
+                if (bossDomain) {
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(200,120,255,0.55)";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(bossData.x, bossData.y, bossDomain.radiusPx, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                if (bossSoulSwap) {
+                    // 渲染猩红色领域
+                    ctx.save();
+                    ctx.fillStyle = "rgba(220, 20, 60, 0.3)"; // 猩红色半透明
+                    ctx.strokeStyle = "#DC143C"; // 猩红色边框
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(bossData.x, bossData.y, BOSS_PARAMS.soulSwap.radiusCells * CELL_W, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.restore();
+                    
+                    // 渲染链条
+                    for (let chain of bossSoulSwap.chains) {
+                        const target = chain.target;
+                        if (target.health <= 0) continue;
+                        
+                        // 猩红色链条（偏向植物）
+                        ctx.save();
+                        ctx.strokeStyle = "#DC143C";
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        const crimsonX = bossData.x + Math.sin(chain.crimsonOffset) * 20;
+                        const crimsonY = bossData.y + Math.cos(chain.crimsonOffset) * 20;
+                        ctx.moveTo(crimsonX, crimsonY);
+                        ctx.lineTo(target.x + 18, target.y + 18);
+                        ctx.stroke();
+                        ctx.restore();
+                        
+                        // 灵魂蓝色链条（偏向Boss）
+                        ctx.save();
+                        ctx.strokeStyle = "#4169E1"; // 灵魂蓝色
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([8, 4]);
+                        ctx.beginPath();
+                        const soulX = target.x + 18 + Math.sin(chain.soulOffset) * 15;
+                        const soulY = target.y + 18 + Math.cos(chain.soulOffset) * 15;
+                        ctx.moveTo(bossData.x, bossData.y);
+                        ctx.lineTo(soulX, soulY);
+                        ctx.stroke();
+                        ctx.restore();
+                        
+                        // 添加丰富的粒子效果
+                        const progress = bossSoulSwap.elapsed / bossSoulSwap.duration;
+                        
+                        // 猩红色粒子：沿着链条流动
+                        for (let i = 0; i < 3; i++) {
+                            const particleProgress = (progress + i * 0.3) % 1;
+                            const particleX = crimsonX + (target.x + 18 - crimsonX) * particleProgress;
+                            const particleY = crimsonY + (target.y + 18 - crimsonY) * particleProgress;
+                            
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(particleX, particleY, 4, 0, Math.PI * 2);
+                            ctx.fillStyle = "#DC143C";
+                            ctx.shadowBlur = 8;
+                            ctx.shadowColor = "#DC143C";
+                            ctx.fill();
+                            ctx.restore();
+                        }
+                        
+                        // 灵魂蓝色粒子：沿着链条流动
+                        for (let i = 0; i < 2; i++) {
+                            const particleProgress = (progress + i * 0.5 + 0.2) % 1;
+                            const particleX = bossData.x + (soulX - bossData.x) * particleProgress;
+                            const particleY = bossData.y + (soulY - bossData.y) * particleProgress;
+                            
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(particleX, particleY, 3, 0, Math.PI * 2);
+                            ctx.fillStyle = "#4169E1";
+                            ctx.shadowBlur = 6;
+                            ctx.shadowColor = "#4169E1";
+                            ctx.fill();
+                            ctx.restore();
+                        }
+                        
+                        // 额外的能量粒子效果
+                        if (Math.random() < 0.3) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const distance = Math.random() * 30;
+                            const energyX = (crimsonX + target.x + 18) / 2 + Math.cos(angle) * distance;
+                            const energyY = (crimsonY + target.y + 18) / 2 + Math.sin(angle) * distance;
+                            
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(energyX, energyY, 2, 0, Math.PI * 2);
+                            ctx.fillStyle = Math.random() > 0.5 ? "#DC143C" : "#4169E1";
+                            ctx.shadowBlur = 4;
+                            ctx.shadowColor = ctx.fillStyle;
+                            ctx.fill();
+                            ctx.restore();
+                        }
+                    }
+                    
+                    // 显示剩余时间
+                    const remainSec = Math.max(0, Math.ceil(bossSoulSwap.duration - bossSoulSwap.elapsed));
+                    ctx.fillStyle = "#ff6b6b";
+                    ctx.font = "bold 16px sans-serif";
+                    ctx.fillText(`魂换剩余: ${remainSec}s`, barX + barW - 120, barY + 84);
+                }
+                for (let w of bossShockwaves) {
+                    ctx.save();
+                    ctx.globalAlpha = w.alpha;
+                    ctx.strokeStyle = w.color;
+                    ctx.lineWidth = w.lineWidth;
+                    ctx.shadowBlur = 18;
+                    ctx.shadowColor = "#d9b3ff";
+                    ctx.beginPath();
+                    ctx.arc(w.x, w.y, w.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+            if (bossSkillBanner.text && bossSkillBanner.startTime > 0) {
+                const elapsed = performance.now() - bossSkillBanner.startTime;
+                const fadeIn = 350;
+                const hold = Math.max(0, bossSkillBanner.durationMs - 700);
+                const fadeOut = 350;
+                let alpha = 0;
+                if (elapsed < fadeIn) alpha = elapsed / fadeIn;
+                else if (elapsed < fadeIn + hold) alpha = 1;
+                else if (elapsed < fadeIn + hold + fadeOut) alpha = 1 - (elapsed - fadeIn - hold) / fadeOut;
+                else {
+                    bossSkillBanner.text = "";
+                    bossSkillBanner.startTime = 0;
+                    alpha = 0;
+                }
+                if (alpha > 0) {
+                    const style = BOSS_SKILL_BANNER_STYLES[bossSkillBanner.style] || BOSS_SKILL_BANNER_STYLES.default;
+                    const titleY = 98;
+                    const scale = 1 + style.scaleBoost * (1 - alpha);
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.translate(canvas.width / 2, titleY);
+                    ctx.scale(scale, scale);
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.font = "bold 34px sans-serif";
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = style.stroke;
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = style.glow;
+                    ctx.strokeText(bossSkillBanner.text, 0, 0);
+                    ctx.fillStyle = style.fill;
+                    ctx.fillText(bossSkillBanner.text, 0, 0);
+                    ctx.restore();
+                }
+            }
             for (let e of electrons) {
                 const elapsed = (performance.now() - e.spawnTime) / 1000;
                 const alpha = elapsed < 1.8 ? 1 : (1 - (elapsed-1.8)/0.2);
@@ -1198,6 +2585,26 @@
             gameOver = false;
             essence = 200;
             totalScore = 0;
+            bossState = 'inactive';
+            bossArenaExpanded = false;
+            bossPrepStartTime = 0;
+            bossButtonUnlocked = false;
+            lastBossTickTime = 0;
+            bossSkillTimer = 0;
+            bossVortex = null;
+            bossDomain = null;
+            bossShockwaves = [];
+            bossCooldowns.domain = 0;
+            bossSkillBanner.text = "";
+            bossSkillBanner.startTime = 0;
+            bossData.hp = 1;
+            bossData.corpseValue = 0;
+            bossData.oxidation = 0;
+            bossData.reduction = 0;
+            bossData.ironArmor = 0;
+            bossData.ironCount = 0;
+            for (let key in bossData.absorbList) bossData.absorbList[key] = 0;
+            updateCanvasForBossArena();
             zombies = [];
             bullets = [];
             electrons = [];
@@ -1218,6 +2625,20 @@
             }
             setShovelMode(false);
             setSkillMode(false);
+            const bossBtn = document.getElementById('challengeBossBtn');
+            if (bossBtn) {
+                bossBtn.disabled = false;
+                bossBtn.innerText = "👑 挑战Boss";
+                bossBtn.classList.remove('show');
+            }
+            // ===== ADMIN DEBUG RESET START (可整段删除) =====
+            const debugEnabledEl = document.getElementById('adminDebugEnabled');
+            const debugFreePlaceEl = document.getElementById('adminFreePlace');
+            const debugIgnoreCooldownEl = document.getElementById('adminIgnoreCooldown');
+            adminDebug.enabled = !!debugEnabledEl?.checked;
+            adminDebug.freePlaceIgnoreEssence = adminDebug.enabled && !!debugFreePlaceEl?.checked;
+            adminDebug.ignoreElementCooldown = adminDebug.enabled && !!debugIgnoreCooldownEl?.checked;
+            // ===== ADMIN DEBUG RESET END =====
             updateUI();
             document.getElementById('gameMessage').innerHTML = "✨ 游戏已重置！前60秒为发育期，不刷怪。";
             if (frameRequest) cancelAnimationFrame(frameRequest);
@@ -1241,6 +2662,80 @@
                 }
             });
             document.getElementById('shovelBigBtn').addEventListener('click', toggleShovelMode);
+            document.getElementById('challengeBossBtn').addEventListener('click', startBossChallenge);
+            // ===== ADMIN DEBUG EVENTS START (可整段删除) =====
+            const adminDebugEnabledEl = document.getElementById('adminDebugEnabled');
+            const adminFreePlaceEl = document.getElementById('adminFreePlace');
+            const adminIgnoreCooldownEl = document.getElementById('adminIgnoreCooldown');
+            const adminScoreInputEl = document.getElementById('adminScoreInput');
+            const adminSetScoreBtnEl = document.getElementById('adminSetScoreBtn');
+            const adminTimeInputEl = document.getElementById('adminTimeInput');
+            const adminSetTimeBtnEl = document.getElementById('adminSetTimeBtn');
+            
+            if (adminDebugEnabledEl && adminFreePlaceEl && adminIgnoreCooldownEl && 
+                adminScoreInputEl && adminSetScoreBtnEl && adminTimeInputEl && adminSetTimeBtnEl) {
+                
+                adminDebugEnabledEl.addEventListener('change', () => {
+                    adminDebug.enabled = adminDebugEnabledEl.checked;
+                    if (!adminDebug.enabled) {
+                        adminDebug.freePlaceIgnoreEssence = false;
+                        adminDebug.ignoreElementCooldown = false;
+                        adminFreePlaceEl.checked = false;
+                        adminIgnoreCooldownEl.checked = false;
+                        adminScoreInputEl.disabled = true;
+                        adminSetScoreBtnEl.disabled = true;
+                        adminTimeInputEl.disabled = true;
+                        adminSetTimeBtnEl.disabled = true;
+                        adminFreePlaceEl.disabled = true;
+                        adminIgnoreCooldownEl.disabled = true;
+                    } else {
+                        adminFreePlaceEl.disabled = false;
+                        adminIgnoreCooldownEl.disabled = false;
+                        adminScoreInputEl.disabled = false;
+                        adminSetScoreBtnEl.disabled = false;
+                        adminTimeInputEl.disabled = false;
+                        adminSetTimeBtnEl.disabled = false;
+                    }
+                    document.getElementById('gameMessage').innerHTML = adminDebug.enabled
+                        ? "🛠️ 管理员调试已开启。"
+                        : "🛠️ 管理员调试已关闭。";
+                });
+                
+                adminFreePlaceEl.addEventListener('change', () => {
+                    adminDebug.freePlaceIgnoreEssence = adminDebug.enabled && adminFreePlaceEl.checked;
+                    document.getElementById('gameMessage').innerHTML = adminDebug.freePlaceIgnoreEssence
+                        ? "🛠️ 调试：植物可无视电子数放置。"
+                        : "🛠️ 调试：植物无视电子数放置已关闭。";
+                });
+                
+                adminIgnoreCooldownEl.addEventListener('change', () => {
+                    adminDebug.ignoreElementCooldown = adminDebug.enabled && adminIgnoreCooldownEl.checked;
+                    document.getElementById('gameMessage').innerHTML = adminDebug.ignoreElementCooldown
+                        ? "🛠️ 调试：元素可无视冷却放置。"
+                        : "🛠️ 调试：元素无视冷却放置已关闭。";
+                });
+                
+                adminSetScoreBtnEl.addEventListener('click', () => {
+                    if (!adminDebug.enabled) return;
+                    const newScore = parseInt(adminScoreInputEl.value) || 0;
+                    totalScore = Math.max(0, newScore);
+                    updateUI();
+                    document.getElementById('gameMessage').innerHTML = `🛠️ 调试：分数已设置为 ${totalScore}。`;
+                });
+                
+                adminSetTimeBtnEl.addEventListener('click', () => {
+                    if (!adminDebug.enabled) return;
+                    const newTimeSeconds = parseFloat(adminTimeInputEl.value) || 0;
+                    if (gameStartTime) {
+                        gameStartTime = performance.now() - (newTimeSeconds * 1000);
+                        updateUI();
+                        document.getElementById('gameMessage').innerHTML = `🛠️ 调试：游戏时间已设置为 ${newTimeSeconds.toFixed(1)} 秒。`;
+                    } else {
+                        document.getElementById('gameMessage').innerHTML = "🛠️ 调试：游戏尚未开始，无法设置时间。";
+                    }
+                });
+            }
+            // ===== ADMIN DEBUG EVENTS END =====
             window.addEventListener('beforeunload', () => {
                 saveCooldownsToLocalStorage();
             });
