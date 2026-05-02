@@ -38,7 +38,17 @@
         .boss-btn{background:#a33dd9;color:#fff;display:none}
         .boss-btn.show{display:inline-block}
         .boss-btn:disabled{opacity:0.7;cursor:not-allowed}
-
+        /* ===== ADMIN DEBUG UI START (可整段删除) ===== */
+        .admin-debug-panel{position:fixed;right:16px;bottom:16px;background:rgba(10,26,42,0.92);border:1px solid #4f7ca3;border-radius:12px;padding:10px 12px;z-index:1200;min-width:280px;box-shadow:0 6px 20px rgba(0,0,0,0.35)}
+        .admin-debug-title{font-size:12px;font-weight:700;color:#aee0ff;margin-bottom:8px}
+        .admin-debug-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#e0f0ff;margin-bottom:6px}
+        .admin-debug-item:last-child{margin-bottom:0}
+        .admin-debug-input{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+        .admin-debug-input input,
+        .admin-debug-input select{width:80px;padding:2px 4px;border:1px solid #4f7ca3;border-radius:4px;background:rgba(20,40,60,0.8);color:#e0f0ff;font-size:11px;text-align:center}
+        .admin-debug-input button{padding:2px 6px;border:1px solid #4f7ca3;border-radius:4px;background:rgba(79,124,163,0.8);color:#ffffff;font-size:10px;cursor:pointer}
+        .admin-debug-input button:hover{background:rgba(99,144,183,0.9)}
+        /* ===== ADMIN DEBUG UI END ===== */
         .game-message{text-align:center;margin-top:0.8rem;font-size:0.85rem;color:var(--accent-light)}
         footer{text-align:center;font-size:0.7rem;margin-top:1rem;color:var(--text-dim)}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);justify-content:center;align-items:center;z-index:1000}
@@ -274,6 +284,16 @@
                 targetCount: 3,
                 cooldownSec: 20
             },
+            transformation: {
+                corpseCost: 10000,
+                radiusCells: 13,
+                targetCount: 2,
+                rewardCorpsePerSecond: 20,
+                rewardCorpseInterval: 2.5,
+                summonStayDistance: 80,
+                summonAttackInterval: 1.5,
+                durationSec: 30
+            },
             initialOxidation: 20,
             initialReduction: 20
         };
@@ -336,6 +356,7 @@
         let bossVortex = null;
         let bossDomain = null;
         let bossShockwaves = [];
+        let bossSummonedZombies = [];
         let bossCooldowns = { domain: 0, soulSwap: 0 };
         const BOSS_SKILL_BANNER_STYLES = {
             default: { fill: "rgba(250,235,255,0.98)", stroke: "rgba(30,0,45,0.95)", glow: "#d9b3ff", scaleBoost: 0.06 },
@@ -343,7 +364,8 @@
             domain: { fill: "rgba(224,188,255,0.98)", stroke: "rgba(42,0,68,0.95)", glow: "#b666ff", scaleBoost: 0.08 },
             oxidation: { fill: "rgba(255,220,170,0.98)", stroke: "rgba(100,40,0,0.95)", glow: "#ff9f4a", scaleBoost: 0.07 },
             reduction: { fill: "rgba(180,245,255,0.98)", stroke: "rgba(0,58,82,0.95)", glow: "#66ddff", scaleBoost: 0.07 },
-            iron: { fill: "rgba(228,236,255,0.98)", stroke: "rgba(40,50,86,0.95)", glow: "#a7b8ff", scaleBoost: 0.08 }
+            iron: { fill: "rgba(228,236,255,0.98)", stroke: "rgba(40,50,86,0.95)", glow: "#a7b8ff", scaleBoost: 0.08 },
+            transformation: { fill: "rgba(170,220,255,0.98)", stroke: "rgba(20,50,95,0.95)", glow: "#6cc4ff", scaleBoost: 0.08 }
         };
         let bossSkillBanner = { text: "", style: "default", startTime: 0, durationMs: 2200 };
         // ===== ADMIN DEBUG LOGIC START (可整段删除) =====
@@ -607,7 +629,7 @@
                     }
                 } else if (this.type === 'ironCannon') {
                     // 铁砂大炮子弹：攻击植物的智能追踪弹
-                    if (this.lifetime <= 0) {
+                    if (this.maxLifetime && this.lifetime > this.maxLifetime) {
                         this.active = false;
                         return;
                     }
@@ -680,8 +702,8 @@
                         const dy = this.lockedTarget.y - this.y;
                         const distance = Math.hypot(dx, dy);
                         
-                        if (distance < 15) {
-                            // 击中目标植物
+                        if (Math.abs(dx) <= CELL_W && Math.abs(dy) <= CELL_H) {
+                            // 击中目标植物（2x2格范围）
                             applyDamageToElement(this.lockedTarget, this.damage, 'ironCannon');
                             addParticles(this.x, this.y, this.color, 15);
                             
@@ -1229,8 +1251,6 @@
             // 这里只处理其他逻辑（如爆炸等）
         }
         function absorbZombieToBoss(zombie) {
-            const hpGain = Math.max(120, Math.floor(zombie.maxHp * BOSS_PARAMS.absorbToHpFactor));
-            bossData.hp = Math.min(bossData.maxHp, bossData.hp + hpGain);
             const corpseGain = Math.max(BOSS_PARAMS.absorbToCorpseMin, Math.floor(zombie.maxHp / BOSS_PARAMS.absorbToCorpseDivisor));
             bossData.corpseValue += corpseGain;
             bossData.absorbList[zombie.type] = (bossData.absorbList[zombie.type] || 0) + 1;
@@ -1258,7 +1278,7 @@
             bossState = 'prep';
             bossArenaExpanded = true;
             bossPrepStartTime = performance.now();
-            bossData.hp = 1;
+            bossData.hp = 200000;
             bossData.corpseValue = 0;
             bossData.oxidation = BOSS_PARAMS.initialOxidation;
             bossData.reduction = BOSS_PARAMS.initialReduction;
@@ -1543,24 +1563,184 @@
             
             // 创建2*2巨大铁球：先创建聚集动画
             const ironBall = new Bullet(bossData.x, bossData.y, null, finalDamage, 'ironCannon', "#C0C0C0", false);
-            ironBall.lifetime = finalLifetime;
+            ironBall.maxLifetime = 5.0;
+            ironBall.lifetime = 0;
             ironBall.state = 'gathering'; // 新增聚集状态
-            ironBall.gatherTime = 1.5; // 聚集时间1.5秒
+            ironBall.gatherTime = 1.0; // 聚集时间1秒
             ironBall.gatherProgress = 0;
             ironBall.size = 0; // 初始大小为0
-            ironBall.maxSize = CELL_W * 2; // 最终大小为2*2格
+            ironBall.maxSize = CELL_W; // 半径为 1 格，直径为 2 格
             ironBall.lockedTarget = null;
             ironBall.velocityX = 0;
             ironBall.velocityY = 0;
-            ironBall.acceleration = 0.3;
-            ironBall.maxSpeed = 8;
+            ironBall.acceleration = 0.45;
+            ironBall.maxSpeed = 10;
             ironBall.attackTimer = 0;
             
             bullets.push(ironBall);
             
-            document.getElementById('gameMessage').innerHTML = `🔫 铁砂大炮！消耗铁数 ${totalIronCost}，发射智能追踪弹（伤害${finalDamage}，持续${finalLifetime.toFixed(1)}秒）。`;
+            document.getElementById('gameMessage').innerHTML = `🔫 铁砂大炮！消耗铁数 ${totalIronCost}，发射2x2格大球，持续5.0秒。`;
             showBossSkillBanner("铁砂大炮", "iron");
             return true;
+        }
+        function removeElementWithoutGain(elem) {
+            if (!elem) return;
+            const idx = elements.indexOf(elem);
+            if (idx !== -1) elements.splice(idx, 1);
+            if (gridElements[elem.row] && gridElements[elem.row][elem.col] === elem) {
+                gridElements[elem.row][elem.col] = null;
+            }
+            addParticles(elem.x, elem.y, elem.data.color, 12);
+        }
+        function createBossSummonedZombie(type, row, spawnX, spawnY) {
+            const offsetX = bossSummonedZombies.length % 2 === 0 ? -48 : 48;
+            const offsetY = (bossSummonedZombies.length % 2 === 0 ? -18 : 18);
+            const elementColor = ELEMENTS[type]?.color || "#888888";
+            bossSummonedZombies.push({
+                id: `summon_${Date.now()}_${Math.random()}`,
+                type,
+                row,
+                startX: spawnX,
+                startY: spawnY,
+                x: spawnX,
+                y: spawnY,
+                targetX: bossData.x + offsetX,
+                targetY: bossData.y + offsetY,
+                pullProgress: 0,
+                pullDuration: 0.6,
+                state: 'pulling',
+                elementColor: elementColor,
+                attack: Math.max(12, Math.floor(ZOMBIE_TYPES.Basic.hpBase * 0.12)),
+                targetTimer: BOSS_PARAMS.transformation.summonAttackInterval,
+                corpseRewardTimer: BOSS_PARAMS.transformation.rewardCorpseInterval,
+                aliveTime: BOSS_PARAMS.transformation.durationSec,
+                radius: 30,
+                width: 50,
+                height: 50
+            });
+        }
+        function castTransformationSkill() {
+            const radiusPx = BOSS_PARAMS.transformation.radiusCells * CELL_W;
+            const targetPlants = elements.filter(e => Math.hypot(e.x - bossData.x, e.y - bossData.y) <= radiusPx);
+            if (targetPlants.length < BOSS_PARAMS.transformation.targetCount) return false;
+            
+            const requiredCost = 50000;
+            let hasEnoughCost = false;
+            let costSource = 'none';
+            
+            if (bossData.hp >= requiredCost) {
+                hasEnoughCost = true;
+                costSource = 'hp';
+            } else {
+                let totalAbsorbedHp = 0;
+                for (let key in bossData.absorbList) {
+                    if (bossData.absorbList[key] > 0) {
+                        const zombieHp = ZOMBIE_TYPES[key]?.hpBase || 300;
+                        totalAbsorbedHp += zombieHp * bossData.absorbList[key];
+                    }
+                }
+                if (totalAbsorbedHp >= requiredCost) {
+                    hasEnoughCost = true;
+                    costSource = 'zombies';
+                }
+            }
+            
+            if (!hasEnoughCost) return false;
+            
+            if (costSource === 'hp') {
+                bossData.hp -= requiredCost;
+            } else {
+                let remaining = requiredCost;
+                for (let key in bossData.absorbList) {
+                    while (bossData.absorbList[key] > 0 && remaining > 0) {
+                        const zombieHp = ZOMBIE_TYPES[key]?.hpBase || 300;
+                        bossData.absorbList[key]--;
+                        remaining -= zombieHp;
+                    }
+                    if (remaining <= 0) break;
+                }
+            }
+            
+            const getPriority = elem => {
+                if (elem.type === 'carbon') return 0;
+                if (elem.type === 'iron') return 1;
+                if (elem.type === 'sodium') return 2;
+                if (elem.type === 'hydrogen' || elem.type === 'oxygen' || elem.type === 'magnesium') return 3;
+                if (elem.type === 'helium' || elem.type === 'neon') return 4;
+                return 5;
+            };
+            targetPlants.sort((a, b) => getPriority(a) - getPriority(b) || b.health - a.health);
+            const targets = targetPlants.slice(0, BOSS_PARAMS.transformation.targetCount);
+            for (let target of targets) {
+                createBossSummonedZombie(target.type, target.row, target.x, target.y);
+                removeElementWithoutGain(target);
+            }
+            bossData.transformationActive = true;
+            const costMsg = costSource === 'hp' ? `消耗生命值 ${requiredCost}` : `消耗吸收的僵尸`;
+            document.getElementById('gameMessage').innerHTML = `🌪️ 无为转变！${costMsg}，将植物转化为僵尸。`;
+            showBossSkillBanner("无为转变", "transformation");
+            return true;
+        }
+        function updateBossSummons(delta) {
+            for (let i = bossSummonedZombies.length - 1; i >= 0; i--) {
+                const summon = bossSummonedZombies[i];
+                summon.aliveTime -= delta;
+                summon.targetTimer -= delta;
+                summon.corpseRewardTimer -= delta;
+                if (summon.corpseRewardTimer <= 0) {
+                    summon.corpseRewardTimer += BOSS_PARAMS.transformation.rewardCorpseInterval;
+                    if (summon.type === 'carbon') {
+                        bossData.corpseValue += BOSS_PARAMS.transformation.rewardCorpsePerSecond;
+                    }
+                }
+                if (summon.state === 'pulling') {
+                    summon.pullProgress += delta;
+                    const progress = Math.min(1, summon.pullProgress / summon.pullDuration);
+                    summon.x = summon.startX + (summon.targetX - summon.startX) * progress;
+                    summon.y = summon.startY + (summon.targetY - summon.startY) * progress;
+                    if (summon.pullProgress >= summon.pullDuration) {
+                        summon.state = 'active';
+                        summon.x = summon.targetX;
+                        summon.y = summon.targetY;
+                    }
+                } else {
+                    if (summon.targetTimer <= 0) {
+                        summon.targetTimer += BOSS_PARAMS.transformation.summonAttackInterval;
+                        let nearestPlant = null;
+                        let minDist = Infinity;
+                        for (let elem of elements) {
+                            const dx = elem.x - summon.x;
+                            const dy = elem.y - summon.y;
+                            const dist = Math.hypot(dx, dy);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                nearestPlant = elem;
+                            }
+                        }
+                        if (nearestPlant) {
+                            const damage = summon.attack;
+                            applyDamageToElement(nearestPlant, damage, 'zombie');
+                            addParticles(nearestPlant.x, nearestPlant.y, summon.color, 10);
+                            if (summon.type === 'iron') {
+                                bossData.ironCount += 1;
+                            }
+                            if (summon.type === 'sodium') {
+                                for (let elem of elements) {
+                                    if (elem === nearestPlant) continue;
+                                    const splashDist = Math.hypot(elem.x - nearestPlant.x, elem.y - nearestPlant.y);
+                                    if (splashDist < 50) {
+                                        applyDamageToElement(elem, Math.floor(damage * 0.35), 'zombie');
+                                        addParticles(elem.x, elem.y, "#ffd966", 6);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (summon.aliveTime <= 0) {
+                    bossSummonedZombies.splice(i, 1);
+                }
+            }
         }
         function bossTakeDamageFromBullets() {
             if (bossState === 'inactive') return;
@@ -1574,11 +1754,18 @@
                 }
             }
         }
+        let bossNaturalHealTimer = 0;
         function bossBattleTick(now, delta) {
             if (bossState !== 'battle') return;
             if (!lastBossTickTime) lastBossTickTime = now;
             if (bossCooldowns.domain > 0) bossCooldowns.domain = Math.max(0, bossCooldowns.domain - delta);
             if (bossCooldowns.soulSwap > 0) bossCooldowns.soulSwap = Math.max(0, bossCooldowns.soulSwap - delta);
+            
+            bossNaturalHealTimer += delta;
+            if (bossNaturalHealTimer >= 60) {
+                bossNaturalHealTimer = 0;
+                bossData.hp = Math.min(bossData.maxHp, bossData.hp + 2000);
+            }
             if (bossDomain) {
                 bossDomain.remain -= delta;
                 bossDomain.tickTimer -= delta;
@@ -1646,6 +1833,7 @@
                 if (w.radius >= w.maxRadius || w.alpha <= 0) bossShockwaves.splice(i, 1);
             }
             updateBossProjectiles(delta);
+            updateBossSummons(delta);
             if (now - lastBossTickTime >= BOSS_PARAMS.battleAbsorbIntervalMs && zombies.length > 0) {
                 lastBossTickTime = now;
                 if (Math.random() < BOSS_PARAMS.battleAbsorbChance) {
@@ -1659,7 +1847,7 @@
             bossSkillTimer += delta;
             if (bossSkillTimer >= BOSS_PARAMS.skillCycleSec && !bossSoulSwap) {
                 bossSkillTimer = 0;
-                const skillOrder = [castVortexSkill, castDomainSkill, castOxidationSkill, castReductionSkill, castIronQuakeSkill, castSoulSwapSkill, castIronCannonSkill];
+                const skillOrder = [castVortexSkill, castDomainSkill, castTransformationSkill, castOxidationSkill, castReductionSkill, castIronQuakeSkill, castSoulSwapSkill, castIronCannonSkill];
                 for (let cast of skillOrder) {
                     if (cast()) break;
                 }
@@ -1690,6 +1878,20 @@
             const adminScoreInputEl = document.getElementById('adminScoreInput');
             if (adminScoreInputEl) {
                 adminScoreInputEl.value = totalScore;
+            }
+            const adminBossPrepInputEl = document.getElementById('adminBossPrepInput');
+            if (adminBossPrepInputEl) {
+                adminBossPrepInputEl.value = bossState === 'prep'
+                    ? ((performance.now() - bossPrepStartTime) / 1000).toFixed(1)
+                    : 0;
+            }
+            const adminBossCorpseInputEl = document.getElementById('adminBossCorpseInput');
+            if (adminBossCorpseInputEl) {
+                adminBossCorpseInputEl.value = bossData.corpseValue;
+            }
+            const adminBossHpInputEl = document.getElementById('adminBossHpInput');
+            if (adminBossHpInputEl) {
+                adminBossHpInputEl.value = bossData.hp;
             }
             // ===== ADMIN DEBUG UI UPDATE END =====
             updateBossButton();
@@ -2199,6 +2401,52 @@
             
             for (let elem of elements) elem.draw(ctx);
             for (let z of zombies) z.draw(ctx);
+            for (let summon of bossSummonedZombies) {
+                if (summon.state === 'pulling') {
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(80,190,255,0.7)";
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([6, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(bossData.x, bossData.y);
+                    ctx.lineTo(summon.x, summon.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(summon.x - 5, summon.y - 15, 12, 0, Math.PI * 2);
+                ctx.fillStyle = summon.elementColor;
+                ctx.fill();
+                ctx.strokeStyle = "#2c2c2c";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(summon.x - 8, summon.y - 18, 4, 0, Math.PI * 2);
+                ctx.fillStyle = "#000000";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(summon.x - 2, summon.y - 18, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(summon.x - 12, summon.y - 5);
+                ctx.lineTo(summon.x - 25, summon.y + 5);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = summon.elementColor;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(summon.x + 2, summon.y - 5);
+                ctx.lineTo(summon.x + 15, summon.y + 5);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.ellipse(summon.x, summon.y + 12, 14, 18, 0, 0, Math.PI * 2);
+                ctx.fillStyle = summon.elementColor;
+                ctx.fill();
+                ctx.strokeStyle = "#2c2c2c";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.restore();
+            }
             if (bossState !== 'inactive') {
                 ctx.save();
                 ctx.beginPath();
@@ -2571,7 +2819,7 @@
             bossCooldowns.domain = 0;
             bossSkillBanner.text = "";
             bossSkillBanner.startTime = 0;
-            bossData.hp = 1;
+            bossData.hp = 200000;
             bossData.corpseValue = 0;
             bossData.oxidation = 0;
             bossData.reduction = 0;
@@ -2645,9 +2893,19 @@
             const adminSetScoreBtnEl = document.getElementById('adminSetScoreBtn');
             const adminTimeInputEl = document.getElementById('adminTimeInput');
             const adminSetTimeBtnEl = document.getElementById('adminSetTimeBtn');
+            const adminBossPrepInputEl = document.getElementById('adminBossPrepInput');
+            const adminSetBossPrepBtnEl = document.getElementById('adminSetBossPrepBtn');
+            const adminBossCorpseInputEl = document.getElementById('adminBossCorpseInput');
+            const adminSetBossCorpseBtnEl = document.getElementById('adminSetBossCorpseBtn');
+            const adminBossHpInputEl = document.getElementById('adminBossHpInput');
+            const adminSetBossHpBtnEl = document.getElementById('adminSetBossHpBtn');
+            const adminBossSkillSelectEl = document.getElementById('adminBossSkillSelect');
+            const adminCastBossSkillBtnEl = document.getElementById('adminCastBossSkillBtn');
             
             if (adminDebugEnabledEl && adminFreePlaceEl && adminIgnoreCooldownEl && 
-                adminScoreInputEl && adminSetScoreBtnEl && adminTimeInputEl && adminSetTimeBtnEl) {
+                adminScoreInputEl && adminSetScoreBtnEl && adminTimeInputEl && adminSetTimeBtnEl &&
+                adminBossPrepInputEl && adminSetBossPrepBtnEl && adminBossCorpseInputEl && adminSetBossCorpseBtnEl &&
+                adminBossHpInputEl && adminSetBossHpBtnEl && adminBossSkillSelectEl && adminCastBossSkillBtnEl) {
                 
                 adminDebugEnabledEl.addEventListener('change', () => {
                     adminDebug.enabled = adminDebugEnabledEl.checked;
@@ -2660,6 +2918,14 @@
                         adminSetScoreBtnEl.disabled = true;
                         adminTimeInputEl.disabled = true;
                         adminSetTimeBtnEl.disabled = true;
+                        adminBossPrepInputEl.disabled = true;
+                        adminSetBossPrepBtnEl.disabled = true;
+                        adminBossCorpseInputEl.disabled = true;
+                        adminSetBossCorpseBtnEl.disabled = true;
+                        adminBossHpInputEl.disabled = true;
+                        adminSetBossHpBtnEl.disabled = true;
+                        adminBossSkillSelectEl.disabled = true;
+                        adminCastBossSkillBtnEl.disabled = true;
                         adminFreePlaceEl.disabled = true;
                         adminIgnoreCooldownEl.disabled = true;
                     } else {
@@ -2669,6 +2935,14 @@
                         adminSetScoreBtnEl.disabled = false;
                         adminTimeInputEl.disabled = false;
                         adminSetTimeBtnEl.disabled = false;
+                        adminBossPrepInputEl.disabled = false;
+                        adminSetBossPrepBtnEl.disabled = false;
+                        adminBossCorpseInputEl.disabled = false;
+                        adminSetBossCorpseBtnEl.disabled = false;
+                        adminBossHpInputEl.disabled = false;
+                        adminSetBossHpBtnEl.disabled = false;
+                        adminBossSkillSelectEl.disabled = false;
+                        adminCastBossSkillBtnEl.disabled = false;
                     }
                     document.getElementById('gameMessage').innerHTML = adminDebug.enabled
                         ? "🛠️ 管理员调试已开启。"
@@ -2707,6 +2981,58 @@
                     } else {
                         document.getElementById('gameMessage').innerHTML = "🛠️ 调试：游戏尚未开始，无法设置时间。";
                     }
+                });
+
+                adminSetBossPrepBtnEl.addEventListener('click', () => {
+                    if (!adminDebug.enabled) return;
+                    const newPrepSeconds = parseFloat(adminBossPrepInputEl.value) || 0;
+                    if (bossState !== 'prep') {
+                        document.getElementById('gameMessage').innerHTML = "🛠️ 调试：Boss当前不在准备阶段，无法调整准备时间。";
+                        return;
+                    }
+                    bossPrepStartTime = performance.now() - newPrepSeconds * 1000;
+                    updateUI();
+                    document.getElementById('gameMessage').innerHTML = `🛠️ 调试：Boss准备时间已设置为 ${newPrepSeconds.toFixed(1)} 秒。`;
+                });
+
+                adminSetBossCorpseBtnEl.addEventListener('click', () => {
+                    if (!adminDebug.enabled) return;
+                    const newCorpse = Math.max(0, parseInt(adminBossCorpseInputEl.value) || 0);
+                    bossData.corpseValue = newCorpse;
+                    updateUI();
+                    document.getElementById('gameMessage').innerHTML = `🛠️ 调试：Boss尸值已设置为 ${newCorpse}。`;
+                });
+
+                adminSetBossHpBtnEl.addEventListener('click', () => {
+                    if (!adminDebug.enabled) return;
+                    const newHp = Math.max(0, Math.min(bossData.maxHp, parseInt(adminBossHpInputEl.value) || 0));
+                    bossData.hp = newHp;
+                    updateUI();
+                    document.getElementById('gameMessage').innerHTML = `🛠️ 调试：Boss血量已设置为 ${newHp}。`;
+                });
+
+                adminCastBossSkillBtnEl.addEventListener('click', () => {
+                    if (!adminDebug.enabled) return;
+                    const skillKey = adminBossSkillSelectEl.value;
+                    const skillMap = {
+                        vortex: castVortexSkill,
+                        domain: castDomainSkill,
+                        transformation: castTransformationSkill,
+                        oxidation: castOxidationSkill,
+                        reduction: castReductionSkill,
+                        ironQuake: castIronQuakeSkill,
+                        soulSwap: castSoulSwapSkill,
+                        ironCannon: castIronCannonSkill
+                    };
+                    const skillFn = skillMap[skillKey];
+                    if (!skillFn) {
+                        document.getElementById('gameMessage').innerHTML = "🛠️ 调试：未找到该技能。";
+                        return;
+                    }
+                    const executed = skillFn();
+                    document.getElementById('gameMessage').innerHTML = executed
+                        ? `🛠️ 调试：Boss已尝试使用技能 ${adminBossSkillSelectEl.options[adminBossSkillSelectEl.selectedIndex].text}。`
+                        : `🛠️ 调试：Boss当前无法使用技能 ${adminBossSkillSelectEl.options[adminBossSkillSelectEl.selectedIndex].text}。`;
                 });
             }
             // ===== ADMIN DEBUG EVENTS END =====
