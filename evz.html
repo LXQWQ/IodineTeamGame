@@ -219,6 +219,7 @@
         const BOSS_TRIGGER_SCORE = 10;
         const BOSS_MAX_HP = 200000;
         const BOSS_ARENA_WIDTH = 420;
+        const CANNON_ARENA_WIDTH = 200;
         const BOSS_PARAMS = {
             prepDurationMs: 3 * 60 * 1000,
             battleAbsorbIntervalMs: 6000,
@@ -298,7 +299,7 @@
             initialReduction: 20
         };
         const BOSS_PREP_DURATION = BOSS_PARAMS.prepDurationMs;
-        canvas.width = COLS * CELL_W + EXTRA_RIGHT;
+        canvas.width = COLS * CELL_W + EXTRA_RIGHT + CANNON_ARENA_WIDTH;
         canvas.height = ROWS * CELL_H;
 
         // 元素库
@@ -356,8 +357,8 @@
         let bossVortex = null;
         let bossDomain = null;
         let bossShockwaves = [];
-        let bossSummonedZombies = [];
         let bossCooldowns = { domain: 0, soulSwap: 0 };
+        let bossVictoryStartTime = 0;
         const BOSS_SKILL_BANNER_STYLES = {
             default: { fill: "rgba(250,235,255,0.98)", stroke: "rgba(30,0,45,0.95)", glow: "#d9b3ff", scaleBoost: 0.06 },
             vortex: { fill: "rgba(238,210,255,0.98)", stroke: "rgba(56,12,82,0.95)", glow: "#c78dff", scaleBoost: 0.09 },
@@ -368,6 +369,16 @@
             transformation: { fill: "rgba(170,220,255,0.98)", stroke: "rgba(20,50,95,0.95)", glow: "#6cc4ff", scaleBoost: 0.08 }
         };
         let bossSkillBanner = { text: "", style: "default", startTime: 0, durationMs: 2200 };
+        
+        // 炮台系统变量
+        let cannonCharge = 0; // 当前充能等级 (0-3)
+        let cannonX = 0; // 炮台X坐标 (动态设置)
+        let cannonY = canvas.height / 2; // 炮台Y坐标
+        let cannonWidth = 60; // 炮台宽度
+        let cannonHeight = 120; // 炮台高度
+        let cannonChargeCooldown = 0; // 充能CD
+        let cannonFireCooldown = 0; // 击发CD
+        
         // ===== ADMIN DEBUG LOGIC START (可整段删除) =====
         const adminDebug = {
             enabled: false,
@@ -390,7 +401,8 @@
             ironCount: 0,
             absorbList: {
                 Basic: 0, Armored: 0, Fast: 0, Explosive: 0, Runner: 0, Jumper: 0, Giant: 0, Healer: 0
-            }
+            },
+            summons: []
         };
 
         // 冷却系统 - 持久化存储
@@ -492,6 +504,7 @@
         };
 
         let bullets = [];
+        let cannonBullets = [];
 
         class Bullet {
             constructor(x, y, targetZombie, damage, type, color, isPierce = false, originRow = null) {
@@ -890,6 +903,58 @@
                 }
             }
         }
+        
+        class CannonBullet {
+            constructor(x, y, targetX, targetY) {
+                this.x = x;
+                this.y = y;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.speed = 300; // 快速子弹
+                this.active = true;
+                this.damage = 50000;
+                this.size = 1.5;
+                this.color = "#ff6b35"; // 橙色
+            }
+            update(deltaTime) {
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                const distance = Math.hypot(dx, dy);
+                
+                if (distance < 10) {
+                    // 击中Boss
+                    bossData.hp -= this.damage;
+                    if (bossData.hp < 0) bossData.hp = 0;
+                    addParticles(this.x, this.y, "#ff4444", 20);
+                    addParticles(this.x, this.y, "#ffff44", 15);
+                    addParticles(this.x, this.y, "#44ff44", 15);
+                    addParticles(this.x, this.y, "#4444ff", 15);
+                    this.active = false;
+                    return;
+                }
+                
+                const step = Math.min(this.speed * deltaTime, distance);
+                const angle = Math.atan2(dy, dx);
+                this.x += Math.cos(angle) * step;
+                this.y += Math.sin(angle) * step;
+                
+                // 防止飞出屏幕
+                if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
+                    this.active = false;
+                }
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
 
         class Zombie {
             constructor(row, type, hp, speed, rewardScore, x) {
@@ -916,7 +981,7 @@
                     if (this.jumpCooldownTimer <= 0) this.jumpRemaining = 1;
                 }
                 
-                const col = Math.floor(this.x / CELL_W);
+                const col = Math.floor((this.x - CANNON_ARENA_WIDTH) / CELL_W);
                 if (col >= 0 && col < COLS) {
                     const elem = gridElements[this.row]?.[col];
                     if (elem && elem.health > 0) {
@@ -1029,7 +1094,7 @@
         class ElementObj {
             constructor(type, row, col) {
                 this.type = type; this.data = ELEMENTS[type]; this.row = row; this.col = col;
-                this.x = col * CELL_W + CELL_W/2; this.y = row * CELL_H + CELL_H/2;
+                this.x = CANNON_ARENA_WIDTH + col * CELL_W + CELL_W/2; this.y = row * CELL_H + CELL_H/2;
                 this.attackTimer = 0; this.produceTimer = 0;
                 this.health = this.data.health || 300;
                 this.maxHealth = this.health;
@@ -1184,7 +1249,7 @@
             bossSkillBanner.startTime = performance.now();
         }
         function updateCanvasForBossArena() {
-            canvas.width = COLS * CELL_W + EXTRA_RIGHT + (bossArenaExpanded ? BOSS_ARENA_WIDTH : 0);
+            canvas.width = CANNON_ARENA_WIDTH + COLS * CELL_W + EXTRA_RIGHT + (bossArenaExpanded ? BOSS_ARENA_WIDTH : 0);
             canvas.height = ROWS * CELL_H;
             updateBossPosition();
         }
@@ -1254,6 +1319,11 @@
             const corpseGain = Math.max(BOSS_PARAMS.absorbToCorpseMin, Math.floor(zombie.maxHp / BOSS_PARAMS.absorbToCorpseDivisor));
             bossData.corpseValue += corpseGain;
             bossData.absorbList[zombie.type] = (bossData.absorbList[zombie.type] || 0) + 1;
+            // 在准备阶段吸收僵尸可以回血
+            if (bossState === 'prep') {
+                bossData.hp = Math.min(bossData.maxHp, bossData.hp + corpseGain);
+                addParticles(bossData.x, bossData.y, "#00ff00", 8); // 绿色粒子表示回血
+            }
         }
         function updateZombieTowardBoss(z, deltaTime) {
             const moveSpeed = (z.speed / 60) * 1.25;
@@ -1294,6 +1364,8 @@
             bossSkillTimer = 0;
             bossSoulSwapTimer = 0;
             lastBossTickTime = performance.now();
+            // 初始化炮台
+            cannonCharge = 0;
             updateCanvasForBossArena();
             const btn = document.getElementById('challengeBossBtn');
             btn.disabled = true;
@@ -1351,7 +1423,7 @@
                     totalExpectedDamage += dmg;
                 }
             }
-            const requiredCorpseValue = Math.ceil(totalExpectedDamage / 2); // 消耗 = 总伤害 / 2
+            const requiredCorpseValue = Math.ceil(totalExpectedDamage / 4); // 消耗 = 总伤害 / 4
             const spend = Math.min(
                 BOSS_PARAMS.vortex.maxCorpseCost,
                 Math.max(BOSS_PARAMS.vortex.minCorpseCost, requiredCorpseValue)
@@ -1593,30 +1665,18 @@
             addParticles(elem.x, elem.y, elem.data.color, 12);
         }
         function createBossSummonedZombie(type, row, spawnX, spawnY) {
-            const offsetX = bossSummonedZombies.length % 2 === 0 ? -48 : 48;
-            const offsetY = (bossSummonedZombies.length % 2 === 0 ? -18 : 18);
-            const elementColor = ELEMENTS[type]?.color || "#888888";
-            bossSummonedZombies.push({
-                id: `summon_${Date.now()}_${Math.random()}`,
-                type,
+            const zombieType = ZOMBIE_TYPES[type] ? type : 'Basic';
+            const zombieData = ZOMBIE_TYPES[zombieType];
+            bossData.summons.push({
+                type: zombieType,
+                originalType: type,
                 row,
-                startX: spawnX,
-                startY: spawnY,
-                x: spawnX,
-                y: spawnY,
-                targetX: bossData.x + offsetX,
-                targetY: bossData.y + offsetY,
-                pullProgress: 0,
-                pullDuration: 0.6,
-                state: 'pulling',
-                elementColor: elementColor,
-                attack: Math.max(12, Math.floor(ZOMBIE_TYPES.Basic.hpBase * 0.12)),
-                targetTimer: BOSS_PARAMS.transformation.summonAttackInterval,
+                x: canvas.width,
+                y: row * CELL_H + CELL_H/2,
+                speed: zombieData.speedBase || 30,
+                attackTimer: 0,
                 corpseRewardTimer: BOSS_PARAMS.transformation.rewardCorpseInterval,
-                aliveTime: BOSS_PARAMS.transformation.durationSec,
-                radius: 30,
-                width: 50,
-                height: 50
+                state: 'moving'
             });
         }
         function castTransformationSkill() {
@@ -1624,11 +1684,11 @@
             const targetPlants = elements.filter(e => Math.hypot(e.x - bossData.x, e.y - bossData.y) <= radiusPx);
             if (targetPlants.length < BOSS_PARAMS.transformation.targetCount) return false;
             
-            const requiredCost = 50000;
+            const requiredCost = 1000;
             let hasEnoughCost = false;
             let costSource = 'none';
             
-            if (bossData.hp >= requiredCost) {
+            if (bossData.hp > requiredCost) { // 确保不会把自己反伤死
                 hasEnoughCost = true;
                 costSource = 'hp';
             } else {
@@ -1681,67 +1741,6 @@
             showBossSkillBanner("无为转变", "transformation");
             return true;
         }
-        function updateBossSummons(delta) {
-            for (let i = bossSummonedZombies.length - 1; i >= 0; i--) {
-                const summon = bossSummonedZombies[i];
-                summon.aliveTime -= delta;
-                summon.targetTimer -= delta;
-                summon.corpseRewardTimer -= delta;
-                if (summon.corpseRewardTimer <= 0) {
-                    summon.corpseRewardTimer += BOSS_PARAMS.transformation.rewardCorpseInterval;
-                    if (summon.type === 'carbon') {
-                        bossData.corpseValue += BOSS_PARAMS.transformation.rewardCorpsePerSecond;
-                    }
-                }
-                if (summon.state === 'pulling') {
-                    summon.pullProgress += delta;
-                    const progress = Math.min(1, summon.pullProgress / summon.pullDuration);
-                    summon.x = summon.startX + (summon.targetX - summon.startX) * progress;
-                    summon.y = summon.startY + (summon.targetY - summon.startY) * progress;
-                    if (summon.pullProgress >= summon.pullDuration) {
-                        summon.state = 'active';
-                        summon.x = summon.targetX;
-                        summon.y = summon.targetY;
-                    }
-                } else {
-                    if (summon.targetTimer <= 0) {
-                        summon.targetTimer += BOSS_PARAMS.transformation.summonAttackInterval;
-                        let nearestPlant = null;
-                        let minDist = Infinity;
-                        for (let elem of elements) {
-                            const dx = elem.x - summon.x;
-                            const dy = elem.y - summon.y;
-                            const dist = Math.hypot(dx, dy);
-                            if (dist < minDist) {
-                                minDist = dist;
-                                nearestPlant = elem;
-                            }
-                        }
-                        if (nearestPlant) {
-                            const damage = summon.attack;
-                            applyDamageToElement(nearestPlant, damage, 'zombie');
-                            addParticles(nearestPlant.x, nearestPlant.y, summon.color, 10);
-                            if (summon.type === 'iron') {
-                                bossData.ironCount += 1;
-                            }
-                            if (summon.type === 'sodium') {
-                                for (let elem of elements) {
-                                    if (elem === nearestPlant) continue;
-                                    const splashDist = Math.hypot(elem.x - nearestPlant.x, elem.y - nearestPlant.y);
-                                    if (splashDist < 50) {
-                                        applyDamageToElement(elem, Math.floor(damage * 0.35), 'zombie');
-                                        addParticles(elem.x, elem.y, "#ffd966", 6);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                if (summon.aliveTime <= 0) {
-                    bossSummonedZombies.splice(i, 1);
-                }
-            }
-        }
         function bossTakeDamageFromBullets() {
             if (bossState === 'inactive') return;
             for (let i = bullets.length - 1; i >= 0; i--) {
@@ -1756,7 +1755,115 @@
         }
         let bossNaturalHealTimer = 0;
         function bossBattleTick(now, delta) {
-            if (bossState !== 'battle') return;
+            if (bossState !== 'battle' && bossState !== 'victory_check') return;
+            
+            // 更新炮台CD
+            if (cannonChargeCooldown > 0) cannonChargeCooldown = Math.max(0, cannonChargeCooldown - delta);
+            if (cannonFireCooldown > 0) cannonFireCooldown = Math.max(0, cannonFireCooldown - delta);
+            
+            // 更新summons
+            for (let i = bossData.summons.length - 1; i >= 0; i--) {
+                const summon = bossData.summons[i];
+                if (summon.state === 'moving') {
+                    let canMove = true;
+                    const zombieData = ZOMBIE_TYPES[summon.type] || ZOMBIE_TYPES.Basic;
+                    const frontCol = Math.floor((summon.x - 25 - CANNON_ARENA_WIDTH) / CELL_W);
+                    if (frontCol >= 0 && frontCol < COLS) {
+                        const elem = gridElements[summon.row]?.[frontCol];
+                        if (elem && elem.health > 0) {
+                            canMove = false;
+                            if (summon.attackTimer <= 0) {
+                                summon.attackTimer = BOSS_PARAMS.transformation.summonAttackInterval;
+                                applyDamageToElement(elem, zombieData.attackDamage || 10, 'zombie');
+                                addParticles(elem.x, elem.y, zombieData.color || "#ffffff", 5);
+                                if (summon.type === 'iron') {
+                                    bossData.ironCount += 1;
+                                }
+                                if (summon.type === 'sodium') {
+                                    for (let elem2 of elements) {
+                                        if (elem2 === elem) continue;
+                                        const splashDist = Math.hypot(elem2.x - elem.x, elem2.y - elem.y);
+                                        if (splashDist < 50) {
+                                            applyDamageToElement(elem2, Math.floor((zombieData.attackDamage || 10) * 0.35), 'zombie');
+                                            addParticles(elem2.x, elem2.y, "#ffd966", 6);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (canMove) {
+                        summon.x -= summon.speed * delta;
+                    }
+                    summon.attackTimer -= delta;
+                    summon.corpseRewardTimer -= delta;
+                    if (summon.corpseRewardTimer <= 0) {
+                        summon.corpseRewardTimer += BOSS_PARAMS.transformation.rewardCorpseInterval;
+                        if (summon.type === 'carbon') {
+                            bossData.corpseValue += BOSS_PARAMS.transformation.rewardCorpsePerSecond;
+                        }
+                    }
+                    if (summon.x < -50) {
+                        bossData.summons.splice(i, 1);
+                    }
+                }
+            }
+            
+            // 检查Boss死亡
+            if (bossData.hp <= 0) {
+                // Boss死亡，释放所有尸值作为全局攻击
+                const totalCorpseValue = bossData.corpseValue;
+                if (totalCorpseValue > 0) {
+                    // 创建强化·极之番·漩涡技能
+                    bossVortex = {
+                        remainingDamage: totalCorpseValue,
+                        tickTimer: 0.0,
+                        tickSec: 0.1,
+                        damagePerTick: Math.max(1, Math.floor(totalCorpseValue / 50)), // 分50次释放
+                        radiusPx: canvas.width * 0.8,
+                        x: canvas.width / 2,
+                        y: canvas.height / 2
+                    };
+                    document.getElementById('gameMessage').innerHTML = `💀 Boss已死亡！释放强化·极之番·漩涡，全局攻击总伤害：${totalCorpseValue}！`;
+                }
+                
+                // 释放所有存储的僵尸
+                const storedZombies = [];
+                for (let type in bossData.absorbList) {
+                    for (let i = 0; i < bossData.absorbList[type]; i++) {
+                        storedZombies.push(type);
+                    }
+                }
+                
+                // 在Boss场地均匀释放僵尸
+                const bossArenaLeft = canvas.width - BOSS_ARENA_WIDTH;
+                const bossArenaRight = canvas.width;
+                const bossArenaTop = 0;
+                const bossArenaBottom = canvas.height;
+                
+                storedZombies.forEach((type, index) => {
+                    const x = bossArenaLeft + (index % 5) * ((bossArenaRight - bossArenaLeft) / 5) + 30;
+                    const y = bossArenaTop + Math.floor(index / 5) * 60 + 30;
+                    const typeData = ZOMBIE_TYPES[type];
+                    const z = new Zombie(Math.floor(y / CELL_H), type, typeData.hpBase, typeData.speedBase, typeData.rewardScore, x);
+                    zombies.push(z);
+                });
+                
+                // 释放summons
+                bossData.summons.forEach((summon) => {
+                    zombies.push(new ZombieObj(summon.type, summon.row));
+                    zombies[zombies.length-1].x = summon.x;
+                    zombies[zombies.length-1].y = summon.y;
+                });
+                bossData.summons = [];
+                
+                // 重置Boss状态，进入胜利检查阶段
+                bossState = 'victory_check';
+                bossVictoryStartTime = now;
+                document.getElementById('gameMessage').innerHTML += `🧟 最终僵尸波已释放！坚持30秒即可胜利！`;
+                return;
+            }
+            
             if (!lastBossTickTime) lastBossTickTime = now;
             if (bossCooldowns.domain > 0) bossCooldowns.domain = Math.max(0, bossCooldowns.domain - delta);
             if (bossCooldowns.soulSwap > 0) bossCooldowns.soulSwap = Math.max(0, bossCooldowns.soulSwap - delta);
@@ -1833,7 +1940,6 @@
                 if (w.radius >= w.maxRadius || w.alpha <= 0) bossShockwaves.splice(i, 1);
             }
             updateBossProjectiles(delta);
-            updateBossSummons(delta);
             if (now - lastBossTickTime >= BOSS_PARAMS.battleAbsorbIntervalMs && zombies.length > 0) {
                 lastBossTickTime = now;
                 if (Math.random() < BOSS_PARAMS.battleAbsorbChance) {
@@ -2279,6 +2385,25 @@
                     document.getElementById('gameMessage').innerHTML = "☠️ Boss战正式开始！BOSS·元素之主-死灵法师 已进入满血状态。";
                 }
             }
+            
+            if (bossState === 'victory_check') {
+                const victoryElapsed = now - bossVictoryStartTime;
+                if (victoryElapsed >= 30) { // 30秒胜利检查
+                    // 检查场上是否还有僵尸
+                    if (zombies.length === 0) {
+                        // 胜利！
+                        totalScore += 500000;
+                        document.getElementById('gameMessage').innerHTML = "🎉 恭喜胜利！获得500000积分奖励！";
+                        bossState = 'inactive';
+                        bossArenaExpanded = false;
+                        updateUI();
+                        // 可以在这里添加胜利动画或效果
+                    } else {
+                        // 还有僵尸，延长检查时间
+                        bossVictoryStartTime = now; // 重置计时器
+                    }
+                }
+            }
 
             updateCooldowns(now);
             trySpawnElectron(now);
@@ -2288,6 +2413,7 @@
 
             for (let elem of elements) elem.update(delta);
             for (let i=bullets.length-1; i>=0; i--) { bullets[i].update(delta); if (!bullets[i].active) bullets.splice(i,1); }
+            for (let i=cannonBullets.length-1; i>=0; i--) { cannonBullets[i].update(delta); if (!cannonBullets[i].active) cannonBullets.splice(i,1); }
             bossTakeDamageFromBullets();
             bossBattleTick(now, delta);
 
@@ -2367,22 +2493,46 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.strokeStyle = "#5a7a4a";
             ctx.lineWidth = 1;
+            // 草地网格从大炮区域右侧开始
+            const grassStartX = CANNON_ARENA_WIDTH;
             for (let i = 0; i <= COLS; i++) {
                 ctx.beginPath();
-                ctx.moveTo(i*CELL_W, 0);
-                ctx.lineTo(i*CELL_W, canvas.height);
+                ctx.moveTo(grassStartX + i*CELL_W, 0);
+                ctx.lineTo(grassStartX + i*CELL_W, canvas.height);
                 ctx.stroke();
             }
             for (let i = 0; i <= ROWS; i++) {
                 ctx.beginPath();
-                ctx.moveTo(0, i*CELL_H);
-                ctx.lineTo(COLS * CELL_W, i*CELL_H);
+                ctx.moveTo(grassStartX, i*CELL_H);
+                ctx.lineTo(grassStartX + COLS * CELL_W, i*CELL_H);
+                ctx.stroke();
+            }
+            for (let j = 0; j <= COLS; j++) {
+                ctx.beginPath();
+                ctx.moveTo(grassStartX + j*CELL_W, 0);
+                ctx.lineTo(grassStartX + j*CELL_W, ROWS*CELL_H);
                 ctx.stroke();
             }
             ctx.fillStyle = "#1a3a2a";
-            ctx.fillRect(COLS * CELL_W, 0, canvas.width - COLS * CELL_W, canvas.height);
+            ctx.fillRect(grassStartX + COLS * CELL_W, 0, canvas.width - (grassStartX + COLS * CELL_W), canvas.height);
             ctx.strokeStyle = "#5a7a4a";
-            ctx.strokeRect(COLS * CELL_W, 0, canvas.width - COLS * CELL_W, canvas.height);
+            ctx.strokeRect(grassStartX + COLS * CELL_W, 0, canvas.width - (grassStartX + COLS * CELL_W), canvas.height);
+            
+            // 大炮区域背景
+            ctx.save();
+            ctx.fillStyle = "rgba(45, 58, 20, 0.55)";
+            ctx.fillRect(0, 0, CANNON_ARENA_WIDTH, canvas.height);
+            ctx.strokeStyle = "#7a9a4a";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(CANNON_ARENA_WIDTH, 0);
+            ctx.lineTo(CANNON_ARENA_WIDTH, canvas.height);
+            ctx.stroke();
+            ctx.font = "bold 20px sans-serif";
+            ctx.fillStyle = "#c0d080";
+            ctx.fillText("炮台 场地", 20, 30);
+            ctx.restore();
+            
             if (bossArenaExpanded) {
                 ctx.save();
                 ctx.fillStyle = "rgba(20, 8, 35, 0.55)";
@@ -2401,51 +2551,14 @@
             
             for (let elem of elements) elem.draw(ctx);
             for (let z of zombies) z.draw(ctx);
-            for (let summon of bossSummonedZombies) {
-                if (summon.state === 'pulling') {
-                    ctx.save();
-                    ctx.strokeStyle = "rgba(80,190,255,0.7)";
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([6, 4]);
-                    ctx.beginPath();
-                    ctx.moveTo(bossData.x, bossData.y);
-                    ctx.lineTo(summon.x, summon.y);
-                    ctx.stroke();
-                    ctx.restore();
-                }
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(summon.x - 5, summon.y - 15, 12, 0, Math.PI * 2);
-                ctx.fillStyle = summon.elementColor;
-                ctx.fill();
-                ctx.strokeStyle = "#2c2c2c";
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(summon.x - 8, summon.y - 18, 4, 0, Math.PI * 2);
-                ctx.fillStyle = "#000000";
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(summon.x - 2, summon.y - 18, 4, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(summon.x - 12, summon.y - 5);
-                ctx.lineTo(summon.x - 25, summon.y + 5);
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = summon.elementColor;
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(summon.x + 2, summon.y - 5);
-                ctx.lineTo(summon.x + 15, summon.y + 5);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.ellipse(summon.x, summon.y + 12, 14, 18, 0, 0, Math.PI * 2);
-                ctx.fillStyle = summon.elementColor;
-                ctx.fill();
-                ctx.strokeStyle = "#2c2c2c";
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-                ctx.restore();
+            for (let summon of bossData.summons) {
+                const zombieData = ZOMBIE_TYPES[summon.type] || ZOMBIE_TYPES.Basic;
+                ctx.fillStyle = zombieData.color || "#ffffff";
+                ctx.fillRect(summon.x - 25, summon.y - 25, 50, 50);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "12px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(summon.type, summon.x, summon.y + 5);
             }
             if (bossState !== 'inactive') {
                 ctx.save();
@@ -2657,6 +2770,99 @@
                     ctx.restore();
                 }
             }
+            
+            // 绘制炮台 (仅在Boss战期间)
+            if (bossState === 'battle') {
+                // 设置大炮位置在大炮区域中心
+                cannonX = CANNON_ARENA_WIDTH / 2;
+                
+                ctx.save();
+                // 炮台主体
+                ctx.fillStyle = "#4a4a4a";
+                ctx.fillRect(cannonX - cannonWidth/2, cannonY - cannonHeight/2, cannonWidth, cannonHeight);
+                ctx.strokeStyle = "#666666";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(cannonX - cannonWidth/2, cannonY - cannonHeight/2, cannonWidth, cannonHeight);
+                
+                // 炮管
+                ctx.fillStyle = "#333333";
+                ctx.fillRect(cannonX + cannonWidth/2, cannonY - 8, 40, 16);
+                ctx.strokeStyle = "#666666";
+                ctx.strokeRect(cannonX + cannonWidth/2, cannonY - 8, 40, 16);
+                
+                // 充能指示器
+                for (let i = 0; i < 3; i++) {
+                    const barX = cannonX - 20;
+                    const barY = cannonY - cannonHeight/2 - 15 - i * 12;
+                    const barWidth = 40;
+                    const barHeight = 8;
+                    
+                    ctx.fillStyle = i < cannonCharge ? "#ff6b35" : "#333333";
+                    ctx.fillRect(barX, barY, barWidth, barHeight);
+                    ctx.strokeStyle = "#666666";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(barX, barY, barWidth, barHeight);
+                }
+                
+                // 充能按钮
+                const chargeButtonX = cannonX - 80;
+                const chargeButtonY = cannonY + cannonHeight/2 + 20;
+                const buttonWidth = 60;
+                const buttonHeight = 25;
+                
+                ctx.fillStyle = "#448844";
+                ctx.fillRect(chargeButtonX - buttonWidth/2, chargeButtonY - buttonHeight/2, buttonWidth, buttonHeight);
+                ctx.strokeStyle = "#66aa66";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(chargeButtonX - buttonWidth/2, chargeButtonY - buttonHeight/2, buttonWidth, buttonHeight);
+                
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 12px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("充能", chargeButtonX, chargeButtonY + 4);
+                
+                // 显示充能CD
+                if (cannonChargeCooldown > 0) {
+                    ctx.fillStyle = "#ff0000";
+                    ctx.font = "bold 10px sans-serif";
+                    ctx.fillText(Math.ceil(cannonChargeCooldown) + "s", chargeButtonX, chargeButtonY - buttonHeight/2 - 5);
+                }
+                
+                // 激发按钮
+                const fireButtonX = cannonX + 80;
+                const fireButtonY = cannonY + cannonHeight/2 + 20;
+                
+                const canFire = cannonCharge >= 3 && !isElementOnCooldown('phosphorus');
+                ctx.fillStyle = canFire ? "#ff4444" : "#666666";
+                ctx.fillRect(fireButtonX - buttonWidth/2, fireButtonY - buttonHeight/2, buttonWidth, buttonHeight);
+                ctx.strokeStyle = canFire ? "#ff6666" : "#999999";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(fireButtonX - buttonWidth/2, fireButtonY - buttonHeight/2, buttonWidth, buttonHeight);
+                
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("激发", fireButtonX, fireButtonY + 4);
+                
+                // 显示激发CD
+                if (cannonFireCooldown > 0) {
+                    ctx.fillStyle = "#ff0000";
+                    ctx.font = "bold 10px sans-serif";
+                    ctx.fillText(Math.ceil(cannonFireCooldown) + "s", fireButtonX, fireButtonY - buttonHeight/2 - 5);
+                }
+                
+                ctx.textAlign = "left";
+                
+                // 炮台标签
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 14px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("元素炮台", cannonX, cannonY - cannonHeight/2 - 35);
+                ctx.font = "12px sans-serif";
+                ctx.fillText("植物+电子充能", cannonX, cannonY - cannonHeight/2 - 20);
+                ctx.textAlign = "left";
+                
+                ctx.restore();
+            }
+            
             for (let e of electrons) {
                 const elapsed = (performance.now() - e.spawnTime) / 1000;
                 const alpha = elapsed < 1.8 ? 1 : (1 - (elapsed-1.8)/0.2);
@@ -2674,6 +2880,7 @@
                 ctx.restore();
             }
             for (let b of bullets) b.draw(ctx);
+            for (let cb of cannonBullets) cb.draw(ctx);
             for (let p of particles) p.draw(ctx);
             drawFlyAnimations();
 
@@ -2683,7 +2890,8 @@
                 if (skillMode) ctx.fillStyle = "#e67e22";
                 else if (shovelMode) ctx.fillStyle = "#e05a3a";
                 else ctx.fillStyle = "#f0c040";
-                ctx.fillRect(mouseGrid.col*CELL_W, mouseGrid.row*CELL_H, CELL_W, CELL_H); 
+                const grassStartX = CANNON_ARENA_WIDTH;
+                ctx.fillRect(grassStartX + mouseGrid.col*CELL_W, mouseGrid.row*CELL_H, CELL_W, CELL_H); 
                 ctx.restore();
             }
             if (gameOver) {
@@ -2700,9 +2908,56 @@
             const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
             const mouseX = (e.clientX - rect.left) * scaleX, mouseY = (e.clientY - rect.top) * scaleY;
             if (tryCollectElectron(mouseX, mouseY)) return;
-            const col = Math.floor(mouseX / CELL_W);
+            
+            // 检查炮台交互 (仅在Boss战期间)
+            if (bossState === 'battle') {
+                const currentCannonX = CANNON_ARENA_WIDTH / 2;
+                
+                // 检查是否点击充能按钮
+                const chargeButtonX = currentCannonX - 80;
+                const chargeButtonY = cannonY + cannonHeight/2 + 20;
+                const buttonWidth = 60;
+                const buttonHeight = 25;
+                if (mouseX >= chargeButtonX - buttonWidth/2 && mouseX <= chargeButtonX + buttonWidth/2 &&
+                    mouseY >= chargeButtonY - buttonHeight/2 && mouseY <= chargeButtonY + buttonHeight/2 &&
+                    cannonCharge < 3 && elements.length >= 5 && essence >= 300 && cannonChargeCooldown <= 0) {
+                    // 随机移除5个植物，消耗300电子充能
+                    for (let i = 0; i < 5; i++) {
+                        const randomIndex = Math.floor(Math.random() * elements.length);
+                        const removedElement = elements.splice(randomIndex, 1)[0];
+                        if (gridElements[removedElement.row] && gridElements[removedElement.row][removedElement.col] === removedElement) {
+                            gridElements[removedElement.row][removedElement.col] = null;
+                        }
+                        addParticles(removedElement.x, removedElement.y, "#ff6b35", 8);
+                    }
+                    essence -= 300;
+                    cannonCharge++;
+                    cannonChargeCooldown = 30; // 设置30秒CD
+                    document.getElementById('gameMessage').innerHTML = `⚡ 炮台充能完成！消耗5个植物和300电子，当前充能等级：${cannonCharge}/3`;
+                    return;
+                }
+                
+                // 检查是否点击激发按钮
+                const fireButtonX = currentCannonX + 80;
+                const fireButtonY = cannonY + cannonHeight/2 + 20;
+                if (mouseX >= fireButtonX - buttonWidth/2 && mouseX <= fireButtonX + buttonWidth/2 &&
+                    mouseY >= fireButtonY - buttonHeight/2 && mouseY <= fireButtonY + buttonHeight/2 &&
+                    cannonCharge >= 3 && !isElementOnCooldown('phosphorus') && cannonFireCooldown <= 0) {
+                    // 发射元素大炮子弹
+                    cannonCharge = 0;
+                    const cannonBullet = new CannonBullet(currentCannonX, cannonY, bossData.x, bossData.y);
+                    cannonBullets.push(cannonBullet);
+                    cannonFireCooldown = 60; // 设置60秒CD
+                    document.getElementById('gameMessage').innerHTML = "💥 元素大炮发射！子弹飞向Boss！";
+                    return;
+                }
+            }
+            
+            const grassStartX = CANNON_ARENA_WIDTH;
+            const grassEndX = grassStartX + COLS * CELL_W;
+            const col = Math.floor((mouseX - grassStartX) / CELL_W);
             const row = Math.floor(mouseY / CELL_H);
-            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+            if (row >= 0 && row < ROWS && mouseX >= grassStartX && mouseX < grassEndX) {
                 if (skillMode) {
                     usePhosphorusSkill(row, col);
                     setSkillMode(false);
@@ -2719,10 +2974,16 @@
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
             const mouseX = (e.clientX - rect.left) * scaleX, mouseY = (e.clientY - rect.top) * scaleY;
-            const col = Math.floor(mouseX / CELL_W);
-            const row = Math.floor(mouseY / CELL_H);
-            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) mouseGrid = { row, col };
-            else mouseGrid = { row: -1, col: -1 };
+            const grassStartX = CANNON_ARENA_WIDTH;
+            const grassEndX = grassStartX + COLS * CELL_W;
+            if (mouseX >= grassStartX && mouseX < grassEndX) {
+                const col = Math.floor((mouseX - grassStartX) / CELL_W);
+                const row = Math.floor(mouseY / CELL_H);
+                if (row >= 0 && row < ROWS && col >= 0 && col < COLS) mouseGrid = { row, col };
+                else mouseGrid = { row: -1, col: -1 };
+            } else {
+                mouseGrid = { row: -1, col: -1 };
+            }
         }
 
         function setShovelMode(active) {
@@ -2819,7 +3080,9 @@
             bossCooldowns.domain = 0;
             bossSkillBanner.text = "";
             bossSkillBanner.startTime = 0;
-            bossData.hp = 200000;
+            // 重置炮台
+            cannonCharge = 0;
+            bossData.hp = 1;
             bossData.corpseValue = 0;
             bossData.oxidation = 0;
             bossData.reduction = 0;
@@ -2829,6 +3092,7 @@
             updateCanvasForBossArena();
             zombies = [];
             bullets = [];
+            cannonBullets = [];
             electrons = [];
             flyAnimations = [];
             particles = [];
