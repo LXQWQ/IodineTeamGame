@@ -38,17 +38,7 @@
         .boss-btn{background:#a33dd9;color:#fff;display:none}
         .boss-btn.show{display:inline-block}
         .boss-btn:disabled{opacity:0.7;cursor:not-allowed}
-        /* ===== ADMIN DEBUG UI START (可整段删除) ===== */
-        .admin-debug-panel{position:fixed;right:16px;bottom:16px;background:rgba(10,26,42,0.92);border:1px solid #4f7ca3;border-radius:12px;padding:10px 12px;z-index:1200;min-width:280px;box-shadow:0 6px 20px rgba(0,0,0,0.35)}
-        .admin-debug-title{font-size:12px;font-weight:700;color:#aee0ff;margin-bottom:8px}
-        .admin-debug-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#e0f0ff;margin-bottom:6px}
-        .admin-debug-item:last-child{margin-bottom:0}
-        .admin-debug-input{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-        .admin-debug-input input,
-        .admin-debug-input select{width:80px;padding:2px 4px;border:1px solid #4f7ca3;border-radius:4px;background:rgba(20,40,60,0.8);color:#e0f0ff;font-size:11px;text-align:center}
-        .admin-debug-input button{padding:2px 6px;border:1px solid #4f7ca3;border-radius:4px;background:rgba(79,124,163,0.8);color:#ffffff;font-size:10px;cursor:pointer}
-        .admin-debug-input button:hover{background:rgba(99,144,183,0.9)}
-        /* ===== ADMIN DEBUG UI END ===== */
+
         .game-message{text-align:center;margin-top:0.8rem;font-size:0.85rem;color:var(--accent-light)}
         footer{text-align:center;font-size:0.7rem;margin-top:1rem;color:var(--text-dim)}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);justify-content:center;align-items:center;z-index:1000}
@@ -217,7 +207,7 @@
         const CELL_W = 100;
         const CELL_H = 100;
         const BOSS_TRIGGER_SCORE = 10;
-        const BOSS_MAX_HP = 200000;
+        const BOSS_MAX_HP = 1000000;
         const BOSS_ARENA_WIDTH = 420;
         const CANNON_ARENA_WIDTH = 200;
         const BOSS_PARAMS = {
@@ -293,7 +283,8 @@
                 rewardCorpseInterval: 2.5,
                 summonStayDistance: 80,
                 summonAttackInterval: 1.5,
-                durationSec: 30
+                durationSec: 30,
+                cooldownSec: 30
             },
             initialOxidation: 20,
             initialReduction: 20
@@ -357,7 +348,7 @@
         let bossVortex = null;
         let bossDomain = null;
         let bossShockwaves = [];
-        let bossCooldowns = { domain: 0, soulSwap: 0 };
+        let bossCooldowns = { domain: 0, soulSwap: 0, transformation: 0 };
         let bossVictoryStartTime = 0;
         const BOSS_SKILL_BANNER_STYLES = {
             default: { fill: "rgba(250,235,255,0.98)", stroke: "rgba(30,0,45,0.95)", glow: "#d9b3ff", scaleBoost: 0.06 },
@@ -500,7 +491,19 @@
             Runner: { name: "Runner", color: "#d4a017", hpBase: 300, speedBase: 120, rewardScore: 40, unlockTime: 120, attackDamage: 12 },
             Jumper: { name: "Jumper", color: "#9acd32", hpBase: 300, speedBase: 40, rewardScore: 60, unlockTime: 150, attackDamage: 10 },
             Giant: { name: "Giant", color: "#5a2e1a", hpBase: 4000, speedBase: 15, rewardScore: 150, unlockTime: 180, width: 60, height: 70, attackDamage: 25 },
-            Healer: { name: "Healer", color: "#20b2aa", hpBase: 400, speedBase: 25, rewardScore: 100, unlockTime: 210, healInterval: 3.0, healAmount: 50, healRange: 150, attackDamage: 5 }
+            Healer: { name: "Healer", color: "#20b2aa", hpBase: 400, speedBase: 25, rewardScore: 100, unlockTime: 210, healInterval: 3.0, healAmount: 50, healRange: 150, attackDamage: 5 },
+            // 元素僵尸类型
+            'CarbonZombie': { name: "Carbon Zombie", color: "#2a2a2a", hpBase: 400, speedBase: 25, rewardScore: 15, unlockTime: 0, attackDamage: 12, summonedOnly: true },
+            'IronZombie': { name: "Iron Zombie", color: "#8b5a2b", hpBase: 600, speedBase: 20, rewardScore: 25, unlockTime: 0, attackDamage: 18, summonedOnly: true },
+            'SodiumZombie': { name: "Sodium Zombie", color: "#ffd966", hpBase: 350, speedBase: 35, rewardScore: 20, unlockTime: 0, attackDamage: 14, summonedOnly: true },
+            'HydrogenZombie': { name: "Hydrogen Zombie", color: "#ffffff", hpBase: 250, speedBase: 40, rewardScore: 12, unlockTime: 0, attackDamage: 8, summonedOnly: true },
+            'OxygenZombie': { name: "Oxygen Zombie", color: "#00bfff", hpBase: 300, speedBase: 30, rewardScore: 14, unlockTime: 0, attackDamage: 10, summonedOnly: true },
+            'MagnesiumZombie': { name: "Magnesium Zombie", color: "#c0c0c0", hpBase: 500, speedBase: 28, rewardScore: 18, unlockTime: 0, attackDamage: 16, summonedOnly: true },
+            'PhosphorusZombie': { name: "Phosphorus Zombie", color: "#ff6b35", hpBase: 450, speedBase: 32, rewardScore: 22, unlockTime: 0, attackDamage: 15, summonedOnly: true },
+            'SiliconZombie': { name: "Silicon Zombie", color: "#a0522d", hpBase: 550, speedBase: 26, rewardScore: 20, unlockTime: 0, attackDamage: 17, summonedOnly: true },
+            'HeliumZombie': { name: "Helium Zombie", color: "#a0522d", hpBase: ELEMENTS.helium.health || 4000, speedBase: 20, rewardScore: 30, unlockTime: 0, attackDamage: 10, summonedOnly: true },
+            'NeonZombie': { name: "Neon Zombie", color: "#cd853f", hpBase: ELEMENTS.neon.health || 6000, speedBase: 18, rewardScore: 40, unlockTime: 0, attackDamage: 12, summonedOnly: true },
+            'AluminumZombie': { name: "Aluminum Zombie", color: "#b0c4de", hpBase: ELEMENTS.aluminum.health || 3000, speedBase: 22, rewardScore: 35, unlockTime: 0, attackDamage: 14, summonedOnly: true, explosiveOnDeath: true }
         };
 
         let bullets = [];
@@ -534,7 +537,20 @@
             }
             update(deltaTime) {
                 this.lifetime += deltaTime;
-                
+
+                // helper: get numeric HP for a target which may be a zombie (.hp) or a plant (.health)
+                const getTargetHp = (t) => {
+                    if (!t) return null;
+                    if (typeof t.hp === 'number') return t.hp;
+                    if (typeof t.health === 'number') return t.health;
+                    return null;
+                };
+                const applyDamageToTarget = (t, dmg) => {
+                    if (!t) return;
+                    if (typeof t.hp === 'number') t.hp -= dmg;
+                    else if (typeof t.health === 'number') t.health -= dmg;
+                };
+
                 if (this.type === 'iron') {
                     // 铁元素智能追踪子弹：跨路攻击最近的僵尸
                     if (this.lifetime > 10) {
@@ -640,6 +656,34 @@
                     if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
                         this.active = false;
                     }
+                } else if (this.type === 'homingPlant') {
+                    // 智能追踪植物的导弹（用于铁僵尸对植物发射）
+                    if (!this.target || getTargetHp(this.target) === null || getTargetHp(this.target) <= 0) { this.active = false; return; }
+                    // 加速向目标移动
+                    const dx = this.target.x - this.x;
+                    const dy = this.target.y - this.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < 12) {
+                        // 命中植物
+                        applyDamageToTarget(this.target, this.damage);
+                        addParticles(this.target.x, this.target.y, this.color, 12);
+                        this.active = false;
+                        return;
+                    }
+                    const accel = 0.6;
+                    const ax = (dx / dist) * accel;
+                    const ay = (dy / dist) * accel;
+                    this.velocityX = (this.velocityX || 0) + ax;
+                    this.velocityY = (this.velocityY || 0) + ay;
+                    const sp = Math.hypot(this.velocityX, this.velocityY);
+                    const maxS = this.maxSpeed || 6;
+                    if (sp > maxS) {
+                        this.velocityX = (this.velocityX / sp) * maxS;
+                        this.velocityY = (this.velocityY / sp) * maxS;
+                    }
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+                    if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) this.active = false;
                 } else if (this.type === 'ironCannon') {
                     // 铁砂大炮子弹：攻击植物的智能追踪弹
                     if (this.maxLifetime && this.lifetime > this.maxLifetime) {
@@ -812,7 +856,8 @@
                     this.y += this.velocityY;
                     
                     // 水平移动（缓慢向目标方向）
-                    if (this.target && this.target.hp > 0) {
+                    const targetHp = getTargetHp(this.target);
+                    if (this.target && targetHp !== null && targetHp > 0) {
                         const dx = this.target.x - this.x;
                         const horizontalSpeed = 2; // 水平移动速度
                         if (Math.abs(dx) > 5) {
@@ -832,6 +877,33 @@
                                 addParticles(z.x, z.y, this.color, 20);
                             }
                         }
+                        // 根据炸弹来源只伤害对应目标类型：plant->伤害僵尸；zombie->伤害植物
+                        if (this.source === 'plant') {
+                            for (let z of zombies) {
+                                const bombDx = z.x - this.x, bombDy = z.y - this.y;
+                                const bombDist = Math.hypot(bombDx, bombDy);
+                                if (bombDist < 80) {
+                                    z.hp -= this.damage;
+                                    addParticles(z.x, z.y, this.color, 20);
+                                }
+                            }
+                        } else if (this.source === 'zombie') {
+                            for (let i = elements.length - 1; i >= 0; i--) {
+                                const elem = elements[i];
+                                const bombDx = elem.x - this.x, bombDy = elem.y - this.y;
+                                const bombDist = Math.hypot(bombDx, bombDy);
+                                if (bombDist < 80) {
+                                    elem.health -= this.damage;
+                                    addParticles(elem.x, elem.y, this.color, 20);
+                                    if (elem.health <= 0) {
+                                        const idx = elements.findIndex(e => e === elem);
+                                        if (idx !== -1) elements.splice(idx,1);
+                                        if (gridElements[elem.row] && gridElements[elem.row][elem.col] === elem) gridElements[elem.row][elem.col] = null;
+                                        addParticles(elem.x, elem.y, elem.data.color, 15);
+                                    }
+                                }
+                            }
+                        }
                         addParticles(this.x, this.y, this.color, 30);
                         this.active = false;
                         return;
@@ -842,16 +914,20 @@
                         this.active = false;
                     }
                 } else {
-                    if (!this.target || this.target.hp <= 0) {
+                    const targetHp2 = getTargetHp(this.target);
+                    if (!this.target || targetHp2 === null || targetHp2 <= 0) {
                         this.active = false;
                         return;
                     }
                     const dx = this.target.x - this.x, dy = this.target.y - this.y;
                     const dist = Math.hypot(dx, dy);
                     if (dist < 8) {
-                        this.target.hp -= this.damage;
+                        applyDamageToTarget(this.target, this.damage);
                         addParticles(this.x, this.y, this.color, 10);
-                        if (this.type === 'poison') this.target.poisoned = 60;
+                        if (this.type === 'poison') {
+                            // 给植物或僵尸添加中毒计数
+                            this.target.poisoned = 60;
+                        }
                         this.active = false;
                     } else {
                         const step = Math.min(this.speed, dist);
@@ -903,6 +979,54 @@
                 }
             }
         }
+
+        // 创建抛物线炸弹的辅助函数：返回已初始化的 Bullet('bomb')
+        function createParabolicBomb(startX, startY, target, damage, color, originRow, source, gravityOverride) {
+            const bomb = new Bullet(startX, startY, target, damage, 'bomb', color, false);
+            bomb.source = source || 'plant';
+            bomb.originRow = originRow;
+            // 默认重力：植物发射时略大，僵尸发射时略小以获得更大射程
+            let g = (typeof gravityOverride === 'number') ? gravityOverride : (source === 'zombie' ? 0.08 : 0.14);
+            bomb.gravity = g;
+
+            if (target) {
+                const targetX = target.x;
+                const targetY = target.y + 18;
+                const startXc = startX + 18;
+                const startYc = startY + 18;
+
+                // 预测目标位置（目标通常向左移动）
+                const targetSpeed = (typeof target.speed === 'number') ? target.speed : 0;
+                // 初步估算飞行时间t：与距离成正比，针对更远距离给更大时间
+                const rawDx = targetX - startXc;
+                const distance = Math.abs(rawDx);
+                const estimatedT = Math.max(0.35, Math.min(2.2, distance / 140 + 0.5));
+                const predictedX = targetX - targetSpeed * estimatedT; // 目标向左移动
+
+                const dx = predictedX - startXc;
+                const dy = targetY - startYc;
+                const horizontalDistance = Math.abs(dx);
+
+                // 计算水平速度，使得在估算时间内到达预测位置
+                let vx0 = horizontalDistance / Math.max(0.25, estimatedT);
+                vx0 = Math.max(3, Math.min(22, vx0));
+                const direction = dx >= 0 ? 1 : -1;
+                bomb.velocityX = vx0 * direction;
+
+                // 重新计算t基于实际vx0
+                const t = Math.max(0.25, horizontalDistance / vx0);
+                const vy0 = (dy + 0.5 * g * t * t) / t;
+                if (vy0 >= 0 || isNaN(vy0)) {
+                    bomb.velocityY = -Math.max(2, Math.abs(dy) / 18);
+                } else {
+                    bomb.velocityY = vy0;
+                }
+            } else {
+                bomb.velocityX = 4;
+                bomb.velocityY = -3;
+            }
+            return bomb;
+        }
         
         class CannonBullet {
             constructor(x, y, targetX, targetY) {
@@ -913,8 +1037,9 @@
                 this.speed = 300; // 快速子弹
                 this.active = true;
                 this.damage = 50000;
-                this.size = 1.5;
+                this.size = 8; // 增大子弹大小
                 this.color = "#ff6b35"; // 橙色
+                this.trailTimer = 0;
             }
             update(deltaTime) {
                 const dx = this.targetX - this.x;
@@ -937,6 +1062,13 @@
                 const angle = Math.atan2(dy, dx);
                 this.x += Math.cos(angle) * step;
                 this.y += Math.sin(angle) * step;
+                
+                // 添加粒子尾迹
+                this.trailTimer += deltaTime;
+                if (this.trailTimer > 0.02) {
+                    this.trailTimer = 0;
+                    particles.push(new Particle(this.x, this.y, 0, 0, this.color, 3, 0.3));
+                }
                 
                 // 防止飞出屏幕
                 if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
@@ -985,6 +1117,22 @@
                 if (col >= 0 && col < COLS) {
                     const elem = gridElements[this.row]?.[col];
                     if (elem && elem.health > 0) {
+                        // 若被铝僵尸（AluminumZombie）杀死，则触发自爆清除前方一格
+                        const checkAluminumExplosion = (zombie) => {
+                            if (zombie.type === 'AluminumZombie' || ZOMBIE_TYPES[zombie.type]?.explosiveOnDeath) {
+                                const frontCol = col + 1;
+                                if (frontCol < COLS) {
+                                    const frontElem = gridElements[this.row][frontCol];
+                                    if (frontElem) {
+                                        frontElem.health = 0;
+                                        const idx2 = elements.findIndex(e => e === frontElem);
+                                        if (idx2 !== -1) elements.splice(idx2,1);
+                                        gridElements[this.row][frontCol] = null;
+                                        addParticles(frontElem.x, frontElem.y, frontElem.data.color, 20);
+                                    }
+                                }
+                            }
+                        };
                         if (this.type === 'Jumper') {
                             if (this.jumpRemaining > 0 && this.jumpCooldownTimer <= 0 && !elem.data.isSpikeweed) {
                                 const behindCol = col - 1;
@@ -1013,6 +1161,8 @@
                                     if (idx !== -1) elements.splice(idx,1);
                                     gridElements[this.row][col] = null;
                                     addParticles(elem.x, elem.y, elem.data.color, 15);
+                                    // 如果攻击者是铝僵尸在击杀时，应触发其自爆效果（清除前方一格）
+                                    checkAluminumExplosion(this);
                                 }
                             } else {
                                 this.attackTimer -= deltaTime;
@@ -1034,6 +1184,7 @@
                                     if (idx !== -1) elements.splice(idx,1);
                                     gridElements[this.row][col] = null;
                                     addParticles(elem.x, elem.y, elem.data.color, 15);
+                                        checkAluminumExplosion(this);
                                 }
                             } else {
                                 this.attackTimer -= deltaTime;
@@ -1082,7 +1233,7 @@
             const startCol = aluminumElem.col;
             const endCol = Math.min(COLS-1, aluminumElem.col + 2);
             for (let z of zombies) {
-                const zCol = Math.floor(z.x / CELL_W);
+                const zCol = Math.floor((z.x - CANNON_ARENA_WIDTH) / CELL_W);
                 if (z.row === aluminumElem.row && zCol >= startCol && zCol <= endCol) {
                     z.hp = 0;
                     addParticles(z.x, z.y, "#ffaa00", 20);
@@ -1150,65 +1301,8 @@
                     // 铁元素：发射穿透子弹，在3路范围内来回穿梭30秒
                     bullets.push(new Bullet(this.x, this.y, null, dmg, 'iron', bulletColor, false));
                 } else if (isBomb) {
-                    // 钠元素：炸弹攻击 - 精确抛物线计算
-                    const bombBullet = new Bullet(this.x, this.y, shootTarget, dmg, 'bomb', bulletColor, false);
-                    bombBullet.gravity = 0.15; // 进一步减小重力加速度
-                    
-                    // 计算精确的抛物线轨迹
-                    if (shootTarget) {
-                        const targetX = shootTarget.x;
-                        const targetY = shootTarget.y + 18; // 目标中心点
-                        const startX = this.x + 18; // 发射点中心
-                        const startY = this.y + 18;
-                        
-                        // 考虑僵尸的移动速度
-                        const zombieSpeed = shootTarget.speed || 0;
-                        const distance = Math.abs(targetX - startX);
-                        
-                        // 估算飞行时间（基于距离和僵尸速度）
-                        const estimatedTime = Math.max(0.5, distance / 150 + Math.abs(targetY - startY) / 100);
-                        
-                        // 预测僵尸在飞行时间后的位置
-                        const predictedX = targetX + zombieSpeed * estimatedTime * (targetX > startX ? -1 : 1);
-                        const dx = predictedX - startX;
-                        const dy = targetY - startY;
-                        
-                        // 使用二元抛物线方程求解
-                        // dy = vy0 * t - 0.5 * g * t²
-                        // dx = vx0 * t
-                        // 其中 t = dx / vx0
-                        
-                        // 求解二次方程：0.5 * g * t² - vy0 * t + dy = 0
-                        // 其中 t = dx / vx0
-                        
-                        // 使用精确的抛物线计算
-                        const g = bombBullet.gravity;
-                        
-                        // 根据距离选择合适的水平速度
-                        const horizontalDistance = Math.abs(dx);
-                        const vx0 = Math.max(2, Math.min(5, horizontalDistance / 25)); // 2-5之间的速度，根据距离调整
-                        const direction = dx > 0 ? 1 : -1;
-                        bombBullet.velocityX = vx0 * direction;
-                        
-                        // 计算飞行时间
-                        const t = horizontalDistance / vx0;
-                        
-                        // 计算所需的垂直速度：vy0 = (dy + 0.5 * g * t²) / t
-                        const vy0 = (dy + 0.5 * g * t * t) / t;
-                        
-                        // 确保是向上抛出，如果计算结果不合适，使用默认值
-                        if (vy0 >= 0 || isNaN(vy0)) {
-                            bombBullet.velocityY = -Math.max(2, Math.abs(dy) / 20);
-                        } else {
-                            bombBullet.velocityY = vy0;
-                        }
-                    } else {
-                        // 没有目标时的默认行为
-                        bombBullet.velocityY = -3;
-                        bombBullet.velocityX = 2;
-                    }
-                    
-                    bombBullet.originRow = this.row; // 记录发射时的行号
+                    // 钠元素：炸弹攻击 - 使用抛物线辅助函数
+                    const bombBullet = createParabolicBomb(this.x, this.y, shootTarget, dmg, bulletColor, this.row, 'plant', 0.18);
                     bullets.push(bombBullet);
                 } else {
                     bullets.push(new Bullet(this.x, this.y, shootTarget, dmg, poison ? 'poison' : 'normal', bulletColor, false));
@@ -1348,7 +1442,7 @@
             bossState = 'prep';
             bossArenaExpanded = true;
             bossPrepStartTime = performance.now();
-            bossData.hp = 200000;
+            bossData.hp = 1000000;
             bossData.corpseValue = 0;
             bossData.oxidation = BOSS_PARAMS.initialOxidation;
             bossData.reduction = BOSS_PARAMS.initialReduction;
@@ -1665,21 +1759,37 @@
             addParticles(elem.x, elem.y, elem.data.color, 12);
         }
         function createBossSummonedZombie(type, row, spawnX, spawnY) {
-            const zombieType = ZOMBIE_TYPES[type] ? type : 'Basic';
-            const zombieData = ZOMBIE_TYPES[zombieType];
-            bossData.summons.push({
-                type: zombieType,
-                originalType: type,
-                row,
-                x: canvas.width,
-                y: row * CELL_H + CELL_H/2,
-                speed: zombieData.speedBase || 30,
-                attackTimer: 0,
-                corpseRewardTimer: BOSS_PARAMS.transformation.rewardCorpseInterval,
-                state: 'moving'
-            });
+            const zombieTypeMap = {
+                'carbon': 'CarbonZombie',
+                'iron': 'IronZombie',
+                'sodium': 'SodiumZombie',
+                'hydrogen': 'HydrogenZombie',
+                'oxygen': 'OxygenZombie',
+                'magnesium': 'MagnesiumZombie',
+                'phosphorus': 'PhosphorusZombie',
+                'silicon': 'SiliconZombie',
+                'helium': 'HeliumZombie',
+                'neon': 'NeonZombie',
+                'aluminum': 'AluminumZombie'
+            };
+            const zombieType = zombieTypeMap[type] || 'Basic';
+            const zombieData = ZOMBIE_TYPES[zombieType] || ZOMBIE_TYPES.Basic;
+            const hp = zombieData.hpBase || 300;
+            const speed = zombieData.speedBase || 30;
+            const startX = (typeof spawnX === 'number') ? spawnX : (canvas.width - EXTRA_RIGHT/2 - 20);
+            const z = new Zombie(row, zombieType, hp, speed, zombieData.rewardScore || 10, startX);
+            // 标记为Boss召唤的特殊僵尸（供后续逻辑或调试使用）
+            z.isBossSummoned = true;
+            // 让元素僵尸的颜色与对应植物颜色一致（若存在）
+            if (ELEMENTS[type] && ELEMENTS[type].color) {
+                ZOMBIE_TYPES[zombieType] = ZOMBIE_TYPES[zombieType] || {};
+                ZOMBIE_TYPES[zombieType].color = ELEMENTS[type].color;
+            }
+            zombies.push(z);
+            addParticles(z.x, z.y, zombieData.color || "#ffffff", 12);
         }
         function castTransformationSkill() {
+            if (bossCooldowns.transformation > 0) return false;
             const radiusPx = BOSS_PARAMS.transformation.radiusCells * CELL_W;
             const targetPlants = elements.filter(e => Math.hypot(e.x - bossData.x, e.y - bossData.y) <= radiusPx);
             if (targetPlants.length < BOSS_PARAMS.transformation.targetCount) return false;
@@ -1736,6 +1846,8 @@
                 removeElementWithoutGain(target);
             }
             bossData.transformationActive = true;
+            // 触发冷却
+            bossCooldowns.transformation = BOSS_PARAMS.transformation.cooldownSec || 30;
             const costMsg = costSource === 'hp' ? `消耗生命值 ${requiredCost}` : `消耗吸收的僵尸`;
             document.getElementById('gameMessage').innerHTML = `🌪️ 无为转变！${costMsg}，将植物转化为僵尸。`;
             showBossSkillBanner("无为转变", "transformation");
@@ -1867,6 +1979,7 @@
             if (!lastBossTickTime) lastBossTickTime = now;
             if (bossCooldowns.domain > 0) bossCooldowns.domain = Math.max(0, bossCooldowns.domain - delta);
             if (bossCooldowns.soulSwap > 0) bossCooldowns.soulSwap = Math.max(0, bossCooldowns.soulSwap - delta);
+            if (bossCooldowns.transformation > 0) bossCooldowns.transformation = Math.max(0, bossCooldowns.transformation - delta);
             
             bossNaturalHealTimer += delta;
             if (bossNaturalHealTimer >= 60) {
@@ -2247,6 +2360,8 @@
                 lastZombieSpawnTime = now;
                 let availableTypes = [];
                 for (let [key, type] of Object.entries(ZOMBIE_TYPES)) {
+                    // 跳过仅能由Boss技能召唤的元素僵尸
+                    if (type.summonedOnly) continue;
                     if (elapsed >= type.unlockTime) {
                         availableTypes.push(key);
                     }
@@ -2331,7 +2446,7 @@
             for (let i=zombies.length-1; i>=0; i--) {
                 const z = zombies[i];
                 const zRow = z.row;
-                const zCol = Math.floor(z.x / CELL_W);
+                const zCol = Math.floor((z.x - CANNON_ARENA_WIDTH) / CELL_W);
                 if (Math.abs(zRow - row) <= 1 && Math.abs(zCol - col) <= 1) {
                     totalScore += z.rewardScore;
                     addParticles(z.x, z.y, "#ff6600", 25);
@@ -2412,6 +2527,20 @@
             spawnZombieByTime(now);
 
             for (let elem of elements) elem.update(delta);
+                // 处理植物中毒效果
+                for (let i = elements.length - 1; i >= 0; i--) {
+                    const elem = elements[i];
+                    if (elem.poisoned && elem.poisoned > 0) {
+                        elem.poisoned -= delta;
+                        elem.health -= 2 * delta * 60; // 每秒约2点伤害
+                        if (elem.health <= 0) {
+                            const idx = elements.findIndex(e => e === elem);
+                            if (idx !== -1) elements.splice(idx,1);
+                            if (gridElements[elem.row] && gridElements[elem.row][elem.col] === elem) gridElements[elem.row][elem.col] = null;
+                            addParticles(elem.x, elem.y, elem.data.color, 15);
+                        }
+                    }
+                }
             for (let i=bullets.length-1; i>=0; i--) { bullets[i].update(delta); if (!bullets[i].active) bullets.splice(i,1); }
             for (let i=cannonBullets.length-1; i>=0; i--) { cannonBullets[i].update(delta); if (!cannonBullets[i].active) cannonBullets.splice(i,1); }
             bossTakeDamageFromBullets();
@@ -2427,6 +2556,60 @@
                     }
                 } else {
                     z.update(delta);
+                    // 元素僵尸的额外技能（仅针对Boss召唤的元素僵尸）
+                    if (z.isBossSummoned) {
+                        if (z.abilityTimer === undefined) z.abilityTimer = 0;
+                        z.abilityTimer -= delta;
+                        if (z.abilityTimer <= 0) {
+                            // 寻找同路的植物优先目标（同一行并在僵尸左侧）
+                            const plantsInRow = elements.filter(e => e.row === z.row && e.x < z.x);
+                            const anyPlants = elements.slice();
+                            const target = (plantsInRow.length>0) ? plantsInRow.reduce((a,b)=> Math.abs(a.x - z.x) < Math.abs(b.x - z.x) ? a : b) : (anyPlants.length>0 ? anyPlants.reduce((a,b)=> Math.hypot(a.x-z.x,a.y-z.y) < Math.hypot(b.x-z.x,b.y-z.y) ? a: b) : null);
+                            const type = z.type;
+                            if (type === 'CarbonZombie') {
+                                // 碳僵尸：回复Boss血量和尸值
+                                const healHp = 200;
+                                const addCorpse = 50;
+                                bossData.hp = Math.min(bossData.maxHp, bossData.hp + healHp);
+                                bossData.corpseValue += addCorpse;
+                                addParticles(bossData.x, bossData.y, "#88cc66", 10);
+                                z.abilityTimer = 3.0;
+                            } else if (type === 'HydrogenZombie') {
+                                if (target) {
+                                    bullets.push(new Bullet(z.x, z.y, target, z.attackDamage || 8, 'normal', ZOMBIE_TYPES[type].color || '#ffffff', false));
+                                }
+                                z.abilityTimer = 1.2;
+                            } else if (type === 'OxygenZombie') {
+                                if (target) {
+                                    bullets.push(new Bullet(z.x, z.y, target, z.attackDamage || 10, 'normal', ZOMBIE_TYPES[type].color || '#00bfff', false));
+                                    // 双发
+                                    bullets.push(new Bullet(z.x, z.y, target, Math.max(1, Math.floor((z.attackDamage||10)/2)), 'normal', ZOMBIE_TYPES[type].color || '#00bfff', false));
+                                }
+                                z.abilityTimer = 1.6;
+                            } else if (type === 'SodiumZombie') {
+                                if (target) {
+                                    const bomb = createParabolicBomb(z.x, z.y, target, z.attackDamage || 14, ZOMBIE_TYPES[type].color || '#ffd966', z.row, 'zombie', 0.12);
+                                    bullets.push(bomb);
+                                }
+                                z.abilityTimer = 2.0;
+                            } else if (type === 'FluorineZombie') {
+                                if (target) {
+                                    bullets.push(new Bullet(z.x, z.y, target, Math.max(4, (z.attackDamage||10)), 'poison', ZOMBIE_TYPES[type].color || '#8fbc8f', false));
+                                }
+                                z.abilityTimer = 2.2;
+                            } else if (type === 'IronZombie') {
+                                if (target) {
+                                    const homing = new Bullet(z.x, z.y, target, z.attackDamage || 18, 'homingPlant', ZOMBIE_TYPES[type].color || '#C0C0C0', false);
+                                    homing.maxSpeed = 8;
+                                    bullets.push(homing);
+                                }
+                                z.abilityTimer = 2.5;
+                            } else {
+                                // 其他元素僵尸（如Helium/Neon/Aluminum）暂不发射子弹
+                                z.abilityTimer = 3.0 + Math.random()*2;
+                            }
+                        }
+                    }
                 }
                 if (z.x + z.width/2 <= 0) {
                     gameOver = true;
@@ -2440,6 +2623,21 @@
                         const row = z.row;
                         const col = Math.floor(z.x / CELL_W);
                         handleExplosiveDeath(z, row, col);
+                    }
+                    // 铝僵尸死亡自爆：清除前方一格的元素
+                    if (z.type === 'AluminumZombie' || ZOMBIE_TYPES[z.type]?.explosiveOnDeath) {
+                        const zCol = Math.floor((z.x - CANNON_ARENA_WIDTH) / CELL_W);
+                        const frontCol = zCol - 1; // 前方一格（向左）
+                        if (frontCol >= 0) {
+                            const frontElem = gridElements[z.row][frontCol];
+                            if (frontElem) {
+                                frontElem.health = 0;
+                                const idxf = elements.findIndex(e => e === frontElem);
+                                if (idxf !== -1) elements.splice(idxf,1);
+                                gridElements[z.row][frontCol] = null;
+                                addParticles(frontElem.x, frontElem.y, frontElem.data.color, 20);
+                            }
+                        }
                     }
                     addScoreAndSync(z.rewardScore);
                     addParticles(z.x, z.y, ZOMBIE_TYPES[z.type]?.color || "#ffffff", 20);
@@ -2458,7 +2656,7 @@
                 if (elem.data.isSpikeweed) {
                     const col = elem.col;
                     for (let z of zombies) {
-                        const zCol = Math.floor(z.x / CELL_W);
+                        const zCol = Math.floor((z.x - CANNON_ARENA_WIDTH) / CELL_W);
                         if (z.row === elem.row && zCol === col) {
                             z.hp -= elem.data.damage;
                             elem.attackTimer = elem.data.cooldown;
