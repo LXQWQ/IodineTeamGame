@@ -6,8 +6,163 @@
     <title>碘化留言板 · 全服反馈</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg-primary:#f9fafc;--bg-card:#ffffff;--text-primary:#1e293b;--text-secondary:#475569;--border:#e2e8f0;--accent:#7c3aed;--accent-light:#a78bfa;--accent-bg:#ede9fe;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.05);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.05);--header-gradient:linear-gradient(135deg,#6d28d9 0%,#4c1d95 100%)}
-        body.dark{--bg-primary:#0f172a;--bg-card:#1e293b;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--border:#334155;--accent:#a78bfa;--accent-light:#c4b5fd;--accent-bg:#312e81;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.3);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.4);--header-gradient:linear-gradient(135deg,#4c1d95 0%,#2e1065 100%)}
+                
+        /* 化学多主题系统 */
+        [data-theme="iodine-vapor"] {
+            --bg-primary: #1a0a2e;
+            --bg-card: #2d1b3a;
+            --text-primary: #f0e6ff;
+            --text-secondary: #b8a0d0;
+            --border: #4a2e5c;
+            --accent: #9b59b6;
+            --accent-light: #c39bd3;
+            --accent-bg: #2a1a35;
+            --accent-starch: #6c3483;
+            --crystal-dark: #1a0a2e;
+            --header-gradient: linear-gradient(135deg, #0d0420 0%, #4a1a6b 40%, #8e44ad 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.5);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.6);
+            --modal-bg: #2d1b3a;
+        }
+        
+        [data-theme="mercury"] {
+            --bg-primary: #1a1a1a;
+            --bg-card: #2d2d2d;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a8a8a8;
+            --border: #404040;
+            --accent: #c0c0c0;
+            --accent-light: #d4d4d4;
+            --accent-bg: #252525;
+            --accent-starch: #87ceeb;
+            --crystal-dark: #1a1a1a;
+            --header-gradient: linear-gradient(135deg, #0a0a0a 0%, #404040 50%, #c0c0c0 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.6);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.7);
+            --modal-bg: #2d2d2d;
+        }
+        
+        [data-theme="sulfur"] {
+            --bg-primary: #2d1810;
+            --bg-card: #4a2c1a;
+            --text-primary: #fff8e1;
+            --text-secondary: #ffd4a3;
+            --border: #6b4423;
+            --accent: #ffa500;
+            --accent-light: #ffb347;
+            --accent-bg: #3d2414;
+            --accent-starch: #9370db;
+            --crystal-dark: #2d1810;
+            --header-gradient: linear-gradient(135deg, #1a0e08 0%, #4a2c1a 40%, #ffa500 100%);
+            --shadow-sm: 0 4px 8px rgba(255,165,0,0.3);
+            --shadow-md: 0 10px 18px rgba(255,165,0,0.4);
+            --modal-bg: #4a2c1a;
+        }
+        
+        [data-theme="cinnabar"] {
+            --bg-primary: #4a0e0e;
+            --bg-card: #6b1a1a;
+            --text-primary: #ffe4e1;
+            --text-secondary: #ffb3ba;
+            --border: #8b2635;
+            --accent: #dc143c;
+            --accent-light: #ff6b6b;
+            --accent-bg: #5a1515;
+            --accent-starch: #ffd700;
+            --crystal-dark: #4a0e0e;
+            --header-gradient: linear-gradient(135deg, #2a0808 0%, #6b1a1a 40%, #dc143c 100%);
+            --shadow-sm: 0 4px 8px rgba(220,20,60,0.4);
+            --shadow-md: 0 10px 18px rgba(220,20,60,0.5);
+            --modal-bg: #6b1a1a;
+        }
+        
+        [data-theme="copper-sulfate"] {
+            --bg-primary: #0a2e4a;
+            --bg-card: #1a4d6b;
+            --text-primary: #e0f2f7;
+            --text-secondary: #a8dadc;
+            --border: #2e5a7a;
+            --accent: #4682b4;
+            --accent-light: #5f9ea0;
+            --accent-bg: #1a3a52;
+            --accent-starch: #ffffff;
+            --crystal-dark: #0a2e4a;
+            --header-gradient: linear-gradient(135deg, #051a2e 0%, #1a4d6b 40%, #4682b4 100%);
+            --shadow-sm: 0 4px 8px rgba(70,130,180,0.3);
+            --shadow-md: 0 10px 18px rgba(70,130,180,0.4);
+            --modal-bg: #1a4d6b;
+        }
+        
+        [data-theme="carbon"] {
+            --bg-primary: #000000;
+            --bg-card: #1a1a1a;
+            --text-primary: #d0d0d0;
+            --text-secondary: #808080;
+            --border: #333333;
+            --accent: #666666;
+            --accent-light: #808080;
+            --accent-bg: #0d0d0d;
+            --accent-starch: #999999;
+            --crystal-dark: #000000;
+            --header-gradient: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #333333 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.8);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.9);
+            --modal-bg: #1a1a1a;
+        }
+        
+        /* 月读主题 */
+        [data-theme="tsukuyomi"] {
+            --tsuki-accent: #e04090;
+            --tsuki-accent-cyan: #00b8d4;
+            --tsuki-accent-gold: #ffb74d;
+            --tsuki-glow: rgba(224, 64, 144, 0.3);
+            
+            --bg-primary: #1e2235;
+            --bg-card: #262b3d;
+            --text-primary: #e8e4ef;
+            --text-secondary: #9a96b5;
+            --border: #3b3850;
+            --accent: #e04090;
+            --accent-light: #ff6bb5;
+            --accent-bg: rgba(224, 64, 144, 0.08);
+            --header-gradient: linear-gradient(135deg, #0d0a1a 0%, #1a0a2e 40%, #2d1044 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.45);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.55);
+            --modal-bg: #1e1d2f;
+        }
+        
+        /* 默认主题（与主页保持一致） */
+        :root {
+            --bg-primary: #f9fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --accent-bg: #ede9fe;
+            --accent-starch: #1e3d59;
+            --crystal-dark: #3a3a4a;
+            --header-gradient: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.05);
+            --modal-bg: #ffffff;
+        }
+        
+        body.dark {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+            --accent: #a78bfa;
+            --accent-light: #c4b5fd;
+            --accent-bg: #312e81;
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.3);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.4);
+            --header-gradient: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%);
+            --modal-bg: #1e293b;
+        }
         body{background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,'Segoe UI','Poppins',sans-serif;transition:background .2s;line-height:1.5;padding:2rem}
         .container{max-width:900px;margin:0 auto}
         header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid var(--accent)}
@@ -72,6 +227,28 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const MAX_FEEDBACK = 50;
+        
+        // 主题同步功能 - 只跟随主页
+        function initThemeSync() {
+            const savedTheme = localStorage.getItem('chemical-theme') || 'tsukuyomi';
+            
+            // 应用保存的主题
+            applyTheme(savedTheme);
+            
+            // 监听主页的主题变化
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'chemical-theme' && e.newValue) {
+                    applyTheme(e.newValue);
+                }
+            });
+        }
+        
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            document.body.classList.remove('dark'); // 移除旧的dark class
+        }
+        
+        initThemeSync();
 
         function escapeHtml(str) {
             if (!str) return '';

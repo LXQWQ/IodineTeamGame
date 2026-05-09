@@ -38,7 +38,17 @@
         .boss-btn{background:#a33dd9;color:#fff;display:none}
         .boss-btn.show{display:inline-block}
         .boss-btn:disabled{opacity:0.7;cursor:not-allowed}
-
+        /* ===== ADMIN DEBUG UI START (可整段删除) ===== */
+        .admin-debug-panel{position:fixed;right:16px;bottom:16px;background:rgba(10,26,42,0.92);border:1px solid #4f7ca3;border-radius:12px;padding:10px 12px;z-index:1200;min-width:280px;box-shadow:0 6px 20px rgba(0,0,0,0.35)}
+        .admin-debug-title{font-size:12px;font-weight:700;color:#aee0ff;margin-bottom:8px}
+        .admin-debug-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#e0f0ff;margin-bottom:6px}
+        .admin-debug-item:last-child{margin-bottom:0}
+        .admin-debug-input{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+        .admin-debug-input input,
+        .admin-debug-input select{width:80px;padding:2px 4px;border:1px solid #4f7ca3;border-radius:4px;background:rgba(20,40,60,0.8);color:#e0f0ff;font-size:11px;text-align:center}
+        .admin-debug-input button{padding:2px 6px;border:1px solid #4f7ca3;border-radius:4px;background:rgba(79,124,163,0.8);color:#ffffff;font-size:10px;cursor:pointer}
+        .admin-debug-input button:hover{background:rgba(99,144,183,0.9)}
+        /* ===== ADMIN DEBUG UI END ===== */
         .game-message{text-align:center;margin-top:0.8rem;font-size:0.85rem;color:var(--accent-light)}
         footer{text-align:center;font-size:0.7rem;margin-top:1rem;color:var(--text-dim)}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);justify-content:center;align-items:center;z-index:1000}
@@ -370,15 +380,7 @@
         let cannonChargeCooldown = 0; // 充能CD
         let cannonFireCooldown = 0; // 击发CD
         
-        // ===== ADMIN DEBUG LOGIC START (可整段删除) =====
-        const adminDebug = {
-            enabled: false,
-            freePlaceIgnoreEssence: false,
-            ignoreElementCooldown: false,
-            controlScore: false,
-            controlTime: false
-        };
-        // ===== ADMIN DEBUG LOGIC END =====
+
         const bossData = {
             name: "BOSS·元素之主-死灵法师",
             hp: 1,

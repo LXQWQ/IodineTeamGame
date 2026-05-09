@@ -7,32 +7,250 @@
     <style>
         /* 样式与原版完全一致，未做任何改动 */
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg-primary:#f9fafc;--bg-card:#ffffff;--text-primary:#1e293b;--text-secondary:#475569;--border:#e2e8f0;--accent:#7c3aed;--accent-light:#a78bfa;--accent-bg:#ede9fe;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.05);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.05);--header-gradient:linear-gradient(135deg,#6d28d9 0%,#4c1d95 100%);--modal-bg:#ffffff}
-        body.dark{--bg-primary:#0f172a;--bg-card:#1e293b;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--border:#334155;--accent:#a78bfa;--accent-light:#c4b5fd;--accent-bg:#312e81;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.3);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.4);--header-gradient:linear-gradient(135deg,#4c1d95 0%,#2e1065 100%);--modal-bg:#1e293b}
-        body{background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;transition:background .2s,color .2s;line-height:1.5}
+        :root{--bg-primary:#f9fafc;--bg-card:#ffffff;--text-primary:#1e293b;--text-secondary:#475569;--border:#e2e8f0;--accent:#5c2d91;--accent-light:#9b3d6b;--accent-bg:#f3edf7;--accent-starch:#1e3d59;--crystal-dark:#3a3a4a;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.05);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.05);--header-gradient:linear-gradient(135deg,#1a0a2e 0%,#5c2d91 40%,#9b3d6b 100%);--modal-bg:#ffffff}
+        
+        /* 化学多主题系统 */
+        [data-theme="iodine-vapor"] {
+            --bg-primary: #1a0a2e;
+            --bg-card: #2d1b3a;
+            --text-primary: #f0e6ff;
+            --text-secondary: #b8a0d0;
+            --border: #4a2e5c;
+            --accent: #9b59b6;
+            --accent-light: #c39bd3;
+            --accent-bg: #2a1a35;
+            --accent-starch: #6c3483;
+            --crystal-dark: #1a0a2e;
+            --header-gradient: linear-gradient(135deg, #0d0420 0%, #4a1a6b 40%, #8e44ad 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.5);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.6);
+            --modal-bg: #2d1b3a;
+        }
+        
+        [data-theme="mercury"] {
+            --bg-primary: #1a1a1a;
+            --bg-card: #2d2d2d;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a8a8a8;
+            --border: #404040;
+            --accent: #c0c0c0;
+            --accent-light: #d4d4d4;
+            --accent-bg: #252525;
+            --accent-starch: #87ceeb;
+            --crystal-dark: #1a1a1a;
+            --header-gradient: linear-gradient(135deg, #0a0a0a 0%, #404040 50%, #c0c0c0 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.6);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.7);
+            --modal-bg: #2d2d2d;
+        }
+        
+        [data-theme="sulfur"] {
+            --bg-primary: #2d1810;
+            --bg-card: #4a2c1a;
+            --text-primary: #fff8e1;
+            --text-secondary: #ffd4a3;
+            --border: #6b4423;
+            --accent: #ffa500;
+            --accent-light: #ffb347;
+            --accent-bg: #3d2414;
+            --accent-starch: #9370db;
+            --crystal-dark: #2d1810;
+            --header-gradient: linear-gradient(135deg, #1a0e08 0%, #4a2c1a 40%, #ffa500 100%);
+            --shadow-sm: 0 4px 8px rgba(255,165,0,0.3);
+            --shadow-md: 0 10px 18px rgba(255,165,0,0.4);
+            --modal-bg: #4a2c1a;
+        }
+        
+        [data-theme="cinnabar"] {
+            --bg-primary: #4a0e0e;
+            --bg-card: #6b1a1a;
+            --text-primary: #ffe4e1;
+            --text-secondary: #ffb3ba;
+            --border: #8b2635;
+            --accent: #dc143c;
+            --accent-light: #ff6b6b;
+            --accent-bg: #5a1515;
+            --accent-starch: #ffd700;
+            --crystal-dark: #4a0e0e;
+            --header-gradient: linear-gradient(135deg, #2a0808 0%, #6b1a1a 40%, #dc143c 100%);
+            --shadow-sm: 0 4px 8px rgba(220,20,60,0.4);
+            --shadow-md: 0 10px 18px rgba(220,20,60,0.5);
+            --modal-bg: #6b1a1a;
+        }
+        
+        [data-theme="copper-sulfate"] {
+            --bg-primary: #0a2e4a;
+            --bg-card: #1a4d6b;
+            --text-primary: #e0f2f7;
+            --text-secondary: #a8dadc;
+            --border: #2e5a7a;
+            --accent: #4682b4;
+            --accent-light: #5f9ea0;
+            --accent-bg: #1a3a52;
+            --accent-starch: #ffffff;
+            --crystal-dark: #0a2e4a;
+            --header-gradient: linear-gradient(135deg, #051a2e 0%, #1a4d6b 40%, #4682b4 100%);
+            --shadow-sm: 0 4px 8px rgba(70,130,180,0.3);
+            --shadow-md: 0 10px 18px rgba(70,130,180,0.4);
+            --modal-bg: #1a4d6b;
+        }
+        
+        [data-theme="carbon"] {
+            --bg-primary: #000000;
+            --bg-card: #1a1a1a;
+            --text-primary: #d0d0d0;
+            --text-secondary: #808080;
+            --border: #333333;
+            --accent: #666666;
+            --accent-light: #808080;
+            --accent-bg: #0d0d0d;
+            --accent-starch: #999999;
+            --crystal-dark: #000000;
+            --header-gradient: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #333333 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.8);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.9);
+            --modal-bg: #1a1a1a;
+        }
+        
+        [data-theme="classic-light"] {
+            --bg-primary: #f9fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --accent-bg: #ede9fe;
+            --accent-starch: #1e3d59;
+            --crystal-dark: #3a3a4a;
+            --header-gradient: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.05);
+            --modal-bg: #ffffff;
+        }
+        
+        [data-theme="classic-dark"] {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+            --accent: #a78bfa;
+            --accent-light: #c4b5fd;
+            --accent-bg: #312e81;
+            --accent-starch: #2a4d7a;
+            --crystal-dark: #5c5c6e;
+            --header-gradient: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%);
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.3);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.4);
+            --modal-bg: #1e293b;
+        }
+        
+        /* 月读主题 - 超时空辉夜姬风格 */
+        [data-theme="tsukuyomi"] {
+            /* 月读空间色 - 虚拟歌姬舞台 */
+            --tsuki-accent: #e04090;
+            --tsuki-accent-cyan: #00b8d4;
+            --tsuki-accent-gold: #ffb74d;
+            --tsuki-glow: rgba(224, 64, 144, 0.3);
+            
+            /* 现实空间色 - 彩叶公寓/日常 */
+            --tsuki-bg: #1e2235;
+            --tsuki-card: #262b3d;
+            --tsuki-text: #e8e4ef;
+            --tsuki-text-dim: #9a96b5;
+            --tsuki-border: #3b3850;
+
+            /* 覆盖全局变量 */
+            --bg-primary: #1e2235;
+            --bg-card: #262b3d;
+            --text-primary: #e8e4ef;
+            --text-secondary: #9a96b5;
+            --border: #3b3850;
+            --accent: #e04090;
+            --accent-light: #ff6bb5;
+            --accent-bg: rgba(224, 64, 144, 0.08);
+            --header-gradient: linear-gradient(135deg, #0d0a1a 0%, #1a0a2e 40%, #2d1044 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.45);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.55);
+            --modal-bg: #1e1d2f;
+        }
+        @property --reveal {
+            syntax: '<percentage>';
+            inherits: false;
+            initial-value: 0%;
+        }
+        body.dark{--bg-primary:#0f172a;--bg-card:#1e293b;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--border:#334155;--accent:#7b4fb8;--accent-light:#c46b8b;--accent-bg:#2a1f35;--accent-starch:#2a4d7a;--crystal-dark:#5c5c6e;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.3);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.4);--header-gradient:linear-gradient(135deg,#0d0620 0%,#3a1a5c 40%,#6b1e3d 100%);--modal-bg:#1e293b}
+        body{background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;transition:background 0.6s cubic-bezier(.45,.05,.19,1.2),color 0.6s ease;line-height:1.5}
         .container{max-width:1280px;margin:0 auto;padding:2rem 1.5rem}
         .navbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:3rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
         .logo{font-size:1.8rem;font-weight:800;background:var(--header-gradient);background-clip:text;-webkit-background-clip:text;color:transparent;letter-spacing:-0.5px}
         .nav-right{display:flex;align-items:center;gap:1rem}
-        .theme-toggle,.auth-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;font-weight:500;color:var(--accent);transition:all .2s}
-        .theme-toggle:hover,.auth-btn:hover{background:var(--accent);color:#fff}
+        .theme-toggle,.auth-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;font-weight:500;color:var(--accent);transition:all .2s;position:relative;overflow:hidden}
+        .theme-toggle::before,.auth-btn::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:var(--accent);border-radius:50%;transform:translate(-50%,-50%);transition:width 0.4s ease,height 0.4s ease}
+        .theme-toggle:hover::before,.auth-btn:hover::before{width:100%;height:100%}
+        .theme-toggle:hover,.auth-btn:hover{background:var(--accent);color:#fff;z-index:1}
+        
+        /* 碘遇淀粉变蓝交互触点 */
+        .theme-toggle:active, .auth-btn:active, .play-btn:active, .feedback-btn:active {
+            background: var(--accent-starch) !important;
+            transition: background 0.3s ease;
+        }
+        
+        .theme-toggle, .auth-btn, .play-btn, .feedback-btn {
+            transition: background 0.3s ease;
+        }
         .user-info{display:flex;align-items:center;gap:.8rem;background:var(--accent-bg);padding:.4rem 1rem;border-radius:40px}
         .user-name{font-weight:600;color:var(--accent)}
         .logout-btn{background:0 0;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8rem}
         .logout-btn:hover{color:var(--accent)}
-        .hero{background:var(--header-gradient);border-radius:2rem;padding:2.5rem 2rem;margin-bottom:3rem;color:#fff;box-shadow:var(--shadow-md)}
+        .hero{background:var(--header-gradient);border-radius:2rem;padding:2.5rem 2rem;margin-bottom:3rem;color:#fff;box-shadow:var(--shadow-md);position:relative;overflow:hidden}
+        .hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.4) var(--reveal, 0%),transparent var(--reveal, 0%));-webkit-mask-image:linear-gradient(to right,transparent 0%,black var(--reveal, 0%));mask-image:linear-gradient(to right,transparent 0%,black var(--reveal, 0%));animation:vapor-deposition 2s cubic-bezier(.65,.05,.36,1) forwards;z-index:1}
+        .hero h1,.hero p,.hero .badge,.hero .feedback-btn{position:relative;z-index:2}
         .hero h1{font-size:2.5rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
         .hero p{font-size:1.1rem;opacity:.92;max-width:80%;margin-bottom:1.5rem}
         .badge{background:rgba(255,255,255,.2);backdrop-filter:blur(4px);display:inline-block;padding:.4rem 1rem;border-radius:40px;font-size:.8rem;font-weight:500}
-        .feedback-btn{background:#fff;color:#6d28d9;border:none;padding:.7rem 1.5rem;border-radius:60px;font-weight:600;margin-top:.5rem;cursor:pointer;transition:transform .1s;display:inline-flex;align-items:center;gap:.5rem}
+        .feedback-btn{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent);padding:.7rem 1.5rem;border-radius:60px;font-weight:600;margin-top:.5rem;cursor:pointer;transition:transform .1s,background .3s,color .3s,border-color .3s;display:inline-flex;align-items:center;gap:.5rem}
         .section-title{font-size:1.8rem;font-weight:700;margin:2rem 0 1.5rem;border-left:5px solid var(--accent);padding-left:1rem}
         .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2rem;margin-bottom:3rem}
-        .game-card{background:var(--bg-card);border-radius:1.5rem;overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--border);transition:transform .2s,box-shadow .2s}
+        .game-card{background:var(--bg-card);border-radius:1.5rem;overflow:hidden;box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,0.6);border:1px solid var(--border);transition:transform .2s,box-shadow .2s;position:relative}
+        .game-card::before{content:'';position:absolute;inset:-4px;border-radius:calc(1.5rem + 4px);background:conic-gradient(from 0deg,transparent,var(--accent-light) 15deg,transparent 30deg,var(--accent-light) 180deg,transparent 210deg,var(--accent-light) 345deg,transparent 360deg);opacity:0;transition:opacity 0.3s ease;z-index:-1;filter:blur(6px)}
+        .game-card:hover::before{opacity:0.6;animation:orbital-rotation 3s linear infinite}
+        @keyframes orbital-rotation{to{transform:rotate(360deg)}}
         .game-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
-        .game-img{background:linear-gradient(145deg,var(--accent-bg),var(--bg-primary));height:160px;display:flex;align-items:center;justify-content:center;font-size:4rem;border-bottom:1px solid var(--border)}
+        .game-img{background:linear-gradient(145deg,var(--accent-bg),var(--bg-primary));height:160px;display:flex;align-items:center;justify-content:center;font-size:4rem;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
         .game-info{padding:1.5rem}
         .game-info h3{font-size:1.4rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
         .game-tag{background:var(--accent-bg);color:var(--accent);font-size:.7rem;padding:.2rem .7rem;border-radius:20px;font-weight:500}
+        
+        /* 碘的氧化性进度指示 */
+        .oxidation-indicator {
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 50%, var(--accent) 100%);
+            border-radius: 2px;
+            margin: 0.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .oxidation-indicator::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--oxidation-level, 30%);
+            background: var(--accent-light);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 8px var(--accent-light);
+        }
+        
+        .oxidation-progress {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin: 0.2rem 0;
+        }
         .game-desc{color:var(--text-secondary);margin:.8rem 0 1rem;font-size:.9rem}
         .play-btn{background:var(--accent);color:#fff;border:none;padding:.5rem 1.2rem;border-radius:40px;font-weight:500;cursor:pointer;width:100%}
         .play-btn:hover{background:var(--accent-light)}
@@ -47,6 +265,1206 @@
         .btn-primary{background:var(--accent);color:#fff}
         .btn-secondary{background:var(--border);color:var(--text-primary)}
         .error-msg{color:#ef4444;font-size:.8rem;margin-top:-.5rem;margin-bottom:.8rem}
+        @keyframes vapor-deposition{0%{--reveal:0%}50%{--reveal:100%}100%{--reveal:0%}}
+        
+        /* 碘的升华特性加载动画 */
+        .iodine-sublimation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 60px;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+        
+        .iodine-crystal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            background: var(--crystal-dark);
+            border-radius: 4px;
+            transform: translate(-50%, -50%);
+            animation: crystal-emerge 3s ease-in-out forwards;
+            box-shadow: 0 4px 12px rgba(58,44,106,0.3);
+        }
+        
+        .iodine-vapor {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            animation: vapor-expand 3s ease-in-out 1.5s forwards;
+        }
+        
+        @keyframes crystal-emerge {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0);
+            }
+            30% {
+                width: 40px;
+                height: 40px;
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                width: 40px;
+                height: 40px;
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+        }
+        
+        @keyframes vapor-expand {
+            0% {
+                width: 80px;
+                height: 80px;
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% {
+                width: 200px;
+                height: 200px;
+                opacity: 0.8;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+        .micro-reaction{width:60px;height:60px;position:relative}
+        .crucible{width:40px;height:30px;background:linear-gradient(135deg,#8b5cf6,#a78bfa);border-radius:0 0 20px 20px;margin:0 auto;position:relative;overflow:hidden;animation:crucible-glow 3s ease-in-out infinite}
+        .crucible::before{content:'';position:absolute;bottom:0;left:0;right:0;height:15px;background-color:#10b981;animation:alchemical-color 3s ease-in-out infinite}
+        @keyframes crucible-glow{0%,100%{box-shadow:0 0 15px rgba(16,185,129,0.3)}33%{box-shadow:0 0 20px rgba(251,191,36,0.5)}66%{box-shadow:0 0 25px rgba(239,68,68,0.6)}}
+        @keyframes alchemical-color{0%,25%{background-color:#10b981}26%,35%{background-color:#fbbf24}36%,45%{background-color:#fbbf24}46%,60%{background-color:#ef4444}61%,100%{background-color:#10b981}}
+        .electron-orbit{width:50px;height:50px;border:2px solid rgba(139,92,246,0.3);border-radius:50%;position:relative;margin:0 auto;animation:orbital-rotate 4s linear infinite}
+        .electron{position:absolute;width:6px;height:6px;background:#8b5cf6;border-radius:50%;top:-3px;left:50%;transform:translateX(-50%);animation:electron-energy 2s ease-in-out infinite}
+        @keyframes orbital-rotate{to{transform:rotate(360deg)}}
+        @keyframes electron-energy{0%,100%{background:#8b5cf6;box-shadow:0 0 8px #8b5cf6}25%{background:#3b82f6;box-shadow:0 0 8px #3b82f6}50%{background:#10b981;box-shadow:0 0 8px #10b981}75%{background:#f59e0b;box-shadow:0 0 8px #f59e0b}}
+        
+        /* 电子轨道跃迁闪光 */
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 60px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+        }
+        
+        .game-card:hover::before {
+            animation: orbital-flash 8s linear infinite;
+        }
+        
+        @keyframes orbital-flash {
+            0%, 85%, 100% { 
+                opacity: 0.3;
+                border-color: rgba(255,255,255,0.1);
+                box-shadow: none;
+            }
+            86%, 88%, 90% {
+                opacity: 1;
+                border-color: rgba(255,255,255,0.8);
+                box-shadow: 0 0 15px rgba(255,255,255,0.6);
+            }
+        }
+        
+        /* 游戏特定轨道颜色 */
+        .game-card.dandao:hover::before {
+            border-color: var(--game-color-1);
+            animation: orbital-flash-dandao 7s linear infinite;
+        }
+        
+        .game-card.evz:hover::before {
+            border-color: var(--game-color-1);
+            animation: orbital-flash-evz 6s linear infinite;
+        }
+        
+        .game-card.phase-transfer:hover::before {
+            border-color: var(--game-color-1);
+            animation: orbital-flash-phase 8s linear infinite;
+        }
+        
+        .game-card.chain-craft:hover::before {
+            border-color: var(--game-color-1);
+            animation: orbital-flash-chain 9s linear infinite;
+        }
+        
+        @keyframes orbital-flash-dandao {
+            0%, 82%, 100% { 
+                opacity: 0.3;
+                border-color: rgba(230,57,70,0.3);
+                box-shadow: none;
+            }
+            83%, 85%, 87% {
+                opacity: 1;
+                border-color: var(--game-color-1);
+                box-shadow: 0 0 20px var(--game-color-1);
+            }
+        }
+        
+        @keyframes orbital-flash-evz {
+            0%, 88%, 100% { 
+                opacity: 0.3;
+                border-color: rgba(46,196,182,0.3);
+                box-shadow: none;
+            }
+            89%, 91%, 93% {
+                opacity: 1;
+                border-color: var(--game-color-1);
+                box-shadow: 0 0 20px var(--game-color-1);
+            }
+        }
+        
+        @keyframes orbital-flash-phase {
+            0%, 85%, 100% { 
+                opacity: 0.3;
+                border-color: rgba(72,202,228,0.3);
+                box-shadow: none;
+            }
+            86%, 88%, 90% {
+                opacity: 1;
+                border-color: var(--game-color-1);
+                box-shadow: 0 0 20px var(--game-color-1);
+            }
+        }
+        
+        @keyframes orbital-flash-chain {
+            0%, 88%, 100% { 
+                opacity: 0.3;
+                border-color: rgba(46,125,50,0.3);
+                box-shadow: none;
+            }
+            89%, 91%, 93% {
+                opacity: 1;
+                border-color: var(--game-color-1);
+                box-shadow: 0 0 20px var(--game-color-1);
+            }
+        }
+        
+        @keyframes orbital-flash-phase {
+            0%, 85%, 100% { 
+                opacity: 0.3;
+                border-color: rgba(72,202,228,0.3);
+                box-shadow: none;
+            }
+            86%, 88%, 90% {
+                opacity: 1;
+                border-color: var(--game-color-1);
+                box-shadow: 0 0 20px var(--game-color-1);
+            }
+        }
+        .phase-transfer .phase-transfer{width:60px;height:40px;display:flex;gap:5px;justify-content:center;align-items:center;position:relative}
+        .phase-drop{width:20px;height:30px;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;position:relative}
+        .phase-drop:first-child{background:#3b82f6}
+        .phase-drop:last-child{background:#f59e0b}
+        .solute{position:absolute;width:4px;height:4px;background:#ef4444;border-radius:50%;animation:phase-migration 4s ease-in-out infinite}
+        @keyframes phase-migration{0%,100%{left:8px;transform:translateY(0);animation-timing-function:ease-in-out}20%{left:18px;transform:translateY(-2px);animation-timing-function:ease-out}25%,35%{left:20px;transform:translateY(-5px);animation-timing-function:ease-in-out}40%{left:22px;transform:translateY(-3px);animation-timing-function:ease-out}45%,55%{left:24px;transform:translateY(0);animation-timing-function:ease-in-out}60%{left:26px;transform:translateY(2px);animation-timing-function:ease-out}65%,75%{left:28px;transform:translateY(5px);animation-timing-function:ease-in-out}80%{left:30px;transform:translateY(3px);animation-timing-function:ease-out}85%,95%{left:32px;transform:translateY(0);animation-timing-function:ease-in-out}98%{left:34px;transform:translateY(-2px);animation-timing-function:ease-out}}
+        
+        /* 分子飘浮随机抖动 */
+        .floating-molecule {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.6;
+            animation: molecule-float 8s ease-in-out infinite;
+        }
+        
+        .floating-molecule:nth-child(1) {
+            top: 10%;
+            left: 15%;
+            animation-delay: 0s;
+            animation-duration: 7s;
+        }
+        
+        .floating-molecule:nth-child(2) {
+            top: 20%;
+            left: 80%;
+            animation-delay: 1s;
+            animation-duration: 9s;
+        }
+        
+        .floating-molecule:nth-child(3) {
+            top: 60%;
+            left: 25%;
+            animation-delay: 2s;
+            animation-duration: 8s;
+        }
+        
+        .floating-molecule:nth-child(4) {
+            top: 70%;
+            left: 70%;
+            animation-delay: 3s;
+            animation-duration: 10s;
+        }
+        
+        @keyframes molecule-float {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0.6;
+            }
+            15% {
+                transform: translate(3px, -2px) rotate(5deg);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translate(-2px, 3px) rotate(-3deg);
+                opacity: 0.5;
+            }
+            45% {
+                transform: translate(4px, 1px) rotate(7deg);
+                opacity: 0.8;
+            }
+            60% {
+                transform: translate(-3px, -4px) rotate(-5deg);
+                opacity: 0.6;
+            }
+            75% {
+                transform: translate(2px, 3px) rotate(3deg);
+                opacity: 0.7;
+            }
+            90% {
+                transform: translate(-1px, -2px) rotate(-2deg);
+                opacity: 0.5;
+            }
+        }
+        
+        /* 色谱斑点线分隔符 */
+        .chromatography-separator {
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                #e63946 5%, 
+                #f4a261 10%, 
+                transparent 15%,
+                transparent 20%,
+                #2ec4b6 25%,
+                #5e60ce 30%,
+                transparent 35%,
+                transparent 40%,
+                #48cae4 45%,
+                #ffb703 50%,
+                transparent 55%,
+                transparent 60%,
+                #e63946 65%,
+                #f4a261 70%,
+                transparent 75%,
+                transparent 80%,
+                #2ec4b6 85%,
+                #5e60ce 90%,
+                transparent 95%,
+                transparent 100%
+            );
+            position: relative;
+            margin: 30px 0;
+            border-radius: 2px;
+        }
+        
+        .chromatography-separator::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 5%;
+            width: 90%;
+            height: 8px;
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(230,57,70,0.3) 0px,
+                rgba(244,162,97,0.3) 8px,
+                rgba(46,196,182,0.3) 16px,
+                rgba(94,96,206,0.3) 24px,
+                rgba(72,202,228,0.3) 32px,
+                rgba(255,183,3,0.3) 40px,
+                rgba(230,57,70,0.3) 48px
+            );
+            border-radius: 4px;
+            opacity: 0.8;
+        }
+        
+        /* 试剂瓶标签角标 */
+        .reagent-label {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 0.7em;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 3px;
+            z-index: 2;
+            backdrop-filter: blur(4px);
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .reagent-label::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 6px;
+            height: 6px;
+            background: var(--game-color-1, #3a7bd5);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--game-color-1, #3a7bd5);
+        }
+        
+        .reagent-label::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            width: 12px;
+            height: 2px;
+            background: var(--game-color-1, #3a7bd5);
+            transform: translateX(-50%);
+            border-radius: 1px;
+        }
+        
+        /* 结晶生长动画 */
+        .crystal-loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            z-index: 9999;
+        }
+        
+        .crystal-loader::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: linear-gradient(45deg, var(--game-color-1, #3a7bd5), var(--game-color-2, #ffb347));
+            transform: translate(-50%, -50%) rotate(45deg);
+            animation: crystal-grow 2s ease-in-out infinite;
+            border-radius: 2px;
+        }
+        
+        .crystal-loader::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: linear-gradient(-45deg, var(--game-color-2, #ffb347), var(--game-color-1, #3a7bd5));
+            transform: translate(-50%, -50%) rotate(-45deg);
+            animation: crystal-grow-secondary 2s ease-in-out infinite 0.5s;
+            border-radius: 2px;
+        }
+        
+        @keyframes crystal-grow {
+            0%, 100% {
+                width: 0;
+                height: 0;
+                opacity: 0.3;
+            }
+            50% {
+                width: 40px;
+                height: 40px;
+                opacity: 0.8;
+            }
+            80% {
+                width: 30px;
+                height: 30px;
+                opacity: 1;
+            }
+        }
+        
+        @keyframes crystal-grow-secondary {
+            0%, 100% {
+                width: 0;
+                height: 0;
+                opacity: 0.2;
+            }
+            50% {
+                width: 25px;
+                height: 25px;
+                opacity: 0.6;
+            }
+            80% {
+                width: 20px;
+                height: 20px;
+                opacity: 0.8;
+            }
+        }
+        
+        /* 页面加载结晶效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(230,57,70,0.1) 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, rgba(244,162,97,0.1) 0%, transparent 50%),
+                          radial-gradient(circle at 50% 50%, rgba(46,196,182,0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+            animation: crystal-float 20s ease-in-out infinite;
+        }
+        
+        @keyframes crystal-float {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.1);
+            }
+        }
+        
+        /* 碘蒸气紫色鼠标交互反馈 */
+        .iodine-vapor-feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 60%);
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .iodine-vapor-feedback.active {
+            animation: vapor-pulse 0.6s ease-out forwards;
+        }
+        
+        @keyframes vapor-pulse {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            50% {
+                opacity: 0.8;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+        
+        /* 碘化学式品牌标记 */
+        .iodine-formula {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 3rem;
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            opacity: 0.06;
+            z-index: 0;
+            letter-spacing: 0.2rem;
+            font-weight: 400;
+            user-select: none;
+            pointer-events: none;
+        }
+        
+        /* 化学主题切换器 */
+        .theme-selector {
+            position: relative;
+        }
+        
+        .theme-toggle-btn {
+            background: var(--accent-bg);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--accent);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .theme-toggle-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: var(--accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease, height 0.4s ease;
+        }
+        
+        .theme-toggle-btn:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .theme-toggle-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            z-index: 1;
+        }
+        
+        .reagent-icon {
+            font-size: 1.2rem;
+        }
+        
+        .theme-name {
+            font-size: 0.9rem;
+        }
+        
+        .theme-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            min-width: 200px;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .theme-dropdown.show {
+            max-height: 400px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .theme-option:last-child {
+            border-bottom: none;
+        }
+        
+        .theme-option:hover {
+            background: var(--accent-bg);
+        }
+        
+        .theme-option.active {
+            background: var(--accent-bg);
+            border-left: 3px solid var(--accent);
+        }
+        
+        .theme-color-preview {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--theme-color);
+            border: 2px solid var(--border);
+            flex-shrink: 0;
+        }
+        
+        .theme-option span {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        /* 游戏页面主题穿透兼容 */
+        :root {
+            /* 游戏页面桥接变量 */
+            --game-bg: var(--bg-primary);
+            --game-card-bg: var(--bg-card);
+            --game-text: var(--text-primary);
+            --game-accent: var(--accent);
+            --game-border: var(--border);
+        }
+        
+        /* 特定主题的游戏页面适配 */
+        [data-theme="sulfur"] {
+            --game-bg: linear-gradient(135deg, #2d1810 0%, #4a2c1a 100%);
+        }
+        
+        [data-theme="cinnabar"] {
+            --game-bg: linear-gradient(135deg, #4a0e0e 0%, #6b1a1a 100%);
+        }
+        
+        [data-theme="carbon"] {
+            --game-bg: #000000;
+        }
+        
+        /* Hero区域特殊主题适配 */
+        [data-theme="sulfur"] .hero::before {
+            background: linear-gradient(90deg, transparent 0%, rgba(255,165,0,0.3) var(--reveal, 0%), transparent var(--reveal, 0%));
+        }
+        
+        [data-theme="cinnabar"] .hero::before {
+            background: linear-gradient(90deg, transparent 0%, rgba(220,20,60,0.3) var(--reveal, 0%), transparent var(--reveal, 0%));
+        }
+        
+        [data-theme="carbon"] .hero::before {
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) var(--reveal, 0%), transparent var(--reveal, 0%));
+        }
+        
+        [data-theme="mercury"] .hero::before {
+            background: linear-gradient(90deg, transparent 0%, rgba(192,192,192,0.3) var(--reveal, 0%), transparent var(--reveal, 0%));
+        }
+        
+        /* 碘特征颜色映射卡片系统 */
+        .game-card.dandao {
+            --game-color-1: var(--crystal-dark); /* 碘晶体灰黑 */
+            --game-color-2: var(--accent); /* 碘蒸气紫 */
+        }
+        .game-card.dandao:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 32px rgba(92,45,145,0.3);
+        }
+        
+        .game-card.evz {
+            --game-color-1: var(--accent-light); /* 碘有机相红 */
+            --game-color-2: var(--accent-starch); /* 碘淀粉蓝 */
+        }
+        .game-card.evz:hover {
+            border-color: var(--accent-light);
+            box-shadow: 0 8px 32px rgba(155,61,107,0.3);
+        }
+        
+        .game-card.phase-transfer {
+            --game-color-1: var(--accent); /* 碘蒸气紫 */
+            --game-color-2: var(--accent-light); /* 碘有机相红 */
+        }
+        .game-card.phase-transfer:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 32px rgba(92,45,145,0.3);
+        }
+        
+        .game-card.chain-craft {
+            --game-color-1: var(--accent-light); /* 碳链绿 */
+            --game-color-2: var(--accent-starch); /* 分子蓝 */
+        }
+        .game-card.chain-craft:hover {
+            border-color: var(--accent-light);
+            box-shadow: 0 8px 32px rgba(46,125,50,0.3);
+        }
+        
+        /* 碘特征卡片背景 */
+        .game-card.dandao .game-img {
+            background: linear-gradient(145deg, var(--crystal-dark), var(--accent));
+        }
+        .game-card.evz .game-img {
+            background: linear-gradient(145deg, var(--game-color-1), var(--game-color-2));
+        }
+        .game-card.phase-transfer .game-img {
+            background: linear-gradient(145deg, var(--game-color-1), var(--game-color-2));
+        }
+        .game-card.chain-craft .game-img {
+            background: linear-gradient(145deg, var(--game-color-1), var(--game-color-2));
+        }
+        
+        /* 色谱展开式入场动画 */
+        @keyframes chromatography-reveal {
+            0% {
+                clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+            }
+            100% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            }
+        }
+        
+        @keyframes crystallization-fade-in {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        
+        @keyframes molecule-crystallization {
+            0% {
+                opacity: 0;
+                filter: blur(2px);
+            }
+            50% {
+                opacity: 0.6;
+                filter: blur(1px);
+            }
+            100% {
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+        
+        /* 入场动画初始状态 */
+        .hero h1 {
+            clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+            opacity: 0;
+        }
+        
+        .hero p,
+        .hero .badge,
+        .hero .feedback-btn {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        #moleculeCanvas {
+            opacity: 0;
+        }
+        
+        .game-card {
+            opacity: 0;
+            transform: translateY(30px) scale(0.9);
+        }
+        
+        /* 入场动画激活状态 */
+        body.loaded .hero h1 {
+            animation: chromatography-reveal 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            opacity: 1;
+        }
+        
+        /* 月读主题卡片粒子拼合动画 */
+        [data-theme="tsukuyomi"] .game-card {
+            opacity: 0;
+            transform: none;
+            transition: none;
+        }
+        
+        [data-theme="tsukuyomi"] body.loaded .game-card {
+            opacity: 1;
+            transform: none;
+            transition: opacity 0.2s ease;
+        }
+        
+        [data-theme="tsukuyomi"] .game-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(224, 64, 144, 0.1) 100%);
+            animation: card-scan 1.2s ease-out 1s forwards;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        @keyframes card-scan {
+            0% { transform: translateY(-100%); opacity: 0; }
+            50% { transform: translateY(0); opacity: 0.3; }
+            100% { transform: translateY(100%); opacity: 0; }
+        }
+        
+        /* 月读主题光柱先现 */
+        [data-theme="tsukuyomi"] body.loaded .tsukuyomi-pillar {
+            animation: pillar-emerge 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            opacity: 1;
+        }
+        
+        @keyframes pillar-emerge {
+            0% {
+                transform: translateX(-50%) scaleY(0);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(-50%) scaleY(1);
+                opacity: 1;
+            }
+        }
+        
+        body.loaded .hero p {
+            animation: crystallization-fade-in 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.4s forwards;
+            opacity: 1;
+        }
+        
+        body.loaded .hero .badge {
+            animation: crystallization-fade-in 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.6s forwards;
+            opacity: 1;
+        }
+        
+        body.loaded .hero .feedback-btn {
+            animation: crystallization-fade-in 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.8s forwards;
+            opacity: 1;
+        }
+        
+        body.loaded #moleculeCanvas {
+            animation: molecule-crystallization 1s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
+        }
+        
+        body.loaded .game-card {
+            animation: crystallization-fade-in 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        
+        /* 卡片延迟动画 */
+        body.loaded .game-card:nth-child(1) { animation-delay: 1.2s; }
+        body.loaded .game-card:nth-child(2) { animation-delay: 1.28s; }
+        body.loaded .game-card:nth-child(3) { animation-delay: 1.36s; }
+        body.loaded .game-card:nth-child(4) { animation-delay: 1.44s; }
+        body.loaded .game-card:nth-child(5) { animation-delay: 1.52s; }
+        body.loaded .game-card:nth-child(6) { animation-delay: 1.6s; }
+        
+        /* 单分子层吸附悬停效果 */
+        .game-card {
+            position: relative;
+            overflow: visible;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), 
+                        box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                                      rgba(255,255,255,0.3) 0%, 
+                                      transparent 40%);
+            border-radius: calc(1.5rem + 2px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .game-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 1.5rem;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255,255,255,0.2) 0%, transparent 8%),
+                radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 6%),
+                radial-gradient(circle at 40% 80%, rgba(255,255,255,0.1) 0%, transparent 4%);
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.15),
+                0 8px 16px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        
+        .game-card:hover::before {
+            opacity: 1;
+        }
+        
+        .game-card:hover::after {
+            opacity: 1;
+            transform: scale(1);
+            animation: molecule-adsorption 2s ease-in-out infinite;
+        }
+        
+        @keyframes molecule-adsorption {
+            0%, 100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            25% {
+                transform: scale(1.05) rotate(2deg);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(0.95) rotate(-1deg);
+                opacity: 1;
+            }
+            75% {
+                transform: scale(1.02) rotate(1deg);
+                opacity: 0.9;
+            }
+        }
+        
+        /* 吸附热效应 - 鼠标位置的光点 */
+        .game-card .adsorption-heat {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, 
+                                      rgba(255,255,255,0.4) 0%, 
+                                      rgba(255,255,255,0.2) 30%, 
+                                      transparent 60%);
+            border-radius: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+            z-index: 3;
+        }
+        
+        .game-card:hover .adsorption-heat {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+                
+        /* 定容燃烧按钮特效 */
+        @keyframes combustion-flash {
+            0% {
+                background: var(--accent);
+                box-shadow: 0 0 0 0 rgba(255,255,255,0.7);
+            }
+            20% {
+                background: #ffffff;
+                box-shadow: 0 0 20px 10px rgba(255,255,255,0.9);
+            }
+            40% {
+                background: var(--accent);
+                box-shadow: 0 0 40px 20px rgba(255,255,255,0.4);
+            }
+            60% {
+                background: var(--accent);
+                box-shadow: 0 0 60px 30px rgba(255,255,255,0.2);
+            }
+            100% {
+                background: var(--accent);
+                box-shadow: 0 0 0 0 rgba(255,255,255,0);
+            }
+        }
+        
+        @keyframes combustion-danger-flash {
+            0% {
+                background: var(--accent);
+                box-shadow: 0 0 0 0 rgba(255,0,0,0.7);
+            }
+            20% {
+                background: #ffffff;
+                box-shadow: 0 0 20px 10px rgba(255,0,0,0.9);
+            }
+            40% {
+                background: var(--accent);
+                box-shadow: 0 0 40px 20px rgba(255,0,0,0.4);
+            }
+            60% {
+                background: var(--accent);
+                box-shadow: 0 0 60px 30px rgba(255,0,0,0.2);
+            }
+            100% {
+                background: var(--accent);
+                box-shadow: 0 0 0 0 rgba(255,0,0,0);
+            }
+        }
+        
+        .combustion-active {
+            animation: combustion-flash 0.6s ease-out forwards;
+            position: relative;
+        }
+        
+        .combustion-danger {
+            animation: combustion-danger-flash 0.6s ease-out forwards;
+            position: relative;
+        }
+        
+        /* 冲击波效果 */
+        .shockwave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        @keyframes shockwave-expand {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            100% {
+                width: 200px;
+                height: 200px;
+                opacity: 0;
+            }
+        }
+        
+        .shockwave.active {
+            animation: shockwave-expand 0.6s ease-out forwards;
+        }
+        
+        /* 月读主题专属样式 */
+        .tsukuyomi-pillar {
+            display: none;
+            position: absolute;
+            left: 50%;
+            top: -20%;
+            width: 8px;
+            height: 140%;
+            transform: translateX(-50%);
+            background: linear-gradient(
+                to bottom,
+                var(--tsuki-accent) 0%,
+                var(--tsuki-accent-gold) 33%,
+                var(--tsuki-accent-cyan) 66%,
+                var(--tsuki-accent) 100%
+            );
+            box-shadow: 
+                0 0 20px var(--tsuki-glow),
+                0 0 40px var(--tsuki-glow),
+                0 0 60px rgba(224, 64, 144, 0.2),
+                0 0 80px rgba(224, 64, 144, 0.1);
+            z-index: 2;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        
+        [data-theme="tsukuyomi"] .tsukuyomi-pillar {
+            display: block;
+        }
+        
+        [data-theme="tsukuyomi"] .hero:hover .tsukuyomi-pillar {
+            width: 12px;
+            filter: brightness(1.3);
+        }
+        
+        /* 月读主题标题霓虹光效 */
+        [data-theme="tsukuyomi"] .hero h1 {
+            text-shadow: 
+                0 0 10px var(--tsuki-accent),
+                0 0 20px var(--tsuki-accent-cyan),
+                0 0 30px var(--tsuki-accent),
+                0 0 40px var(--tsuki-accent-cyan);
+            letter-spacing: 0.1em;
+            animation: neon-flicker 3s ease-in-out infinite;
+        }
+        
+        @keyframes neon-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+            75% { opacity: 0.95; }
+        }
+        
+        /* 月读主题碘元素低透明度 */
+        [data-theme="tsukuyomi"] .iodine-formula {
+            opacity: 0.04;
+        }
+        
+        /* 月读主题卡片逆光悬停 */
+        [data-theme="tsukuyomi"] .game-card {
+            backdrop-filter: blur(12px);
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        
+        [data-theme="tsukuyomi"] .game-card:hover {
+            transform: translateY(-8px) rotateX(2deg);
+            box-shadow: 
+                0 -5px 20px var(--tsuki-glow),
+                0 20px 40px rgba(224, 64, 144, 0.3),
+                0 30px 60px rgba(224, 64, 144, 0.1);
+        }
+        
+        [data-theme="tsukuyomi"] .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                var(--tsuki-accent) 0%, 
+                transparent 50%, 
+                var(--tsuki-accent) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        
+        [data-theme="tsukuyomi"] .game-card:hover::before {
+            opacity: 1;
+        }
+        
+        /* 月读主题滚动条和分隔线 */
+        [data-theme="tsukuyomi"] ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        [data-theme="tsukuyomi"] ::-webkit-scrollbar-track {
+            background: var(--tsuki-card);
+            border-radius: 4px;
+        }
+        
+        [data-theme="tsukuyomi"] ::-webkit-scrollbar-thumb {
+            background: var(--tsuki-accent);
+            border-radius: 4px;
+            border: 1px solid var(--tsuki-border);
+        }
+        
+        [data-theme="tsukuyomi"] ::-webkit-scrollbar-thumb:hover {
+            background: var(--tsuki-accent-cyan);
+        }
+        
+        /* 月读主题彩蛋文案 */
+        .tsukuyomi-easter-egg {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            color: var(--tsuki-text-dim);
+            opacity: 0;
+            animation: tsukuyomi-breath 4s ease-in-out infinite;
+        }
+        
+        [data-theme="tsukuyomi"] .tsukuyomi-easter-egg {
+            display: block;
+        }
+        
+        @keyframes tsukuyomi-breath {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        
         @media (max-width:680px){.container{padding:1.2rem}.hero h1{font-size:1.8rem}.hero p{max-width:100%}.section-title{font-size:1.4rem}}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -56,24 +1474,74 @@
     <div class="navbar">
         <div class="logo">🧪 碘队 · 化学游戏工坊 <span>| Iodine Studio</span></div>
         <div class="nav-right">
-            <button class="theme-toggle" id="themeSwitcher">🌙 深色模式</button>
+            <div class="theme-selector">
+                <button class="theme-toggle-btn" id="themeSwitcher">
+                    <span class="reagent-icon">🧪</span>
+                    <span class="theme-name">碘蒸气</span>
+                </button>
+                <div class="theme-dropdown" id="themeDropdown">
+                    <div class="theme-option" data-theme="iodine-vapor" style="--theme-color: #9b59b6;">
+                        <div class="theme-color-preview"></div>
+                        <span>碘蒸气</span>
+                    </div>
+                    <div class="theme-option" data-theme="mercury" style="--theme-color: #c0c0c0;">
+                        <div class="theme-color-preview"></div>
+                        <span>汞齐银</span>
+                    </div>
+                    <div class="theme-option" data-theme="sulfur" style="--theme-color: #ffa500;">
+                        <div class="theme-color-preview"></div>
+                        <span>硫磺焰</span>
+                    </div>
+                    <div class="theme-option" data-theme="cinnabar" style="--theme-color: #dc143c;">
+                        <div class="theme-color-preview"></div>
+                        <span>辰砂红</span>
+                    </div>
+                    <div class="theme-option" data-theme="copper-sulfate" style="--theme-color: #4682b4;">
+                        <div class="theme-color-preview"></div>
+                        <span>胆矾蓝</span>
+                    </div>
+                    <div class="theme-option" data-theme="carbon" style="--theme-color: #666666;">
+                        <div class="theme-color-preview"></div>
+                        <span>活性炭</span>
+                    </div>
+                    <div class="theme-option" data-theme="classic-light" style="--theme-color: #5c2d91;">
+                        <div class="theme-color-preview"></div>
+                        <span>经典浅色</span>
+                    </div>
+                    <div class="theme-option" data-theme="classic-dark" style="--theme-color: #7b4fb8;">
+                        <div class="theme-color-preview"></div>
+                        <span>经典暗色</span>
+                    </div>
+                    <div class="theme-option" data-theme="tsukuyomi" style="--theme-color: #e04090;">
+                        <div class="theme-color-preview"></div>
+                        <span>🌙 月读</span>
+                    </div>
+                </div>
+            </div>
             <div id="authArea"></div>
         </div>
     </div>
 
     <div class="hero">
+        <canvas id="moleculeCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1"></canvas>
+        <div class="tsukuyomi-pillar" aria-hidden="true"></div>
+        <div class="iodine-formula">[Kr] 4d¹⁰ 5s² 5p⁵</div>
         <h1><span>⚗️</span> 碘队 AI 化学游戏季</h1>
         <p>🎮 致第一批「碘化玩家」</p>
         <p>欢迎来到碘队化学游戏工坊！这里的每一个游戏，都是由站长_Tsukuyomi仅用 Deepseek网页版 辅助创作的化学主题小游戏。它们充满创意、略显稚嫩，遇到 bug 还请多多包涵～</p>
         <p>📱 目前已上线“丹道化学Pro“与“元素大战僵尸”“相转移大作战”三款游戏~ </p>
         <div><span class="badge">🧪 炼丹模拟</span><span class="badge">🔬 个人开发</span><span class="badge">⚡ AI 辅助创作</span></div>
-        <a href="message_board.html" class="feedback-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">💬 玩家留言板 →</a>
+        <a href="message_board.html" class="feedback-btn" id="messageBoardBtn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">💬 玩家留言板 →</a>
     </div>
 
     <h2 class="section-title">✨ 碘队精选游戏</h2>
     <div class="game-grid" id="gameGrid"></div>
 
     <div class="footnote">⚛️ 碘队化学游戏工坊 · 所有游戏灵感来自化学世界 | 留言已支持云端同步，全服可见</div>
+    <!-- 月读主题彩蛋文案 -->
+    <div class="tsukuyomi-easter-egg" data-theme="tsukuyomi">
+        八千年的等待，只为在这间实验室里遇见你。──月见八千代
+    </div>
 </div>
 
 <!-- 登录/注册模态框 -->
@@ -293,7 +1761,7 @@
             { id:1, name:"丹道化学Pro", emoji:"🧪🔥", tag:"炼丹模拟", desc:"收集五金八石，翻阅典籍，炼制灵丹！探索地图，解锁配方，登上排行榜。", link:"dandao_chemistry.html", newWindow:true },
             { id:2, name:"元素大战僵尸Pro", emoji:"🧟🧠", tag:"塔防模拟", desc:"获取电子，分配元素攻击防御，抵御僵尸！", link:"evz.html", newWindow:false },
             { id:3, name:"相转移大作战", emoji:"💧❄⚡", tag:"双人对抗", desc:"原创游戏，回合制抽取卡牌，将反应物拉向自己的相！", link:"phase_shift_showdown.html", newWindow:false },
-            { id:4, name:"敬请期待", emoji:"  ", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
+            { id:4, name:"碳链工坊", emoji:"🧬⛓", tag:"3D分子工坊", desc:"有机合成策略，构建分子结构，探索化学反应！", link:"chain_craft.html", newWindow:false },
             { id:5, name:"敬请期待", emoji:"  ", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false },
             { id:6, name:"敬请期待", emoji:"  ", tag:"尚未上线", desc:"尚未上线", link:null, newWindow:false }
         ];
@@ -305,44 +1773,505 @@
             games.forEach(game => {
                 const card = document.createElement('div');
                 card.className = 'game-card';
+                
+                // 添加游戏特定类名
+                if (game.id === 1) card.classList.add('dandao');
+                if (game.id === 2) card.classList.add('evz');
+                if (game.id === 3) card.classList.add('phase-transfer');
+                if (game.id === 4) card.classList.add('chain-craft');
+                
+                let gameIcon = '';
+                if (game.id === 1) {
+                    gameIcon = '<div class="micro-reaction"><div class="crucible"></div></div>';
+                } else if (game.id === 2) {
+                    gameIcon = '<div class="micro-reaction"><div class="electron-orbit"><div class="electron"></div></div></div>';
+                } else if (game.id === 3) {
+                    gameIcon = '<div class="micro-reaction"><div class="phase-transfer"><div class="phase-drop"></div><div class="phase-drop"></div><div class="solute"></div></div></div>';
+                } else if (game.id === 4) {
+                    gameIcon = '<div class="micro-reaction"><div class="floating-molecule"></div><div class="floating-molecule"></div><div class="floating-molecule"></div><div class="floating-molecule"></div></div>';
+                } else {
+                    gameIcon = '<div style="font-size: 3rem; opacity: 0.5;">🔒</div>';
+                }
+                
+                const isComingSoon = !game.link;
+                const imgStyle = isComingSoon ? 'background: #e5e7eb;' : '';
+                const tagStyle = isComingSoon ? 'background: #e5e7eb; color: #6b7280;' : '';
+                const tagText = isComingSoon ? '即将上线' : game.tag;
+                const btnDisabled = isComingSoon ? 'disabled style="background: #9ca3af; cursor: not-allowed;"' : '';
+                const btnText = isComingSoon ? '🔒 敬请期待' : '🧪 立即试玩';
+                
                 card.innerHTML = `
-                    <div class="game-img">${game.emoji}</div>
+                    <div class="game-img" style="${imgStyle}">${gameIcon}</div>
                     <div class="game-info">
-                        <h3>${game.name} <span class="game-tag">${game.tag}</span></h3>
+                        <h3>${game.name} <span class="game-tag" style="${tagStyle}">${tagText}</span></h3>
                         <div class="game-desc">${game.desc}</div>
-                        <button class="play-btn" data-link="${game.link || ''}" data-new="${game.newWindow}">🧪 立即试玩</button>
+                        <button class="play-btn" data-link="${game.link || ''}" data-new="${game.newWindow}" ${btnDisabled}>${btnText}</button>
                     </div>
+                    <div class="adsorption-heat"></div>
                 `;
                 grid.appendChild(card);
+                
+                // 月读主题卡片粒子拼合动画
+                if (document.body.getAttribute('data-theme') === 'tsukuyomi') {
+                    initCardParticleAnimation(card);
+                }
             });
+            
             document.querySelectorAll('.play-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const link = btn.dataset.link;
                     const newWindow = btn.dataset.new === 'true';
                     if (link) {
-                        if (newWindow) window.open(link, '_blank');
-                        else window.location.href = link;
-                    } else {
-                        alert('敬请期待！');
+                        if (newWindow) {
+                            window.open(link, '_blank');
+                        } else {
+                            window.location.href = link;
+                        }
                     }
                 });
+                // 为所有卡片添加鼠标离开事件
+            document.querySelectorAll('.game-card').forEach(card => {
+                card.addEventListener('mouseleave', () => {
+                    // 重置CSS变量
+                    card.style.setProperty('--mouse-x', '50%');
+                    card.style.setProperty('--mouse-y', '50%');
+                });
+            });
             });
         }
 
-        // ======================= 深色主题 =======================
+        // ======================= 化学多主题系统 =======================
+        const themes = {
+            'iodine-vapor': '碘蒸气',
+            'mercury': '汞齐银',
+            'sulfur': '硫磺焰',
+            'cinnabar': '辰砂红',
+            'copper-sulfate': '胆矾蓝',
+            'carbon': '活性炭',
+            'classic-light': '经典浅色',
+            'classic-dark': '经典暗色',
+            'tsukuyomi': '月读'
+        };
+
         function initTheme() {
             const themeBtn = document.getElementById('themeSwitcher');
-            const isDark = localStorage.getItem('theme') === 'dark';
-            if (isDark) document.body.classList.add('dark');
-            themeBtn.innerHTML = isDark ? '☀️ 浅色模式' : '🌙 深色模式';
-            themeBtn.onclick = () => {
-                document.body.classList.toggle('dark');
-                const darkNow = document.body.classList.contains('dark');
-                localStorage.setItem('theme', darkNow ? 'dark' : 'light');
-                themeBtn.innerHTML = darkNow ? '☀️ 浅色模式' : '🌙 深色模式';
-            };
+            const themeDropdown = document.getElementById('themeDropdown');
+            const savedTheme = localStorage.getItem('chemical-theme') || 'tsukuyomi';
+            
+            // 应用保存的主题
+            applyTheme(savedTheme);
+            updateThemeUI(savedTheme);
+            
+            // 切换按钮点击事件
+            themeBtn.addEventListener('click', () => {
+                themeDropdown.classList.toggle('show');
+            });
+            
+            // 点击外部关闭下拉菜单
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.theme-selector')) {
+                    themeDropdown.classList.remove('show');
+                }
+            });
+            
+            // 主题选项点击事件
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const theme = option.dataset.theme;
+                    applyTheme(theme);
+                    updateThemeUI(theme);
+                    localStorage.setItem('chemical-theme', theme);
+                    themeDropdown.classList.remove('show');
+                });
+            });
+            
+            // 监听其他页面的主题变化
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'chemical-theme' && e.newValue) {
+                    applyTheme(e.newValue);
+                    updateThemeUI(e.newValue);
+                }
+            });
         }
 
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            document.body.classList.remove('dark'); // 移除旧的dark class
+        }
+
+        function updateThemeUI(theme) {
+            const themeBtn = document.getElementById('themeSwitcher');
+            const themeName = document.querySelector('.theme-name');
+            const themeOptions = document.querySelectorAll('.theme-option');
+            
+            // 更新按钮显示
+            themeName.textContent = themes[theme];
+            
+            // 更新活动状态
+            themeOptions.forEach(option => {
+                option.classList.toggle('active', option.dataset.theme === theme);
+            });
+        }
+
+        // ======================= 分子Canvas动画 =======================
+        function initMoleculeCanvas() {
+            const canvas = document.getElementById('moleculeCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const hero = document.querySelector('.hero');
+            
+            function resizeCanvas() {
+                const rect = hero.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            }
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 鼠标交互
+            let mouseX = null;
+            let mouseY = null;
+            
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = e.clientX - rect.left;
+                mouseY = e.clientY - rect.top;
+            });
+            
+            canvas.addEventListener('mouseleave', () => {
+                mouseX = null;
+                mouseY = null;
+            });
+            
+            // 分子数据（增加碘分子I₂）
+            const molecules = [
+                { x: 100, y: 100, vx: 0.5, vy: 0.3, angle: 0, bondLength: 30, anchorX: 100, anchorY: 100, type: 'diatomic' },
+                { x: 300, y: 150, vx: -0.3, vy: 0.4, angle: 45, bondLength: 35, anchorX: 300, anchorY: 150, type: 'diatomic' },
+                { x: 500, y: 80, vx: 0.4, vy: -0.2, angle: 90, bondLength: 32, anchorX: 500, anchorY: 80, type: 'diatomic' },
+                { x: 200, y: 200, vx: -0.2, vy: -0.3, angle: 120, bondLength: 28, anchorX: 200, anchorY: 200, type: 'diatomic' },
+                { x: 400, y: 250, vx: 0.3, vy: 0.2, angle: 30, bondLength: 25, anchorX: 400, anchorY: 250, type: 'diatomic' },
+                { x: 150, y: 300, vx: -0.4, vy: 0.1, angle: 60, bondLength: 30, anchorX: 150, anchorY: 300, type: 'diatomic' },
+                { x: 350, y: 120, vx: 0.2, vy: -0.4, angle: 15, bondLength: 0, anchorX: 350, anchorY: 120, type: 'water' },
+                { x: 250, y: 180, vx: 0.08, vy: 0.05, angle: 90, bondLength: 50, anchorX: 250, anchorY: 180, type: 'iodine', color: '#5c2d91', glowColor: '#9b3d6b' }
+            ];
+            
+            function getMoleculeColors(isDark) {
+                if (isDark) {
+                    return [
+                        { atom1: '#c4b5fd', atom2: '#e9d5ff', bond: 'rgba(139, 92, 246, 0.4)' },
+                        { atom1: '#fcd34d', atom2: '#fde68a', bond: 'rgba(217, 119, 6, 0.4)' },
+                        { atom1: '#93c5fd', atom2: '#bfdbfe', bond: 'rgba(59, 130, 246, 0.4)' },
+                        { atom1: '#86efac', atom2: '#bbf7d0', bond: 'rgba(16, 185, 129, 0.4)' },
+                        { atom1: '#fca5a5', atom2: '#f87171', bond: 'rgba(239, 68, 68, 0.4)' },
+                        { atom1: '#c7d2fe', atom2: '#a5b4fc', bond: 'rgba(99, 102, 241, 0.4)' },
+                        { atom1: '#93c5fd', atom2: '#60a5fa', atom3: '#3b82f6', bond: 'rgba(59, 130, 246, 0.4)' }
+                    ];
+                } else {
+                    return [
+                        { atom1: '#a78bfa', atom2: '#c4b5fd', bond: 'rgba(139, 92, 246, 0.3)' },
+                        { atom1: '#fbbf24', atom2: '#f59e0b', bond: 'rgba(245, 158, 11, 0.3)' },
+                        { atom1: '#60a5fa', atom2: '#3b82f6', bond: 'rgba(59, 130, 246, 0.3)' },
+                        { atom1: '#34d399', atom2: '#10b981', bond: 'rgba(16, 185, 129, 0.3)' },
+                        { atom1: '#f87171', atom2: '#ef4444', bond: 'rgba(239, 68, 68, 0.3)' },
+                        { atom1: '#a5b4fc', atom2: '#818cf8', bond: 'rgba(99, 102, 241, 0.3)' },
+                        { atom1: '#60a5fa', atom2: '#3b82f6', atom3: '#2563eb', bond: 'rgba(59, 130, 246, 0.3)' }
+                    ];
+                }
+            }
+
+            function drawMolecule(mol, colors) {
+                ctx.save();
+                ctx.translate(mol.x, mol.y);
+                ctx.rotate(mol.angle * Math.PI / 180);
+                
+                if (mol.type === 'water') {
+                    // 绘制水分子（H2O，V形）
+                    ctx.shadowBlur = 4;
+                    ctx.shadowColor = colors.bond;
+                    ctx.strokeStyle = colors.bond;
+                    ctx.lineWidth = 2;
+                    
+                    // 绘制两条化学键
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(-20, 15);
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(20, 15);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    
+                    // 绘制氧原子（中心，较大）
+                    const oxygenGradient = ctx.createRadialGradient(-2, -2, 1, 0, 0, 10);
+                    oxygenGradient.addColorStop(0, 'rgba(255,255,255,0.8)');
+                    oxygenGradient.addColorStop(0.3, colors.atom1);
+                    oxygenGradient.addColorStop(1, 'rgba(0,0,0,0.3)');
+                    ctx.fillStyle = oxygenGradient;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 绘制氢原子1
+                    const hydrogen1Gradient = ctx.createRadialGradient(-20-2, 15-2, 1, -20, 15, 6);
+                    hydrogen1Gradient.addColorStop(0, 'rgba(255,255,255,0.8)');
+                    hydrogen1Gradient.addColorStop(0.3, colors.atom2);
+                    hydrogen1Gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
+                    ctx.fillStyle = hydrogen1Gradient;
+                    ctx.beginPath();
+                    ctx.arc(-20, 15, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 绘制氢原子2
+                    const hydrogen2Gradient = ctx.createRadialGradient(20-2, 15-2, 1, 20, 15, 6);
+                    hydrogen2Gradient.addColorStop(0, 'rgba(255,255,255,0.8)');
+                    hydrogen2Gradient.addColorStop(0.3, colors.atom3);
+                    hydrogen2Gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
+                    ctx.fillStyle = hydrogen2Gradient;
+                    ctx.beginPath();
+                    ctx.arc(20, 15, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (mol.type === 'iodine') {
+                    // 绘制碘分子I₂（两个大原子，长键）
+                    ctx.shadowBlur = 6;
+                    ctx.shadowColor = mol.glowColor || '#9b3d6b';
+                    ctx.strokeStyle = colors.bond;
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([5, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(-mol.bondLength/2, 0);
+                    ctx.lineTo(mol.bondLength/2, 0);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    
+                    // 绘制碘原子1（大半径，深紫色）
+                    const iodine1Gradient = ctx.createRadialGradient(-mol.bondLength/2-3, -3, 1, -mol.bondLength/2, 0, 12);
+                    iodine1Gradient.addColorStop(0, 'rgba(255,255,255,0.9)');
+                    iodine1Gradient.addColorStop(0.2, mol.color || '#5c2d91');
+                    iodine1Gradient.addColorStop(0.8, 'rgba(30,30,30,0.4)');
+                    iodine1Gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
+                    ctx.fillStyle = iodine1Gradient;
+                    ctx.beginPath();
+                    ctx.arc(-mol.bondLength/2, 0, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 绘制碘原子2（大半径，深紫色）
+                    const iodine2Gradient = ctx.createRadialGradient(mol.bondLength/2-3, -3, 1, mol.bondLength/2, 0, 12);
+                    iodine2Gradient.addColorStop(0, 'rgba(255,255,255,0.9)');
+                    iodine2Gradient.addColorStop(0.2, mol.color || '#5c2d91');
+                    iodine2Gradient.addColorStop(0.8, 'rgba(30,30,30,0.4)');
+                    iodine2Gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
+                    ctx.fillStyle = iodine2Gradient;
+                    ctx.beginPath();
+                    ctx.arc(mol.bondLength/2, 0, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 碘分子周围的光晕效果
+                    if (mouseX !== null && mouseY !== null) {
+                        const dx = mol.x - mouseX;
+                        const dy = mol.y - mouseY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < 100 && distance > 0) {
+                            ctx.save();
+                            ctx.globalAlpha = 0.3 * (1 - distance / 100);
+                            ctx.fillStyle = mol.glowColor || '#9b3d6b';
+                            ctx.beginPath();
+                            ctx.arc(mol.x, mol.y, 20 + 10 * (1 - distance / 100), 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.restore();
+                        }
+                    }
+                } else {
+                    // 绘制双原子分子
+                    ctx.shadowBlur = 4;
+                    ctx.shadowColor = colors.bond;
+                    ctx.strokeStyle = colors.bond;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(-mol.bondLength/2, 0);
+                    ctx.lineTo(mol.bondLength/2, 0);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    
+                    // 绘制原子1（带径向渐变的球体效果）
+                    const atom1Gradient = ctx.createRadialGradient(-mol.bondLength/2-2, -2, 1, -mol.bondLength/2, 0, 8);
+                    atom1Gradient.addColorStop(0, 'rgba(255,255,255,0.8)');
+                    atom1Gradient.addColorStop(0.3, colors.atom1);
+                    atom1Gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
+                    ctx.fillStyle = atom1Gradient;
+                    ctx.beginPath();
+                    ctx.arc(-mol.bondLength/2, 0, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 绘制原子2（带径向渐变的球体效果）
+                    const atom2Gradient = ctx.createRadialGradient(mol.bondLength/2-2, -2, 1, mol.bondLength/2, 0, 8);
+                    atom2Gradient.addColorStop(0, 'rgba(255,255,255,0.8)');
+                    atom2Gradient.addColorStop(0.3, colors.atom2);
+                    atom2Gradient.addColorStop(1, 'rgba(0,0,0,0.3)');
+                    ctx.fillStyle = atom2Gradient;
+                    ctx.beginPath();
+                    ctx.arc(mol.bondLength/2, 0, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+            
+            // 视口检测暂停动画
+            let animationId = null;
+            let isPaused = false;
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        if (isPaused) {
+                            isPaused = false;
+                            animate();
+                        }
+                    } else {
+                        isPaused = true;
+                        if (animationId) {
+                            cancelAnimationFrame(animationId);
+                            animationId = null;
+                        }
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            observer.observe(hero);
+            
+            // ======================= 月读粒子系统 =======================
+            function initTsukuyomiParticles() {
+                // 月读粒子数据
+                window.tsukuyomiParticles = [];
+                const colors = ['#e04090', '#00b8d4', '#ffb74d'];
+                
+                for (let i = 0; i < 30; i++) {
+                    window.tsukuyomiParticles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        size: Math.random() * 3 + 1,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        opacity: Math.random() * 0.5 + 0.3,
+                        breathPhase: Math.random() * Math.PI * 2
+                    });
+                }
+                
+                // 兔子彩蛋定时器
+                window.rabbitTimer = null;
+                window.rabbitActive = false;
+            }
+
+            function drawTsukuyomiParticles() {
+                // 绘制月读粒子
+                window.tsukuyomiParticles.forEach(particle => {
+                    // 更新位置
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    
+                    // 边界反弹
+                    if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
+                    if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+                    
+                    // 呼吸式闪烁
+                    particle.breathPhase += 0.05;
+                    const breathOpacity = particle.opacity * (0.7 + 0.3 * Math.sin(particle.breathPhase));
+                    
+                    // 绘制粒子
+                    ctx.save();
+                    ctx.globalAlpha = breathOpacity;
+                    ctx.fillStyle = particle.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = particle.color;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+                
+                // 偶尔混入碘蒸气粒子
+                if (Math.random() < 0.02) {
+                    const iodineParticle = window.tsukuyomiParticles.find(p => p.color === '#5c2d91');
+                    if (!iodineParticle) {
+                        window.tsukuyomiParticles.push({
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height,
+                            vx: (Math.random() - 0.5) * 0.3,
+                            vy: (Math.random() - 0.5) * 0.3,
+                            size: 2,
+                            color: '#5c2d91',
+                            opacity: 0.4,
+                            breathPhase: Math.random() * Math.PI * 2
+                        });
+                    }
+                }
+            }
+            
+            // 初始化月读粒子系统
+            initTsukuyomiParticles();
+            
+            function animate() {
+                if (isPaused) return;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const isTsukuyomi = document.body.getAttribute('data-theme') === 'tsukuyomi';
+                
+                if (isTsukuyomi) {
+                    // 月读粒子系统
+                    drawTsukuyomiParticles();
+                } else {
+                    // 原始分子系统
+                    const isDark = document.body.classList.contains('dark');
+                    const colors = getMoleculeColors(isDark);
+                    
+                    molecules.forEach((mol, index) => {
+                        // 更新位置
+                        mol.x += mol.vx;
+                        mol.y += mol.vy;
+                        mol.angle += 0.5;
+                    
+                    // 边界弹簧力（软边界）
+                    const edgeForce = 0.001;
+                    const margin = 50;
+                    if (mol.x < margin) mol.vx += edgeForce * (margin - mol.x);
+                    if (mol.x > canvas.width - margin) mol.vx -= edgeForce * (mol.x - (canvas.width - margin));
+                    if (mol.y < margin) mol.vy += edgeForce * (margin - mol.y);
+                    if (mol.y > canvas.height - margin) mol.vy -= edgeForce * (mol.y - (canvas.height - margin));
+                    
+                    // 各自锚点的简谐力
+                        mol.vx += (mol.anchorX - mol.x) * 0.0001;
+                        mol.vy += (mol.anchorY - mol.y) * 0.0001;
+                        
+                        // 鼠标排斥力（降低敏感度）
+                        if (mouseX !== null && mouseY !== null) {
+                            const dx = mol.x - mouseX;
+                            const dy = mol.y - mouseY;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            if (distance < 100 && distance > 0) {
+                                const repelForce = 0.02 * (100 - distance) / 100;
+                                mol.vx += (dx / distance) * repelForce;
+                                mol.vy += (dy / distance) * repelForce;
+                            }
+                        }
+                        
+                        // 为碘分子使用特殊颜色
+                        const molColors = mol.type === 'iodine' ? 
+                            { atom1: mol.color || '#5c2d91', atom2: mol.color || '#5c2d91', bond: 'rgba(92,45,145,0.4)' } : 
+                            colors[index];
+                        drawMolecule(mol, molColors);
+                    });
+                }
+                
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        
         // ======================= 初始化 =======================
         function initSupabase() {
             try {
@@ -357,9 +2286,75 @@
             }
         }
 
+        // 触发入场动画
+        function triggerEntranceAnimation() {
+            // 确保所有元素都已渲染
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 100);
+        }
+
+        
+        // 定容燃烧按钮特效
+        function initCombustionEffects() {
+            function createShockwave(button, isDanger = false) {
+                const shockwave = document.createElement('div');
+                shockwave.className = 'shockwave';
+                
+                // 月读主题使用品红→青蓝渐变
+                const isTsukuyomi = document.body.getAttribute('data-theme') === 'tsukuyomi';
+                if (isTsukuyomi) {
+                    shockwave.style.background = 'radial-gradient(circle, var(--tsuki-accent) 0%, var(--tsuki-accent-cyan) 50%, transparent 70%)';
+                } else if (isDanger) {
+                    shockwave.style.background = 'radial-gradient(circle, rgba(255,0,0,0.3) 0%, transparent 70%)';
+                }
+                
+                button.appendChild(shockwave);
+                
+                // 触发动画
+                setTimeout(() => {
+                    shockwave.classList.add('active');
+                }, 10);
+                
+                // 清理元素
+                setTimeout(() => {
+                    shockwave.remove();
+                }, 600);
+            }
+            
+            function triggerCombustion(button, isDanger = false) {
+                // 添加燃烧动画类
+                button.classList.add(isDanger ? 'combustion-danger' : 'combustion-active');
+                
+                // 创建冲击波
+                createShockwave(button, isDanger);
+                
+                // 移除动画类
+                setTimeout(() => {
+                    button.classList.remove('combustion-active', 'combustion-danger');
+                }, 600);
+            }
+            
+            // 为所有按钮添加点击效果
+            document.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                
+                // 判断是否为危险操作
+                const isDanger = button.classList.contains('logout-btn') || 
+                               button.textContent?.includes('删除') ||
+                               button.textContent?.includes('移除');
+                
+                triggerCombustion(button, isDanger);
+            });
+        }
+
         initSupabase();
         renderGames();
         initTheme();
+        initMoleculeCanvas();
+        triggerEntranceAnimation();
+        initCombustionEffects();
 
         // 绑定模态框按钮
         switchBtn.onclick = () => {

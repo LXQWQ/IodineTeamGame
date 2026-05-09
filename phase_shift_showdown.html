@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>相转移大作战 · 多相宇宙</title>
+    <title>相转移大作战 · 科学重设计版</title>
     <style>
         * {
             margin: 0;
@@ -138,28 +138,78 @@
             font-size: 3rem;
             margin: 5px 0;
         }
-        .progress-track {
-            width: 180px;
-            height: 18px;
-            background: #334155;
-            border-radius: 40px;
-            margin: 15px auto;
+        .phase-space {
+            width: 300px;
+            height: 300px;
+            background: #0f172a;
+            border: 2px solid var(--accent);
+            border-radius: 1rem;
             position: relative;
-            overflow: hidden;
+            margin: 1rem auto;
         }
-        .progress-fill {
-            width: 50%;
+        .phase-axis {
+            position: absolute;
+            background: var(--border);
+        }
+        .phase-axis.horizontal {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            left: 0;
+        }
+        .phase-axis.vertical {
+            width: 2px;
             height: 100%;
-            background: linear-gradient(90deg, #ef4444, #3b82f6);
-            border-radius: 40px;
-            transition: width 0.3s ease-out;
+            top: 0;
+            left: 50%;
         }
-        .position-value {
+        .phase-label {
+            position: absolute;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-weight: bold;
+        }
+        .substance-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease-out;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+        .target-zone {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 2px dashed;
+            border-radius: 1rem;
+            transform: translate(-50%, -50%);
+        }
+        .target-zone.left {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .target-zone.right {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .state-info {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin: 1rem 0;
             font-size: 0.8rem;
-            font-family: monospace;
-            background: #00000066;
-            padding: 2px 8px;
-            border-radius: 20px;
+        }
+        .state-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.3rem 0;
+        }
+        .state-value {
+            font-weight: bold;
+            color: var(--accent);
         }
         .current-turn {
             background: var(--accent);
@@ -273,7 +323,7 @@
 </head>
 <body>
 <div class="game-container">
-    <h1>⚛️ 相转移大作战 · 多相宇宙 ⚛️</h1>
+    <h1>⚛️ 相转移大作战 · 科学重设计版 ⚛️</h1>
     <div class="arena">
         <div class="player" id="playerLeft">
             <div class="player-name"><span id="leftName">🔴 左道修士</span></div>
@@ -287,11 +337,38 @@
                 <div class="reactant-name" id="reactantName">未知物质</div>
                 <div class="reactant-state" id="reactantState">状态未知</div>
             </div>
-            <div class="progress-track">
-                <div class="progress-fill" id="progressFill"></div>
+            <div class="state-info">
+                <div class="state-item">
+                    <span>温度:</span>
+                    <span class="state-value" id="tempValue">25°C</span>
+                </div>
+                <div class="state-item">
+                    <span>压强:</span>
+                    <span class="state-value" id="pressureValue">1.0 atm</span>
+                </div>
+                <div class="state-item">
+                    <span>热力学相:</span>
+                    <span class="state-value" id="phaseValue">固相</span>
+                </div>
+                <div class="state-item">
+                    <span>溶剂环境:</span>
+                    <span class="state-value" id="solventValue">无</span>
+                </div>
             </div>
-            <div class="position-value" id="positionLabel">50.0</div>
-            <div class="current-turn" id="turnIndicator">左道回合</div>
+            <div class="phase-space" id="phaseSpace">
+                <div class="phase-axis horizontal"></div>
+                <div class="phase-axis vertical"></div>
+                <div class="phase-label" style="top: 5px; left: 50%; transform: translateX(-50%);">等离子相</div>
+                <div class="phase-label" style="top: 50%; right: 5px; transform: translateY(-50%);">气相</div>
+                <div class="phase-label" style="bottom: 5px; left: 50%; transform: translateX(-50%);">固相</div>
+                <div class="phase-label" style="top: 50%; left: 5px; transform: translateY(-50%);">液相</div>
+                <div class="phase-label" style="top: 5px; left: 5px;">亲水/有机</div>
+                <div class="phase-label" style="bottom: 5px; right: 5px;">疏水/无</div>
+                <div class="target-zone left" id="leftTarget"></div>
+                <div class="target-zone right" id="rightTarget"></div>
+                <div class="substance-marker" id="substanceMarker"></div>
+            </div>
+            <div class="current-turn" id="turnIndicator">左道修士回合</div>
         </div>
         <div class="player" id="playerRight">
             <div class="player-name"><span id="rightName">🔵 右道修士</span></div>
@@ -308,103 +385,393 @@
         <div class="cards" id="cardsContainer"></div>
         <div class="game-message" id="gameMessage"></div>
     </div>
-    <footer>🧪 科学规则：使用卡牌后，若新相更接近你的相，则物质向你移动；反之远离。相不变时按自然方向（加热向右，冷却向左，电离向右，加压向左，减压向右，催化向玩家）。</footer>
+    <footer>🧪 科学规则：使用真实物理操作改变物质的热力学状态和溶剂环境。使物质进入你的目标象限即可获胜！温度、压力、溶剂都会影响相变。</footer>
 </div>
 
 <script>
-    // ======================= 相定义 =======================
-    const PHASES = {
+    // ======================= 热力学相定义 =======================
+    const THERMO_PHASES = {
         solid: { name: "固相", icon: "❄️", order: 0 },
         liquid: { name: "液相", icon: "💧", order: 1 },
         gas: { name: "气相", icon: "💨", order: 2 },
-        organic: { name: "有机相", icon: "🌿", order: 3 },
-        plasma: { name: "等离子相", icon: "⚡", order: 4 }
+        plasma: { name: "等离子相", icon: "⚡", order: 3 }
     };
-    const PHASE_KEYS = ["solid", "liquid", "gas", "organic", "plasma"];
+    const THERMO_PHASE_KEYS = ["solid", "liquid", "gas", "plasma"];
+    
+    // ======================= 溶剂亲和性定义 =======================
+    const SOLVENT_AFFINITY = {
+        hydrophilic: { name: "亲水性", icon: "💧" },
+        lipophilic: { name: "亲油性", icon: "🛢️" },
+        amphiphilic: { name: "两亲性", icon: "🌊" },
+        insoluble: { name: "不溶性", icon: "🪨" }
+    };
 
-    // ======================= 物质库 =======================
-    const SUBSTANCES = [
-        { name: "氢氧化钠", icon: "🧪", phases: ["solid", "liquid", "plasma"] },
-        { name: "水", icon: "💧", phases: ["solid", "liquid", "gas"] },
-        { name: "乙醇", icon: "🍷", phases: ["liquid", "gas", "organic"] },
-        { name: "甲烷", icon: "🔥", phases: ["gas", "organic"] },
-        { name: "二氧化碳", icon: "🌫️", phases: ["solid", "gas"] },
-        { name: "铁", icon: "⚙️", phases: ["solid", "liquid", "plasma"] },
-        { name: "汞", icon: "🌡️", phases: ["liquid", "gas"] },
-        { name: "葡萄糖", icon: "🍬", phases: ["solid", "liquid", "organic"] },
-        { name: "氯化钠", icon: "🧂", phases: ["solid", "liquid", "plasma"] },
-        { name: "氢气", icon: "💨", phases: ["gas", "plasma"] }
-    ];
+    // ======================= 真实物质特性卡片 =======================
+    const SUBSTANCE_REAL = {
+        "水": {
+            formula: "H₂O",
+            icon: "💧",
+            meltingPoint: 0,
+            boilingPoint: 100,
+            ionizationPoint: null,
+            sublimation: false,
+            polarity: "polar_protic",
+            solventAffinity: "hydrophilic",
+            special: "4°C密度最大，加压可降低熔点（冰刀原理）",
+            phases: {
+                solid: { range: "T < 0°C", density: 0.92, conductivity: "低" },
+                liquid: { range: "0°C < T < 100°C", density: 1.00, conductivity: "极低" },
+                gas: { range: "T > 100°C", density: 0.0006, conductivity: "极低" }
+            }
+        },
+        "碘": {
+            formula: "I₂",
+            icon: "🟣",
+            meltingPoint: 113.7,
+            boilingPoint: 184.3,
+            sublimationPoint: 113.7,  // 常压升华点
+            ionizationPoint: null,
+            sublimation: true,
+            polarity: "nonpolar",
+            solventAffinity: "lipophilic",
+            special: "常压下加热不经液相直接气化（升华）",
+            phases: {
+                solid: { range: "T < 113.7°C", color: "紫黑色晶体" },
+                gas: { range: "T > 113.7°C (升华)", color: "紫色蒸气" },
+                liquid: { range: "仅加压下存在" }
+            }
+        },
+        "氩": {
+            formula: "Ar",
+            icon: "🔵",
+            meltingPoint: -189.3,
+            boilingPoint: -185.8,
+            ionizationLevel: "low",  // 改为等级而非精确值
+            sublimation: false,
+            polarity: "nonpolar",
+            solventAffinity: "insoluble",
+            special: "惰性气体，极难反应",
+            phases: {
+                solid: { range: "T < -189.3°C" },
+                liquid: { range: "-189.3°C < T < -185.8°C" },
+                gas: { range: "-185.8°C < T < 5000K" },
+                plasma: { range: "T > 5000K", conductivity: "高" }
+            }
+        },
+        "铁": {
+            formula: "Fe",
+            icon: "⚙️",
+            meltingPoint: 1538,
+            boilingPoint: 2862,
+            ionizationLevel: "medium",  // 改为等级
+            sublimation: false,
+            polarity: "metallic",
+            solventAffinity: "insoluble",
+            special: "铁磁性材料，高温冶炼产生铁蒸气",
+            phases: {
+                solid: { range: "T < 1538°C", magnetic: "铁磁性" },
+                liquid: { range: "1538°C < T < 2862°C", conductivity: "高" },
+                gas: { range: "T > 2862°C", conductivity: "中等" },
+                plasma: { range: "T > 8000K", conductivity: "极高" }
+            }
+        },
+        "汞": {
+            formula: "Hg",
+            icon: "🌡️",
+            meltingPoint: -38.8,
+            boilingPoint: 356.7,
+            ionizationLevel: "medium",  // 改为等级
+            sublimation: false,
+            polarity: "metallic",
+            solventAffinity: "insoluble",
+            special: "常温下为液态金属，-39°C凝固",
+            phases: {
+                solid: { range: "T < -38.8°C", color: "银白色固体" },
+                liquid: { range: "-38.8°C < T < 356.7°C", color: "银白色液体" },
+                gas: { range: "T > 356.7°C", toxicity: "剧毒蒸气" }
+            }
+        },
+        "氢气": {
+            formula: "H₂",
+            icon: "💨",
+            meltingPoint: -259.2,
+            boilingPoint: -252.9,
+            ionizationLevel: "low",  // 改为等级
+            sublimation: false,
+            polarity: "nonpolar",
+            solventAffinity: "insoluble",
+            special: "最轻的气体，清洁能源",
+            phases: {
+                solid: { range: "T < -259.2°C" },
+                liquid: { range: "-259.2°C < T < -252.9°C", color: "无色液体" },
+                gas: { range: "T > -252.9°C", flammability: "易燃" },
+                plasma: { range: "T > 2000K", conductivity: "高" }
+            }
+        },
+        "乙醇": {
+            formula: "C₂H₅OH",
+            icon: "🍷",
+            meltingPoint: -114.1,
+            boilingPoint: 78.4,
+            ionizationLevel: null,
+            sublimation: false,
+            polarity: "polar_protic",
+            solventAffinity: "amphiphilic",
+            special: "既溶于水也溶于有机溶剂",
+            phases: {
+                solid: { range: "T < -114.1°C" },
+                liquid: { range: "-114.1°C < T < 78.4°C", miscibility: "与水互溶" },
+                gas: { range: "T > 78.4°C", flammability: "易燃" }
+            }
+        },
+        "氯化钠": {
+            formula: "NaCl",
+            icon: "🧂",
+            meltingPoint: 801,
+            boilingPoint: 1413,
+            ionizationLevel: null,
+            sublimation: false,
+            polarity: "ionic",
+            solventAffinity: "hydrophilic",
+            special: "离子晶体，极易溶于水",
+            phases: {
+                solid: { range: "T < 801°C", structure: "立方晶系" },
+                liquid: { range: "801°C < T < 1413°C", conductivity: "离子导电" },
+                gas: { range: "T > 1413°C", state: "Na⁺和Cl⁻离子对" }
+            }
+        }
+    };
 
-    // ======================= 卡牌定义 =======================
+    // ======================= 真实物理操作卡牌 =======================
     // 每张卡牌包含：
     // - name, desc
-    // - naturalDirection: 相不变时的自然偏移方向 (+1向右, -1向左)
-    // - getNewPhase: 函数，返回新相或 null
+    // - effect: 对温度、压力、溶剂环境的影响
+    // - getNewState: 函数，根据物质特性和当前状态返回新状态
     const CARD_TEMPLATES = [
         {
-            name: "🔥 加热",
-            desc: "升高相序（固→液→气→有机→等离子）",
-            naturalDirection: +1,
-            getNewPhase: (currentPhase) => {
-                let order = PHASES[currentPhase].order;
-                if (order < 4) return PHASE_KEYS[order + 1];
-                return null;
+            name: "🔥 升温",
+            desc: "增加体系温度100°C",
+            effect: { temperature: +100 },
+            getNewState: (substance, currentState) => {
+                const newTemp = currentState.temperature + 100;
+                const newPhase = determinePhase(substance, newTemp, currentState.pressure);
+                return { 
+                    temperature: newTemp, 
+                    phase: newPhase,
+                    message: `温度升至${newTemp.toFixed(1)}°C，${newPhase !== currentState.phase ? '物质相变为' + THERMO_PHASES[newPhase].name : '相未变'}`
+                };
             }
         },
         {
-            name: "❄️ 冷却",
-            desc: "降低相序（等离子→有机→气→液→固）",
-            naturalDirection: -1,
-            getNewPhase: (currentPhase) => {
-                let order = PHASES[currentPhase].order;
-                if (order > 0) return PHASE_KEYS[order - 1];
-                return null;
+            name: "❄️ 降温",
+            desc: "降低体系温度100°C",
+            effect: { temperature: -100 },
+            getNewState: (substance, currentState) => {
+                const newTemp = currentState.temperature - 100;
+                const newPhase = determinePhase(substance, newTemp, currentState.pressure);
+                return { 
+                    temperature: newTemp, 
+                    phase: newPhase,
+                    message: `温度降至${newTemp.toFixed(1)}°C，${newPhase !== currentState.phase ? '物质相变为' + THERMO_PHASES[newPhase].name : '相未变'}`
+                };
             }
         },
         {
-            name: "⚡ 电离",
-            desc: "升高相序，直接向等离子相转变",
-            naturalDirection: +1,
-            getNewPhase: (currentPhase) => {
-                if (currentPhase !== "plasma") return "plasma";
-                return null;
+            name: "⚡ 放电",
+            desc: "瞬间高温高压局部放电",
+            effect: { temperature: +2000, pressure: +10 },
+            getNewState: (substance, currentState) => {
+                const newTemp = currentState.temperature + 2000;
+                const newPressure = currentState.pressure + 10;
+                
+                // 放电可跨过液相直接产生等离子体
+                if (substance.ionizationLevel && newTemp + 273.15 >= 5000) {
+                    return { 
+                        temperature: newTemp, 
+                        pressure: newPressure,
+                        phase: 'plasma',
+                        message: '放电产生等离子体！'
+                    };
+                }
+                
+                const newPhase = determinePhase(substance, newTemp, newPressure);
+                return { 
+                    temperature: newTemp, 
+                    pressure: newPressure,
+                    phase: newPhase,
+                    message: `放电升温至${newTemp.toFixed(1)}°C，${newPhase !== currentState.phase ? '物质相变为' + THERMO_PHASES[newPhase].name : '相未变'}`
+                };
             }
         },
         {
-            name: "🌊 加压",
-            desc: "降低相序（促进凝聚）",
-            naturalDirection: -1,
-            getNewPhase: (currentPhase) => {
-                let order = PHASES[currentPhase].order;
-                if (order > 0) return PHASE_KEYS[order - 1];
-                return null;
+            name: "🧪 添加溶剂",
+            desc: "向体系注入水",
+            effect: { solvent: 'water' },
+            getNewState: (substance, currentState) => {
+                let newSolvent = currentState.solvent;
+                let message = '';
+                
+                if (substance.solventAffinity === 'hydrophilic') {
+                    newSolvent = 'water';
+                    message = '亲水性物质完全溶解于水相';
+                } else if (substance.solventAffinity === 'lipophilic') {
+                    // 亲油性物质不溶于水，保持原溶剂状态
+                    message = '亲油性物质不溶于水，保持原状态';
+                } else if (substance.solventAffinity === 'amphiphilic') {
+                    newSolvent = 'water';
+                    message = '两亲性物质部分溶解于水相';
+                } else {
+                    // 不溶性物质
+                    message = '不溶性物质在水中形成沉淀';
+                }
+                
+                return { 
+                    solvent: newSolvent,
+                    message: message
+                };
             }
         },
         {
-            name: "🌀 减压",
-            desc: "升高相序（促进气化/等离子化）",
-            naturalDirection: +1,
-            getNewPhase: (currentPhase) => {
-                let order = PHASES[currentPhase].order;
-                if (order < 4) return PHASE_KEYS[order + 1];
-                return null;
+            name: "🛢️ 添加有机溶剂",
+            desc: "注入乙醚/己烷",
+            effect: { solvent: 'organic' },
+            getNewState: (substance, currentState) => {
+                let newSolvent = currentState.solvent;
+                let message = '';
+                
+                if (substance.solventAffinity === 'lipophilic') {
+                    newSolvent = 'organic';
+                    message = '亲油性物质完全溶解于有机相';
+                } else if (substance.solventAffinity === 'hydrophilic') {
+                    // 亲水性物质不溶于有机溶剂
+                    message = '亲水性物质不溶于有机溶剂，保持原状态';
+                } else if (substance.solventAffinity === 'amphiphilic') {
+                    newSolvent = 'organic';
+                    message = '两亲性物质部分溶解于有机相';
+                } else {
+                    // 不溶性物质
+                    message = '不溶性物质在有机溶剂中形成沉淀';
+                }
+                
+                return { 
+                    solvent: newSolvent,
+                    message: message
+                };
             }
         },
         {
-            name: "🧪 催化",
-            desc: "不改变相，直接向玩家方向偏移",
-            naturalDirection: 0, // 特殊，将由函数决定
-            getNewPhase: () => null
+            name: "📏 加压",
+            desc: "增大压强10倍",
+            effect: { pressure: +10 },
+            getNewState: (substance, currentState) => {
+                const newPressure = currentState.pressure + 10;
+                const newPhase = determinePhase(substance, currentState.temperature, newPressure);
+                return { 
+                    pressure: newPressure, 
+                    phase: newPhase,
+                    message: `压强增至${newPressure}atm，${newPhase !== currentState.phase ? '物质相变为' + THERMO_PHASES[newPhase].name : '相未变'}`
+                };
+            }
+        },
+        {
+            name: "🧹 减压",
+            desc: "减小压强至1/10",
+            effect: { pressure: -0.9 },
+            getNewState: (substance, currentState) => {
+                const newPressure = Math.max(0.1, currentState.pressure * 0.1);
+                const newPhase = determinePhase(substance, currentState.temperature, newPressure);
+                return { 
+                    pressure: newPressure, 
+                    phase: newPhase,
+                    message: `压强降至${newPressure.toFixed(1)}atm，${newPhase !== currentState.phase ? '物质相变为' + THERMO_PHASES[newPhase].name : '相未变'}`
+                };
+            }
+        },
+        {
+            name: "� 电磁场",
+            desc: "施加电磁场",
+            effect: { electromagnetic: true },
+            getNewState: (substance, currentState) => {
+                if (currentState.phase === 'plasma') {
+                    return { 
+                        electromagnetic: true,
+                        message: '电磁场约束等离子体！'
+                    };
+                }
+                return { 
+                    electromagnetic: true,
+                    message: '电磁场对当前相影响微弱'
+                };
+            }
         }
     ];
+    
+    // ======================= 相判断函数 =======================
+    function determinePhase(substance, temperatureC, pressure) {
+        // 统一转换为开尔文
+        const tempK = temperatureC + 273.15;
+        
+        // 检查等离子相（基于电离等级）
+        if (substance.ionizationLevel) {
+            let plasmaThreshold = 0;
+            if (substance.ionizationLevel === 'low') plasmaThreshold = 2000;
+            else if (substance.ionizationLevel === 'medium') plasmaThreshold = 5000;
+            else if (substance.ionizationLevel === 'high') plasmaThreshold = 8000;
+            else if (substance.ionizationLevel === 'extreme') plasmaThreshold = 12000;
+            
+            if (tempK >= plasmaThreshold) {
+                return 'plasma';
+            }
+        }
+        
+        // 检查升华（直接固→气）
+        if (substance.sublimation && substance.sublimationPoint !== undefined) {
+            const sublimationK = substance.sublimationPoint + 273.15;
+            if (tempK >= sublimationK && pressure < 2) {
+                return 'gas';
+            }
+        }
+        
+        // 正常相变判断
+        const meltingK = substance.meltingPoint + 273.15;
+        const boilingK = substance.boilingPoint + 273.15;
+        
+        // 压力对沸点的影响（简化的克劳修斯-克拉佩龙方程）
+        const pressureEffect = Math.log(pressure) * 10;
+        const adjustedBoilingK = boilingK + pressureEffect;
+        
+        // 特殊处理：加压下碘可以出现液相
+        if (substance.formula === 'I₂' && pressure >= 5 && tempK >= substance.meltingPoint + 273.15 && tempK < substance.boilingPoint + 273.15) {
+            return 'liquid';
+        }
+        
+        if (tempK < meltingK) {
+            return 'solid';
+        } else if (tempK < adjustedBoilingK) {
+            return 'liquid';
+        } else {
+            return 'gas';
+        }
+    }
 
     // ======================= 游戏状态 =======================
     let currentSubstance = null;
-    let currentPhase = "";
-    let leftPhase = "";
-    let rightPhase = "";
-    let position = 50;
+    let currentState = {
+        temperature: 25,      // °C
+        pressure: 1,           // atm
+        phase: 'solid',        // 热力学相
+        solvent: 'none',      // 溶剂环境: 'none', 'water', 'organic'
+        electromagnetic: false
+    };
+    let leftTarget = {
+        phase: 'solid',
+        solvent: 'hydrophilic'
+    };
+    let rightTarget = {
+        phase: 'gas',
+        solvent: 'lipophilic'
+    };
+    let position = { x: 50, y: 50 }; // x: 热力学相位置, y: 溶剂环境位置
     let currentTurn = "left";
     let gameActive = true;
     let currentCards = [];
@@ -419,120 +786,232 @@
     const leftIconSpan = document.getElementById('leftIcon');
     const rightIconSpan = document.getElementById('rightIcon');
     const turnIndicator = document.getElementById('turnIndicator');
-    const progressFill = document.getElementById('progressFill');
-    const positionLabel = document.getElementById('positionLabel');
     const cardsContainer = document.getElementById('cardsContainer');
     const gameMessageDiv = document.getElementById('gameMessage');
     const resetBtn = document.getElementById('resetGameBtn');
     const reactantNameSpan = document.getElementById('reactantName');
     const reactantStateSpan = document.getElementById('reactantState');
     const reactantIconSpan = document.getElementById('reactantIcon');
+    
+    // 新的DOM元素
+    const tempValueSpan = document.getElementById('tempValue');
+    const pressureValueSpan = document.getElementById('pressureValue');
+    const phaseValueSpan = document.getElementById('phaseValue');
+    const solventValueSpan = document.getElementById('solventValue');
+    const substanceMarker = document.getElementById('substanceMarker');
+    const leftTargetZone = document.getElementById('leftTarget');
+    const rightTargetZone = document.getElementById('rightTarget');
+    const phaseSpace = document.getElementById('phaseSpace');
 
     // ======================= 辅助函数 =======================
-    function assignPlayerPhases() {
-        let phases = [...PHASE_KEYS];
-        for (let i = phases.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [phases[i], phases[j]] = [phases[j], phases[i]];
+    function assignPlayerTargets() {
+        const phases = [...THERMO_PHASE_KEYS];
+        const affinities = Object.keys(SOLVENT_AFFINITY);
+        
+        // 生成目标象限对，确保最小距离约束
+        let validPairs = [];
+        for (let i = 0; i < phases.length; i++) {
+            for (let j = 0; j < affinities.length; j++) {
+                for (let k = 0; k < phases.length; k++) {
+                    for (let l = 0; l < affinities.length; l++) {
+                        if (i === k && j === l) continue; // 避免相同目标
+                        
+                        const leftPos = phaseToCoords(phases[i], affinities[j]);
+                        const rightPos = phaseToCoords(phases[k], affinities[l]);
+                        const distance = Math.sqrt(
+                            Math.pow(leftPos.x - rightPos.x, 2) + 
+                            Math.pow(leftPos.y - rightPos.y, 2)
+                        );
+                        
+                        // 最小距离约束：至少相距30%
+                        if (distance >= 30) {
+                            validPairs.push({
+                                left: { phase: phases[i], solvent: affinities[j] },
+                                right: { phase: phases[k], solvent: affinities[l] },
+                                distance: distance
+                            });
+                        }
+                    }
+                }
+            }
         }
-        leftPhase = phases[0];
-        rightPhase = phases[1];
-        leftNameSpan.innerText = `🔴 ${PHASES[leftPhase].name}修士`;
-        rightNameSpan.innerText = `🔵 ${PHASES[rightPhase].name}修士`;
-        leftPhaseSpan.innerText = PHASES[leftPhase].name;
-        rightPhaseSpan.innerText = PHASES[rightPhase].name;
-        leftIconSpan.innerText = PHASES[leftPhase].icon;
-        rightIconSpan.innerText = PHASES[rightPhase].icon;
+        
+        // 随机选择一个有效的目标对
+        if (validPairs.length > 0) {
+            const selected = validPairs[Math.floor(Math.random() * validPairs.length)];
+            leftTarget = selected.left;
+            rightTarget = selected.right;
+        } else {
+            // 如果没有满足距离约束的对，回退到随机分配
+            leftTarget.phase = phases[Math.floor(Math.random() * phases.length)];
+            rightTarget.phase = phases[Math.floor(Math.random() * phases.length)];
+            leftTarget.solvent = affinities[Math.floor(Math.random() * affinities.length)];
+            rightTarget.solvent = affinities[Math.floor(Math.random() * affinities.length)];
+        }
+        
+        // 更新UI
+        leftNameSpan.innerText = `🔴 ${THERMO_PHASES[leftTarget.phase].name}+${SOLVENT_AFFINITY[leftTarget.solvent].name}修士`;
+        rightNameSpan.innerText = `🔵 ${THERMO_PHASES[rightTarget.phase].name}+${SOLVENT_AFFINITY[rightTarget.solvent].name}修士`;
+        leftPhaseSpan.innerText = `${THERMO_PHASES[leftTarget.phase].name}/${SOLVENT_AFFINITY[leftTarget.solvent].name}`;
+        rightPhaseSpan.innerText = `${THERMO_PHASES[rightTarget.phase].name}/${SOLVENT_AFFINITY[rightTarget.solvent].name}`;
+        leftIconSpan.innerText = THERMO_PHASES[leftTarget.phase].icon;
+        rightIconSpan.innerText = THERMO_PHASES[rightTarget.phase].icon;
+        
+        // 设置目标区域位置
+        updateTargetZones();
+    }
+    
+    function updateTargetZones() {
+        // 将相和溶剂亲和性转换为相空间坐标
+        const leftPos = phaseToCoords(leftTarget.phase, leftTarget.solvent);
+        const rightPos = phaseToCoords(rightTarget.phase, rightTarget.solvent);
+        
+        leftTargetZone.style.left = leftPos.x + '%';
+        leftTargetZone.style.top = leftPos.y + '%';
+        rightTargetZone.style.left = rightPos.x + '%';
+        rightTargetZone.style.top = rightPos.y + '%';
+    }
+    
+    function phaseToCoords(phase, solvent) {
+        // 热力学相映射到x轴 (0-100%)
+        let x = 50; // 默认中心
+        if (phase === 'solid') x = 25;
+        else if (phase === 'liquid') x = 50;
+        else if (phase === 'gas') x = 75;
+        else if (phase === 'plasma') x = 90;
+        
+        // 溶剂亲和性映射到y轴 (0-100%)
+        let y = 50; // 默认中心
+        if (solvent === 'hydrophilic') y = 25;
+        else if (solvent === 'amphiphilic') y = 50;
+        else if (solvent === 'lipophilic') y = 75;
+        else if (solvent === 'insoluble') y = 90;
+        
+        return { x, y };
     }
 
     function selectRandomSubstance() {
-        const idx = Math.floor(Math.random() * SUBSTANCES.length);
-        const sub = { ...SUBSTANCES[idx] };
-        currentSubstance = sub;
-        const allowedPhases = sub.phases;
-        const initPhase = allowedPhases[Math.floor(Math.random() * allowedPhases.length)];
-        currentPhase = initPhase;
-        reactantNameSpan.innerText = sub.name;
-        reactantStateSpan.innerText = PHASES[currentPhase].name;
-        reactantIconSpan.innerText = sub.icon;
+        const substanceNames = Object.keys(SUBSTANCE_REAL);
+        const randomName = substanceNames[Math.floor(Math.random() * substanceNames.length)];
+        currentSubstance = SUBSTANCE_REAL[randomName];
+        
+        // 初始化状态（基于物质特性）
+        currentState = {
+            temperature: 25 + Math.random() * 50, // 25-75°C
+            pressure: 0.5 + Math.random() * 2,   // 0.5-2.5 atm
+            phase: 'solid',
+            solvent: 'none',
+            electromagnetic: false
+        };
+        
+        // 根据温度确定初始相
+        currentState.phase = determinePhase(currentSubstance, currentState.temperature, currentState.pressure);
+        
+        // 更新UI
+        reactantNameSpan.innerText = `${randomName} (${currentSubstance.formula})`;
+        reactantStateSpan.innerText = `${THERMO_PHASES[currentState.phase].name} - ${currentSubstance.special}`;
+        reactantIconSpan.innerText = currentSubstance.icon;
+        
+        updateSubstanceMarker();
     }
-
-    // 先手玩家（左侧）劣势，位置 60~80
-    function computeInitialPosition() {
-        return Math.floor(Math.random() * (80 - 60 + 1) + 60);
+    
+    function updateSubstanceMarker() {
+        // 将当前状态转换为相空间坐标
+        const coords = stateToCoords(currentState);
+        substanceMarker.style.left = coords.x + '%';
+        substanceMarker.style.top = coords.y + '%';
+        
+        // 更新状态显示
+        tempValueSpan.innerText = currentState.temperature.toFixed(1) + '°C';
+        pressureValueSpan.innerText = currentState.pressure.toFixed(1) + ' atm';
+        phaseValueSpan.innerText = THERMO_PHASES[currentState.phase].name;
+        
+        let solventText = '无';
+        if (currentState.solvent === 'water') solventText = '水相';
+        else if (currentState.solvent === 'organic') solventText = '有机相';
+        solventValueSpan.innerText = solventText;
     }
-
-    // 移动反应物，返回是否结束游戏
-    function moveReaction(delta, newPhaseAfter = null) {
-        if (!gameActive) return false;
-        let newPos = position + delta;
-        if (newPos <= 0) {
+    
+    function stateToCoords(state) {
+        // 热力学相映射到x轴，在相区内线性插值
+        let x = 50;
+        const tempK = state.temperature + 273.15;
+        
+        if (!currentSubstance) return { x: 50, y: 50 };
+        
+        const meltingK = currentSubstance.meltingPoint + 273.15;
+        const boilingK = currentSubstance.boilingPoint + 273.15;
+        
+        if (state.phase === 'solid') {
+            // 固相区：从绝对零度到熔点
+            const solidRange = meltingK - 0; // 简化：假设0K为下限
+            const positionInSolid = Math.max(0, Math.min(1, tempK / solidRange));
+            x = 10 + positionInSolid * 15; // 10% 到 25%
+        } else if (state.phase === 'liquid') {
+            // 液相区：从熔点到沸点
+            const liquidRange = boilingK - meltingK;
+            const positionInLiquid = (tempK - meltingK) / liquidRange;
+            x = 35 + positionInLiquid * 15; // 35% 到 50%
+        } else if (state.phase === 'gas') {
+            // 气相区：从沸点到等离子相阈值
+            let plasmaThreshold = 10000; // 默认值
+            if (currentSubstance.ionizationLevel === 'low') plasmaThreshold = 2000;
+            else if (currentSubstance.ionizationLevel === 'medium') plasmaThreshold = 5000;
+            else if (currentSubstance.ionizationLevel === 'high') plasmaThreshold = 8000;
+            else if (currentSubstance.ionizationLevel === 'extreme') plasmaThreshold = 12000;
+            
+            const gasRange = plasmaThreshold - boilingK;
+            const positionInGas = Math.min(1, (tempK - boilingK) / gasRange);
+            x = 60 + positionInGas * 20; // 60% 到 80%
+        } else if (state.phase === 'plasma') {
+            // 等离子相区：固定在90%
+            x = 90;
+        }
+        
+        // 溶剂环境映射到y轴（连续值）
+        let y = 50;
+        if (state.solvent === 'water') {
+            y = 25;
+        } else if (state.solvent === 'organic') {
+            y = 75;
+        } else if (state.solvent === 'none') {
+            y = 50;
+        }
+        
+        return { x, y };
+    }
+    
+    // 检查是否进入目标区域（获胜条件）
+    function checkVictory() {
+        const currentCoords = stateToCoords(currentState);
+        const leftCoords = phaseToCoords(leftTarget.phase, leftTarget.solvent);
+        const rightCoords = phaseToCoords(rightTarget.phase, rightTarget.solvent);
+        
+        const threshold = 15; // 距离阈值
+        
+        const leftDistance = Math.sqrt(
+            Math.pow(currentCoords.x - leftCoords.x, 2) + 
+            Math.pow(currentCoords.y - leftCoords.y, 2)
+        );
+        
+        const rightDistance = Math.sqrt(
+            Math.pow(currentCoords.x - rightCoords.x, 2) + 
+            Math.pow(currentCoords.y - rightCoords.y, 2)
+        );
+        
+        if (leftDistance < threshold) {
             gameActive = false;
-            gameMessageDiv.innerHTML = `🎉 ${leftNameSpan.innerText} 胜利！物质完全转化为${PHASES[leftPhase].name}！点击「新物质·新对局」继续 🎉`;
+            gameMessageDiv.innerHTML = `🎉 ${leftNameSpan.innerText} 胜利！物质进入目标象限！点击「新物质·新对局」继续 🎉`;
             alert(`${leftNameSpan.innerText} 获胜！`);
             return true;
-        } else if (newPos >= 100) {
+        } else if (rightDistance < threshold) {
             gameActive = false;
-            gameMessageDiv.innerHTML = `🎉 ${rightNameSpan.innerText} 胜利！物质完全转化为${PHASES[rightPhase].name}！点击「新物质·新对局」继续 🎉`;
+            gameMessageDiv.innerHTML = `🎉 ${rightNameSpan.innerText} 胜利！物质进入目标象限！点击「新物质·新对局」继续 🎉`;
             alert(`${rightNameSpan.innerText} 获胜！`);
             return true;
         }
-        position = newPos;
-        if (newPhaseAfter && newPhaseAfter !== currentPhase) {
-            currentPhase = newPhaseAfter;
-            reactantStateSpan.innerText = PHASES[currentPhase].name;
-        }
-        updateUI();
+        
         return false;
-    }
-
-    // 核心：根据卡牌和当前状态计算偏移方向与幅度
-    function computeDeltaAndNewPhase(card, playerPhase) {
-        const currentOrder = PHASES[currentPhase].order;
-        const playerOrder = PHASES[playerPhase].order;
-        let newPhase = card.getNewPhase(currentPhase);
-        let direction = 0;
-        let magnitude = 8; // 基础幅度
-        let message = "";
-
-        if (card.name === "🧪 催化") {
-            // 催化：直接向玩家相方向偏移
-            if (playerOrder > currentOrder) direction = +1;
-            else if (playerOrder < currentOrder) direction = -1;
-            else direction = 0;
-            magnitude = 6;
-            message = `催化反应使物质向${PHASES[playerPhase].name}偏移。`;
-        } else {
-            if (newPhase && newPhase !== currentPhase) {
-                // 有相变：计算新旧相与玩家相的距离
-                const newOrder = PHASES[newPhase].order;
-                const distOld = Math.abs(currentOrder - playerOrder);
-                const distNew = Math.abs(newOrder - playerOrder);
-                if (distNew < distOld) {
-                    // 更接近玩家 -> 向玩家方向偏移
-                    direction = (playerOrder > currentOrder) ? +1 : -1;
-                    message = `物质转变为${PHASES[newPhase].name}，更接近你的相，向你移动。`;
-                } else if (distNew > distOld) {
-                    // 更远离玩家 -> 向对手方向偏移（即反向）
-                    direction = (playerOrder > currentOrder) ? -1 : +1;
-                    message = `物质转变为${PHASES[newPhase].name}，更远离你的相，向对手移动。`;
-                } else {
-                    // 距离不变，使用自然方向
-                    direction = card.naturalDirection;
-                    message = `物质转变为${PHASES[newPhase].name}，相距离不变，按自然趋势移动。`;
-                }
-            } else {
-                // 无相变，使用自然方向
-                direction = card.naturalDirection;
-                message = `物质相未变，按自然趋势移动。`;
-            }
-            // 幅度微调：若自然方向为0（不会发生），这里忽略
-        }
-
-        // 特殊处理：如果direction=0，则无偏移
-        if (direction === 0) magnitude = 0;
-        const delta = direction * magnitude;
-        return { delta, newPhase: (newPhase !== currentPhase ? newPhase : null), message };
     }
 
     // 抽卡
@@ -552,10 +1031,27 @@
             gameMessageDiv.innerHTML = "游戏已结束，请重新开局。";
             return;
         }
-        const playerPhase = (currentTurn === "left") ? leftPhase : rightPhase;
-        const { delta, newPhase, message } = computeDeltaAndNewPhase(card, playerPhase);
-        const ended = moveReaction(delta, newPhase);
-        gameMessageDiv.innerHTML = `${currentTurn === "left" ? leftNameSpan.innerText : rightNameSpan.innerText} 使用了 ${card.name}！${message} 拉动 ${delta.toFixed(1)} 点。`;
+        
+        const playerTarget = (currentTurn === "left") ? leftTarget : rightTarget;
+        const playerName = (currentTurn === "left") ? leftNameSpan.innerText : rightNameSpan.innerText;
+        
+        // 应用卡牌效果
+        const newState = card.getNewState(currentSubstance, currentState);
+        
+        // 更新状态
+        if (newState.temperature !== undefined) currentState.temperature = newState.temperature;
+        if (newState.pressure !== undefined) currentState.pressure = newState.pressure;
+        if (newState.phase !== undefined) currentState.phase = newState.phase;
+        if (newState.solvent !== undefined) currentState.solvent = newState.solvent;
+        if (newState.electromagnetic !== undefined) currentState.electromagnetic = newState.electromagnetic;
+        
+        // 更新UI
+        updateSubstanceMarker();
+        gameMessageDiv.innerHTML = `${playerName} 使用了 ${card.name}！${newState.message}`;
+        
+        // 检查胜利条件
+        const ended = checkVictory();
+        
         if (!ended) {
             currentTurn = (currentTurn === "left") ? "right" : "left";
             drawCards();
@@ -575,7 +1071,7 @@
             cardDiv.innerHTML = `
                 <div class="card-name">${card.name}</div>
                 <div class="card-desc">${card.desc}</div>
-                <div class="card-power">⚡ 智能相变</div>
+                <div class="card-power">⚗️ 真实物理</div>
             `;
             if (!disable) {
                 cardDiv.addEventListener('click', () => useCard(card));
@@ -585,9 +1081,6 @@
     }
 
     function updateUI() {
-        let percent = (position / 100) * 100;
-        progressFill.style.width = `${percent}%`;
-        positionLabel.innerText = position.toFixed(1);
         if (currentTurn === 'left') {
             leftDiv.classList.add('active');
             rightDiv.classList.remove('active');
@@ -601,20 +1094,18 @@
 
     function resetGame() {
         gameActive = true;
-        assignPlayerPhases();
+        assignPlayerTargets();
         selectRandomSubstance();
-        position = computeInitialPosition();
         currentTurn = "left";
         drawCards();
         updateUI();
-        gameMessageDiv.innerHTML = "✨ 新物质登场！先手玩家处于劣势，使用卡牌让物质相更接近你，它就会向你移动！";
+        gameMessageDiv.innerHTML = "✨ 新物质登场！使用真实物理操作改变物质状态，使物质进入你的目标象限即可获胜！";
         renderCards();
     }
 
     function init() {
-        assignPlayerPhases();
+        assignPlayerTargets();
         selectRandomSubstance();
-        position = computeInitialPosition();
         currentTurn = "left";
         gameActive = true;
         drawCards();

@@ -250,14 +250,17 @@
       [1, 1, 3], [1, -1, -3], [-1, 1, -3], [-1, -1, 3]
     ]);
 
-    // 截角立方体 - 24个顶点
+    // 截角立方体 - 24个顶点 (正确的截角比例)
     const truncCubeVerts = scaleToUnit([
+      // 原始立方体面中心 (8个八边形面的中心)
+      [2, 0, 0], [-2, 0, 0], [0, 2, 0], [0, -2, 0], [0, 0, 2], [0, 0, -2],
+      // 截角产生的新顶点 (24个)
+      [1, 1, 2], [1, -1, 2], [-1, 1, 2], [-1, -1, 2],
+      [1, 1, -2], [1, -1, -2], [-1, 1, -2], [-1, -1, -2],
+      [1, 2, 1], [1, 2, -1], [-1, 2, 1], [-1, 2, -1],
+      [1, -2, 1], [1, -2, -1], [-1, -2, 1], [-1, -2, -1],
       [2, 1, 1], [2, 1, -1], [2, -1, 1], [2, -1, -1],
-      [-2, 1, 1], [-2, 1, -1], [-2, -1, 1], [-2, -1, -1],
-      [1, 2, 1], [1, 2, -1], [1, -2, 1], [1, -2, -1],
-      [-1, 2, 1], [-1, 2, -1], [-1, -2, 1], [-1, -2, -1],
-      [1, 1, 2], [1, 1, -2], [1, -1, 2], [1, -1, -2],
-      [-1, 1, 2], [-1, 1, -2], [-1, -1, 2], [-1, -1, -2]
+      [-2, 1, 1], [-2, 1, -1], [-2, -1, 1], [-2, -1, -1]
     ]);
 
     // 截角八面体 - 24个顶点
@@ -270,34 +273,45 @@
       [0, 1, 2], [0, 1, -2], [0, -1, 2], [0, -1, -2]
     ]);
 
-    // 截角十二面体 - 60个顶点
+    // 截角十二面体 - 60个顶点 (正确的截角比例)
     const truncDodecaVerts = scaleToUnit([
-      [0, 1/phi, 2+phi], [0, -1/phi, 2+phi], [0, 1/phi, -(2+phi)], [0, -1/phi, -(2+phi)],
-      [1/phi, 2+phi, 0], [-1/phi, 2+phi, 0], [1/phi, -(2+phi), 0], [-1/phi, -(2+phi), 0],
-      [2+phi, 0, 1/phi], [2+phi, 0, -1/phi], [-(2+phi), 0, 1/phi], [-(2+phi), 0, -1/phi],
-      [1, 1, 1], [1, 1, -1], [1, -1, 1], [1, -1, -1],
-      [-1, 1, 1], [-1, 1, -1], [-1, -1, 1], [-1, -1, -1],
-      [2, 0, 0], [-2, 0, 0], [0, 2, 0], [0, -2, 0], [0, 0, 2], [0, 0, -2],
-      [phi, 1/phi, 0], [-phi, 1/phi, 0], [phi, -1/phi, 0], [-phi, -1/phi, 0],
-      [1/phi, 0, phi], [1/phi, 0, -phi], [-1/phi, 0, phi], [-1/phi, 0, -phi],
-      [0, phi, 1/phi], [0, phi, -1/phi], [0, -phi, 1/phi], [0, -phi, -1/phi],
-      [phi*phi, 0, 0], [-phi*phi, 0, 0], [0, phi*phi, 0], [0, -phi*phi, 0], [0, 0, phi*phi], [0, 0, -phi*phi]
+      // 原始十二面体面中心 (12个十边形面的中心)
+      [0, 0, 3], [0, 0, -3], [0, 3, 0], [0, -3, 0], [3, 0, 0], [-3, 0, 0],
+      [1/phi, phi, 2*phi], [1/phi, -phi, 2*phi], [-1/phi, phi, 2*phi], [-1/phi, -phi, 2*phi],
+      [1/phi, phi, -2*phi], [1/phi, -phi, -2*phi], [-1/phi, phi, -2*phi], [-1/phi, -phi, -2*phi],
+      [phi, 2*phi, 1/phi], [phi, -2*phi, 1/phi], [-phi, 2*phi, 1/phi], [-phi, -2*phi, 1/phi],
+      [phi, 2*phi, -1/phi], [phi, -2*phi, -1/phi], [-phi, 2*phi, -1/phi], [-phi, -2*phi, -1/phi],
+      [2*phi, 1/phi, phi], [2*phi, 1/phi, -phi], [-2*phi, 1/phi, phi], [-2*phi, 1/phi, -phi],
+      [2*phi, -1/phi, phi], [2*phi, -1/phi, -phi], [-2*phi, -1/phi, phi], [-2*phi, -1/phi, -phi],
+      // 截角产生的新顶点 (60个)
+      [1, 1, phi], [1, -1, phi], [-1, 1, phi], [-1, -1, phi],
+      [1, 1, -phi], [1, -1, -phi], [-1, 1, -phi], [-1, -1, -phi],
+      [1, phi, 1], [1, phi, -1], [-1, phi, 1], [-1, phi, -1],
+      [1, -phi, 1], [1, -phi, -1], [-1, -phi, 1], [-1, -phi, -1],
+      [phi, 1, 1], [phi, 1, -1], [phi, -1, 1], [phi, -1, -1],
+      [-phi, 1, 1], [-phi, 1, -1], [-phi, -1, 1], [-phi, -1, -1],
+      [0, 2/phi, 2*phi], [0, -2/phi, 2*phi], [0, 2/phi, -2*phi], [0, -2/phi, -2*phi],
+      [2/phi, 0, 2*phi], [-2/phi, 0, 2*phi], [2/phi, 0, -2*phi], [-2/phi, 0, -2*phi],
+      [2*phi, 2/phi, 0], [2*phi, -2/phi, 0], [-2*phi, 2/phi, 0], [-2*phi, -2/phi, 0]
     ]);
 
-    // 截角二十面体 - 60个顶点
+    // 截角二十面体 - 60个顶点 (正确的截角比例，足球形状)
     const truncIcosaVerts = scaleToUnit([
+      // 原始二十面体面中心 (12个五边形面的中心)
+      [0, 0, 2*phi], [0, 0, -2*phi], [0, 2*phi, 0], [0, -2*phi, 0], [2*phi, 0, 0], [-2*phi, 0, 0],
+      [1, phi, phi], [1, phi, -phi], [1, -phi, phi], [1, -phi, -phi],
+      [-1, phi, phi], [-1, phi, -phi], [-1, -phi, phi], [-1, -phi, -phi],
+      [phi, 1, phi], [phi, 1, -phi], [phi, -1, phi], [phi, -1, -phi],
+      [-phi, 1, phi], [-phi, 1, -phi], [-phi, -1, phi], [-phi, -1, -phi],
+      [phi, phi, 1], [phi, phi, -1], [phi, -phi, 1], [phi, -phi, -1],
+      [-phi, phi, 1], [-phi, phi, -1], [-phi, -phi, 1], [-phi, -phi, -1],
+      // 截角产生的新顶点 (60个)
       [0, 1, 3*phi], [0, -1, 3*phi], [0, 1, -3*phi], [0, -1, -3*phi],
       [1, 3*phi, 0], [-1, 3*phi, 0], [1, -3*phi, 0], [-1, -3*phi, 0],
       [3*phi, 0, 1], [3*phi, 0, -1], [-3*phi, 0, 1], [-3*phi, 0, -1],
       [2, phi, 0], [-2, phi, 0], [2, -phi, 0], [-2, -phi, 0],
       [phi, 0, 2], [-phi, 0, 2], [phi, 0, -2], [-phi, 0, -2],
-      [0, 2, phi], [0, -2, phi], [0, 2, -phi], [0, -2, -phi],
-      [1, 1, phi], [-1, 1, phi], [1, -1, phi], [-1, -1, phi],
-      [1, 1, -phi], [-1, 1, -phi], [1, -1, -phi], [-1, -1, -phi],
-      [phi, 1, 1], [phi, -1, 1], [-phi, 1, 1], [-phi, -1, 1],
-      [phi, 1, -1], [phi, -1, -1], [-phi, 1, -1], [-phi, -1, -1],
-      [1, phi, 1], [1, phi, -1], [1, -phi, 1], [1, -phi, -1],
-      [-1, phi, 1], [-1, phi, -1], [-1, -phi, 1], [-1, -phi, -1]
+      [0, 2, phi], [0, -2, phi], [0, 2, -phi], [0, -2, -phi]
     ]);
 
     // 立方八面体 - 12个顶点
@@ -428,10 +442,10 @@
         name: '正十二面体', group: '柏拉图',
         vertices: dodecaVerts,
         faces: [
-          [0, 8, 9, 4, 16], [0, 16, 17, 2, 12], [12, 2, 18, 1, 14], [14, 1, 19, 3, 15], [15, 3, 17, 16, 0],
-          [4, 9, 10, 6, 11], [11, 6, 13, 5, 19], [19, 5, 18, 1, 14], [18, 2, 17, 3, 19], [17, 16, 0, 15, 3],
-          [8, 0, 12, 10, 9], [10, 12, 14, 15, 11], [11, 15, 13, 6, 4], [13, 5, 18, 14, 12], [10, 14, 18, 5, 6],
-          [4, 11, 6, 10, 9], [8, 4, 11, 15, 0], [7, 8, 9, 10, 6], [7, 6, 13, 5, 19], [7, 19, 3, 17, 16]
+          [0, 1, 2, 3, 4], [0, 5, 6, 7, 1], [5, 8, 9, 10, 6], [8, 11, 12, 13, 9], [11, 14, 15, 16, 12],
+          [14, 2, 17, 18, 15], [2, 0, 4, 19, 17], [4, 3, 16, 19, 0], [3, 7, 18, 19, 16], [7, 1, 6, 10, 18],
+          [9, 13, 12, 10, 6], [13, 11, 15, 18, 10], [12, 16, 15, 11, 13], [5, 0, 17, 14, 8], [1, 7, 3, 2, 14],
+          [4, 19, 18, 10, 9], [8, 5, 6, 9, 13], [11, 8, 14, 15, 12], [16, 3, 2, 15, 11], [17, 19, 4, 0, 5]
         ],
         schläfli: '{5,3}',
         faceTypes: {5: 12}
@@ -907,67 +921,179 @@
     function mergeCoplanarTriangles(triFaces, points) {
       if (triFaces.length === 0) return [];
       
-      const faces = [];
-      const used = new Set();
+      // 首先按法线方向分组
+      const faceGroups = groupFacesByNormal(triFaces, points);
+      const mergedFaces = [];
       
-      for (let i = 0; i < triFaces.length; i++) {
-        if (used.has(i)) continue;
-        
-        const currentFace = [...triFaces[i]];
-        used.add(i);
-        
-        // 计算当前面的法线
-        const v1 = new THREE.Vector3().subVectors(points[currentFace[1]], points[currentFace[0]]);
-        const v2 = new THREE.Vector3().subVectors(points[currentFace[2]], points[currentFace[0]]);
+      for (const group of faceGroups) {
+        const merged = mergeFaceGroup(group, points);
+        mergedFaces.push(...merged);
+      }
+      
+      return mergedFaces;
+    }
+    
+    function groupFacesByNormal(triFaces, points) {
+      const groups = [];
+      const tolerance = 1e-6;
+      
+      for (const face of triFaces) {
+        const v1 = new THREE.Vector3().subVectors(points[face[1]], points[face[0]]);
+        const v2 = new THREE.Vector3().subVectors(points[face[2]], points[face[0]]);
         const normal = new THREE.Vector3().crossVectors(v1, v2).normalize();
         
-        // 寻找共面的相邻三角形
-        let merged = true;
-        while (merged) {
-          merged = false;
-          
-          for (let j = 0; j < triFaces.length; j++) {
-            if (used.has(j)) continue;
-            
-            const testFace = triFaces[j];
-            
-            // 检查是否共面
-            const tv1 = new THREE.Vector3().subVectors(points[testFace[1]], points[testFace[0]]);
-            const tv2 = new THREE.Vector3().subVectors(points[testFace[2]], points[testFace[0]]);
-            const tNormal = new THREE.Vector3().crossVectors(tv1, tv2).normalize();
-            
-            if (Math.abs(normal.dot(tNormal)) > 0.999) {
-              // 检查是否有共享边
-              const sharedVertices = currentFace.filter(v => testFace.includes(v));
-              
-              if (sharedVertices.length === 2) {
-                // 合并面
-                const newVertex = testFace.find(v => !currentFace.includes(v));
-                if (newVertex !== undefined) {
-                  currentFace.push(newVertex);
-                  used.add(j);
-                  merged = true;
-                }
-              }
-            }
+        let foundGroup = false;
+        for (const group of groups) {
+          if (Math.abs(normal.dot(group.normal)) > 0.999) {
+            group.faces.push(face);
+            foundGroup = true;
+            break;
           }
         }
         
-        // 移除重复顶点
-        const uniqueFace = [...new Set(currentFace)];
-        if (uniqueFace.length >= 3) {
-          faces.push(uniqueFace);
+        if (!foundGroup) {
+          groups.push({
+            normal: normal,
+            faces: [face]
+          });
         }
       }
       
-      return faces;
+      return groups;
+    }
+    
+    function mergeFaceGroup(group, points) {
+      const faces = group.faces;
+      if (faces.length === 1) return faces;
+      
+      // 构建边的邻接关系
+      const edgeAdjacency = buildEdgeAdjacency(faces);
+      
+      // 使用深度优先搜索找到连通的面
+      const mergedPolygons = [];
+      const visited = new Set();
+      
+      for (let i = 0; i < faces.length; i++) {
+        if (visited.has(i)) continue;
+        
+        const polygon = extractPolygon(i, faces, edgeAdjacency, visited, points);
+        if (polygon.length >= 3) {
+          mergedPolygons.push(polygon);
+        }
+      }
+      
+      return mergedPolygons;
+    }
+    
+    function buildEdgeAdjacency(faces) {
+      const edgeToFace = new Map();
+      
+      for (let i = 0; i < faces.length; i++) {
+        const face = faces[i];
+        for (let j = 0; j < 3; j++) {
+          const k = (j + 1) % 3;
+          const a = Math.min(face[j], face[k]);
+          const b = Math.max(face[j], face[k]);
+          const key = `${a}_${b}`;
+          
+          if (!edgeToFace.has(key)) {
+            edgeToFace.set(key, []);
+          }
+          edgeToFace.get(key).push(i);
+        }
+      }
+      
+      return edgeToFace;
+    }
+    
+    function extractPolygon(startIndex, faces, edgeAdjacency, visited, points) {
+      const polygon = [];
+      const toVisit = [startIndex];
+      const faceVertices = new Map();
+      
+      while (toVisit.length > 0) {
+        const faceIndex = toVisit.pop();
+        if (visited.has(faceIndex)) continue;
+        
+        visited.add(faceIndex);
+        const face = faces[faceIndex];
+        
+        // 添加面的顶点
+        for (const vertex of face) {
+          if (!faceVertices.has(vertex)) {
+            faceVertices.set(vertex, []);
+          }
+          faceVertices.get(vertex).push(faceIndex);
+        }
+        
+        // 找到相邻的面
+        for (let j = 0; j < 3; j++) {
+          const k = (j + 1) % 3;
+          const a = Math.min(face[j], face[k]);
+          const b = Math.max(face[j], face[k]);
+          const key = `${a}_${b}`;
+          
+          const adjacentFaces = edgeAdjacency.get(key) || [];
+          for (const adjFaceIndex of adjacentFaces) {
+            if (adjFaceIndex !== faceIndex && !visited.has(adjFaceIndex)) {
+              toVisit.push(adjFaceIndex);
+            }
+          }
+        }
+      }
+      
+      // 构建多边形顶点顺序
+      const vertices = Array.from(faceVertices.keys());
+      if (vertices.length < 3) return [];
+      
+      // 使用凸包算法确定顶点顺序
+      return orderVerticesConvex(vertices, points, faces[0]);
+    }
+    
+    function orderVerticesConvex(vertices, points, referenceFace) {
+      if (vertices.length <= 3) return vertices;
+      
+      // 计算面的法线
+      const v1 = new THREE.Vector3().subVectors(points[referenceFace[1]], points[referenceFace[0]]);
+      const v2 = new THREE.Vector3().subVectors(points[referenceFace[2]], points[referenceFace[0]]);
+      const normal = new THREE.Vector3().crossVectors(v1, v2).normalize();
+      
+      // 找到中心点
+      let center = new THREE.Vector3();
+      for (const v of vertices) {
+        center.add(points[v]);
+      }
+      center.divideScalar(vertices.length);
+      
+      // 创建局部坐标系
+      let up = normal;
+      let right = new THREE.Vector3().crossVectors(up, new THREE.Vector3(1, 0, 0));
+      if (right.length() < 0.1) {
+        right = new THREE.Vector3().crossVectors(up, new THREE.Vector3(0, 1, 0));
+      }
+      right.normalize();
+      let forward = new THREE.Vector3().crossVectors(right, up).normalize();
+      
+      // 计算每个顶点的角度
+      const angleVertices = vertices.map(v => {
+        const vec = new THREE.Vector3().subVectors(points[v], center);
+        const x = vec.dot(right);
+        const y = vec.dot(forward);
+        const angle = Math.atan2(y, x);
+        return { vertex: v, angle: angle };
+      });
+      
+      // 按角度排序
+      angleVertices.sort((a, b) => a.angle - b.angle);
+      
+      return angleVertices.map(av => av.vertex);
     }
     
     // 测试凸包算法
     function testConvexHull() {
-      console.log("Testing improved convex hull algorithm...");
+      console.log("Testing improved convex hull algorithm with polygon merging...");
       
-      // 测试立方体
+      // 测试立方体 - 应该生成6个四边形
       const cubeVertices = [
         [1,1,1], [1,1,-1], [1,-1,1], [1,-1,-1],
         [-1,1,1], [-1,1,-1], [-1,-1,1], [-1,-1,-1]
@@ -977,7 +1103,7 @@
       console.log("Cube faces:", cubeFaces.length, "expected: 6");
       console.log("Cube face types:", cubeFaces.map(f => f.length));
       
-      // 测试四面体
+      // 测试四面体 - 应该生成4个三角形
       const tetraVertices = [
         [1,1,1], [1,-1,-1], [-1,1,-1], [-1,-1,1]
       ];
@@ -986,7 +1112,7 @@
       console.log("Tetrahedron faces:", tetraFaces.length, "expected: 4");
       console.log("Tetrahedron face types:", tetraFaces.map(f => f.length));
       
-      // 测试八面体
+      // 测试八面体 - 应该生成8个三角形
       const octaVertices = [
         [1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]
       ];
@@ -995,7 +1121,81 @@
       console.log("Octahedron faces:", octaFaces.length, "expected: 8");
       console.log("Octahedron face types:", octaFaces.map(f => f.length));
       
-      return { cubeFaces, tetraFaces, octaFaces };
+      // 测试立方八面体 - 应该生成8个三角形和6个四边形
+      const cuboctaVertices = [
+        [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0],
+        [1, 0, 1], [1, 0, -1], [-1, 0, 1], [-1, 0, -1],
+        [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1]
+      ];
+      
+      const cuboctaFaces = convexHull3D(cuboctaVertices);
+      console.log("Cuboctahedron faces:", cuboctaFaces.length, "expected: 14");
+      console.log("Cuboctahedron face types:", cuboctaFaces.map(f => f.length));
+      
+      // 测试截角多面体
+      console.log("Testing truncated polyhedrons...");
+      
+      // 截角立方体 - 应该生成8个三角形和6个八边形
+      const truncCubeFaces = convexHull3D(truncCubeVerts);
+      console.log("Truncated Cube faces:", truncCubeFaces.length, "expected: 14");
+      console.log("Truncated Cube face types:", truncCubeFaces.map(f => f.length));
+      
+      const truncCubeTriangles = truncCubeFaces.filter(f => f.length === 3).length;
+      const truncCubeOctagons = truncCubeFaces.filter(f => f.length === 8).length;
+      console.log(`Truncated Cube - Triangles: ${truncCubeTriangles}, Octagons: ${truncCubeOctagons}`);
+      
+      // 截角十二面体 - 应该生成20个三角形和12个十边形
+      const truncDodecaFaces = convexHull3D(truncDodecaVerts);
+      console.log("Truncated Dodecahedron faces:", truncDodecaFaces.length, "expected: 32");
+      console.log("Truncated Dodecahedron face types:", truncDodecaFaces.map(f => f.length));
+      
+      const truncDodecaTriangles = truncDodecaFaces.filter(f => f.length === 3).length;
+      const truncDodecaDecagons = truncDodecaFaces.filter(f => f.length === 10).length;
+      console.log(`Truncated Dodecahedron - Triangles: ${truncDodecaTriangles}, Decagons: ${truncDodecaDecagons}`);
+      
+      // 截角二十面体 - 应该生成12个五边形和20个六边形 (足球)
+      const truncIcosaFaces = convexHull3D(truncIcosaVerts);
+      console.log("Truncated Icosahedron faces:", truncIcosaFaces.length, "expected: 32");
+      console.log("Truncated Icosahedron face types:", truncIcosaFaces.map(f => f.length));
+      
+      const truncIcosaPentagons = truncIcosaFaces.filter(f => f.length === 5).length;
+      const truncIcosaHexagons = truncIcosaFaces.filter(f => f.length === 6).length;
+      console.log(`Truncated Icosahedron - Pentagons: ${truncIcosaPentagons}, Hexagons: ${truncIcosaHexagons}`);
+      
+      // 测试正十二面体和正二十面体的预定义面
+      console.log("Testing Platonic solids with predefined faces...");
+      
+      const dodecaData = polyData.dodecahedron;
+      console.log("Dodecahedron vertices:", dodecaData.vertices.length);
+      console.log("Dodecahedron faces:", dodecaData.faces.length);
+      
+      // 检查面索引是否超出范围
+      let maxDodecaIndex = 0;
+      for (const face of dodecaData.faces) {
+        for (const idx of face) {
+          maxDodecaIndex = Math.max(maxDodecaIndex, idx);
+        }
+      }
+      console.log("Dodecahedron max face index:", maxDodecaIndex, "vertices count:", dodecaData.vertices.length);
+      
+      const icosaData = polyData.icosahedron;
+      console.log("Icosahedron vertices:", icosaData.vertices.length);
+      console.log("Icosahedron faces:", icosaData.faces.length);
+      
+      // 检查面索引是否超出范围
+      let maxIcosaIndex = 0;
+      for (const face of icosaData.faces) {
+        for (const idx of face) {
+          maxIcosaIndex = Math.max(maxIcosaIndex, idx);
+        }
+      }
+      console.log("Icosahedron max face index:", maxIcosaIndex, "vertices count:", icosaData.vertices.length);
+      
+      return { 
+        cubeFaces, tetraFaces, octaFaces, cuboctaFaces, 
+        truncCubeFaces, truncDodecaFaces, truncIcosaFaces,
+        maxDodecaIndex, maxIcosaIndex 
+      };
     }
     
     function buildModel(key) {

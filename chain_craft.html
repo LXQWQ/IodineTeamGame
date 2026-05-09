@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>碳链工坊 · 3D分子工坊 | 有机合成策略</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🧪</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border: #cbd5e1;
+            --accent: #2c7a4c;
+            --accent-light: #4c9a6e;
+            --accent-bg: #e6f3ec;
+            --danger: #c23b22;
+            --warning: #e67e22;
+            --info: #3b82f6;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        body.dark {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+            --accent-bg: #1e3a2e;
+        }
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            padding: 1rem;
+            transition: background 0.2s;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--accent);
+        }
+        h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--accent), #5a9ac0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .theme-btn {
+            background: var(--accent-bg);
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            color: var(--accent);
+        }
+        .game-layout {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .molecule-card {
+            flex: 1.2;
+            min-width: 320px;
+            background: var(--bg-card);
+            border-radius: 1.5rem;
+            border: 1px solid var(--border);
+            padding: 1.2rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+        .model-container {
+            width: 100%;
+            height: 320px;
+            background: var(--accent-bg);
+            border-radius: 1rem;
+            margin: 0.5rem 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .carbon-count {
+            font-size: 1.2rem;
+            text-align: center;
+            margin: 0.5rem 0;
+            font-weight: bold;
+        }
+        .reactant-panel {
+            flex: 2;
+            min-width: 400px;
+        }
+        .resources-panel {
+            flex: 1;
+            min-width: 260px;
+            background: var(--bg-card);
+            border-radius: 1.5rem;
+            border: 1px solid var(--border);
+            padding: 1.2rem;
+        }
+        .reaction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .reaction-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 0.8rem;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .reaction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+            border-color: var(--accent);
+        }
+        .reaction-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.3);
+        }
+        .reaction-name {
+            font-weight: bold;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+        .reaction-desc {
+            font-size: 0.75rem;
+            margin: 0.3rem 0;
+            color: var(--text-secondary);
+        }
+        .reaction-stats {
+            font-size: 0.7rem;
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .stat-badge {
+            background: var(--accent-bg);
+            padding: 0.1rem 0.4rem;
+            border-radius: 1rem;
+        }
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.8rem 0;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .turn-counter {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: var(--accent-bg);
+            border-radius: 2rem;
+        }
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .feedback {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: var(--accent-bg);
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        .victory { background: #2c7a4c; color: white; }
+        .defeat { background: #c23b22; color: white; }
+        .reset-btn, .buy-tech-btn {
+            background: var(--warning);
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+        .tech-btn {
+            background: var(--info);
+            margin-bottom: 0.5rem;
+        }
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        @media (max-width: 800px) {
+            .game-layout { flex-direction: column; }
+            .model-container { height: 260px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🧪 碳链工坊 · 3D分子工坊 | 有机合成策略</h1>
+        <button class="theme-btn" id="darkModeToggle">🌙 深色模式</button>
+    </header>
+    <div class="game-layout">
+        <div class="molecule-card">
+            <h3>🧬 当前分子 (3D 球棍模型)</h3>
+            <div id="modelContainer" class="model-container"></div>
+            <div class="carbon-count">📊 碳链长度: <span id="carbonCount">1</span> C</div>
+            <div id="moleculeDetail" style="font-size:0.8rem; text-align:center;">官能团: 烷烃</div>
+        </div>
+        <div class="reactant-panel">
+            <h3>⚗️ 可用的反应</h3>
+            <div class="reaction-grid" id="reactionGrid"></div>
+            <div class="feedback" id="feedbackMsg">选择反应，合理分配资源，在有限回合内达到目标碳数！</div>
+        </div>
+        <div class="resources-panel">
+            <h3>📦 实验室资源</h3>
+            <div class="resource-item"><span>⏱️ 剩余回合</span><span id="turnsLeft">15</span></div>
+            <div class="resource-item"><span>🧪 碳预算 (C)</span><span id="carbonBudget">30</span></div>
+            <div class="resource-item"><span>⚡ 镁 (Mg)</span><span id="magnesium">3</span></div>
+            <div class="resource-item"><span>🔷 铜催化剂 (CuI)</span><span id="copper">2</span></div>
+            <div class="resource-item"><span>⚙️ 钯催化剂 (Pd)</span><span id="palladium">1</span></div>
+            <div class="resource-item"><span>🔬 研究点数</span><span id="researchPoints">0</span></div>
+            <div class="turn-counter">🎯 目标碳链: <span id="targetCarbon">10</span> C</div>
+            <button id="techTreeBtn" class="tech-btn">📚 科技树升级</button>
+            <button id="resetGameBtn" class="reset-btn">🔄 重新开局</button>
+        </div>
+    </div>
+    <footer>⚛️ 原子经济 · 策略合成 | 副反应、产率波动、随机事件 | 3D 球棍模型展示真实烷烃构型</footer>
+</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // ---------- 游戏数据 (与之前完全一致) ----------
+    const REACTIONS = [
+        { id: "grignard", name: "格式反应 (Grignard)", desc: "卤代烃 + 羰基 → 醇 (+2C)", baseGain: 2, costTurn: 1, costMg: 1, costCu: 0, costPd: 0, minCarbon: 1, yieldBase: 0.9, sideEffectChance: 0.05, sideEffectDesc: "偶联副反应，碳链不变", requires: { mg: 1 }, tooltip: "消耗1镁，+2C，产率90%，5%副反应" },
+        { id: "aldol", name: "羟醛缩合 (Aldol)", desc: "醛/酮自身缩合 (碳链翻倍)", baseGain: "double", costTurn: 2, costMg: 0, costCu: 0, costPd: 0, minCarbon: 2, yieldBase: 0.85, sideEffectChance: 0.1, sideEffectDesc: "脱水不完全，碳链仅+1", requires: {}, tooltip: "耗时2回合，碳链翻倍，85%成功率，10%副反应" },
+        { id: "alkyne_coupling", name: "炔偶联 (Sonogashira)", desc: "末端炔烃偶联 (+2C)", baseGain: 2, costTurn: 1, costMg: 0, costCu: 1, costPd: 0, minCarbon: 2, yieldBase: 0.95, sideEffectChance: 0.05, sideEffectDesc: "自身偶联，碳链不变", requires: { cu: 1 }, tooltip: "消耗1铜，+2C，95%产率" },
+        { id: "diels_alder", name: "Diels-Alder", desc: "环加成 (+4C)", baseGain: 4, costTurn: 2, costMg: 0, costCu: 0, costPd: 0, minCarbon: 4, yieldBase: 0.9, sideEffectChance: 0.1, sideEffectDesc: "逆反应，碳链不变", requires: {}, tooltip: "耗时2回合，+4C，90%成功率" },
+        { id: "carbonylation", name: "羰基化", desc: "烯烃+CO (+1C)", baseGain: 1, costTurn: 1, costMg: 0, costCu: 0, costPd: 1, minCarbon: 2, yieldBase: 0.85, sideEffectChance: 0.1, sideEffectDesc: "CO中毒，无增长", requires: { pd: 1 }, tooltip: "消耗1钯，+1C" }
+    ];
+    const TECH_TREE = [
+        { id: "efficient_mg", name: "高效镁试剂", cost: 5, effect: "镁消耗减半", apply: () => { techMgEfficiency = true; } },
+        { id: "green_aldol", name: "绿色羟醛缩合", cost: 8, effect: "副产物自动分离，不消耗额外回合", apply: () => { techAldolGreen = true; } },
+        { id: "atomic_economy", name: "原子经济洞察", cost: 3, effect: "显示每个反应的确切碳转化率", apply: () => { techAtomicDisplay = true; } },
+        { id: "tandem_reaction", name: "串联反应", cost: 10, effect: "允许将两个连续反应合并执行（节约1回合）", apply: () => { techTandem = true; } }
+    ];
+    const EVENT_POOL = [
+        { name: "意外收获", effect: () => { researchPoints += 2; return "🔬 发现新反应路径，研究点 +2！"; }, weight: 20 },
+        { name: "试剂污染", effect: () => { magnesium = Math.max(0, magnesium - 1); copper = Math.max(0, copper - 1); return "🧪 试剂污染，镁和铜各 -1！"; }, weight: 15 },
+        { name: "灵感迸发", effect: () => { turnsLeft += 1; return "💡 灵感迸发，额外获得 1 回合！"; }, weight: 10 },
+        { name: "供应商折扣", effect: () => { magnesium += 2; copper += 1; return "💰 供应商折扣，镁 +2，铜 +1！"; }, weight: 15 },
+        { name: "安然无事", effect: () => { return "✨ 风平浪静，无事发生。"; }, weight: 40 }
+    ];
+
+    let currentCarbon = 1;
+    let turnsLeft = 15;
+    let carbonBudget = 30;
+    let magnesium = 3;
+    let copper = 2;
+    let palladium = 1;
+    let targetCarbon = 10;
+    let gameActive = true;
+    let gameWin = false;
+    let reactionCount = 0;
+    let researchPoints = 0;
+    let techMgEfficiency = false;
+    let techAldolGreen = false;
+    let techAtomicDisplay = false;
+    let techTandem = false;
+
+    // DOM 元素
+    const carbonCountSpan = document.getElementById('carbonCount');
+    const moleculeDetailSpan = document.getElementById('moleculeDetail');
+    const turnsLeftSpan = document.getElementById('turnsLeft');
+    const carbonBudgetSpan = document.getElementById('carbonBudget');
+    const magnesiumSpan = document.getElementById('magnesium');
+    const copperSpan = document.getElementById('copper');
+    const palladiumSpan = document.getElementById('palladium');
+    const researchPointsSpan = document.getElementById('researchPoints');
+    const targetCarbonSpan = document.getElementById('targetCarbon');
+    const reactionGrid = document.getElementById('reactionGrid');
+    const feedbackMsg = document.getElementById('feedbackMsg');
+    const resetBtn = document.getElementById('resetGameBtn');
+    const techTreeBtn = document.getElementById('techTreeBtn');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+
+    // 清理3D对象内存
+    function dispose3DObject(obj) {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+            if (Array.isArray(obj.material)) {
+                obj.material.forEach(material => material.dispose());
+            } else {
+                obj.material.dispose();
+            }
+        }
+    }
+    
+    function disposeGroup(group) {
+        if (group && group.children) {
+            while (group.children.length > 0) {
+                const child = group.children[0];
+                group.remove(child);
+                dispose3DObject(child);
+            }
+        }
+    }
+    
+    // 共享的碳原子位置计算函数
+    function calculateCarbonPositions(n) {
+        const positions = [];
+        const bondLength = 1.5;
+        const bondAngle = 109.5 * Math.PI / 180;
+        
+        for (let i = 0; i < n; i++) {
+            if (i === 0) {
+                positions.push({ x: 0, y: 0, z: 0 });
+            } else {
+                const prevPos = positions[i-1];
+                let x, y, z;
+                
+                if (i === 1) {
+                    x = prevPos.x + bondLength;
+                    y = 0;
+                    z = 0;
+                } else {
+                    const angle = (i % 2 === 0) ? bondAngle : -bondAngle;
+                    const dx = prevPos.x - positions[i-2].x;
+                    const dy = prevPos.y - positions[i-2].y;
+                    const prevAngle = Math.atan2(dy, dx);
+                    const newAngle = prevAngle + angle;
+                    
+                    x = prevPos.x + bondLength * Math.cos(newAngle);
+                    y = prevPos.y + bondLength * Math.sin(newAngle);
+                    z = 0;
+                }
+                
+                positions.push({ x, y, z });
+            }
+        }
+        return positions;
+    }
+    let scene, camera, renderer, labelRenderer, controls, currentModelGroup = null;
+    const container = document.getElementById('modelContainer');
+
+    function init3D() {
+        scene = new THREE.Scene();
+        updateSceneBackground();
+        camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(5, 4, 8);
+        camera.lookAt(0, 0, 0);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+        
+        labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(container.clientWidth, container.clientHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        container.appendChild(labelRenderer.domElement);
+        
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = false;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        
+        // 环境光 + 点光源
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(2, 5, 3);
+        scene.add(dirLight);
+        const backLight = new THREE.PointLight(0x88aaff, 0.5);
+        backLight.position.set(-2, 1, -3);
+        scene.add(backLight);
+        
+        // 辅助地面（半透明，仅为了视觉参考）
+        const gridHelper = new THREE.GridHelper(15, 20, 0x88aaff, 0x335588);
+        gridHelper.position.y = -1.5;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.3;
+        scene.add(gridHelper);
+        
+        window.addEventListener('resize', onWindowResize, false);
+        animate();
+    }
+    
+    function onWindowResize() {
+        if (!container) return;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+        labelRenderer.setSize(width, height);
+    }
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update(); // 更新轨道控制
+        renderer.render(scene, camera);
+        labelRenderer.render(scene, camera);
+    }
+    
+    // 根据碳原子数生成3D模型（烷烃，锯齿链，键角 ~109.5°）
+    function generateCarbonChain(n) {
+        if (currentModelGroup) {
+            scene.remove(currentModelGroup);
+            // 清理材质等
+            if (currentModelGroup.children) {
+                currentModelGroup.children.forEach(child => {
+                    if (child.isMesh) child.material.dispose();
+                });
+            }
+        }
+        const group = new THREE.Group();
+        if (n === 0) return group;
+        
+        // 原子半径和键半径
+        const atomRadius = 0.4;
+        const bondRadius = 0.08;
+        const carbonColor = 0x6c8c5e;
+        const hydrogenColor = 0xaaaaaa;
+        
+        // 计算碳原子位置: 正确的锯齿链，键角109.5°，键长1.54Å (缩放为1.5单位)
+        const positions = calculateCarbonPositions(n);
+        
+        // 添加碳原子球体
+        for (let i = 0; i < n; i++) {
+            const pos = positions[i];
+            const geometry = new THREE.SphereGeometry(atomRadius, 32, 32);
+            const material = new THREE.MeshStandardMaterial({ color: carbonColor, roughness: 0.3, metalness: 0.1 });
+            const sphere = new THREE.Mesh(geometry, material);
+            sphere.position.set(pos.x, pos.y, pos.z);
+            group.add(sphere);
+            
+            // 添加CSS2D文字标签 "C"
+            const div = document.createElement('div');
+            div.textContent = 'C';
+            div.style.color = '#fff';
+            div.style.fontSize = '18px';
+            div.style.fontWeight = 'bold';
+            div.style.textShadow = '1px 1px 0 #000';
+            div.style.background = 'rgba(0,0,0,0.5)';
+            div.style.padding = '2px 4px';
+            div.style.borderRadius = '12px';
+            const label = new CSS2DObject(div);
+            label.position.set(pos.x, pos.y + 0.5, pos.z);
+            group.add(label);
+        }
+        // 添加碳-碳键 (圆柱体)
+        for (let i = 0; i < n-1; i++) {
+            const p1 = positions[i];
+            const p2 = positions[i+1];
+            const start = new THREE.Vector3(p1.x, p1.y, p1.z);
+            const end = new THREE.Vector3(p2.x, p2.y, p2.z);
+            const direction = new THREE.Vector3().subVectors(end, start);
+            const length = direction.length();
+            const center = start.clone().add(end).multiplyScalar(0.5);
+            const cylinder = new THREE.Mesh(
+                new THREE.CylinderGeometry(bondRadius, bondRadius, length, 8),
+                new THREE.MeshStandardMaterial({ color: 0xccccaa, roughness: 0.4 })
+            );
+            cylinder.position.copy(center);
+            cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), direction.clone().normalize());
+            group.add(cylinder);
+        }
+        // 添加氢原子 (正确的四面体几何构型)
+        for (let i = 0; i < n; i++) {
+            const pos = positions[i];
+            const hGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+            const hMaterial = new THREE.MeshStandardMaterial({ color: hydrogenColor });
+            
+            // 计算氢原子的四面体位置
+            let hPositions = [];
+            
+            if (i === 0 && n === 1) {
+                // 甲烷：4个氢原子呈正四面体
+                const hDistance = 0.7;
+                const tetrahedralPositions = [
+                    { x: hDistance, y: 0, z: 0 },
+                    { x: -hDistance/3, y: hDistance * Math.sqrt(8)/3, z: 0 },
+                    { x: -hDistance/3, y: -hDistance * Math.sqrt(2)/3, z: hDistance * Math.sqrt(6)/3 },
+                    { x: -hDistance/3, y: -hDistance * Math.sqrt(2)/3, z: -hDistance * Math.sqrt(6)/3 }
+                ];
+                hPositions = tetrahedralPositions.map(p => ({
+                    x: pos.x + p.x,
+                    y: pos.y + p.y, 
+                    z: pos.z + p.z
+                }));
+            } else {
+                // 链状烷烃：每个碳的氢原子数
+                const hCount = (i === 0 || i === n-1) ? 3 : 2;
+                
+                if (i === 0) {
+                    // 第一个碳：3个氢原子
+                    const nextPos = positions[1];
+                    const bondDir = new THREE.Vector3(nextPos.x - pos.x, nextPos.y - pos.y, nextPos.z - pos.z).normalize();
+                    
+                    // 创建垂直于键方向的向量
+                    let perpDir1 = new THREE.Vector3(-bondDir.y, bondDir.x, 0);
+                    if (perpDir1.length() < 0.001) {
+                        perpDir1 = new THREE.Vector3(0, -bondDir.z, bondDir.y);
+                    }
+                    perpDir1.normalize();
+                    
+                    const perpDir2 = new THREE.Vector3().crossVectors(bondDir, perpDir1).normalize();
+                    
+                    hPositions = [
+                        { x: pos.x - bondDir.x * 0.7 + perpDir1.x * 0.5, y: pos.y - bondDir.y * 0.7 + perpDir1.y * 0.5, z: pos.z - bondDir.z * 0.7 + perpDir1.z * 0.5 },
+                        { x: pos.x - bondDir.x * 0.7 - perpDir1.x * 0.5, y: pos.y - bondDir.y * 0.7 - perpDir1.y * 0.5, z: pos.z - bondDir.z * 0.7 - perpDir1.z * 0.5 },
+                        { x: pos.x - bondDir.x * 0.7 + perpDir2.x * 0.5, y: pos.y - bondDir.y * 0.7 + perpDir2.y * 0.5, z: pos.z - bondDir.z * 0.7 + perpDir2.z * 0.5 }
+                    ];
+                } else if (i === n-1) {
+                    // 最后一个碳：3个氢原子
+                    const prevPos = positions[i-1];
+                    const bondDir = new THREE.Vector3(prevPos.x - pos.x, prevPos.y - pos.y, prevPos.z - pos.z).normalize();
+                    
+                    // 创建垂直于键方向的向量
+                    let perpDir1 = new THREE.Vector3(-bondDir.y, bondDir.x, 0);
+                    if (perpDir1.length() < 0.001) {
+                        perpDir1 = new THREE.Vector3(0, -bondDir.z, bondDir.y);
+                    }
+                    perpDir1.normalize();
+                    
+                    const perpDir2 = new THREE.Vector3().crossVectors(bondDir, perpDir1).normalize();
+                    
+                    hPositions = [
+                        { x: pos.x - bondDir.x * 0.7 + perpDir1.x * 0.5, y: pos.y - bondDir.y * 0.7 + perpDir1.y * 0.5, z: pos.z - bondDir.z * 0.7 + perpDir1.z * 0.5 },
+                        { x: pos.x - bondDir.x * 0.7 - perpDir1.x * 0.5, y: pos.y - bondDir.y * 0.7 - perpDir1.y * 0.5, z: pos.z - bondDir.z * 0.7 - perpDir1.z * 0.5 },
+                        { x: pos.x - bondDir.x * 0.7 + perpDir2.x * 0.5, y: pos.y - bondDir.y * 0.7 + perpDir2.y * 0.5, z: pos.z - bondDir.z * 0.7 + perpDir2.z * 0.5 }
+                    ];
+                } else {
+                    // 中间碳：2个氢原子 - 使用真正的四面体几何
+                    const prevPos = positions[i-1];
+                    const nextPos = positions[i+1];
+                    const bondDir1 = new THREE.Vector3(prevPos.x - pos.x, prevPos.y - pos.y, prevPos.z - pos.z).normalize();
+                    const bondDir2 = new THREE.Vector3(nextPos.x - pos.x, nextPos.y - pos.y, nextPos.z - pos.z).normalize();
+                    const avgDir = new THREE.Vector3().addVectors(bondDir1, bondDir2).normalize();
+                    
+                    // 创建两个垂直向量用于氢原子定位
+                    let perpDir1 = new THREE.Vector3(-avgDir.y, avgDir.x, 0);
+                    if (perpDir1.length() < 0.001) {
+                        perpDir1 = new THREE.Vector3(0, -avgDir.z, avgDir.y);
+                    }
+                    perpDir1.normalize();
+                    
+                    const perpDir2 = new THREE.Vector3().crossVectors(avgDir, perpDir1).normalize();
+                    
+                    hPositions = [
+                        { x: pos.x + perpDir1.x * 0.7, y: pos.y + perpDir1.y * 0.7, z: pos.z + perpDir1.z * 0.7 },
+                        { x: pos.x + perpDir2.x * 0.7, y: pos.y + perpDir2.y * 0.7, z: pos.z + perpDir2.z * 0.7 }
+                    ];
+                }
+            }
+            
+            // 创建氢原子 - 添加安全检查
+            for (let hPos of hPositions) {
+                if (hPos && typeof hPos.x === 'number' && typeof hPos.y === 'number' && typeof hPos.z === 'number' &&
+                    !isNaN(hPos.x) && !isNaN(hPos.y) && !isNaN(hPos.z)) {
+                    const hSphere = new THREE.Mesh(hGeometry, hMaterial);
+                    hSphere.position.set(hPos.x, hPos.y, hPos.z);
+                    group.add(hSphere);
+                }
+            }
+        }
+        return group;
+    }
+    
+    function update3DModel() {
+        if (!scene) return;
+        const newGroup = generateCarbonChain(currentCarbon);
+        
+        // 清理旧模型
+        if (currentModelGroup) {
+            scene.remove(currentModelGroup);
+            disposeGroup(currentModelGroup);
+        }
+        
+        currentModelGroup = newGroup;
+        scene.add(currentModelGroup);
+        
+        // 调整相机视口适应分子大小 - 包括氢原子
+        if (currentCarbon > 1) {
+            // 计算所有原子位置（包括氢原子）的边界框
+            const positions = calculateCarbonPositions(currentCarbon);
+            let allPositions = [...positions];
+            
+            // 估算氢原子位置用于边界框计算
+            for (let i = 0; i < currentCarbon; i++) {
+                const pos = positions[i];
+                const hCount = (i === 0 && currentCarbon === 1) ? 4 : 
+                              (i === 0 || i === currentCarbon-1) ? 3 : 2;
+                
+                // 简化估算氢原子位置范围
+                for (let j = 0; j < hCount; j++) {
+                    allPositions.push({
+                        x: pos.x + (j % 2 === 0 ? 0.7 : -0.7),
+                        y: pos.y + (j % 3 === 0 ? 0.7 : -0.7),
+                        z: pos.z + (j % 2 === 0 ? 0.5 : -0.5)
+                    });
+                }
+            }
+            
+            // 计算边界框
+            const minX = Math.min(...allPositions.map(p => p.x));
+            const maxX = Math.max(...allPositions.map(p => p.x));
+            const minY = Math.min(...allPositions.map(p => p.y));
+            const maxY = Math.max(...allPositions.map(p => p.y));
+            const minZ = Math.min(...allPositions.map(p => p.z));
+            const maxZ = Math.max(...allPositions.map(p => p.z));
+            
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            const centerZ = (minZ + maxZ) / 2;
+            
+            const sizeX = maxX - minX;
+            const sizeY = maxY - minY;
+            const sizeZ = maxZ - minZ;
+            const maxSize = Math.max(sizeX, sizeY, sizeZ);
+            
+            // 调整相机距离和位置
+            const distance = Math.max(10, maxSize * 3);
+            camera.position.set(distance * 0.8, distance * 0.6, distance * 0.8);
+            camera.lookAt(centerX, centerY, centerZ);
+            controls.target.set(centerX, centerY, centerZ);
+            controls.update();
+        }
+    }
+    
+    // ---------- 游戏逻辑 (与之前相同) ----------
+    function updateResourceUI() {
+        turnsLeftSpan.innerText = turnsLeft;
+        carbonBudgetSpan.innerText = carbonBudget;
+        magnesiumSpan.innerText = magnesium;
+        copperSpan.innerText = copper;
+        palladiumSpan.innerText = palladium;
+        researchPointsSpan.innerText = researchPoints;
+    }
+    
+    function showMessage(msg, isSuccess) {
+        feedbackMsg.innerHTML = msg;
+        if (!isSuccess) {
+            setTimeout(() => {
+                if (gameActive && !gameWin) feedbackMsg.innerHTML = "选择反应，规划路线。每3次反应触发随机事件。";
+                else updateUI();
+            }, 2500);
+        }
+    }
+    
+    function triggerRandomEvent() {
+        const totalWeight = EVENT_POOL.reduce((sum, e) => sum + e.weight, 0);
+        let rand = Math.random() * totalWeight;
+        let selected = EVENT_POOL[0];
+        for (let e of EVENT_POOL) {
+            if (rand < e.weight) { selected = e; break; }
+            rand -= e.weight;
+        }
+        const msg = selected.effect();
+        showMessage(`🎲 随机事件: ${msg}`, true);
+        updateResourceUI();
+    }
+    
+    async function performReaction(reaction, isTandem = false) {
+        if (!gameActive || gameWin) { showMessage("游戏已结束，请重新开局。", false); return false; }
+        let mgCost = reaction.costMg;
+        if (techMgEfficiency && reaction.id === "grignard") mgCost = Math.ceil(mgCost / 2);
+        if (mgCost > magnesium) { showMessage(`❌ 镁不足，需要 ${mgCost}`, false); return false; }
+        if (reaction.costCu > copper) { showMessage(`❌ 铜不足，需要 ${reaction.costCu}`, false); return false; }
+        if (reaction.costPd > palladium) { showMessage(`❌ 钯不足，需要 ${reaction.costPd}`, false); return false; }
+        
+        // 串联反应技术：节约1回合
+        let turnCost = reaction.costTurn;
+        if (isTandem && techTandem && turnCost > 1) {
+            turnCost = turnCost - 1;
+        }
+        
+        if (turnsLeft < turnCost) { showMessage(`❌ 回合不足，需要 ${turnCost}`, false); return false; }
+        if (currentCarbon < reaction.minCarbon) { showMessage(`❌ 碳链太短 (${currentCarbon}C)，需要至少 ${reaction.minCarbon}C`, false); return false; }
+        
+        magnesium -= mgCost;
+        copper -= reaction.costCu;
+        palladium -= reaction.costPd;
+        turnsLeft -= turnCost;
+        reactionCount++;
+        
+        let success = true;
+        let gain = reaction.baseGain;
+        let extraMsg = "";
+        const yieldRoll = Math.random();
+        if (yieldRoll > reaction.yieldBase) {
+            success = false;
+            extraMsg = " 产率不足，反应失败！";
+        } else {
+            const sideRoll = Math.random();
+            if (sideRoll < reaction.sideEffectChance) {
+                success = false;
+                extraMsg = ` 副反应：${reaction.sideEffectDesc}，碳链未增长！`;
+            }
+        }
+        let oldCarbon = currentCarbon;
+        if (success) {
+            if (reaction.id === "aldol") {
+                currentCarbon = currentCarbon * 2;
+                if (techAldolGreen) extraMsg += " (绿色羟醛缩合，无副产物)";
+            } else {
+                let add = (typeof gain === 'number') ? gain : 2;
+                currentCarbon += add;
+            }
+        } else {
+            // 处理副反应情况 - 羟醛缩合副反应只增加1个碳
+            if (reaction.id === "aldol" && extraMsg.includes("脱水不完全")) {
+                currentCarbon += 1;
+                extraMsg += " (实际增加1个碳)";
+            }
+        }
+        if (currentCarbon > carbonBudget) {
+            showMessage(`⚠️ 碳链超过预算 (${carbonBudget}C)，但游戏继续`, true);
+        }
+        if (success) researchPoints++;
+        
+        let msg = `${success ? '✅' : '❌'} ${reaction.name}！碳链 ${oldCarbon} → ${currentCarbon} (${success ? '+' + (currentCarbon-oldCarbon) : '0'})。${extraMsg}`;
+        showMessage(msg, success);
+        
+        if (reactionCount % 3 === 0 && gameActive && !gameWin) {
+            triggerRandomEvent();
+        }
+        
+        updateResourceUI();
+        carbonCountSpan.innerText = currentCarbon;
+        moleculeDetailSpan.innerText = `官能团: ${currentCarbon >= 8 ? '长链烷烃' : '烷烃'}`;
+        update3DModel();  // 更新3D分子模型
+        
+        if (currentCarbon >= targetCarbon) {
+            gameActive = false;
+            gameWin = true;
+            const finalScore = calculateScore();
+            saveHighScore(finalScore);
+            showMessage(`🎉 胜利！碳链达到 ${currentCarbon}C！最终得分: ${finalScore} 🎉`, true);
+            updateUI(); return true;
+        }
+        if (turnsLeft <= 0) {
+            gameActive = false;
+            gameWin = false;
+            showMessage(`💀 回合耗尽，未达到目标碳数 ${targetCarbon}C。游戏失败。`, false);
+            updateUI(); return false;
+        }
+        updateUI();
+        return true;
+    }
+    
+    function calculateScore() {
+        let score = (currentCarbon / targetCarbon) * 100;
+        score -= (15 - turnsLeft) * 2;
+        score -= (3 - magnesium) * 5;
+        score -= (2 - copper) * 3;
+        score -= (1 - palladium) * 8;
+        score += researchPoints * 2;
+        return Math.max(0, Math.floor(score));
+    }
+    
+    function saveHighScore(score) {
+        let scores = JSON.parse(localStorage.getItem('carbon_highscores') || '[]');
+        scores.push({ score: score, date: new Date().toLocaleString(), carbon: currentCarbon });
+        scores.sort((a,b) => b.score - a.score);
+        scores = scores.slice(0, 8);
+        localStorage.setItem('carbon_highscores', JSON.stringify(scores));
+        displayHighScores();
+    }
+    
+    function displayHighScores() {
+        let scores = JSON.parse(localStorage.getItem('carbon_highscores') || '[]');
+        if (scores.length) {
+            let topText = "🏆 高分榜: " + scores.slice(0,3).map(s=>s.score).join(", ");
+            feedbackMsg.innerHTML = topText + "<br>" + (feedbackMsg.innerHTML.split("<br>")[1] || "");
+        }
+    }
+    
+    function openTechTree() {
+        let options = TECH_TREE.map(tech => {
+            let purchased = (tech.id === "efficient_mg" && techMgEfficiency) ||
+                           (tech.id === "green_aldol" && techAldolGreen) ||
+                           (tech.id === "atomic_economy" && techAtomicDisplay) ||
+                           (tech.id === "tandem_reaction" && techTandem);
+            return `${tech.name} (${tech.cost}点) - ${tech.effect} ${purchased ? '✅已解锁' : ''}`;
+        }).join("\n");
+        let choice = prompt("科技树升级（输入编号）:\n1. 高效镁试剂 (5)\n2. 绿色羟醛缩合 (8)\n3. 原子经济洞察 (3)\n4. 串联反应 (10)\n当前研究点: " + researchPoints);
+        if (choice === "1" && !techMgEfficiency && researchPoints >= 5) {
+            techMgEfficiency = true; researchPoints -= 5; showMessage("🔧 解锁：高效镁试剂（镁消耗减半）", true);
+        } else if (choice === "2" && !techAldolGreen && researchPoints >= 8) {
+            techAldolGreen = true; researchPoints -= 8; showMessage("🌿 解锁：绿色羟醛缩合", true);
+        } else if (choice === "3" && !techAtomicDisplay && researchPoints >= 3) {
+            techAtomicDisplay = true; researchPoints -= 3; showMessage("📊 解锁：原子经济洞察", true);
+        } else if (choice === "4" && !techTandem && researchPoints >= 10) {
+            techTandem = true; researchPoints -= 10; showMessage("⚙️ 解锁：串联反应", true);
+        } else { showMessage("无法解锁，研究点不足或已解锁", false); }
+        updateResourceUI();
+        renderReactions();
+    }
+    
+    function renderReactions() {
+        reactionGrid.innerHTML = '';
+        for (let r of REACTIONS) {
+            let disabled = (!gameActive || gameWin);
+            let mgCost = r.costMg;
+            if (techMgEfficiency && r.id === "grignard") mgCost = Math.ceil(mgCost / 2);
+            if (mgCost > magnesium) disabled = true;
+            if (r.costCu > copper) disabled = true;
+            if (r.costPd > palladium) disabled = true;
+            if (turnsLeft < r.costTurn) disabled = true;
+            if (currentCarbon < (r.minCarbon || 0)) disabled = true;
+            
+            const card = document.createElement('div');
+            card.className = `reaction-card ${disabled ? 'disabled' : ''}`;
+            let gainText = r.id === "aldol" ? "翻倍" : `+${r.baseGain}`;
+            let turnCost = r.costTurn;
+            if (techTandem && turnCost > 1) {
+                turnCost = turnCost - 1;
+            }
+            let turnText = techTandem && r.costTurn > 1 ? `${turnCost}(${r.costTurn-1})` : `${r.costTurn}`;
+            let yieldText = techAtomicDisplay ? ` 产率: ${r.yieldBase*100}%` : "";
+            
+            card.innerHTML = `
+                <div class="reaction-name">${r.name}</div>
+                <div class="reaction-desc">${r.desc}</div>
+                <div class="reaction-stats">
+                    <span class="stat-badge">📈 ${gainText}</span>
+                    <span class="stat-badge">⏱️ ${turnText}回合</span>
+                    ${mgCost ? `<span class="stat-badge">⚡ Mg x${mgCost}</span>` : ''}
+                    ${r.costCu ? `<span class="stat-badge">🔷 Cu x${r.costCu}</span>` : ''}
+                    ${r.costPd ? `<span class="stat-badge">⚙️ Pd x${r.costPd}</span>` : ''}
+                    ${yieldText}
+                    ${techTandem && r.costTurn > 1 ? `<span class="stat-badge">⚡ 串联</span>` : ''}
+                </div>
+            `;
+            if (!disabled) card.addEventListener('click', () => performReaction(r, techTandem && r.costTurn > 1));
+            reactionGrid.appendChild(card);
+        }
+    }
+    
+    function updateUI() {
+        carbonCountSpan.innerText = currentCarbon;
+        updateResourceUI();
+        renderReactions();
+        if (gameWin) feedbackMsg.innerHTML = "🎉 胜利！点击重新开局继续挑战。";
+        else if (!gameActive && !gameWin) feedbackMsg.innerHTML = "💀 失败！点击重新开局继续挑战。";
+    }
+    
+    function resetGame() {
+        currentCarbon = 1;
+        turnsLeft = 15;
+        carbonBudget = 30;
+        magnesium = 3;
+        copper = 2;
+        palladium = 1;
+        targetCarbon = 10;
+        researchPoints = 0;
+        gameActive = true;
+        gameWin = false;
+        reactionCount = 0;
+        techMgEfficiency = false;
+        techAldolGreen = false;
+        techAtomicDisplay = false;
+        techTandem = false;
+        updateUI();
+        update3DModel();
+        showMessage("✨ 游戏已重置！从甲烷开始，合理规划合成路线。", true);
+        displayHighScores();
+    }
+    
+    function updateSceneBackground() {
+        if (!scene) return;
+        const isDark = document.body.classList.contains('dark');
+        scene.background = new THREE.Color(isDark ? 0x0f172a : 0xf5f7fb);
+    }
+    
+    function initTheme() {
+        const isDark = localStorage.getItem('carbon_theme') === 'dark';
+        if (isDark) document.body.classList.add('dark');
+        darkModeToggle.innerText = isDark ? '☀️ 浅色模式' : '🌙 深色模式';
+        darkModeToggle.onclick = () => {
+            document.body.classList.toggle('dark');
+            const darkNow = document.body.classList.contains('dark');
+            localStorage.setItem('carbon_theme', darkNow ? 'dark' : 'light');
+            darkModeToggle.innerText = darkNow ? '☀️ 浅色模式' : '🌙 深色模式';
+            updateSceneBackground(); // 更新3D场景背景
+        };
+    }
+    
+    // 初始化3D和游戏
+    function init() {
+        initTheme();
+        init3D();
+        resetGame();
+        resetBtn.addEventListener('click', resetGame);
+        techTreeBtn.addEventListener('click', openTechTree);
+        displayHighScores();
+    }
+    
+    init();
+</script>
+</body>
+</html>
