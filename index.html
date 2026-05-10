@@ -181,12 +181,12 @@
             initial-value: 0%;
         }
         body.dark{--bg-primary:#0f172a;--bg-card:#1e293b;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--border:#334155;--accent:#7b4fb8;--accent-light:#c46b8b;--accent-bg:#2a1f35;--accent-starch:#2a4d7a;--crystal-dark:#5c5c6e;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.3);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.4);--header-gradient:linear-gradient(135deg,#0d0620 0%,#3a1a5c 40%,#6b1e3d 100%);--modal-bg:#1e293b}
-        body{background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;transition:background 0.6s cubic-bezier(.45,.05,.19,1.2),color 0.6s ease;line-height:1.5}
+        body{background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;transition:background 0.8s cubic-bezier(.45,.05,.19,1.2),color 0.8s ease,line-height 1.5}
         .container{max-width:1280px;margin:0 auto;padding:2rem 1.5rem}
-        .navbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:3rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+        .navbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:3rem;padding-bottom:1rem;border-bottom:1px solid var(--border);transition:border-color 0.8s ease}
         .logo{font-size:1.8rem;font-weight:800;background:var(--header-gradient);background-clip:text;-webkit-background-clip:text;color:transparent;letter-spacing:-0.5px}
         .nav-right{display:flex;align-items:center;gap:1rem}
-        .theme-toggle,.auth-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;font-weight:500;color:var(--accent);transition:all .2s;position:relative;overflow:hidden}
+        .theme-toggle,.auth-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;font-weight:500;color:var(--accent);transition:all .3s cubic-bezier(.45,.05,.19,1.2);position:relative;overflow:hidden}
         .theme-toggle::before,.auth-btn::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:var(--accent);border-radius:50%;transform:translate(-50%,-50%);transition:width 0.4s ease,height 0.4s ease}
         .theme-toggle:hover::before,.auth-btn:hover::before{width:100%;height:100%}
         .theme-toggle:hover,.auth-btn:hover{background:var(--accent);color:#fff;z-index:1}
@@ -200,12 +200,23 @@
         .theme-toggle, .auth-btn, .play-btn, .feedback-btn {
             transition: background 0.3s ease;
         }
-        .user-info{display:flex;align-items:center;gap:.8rem;background:var(--accent-bg);padding:.4rem 1rem;border-radius:40px}
+        .user-info{display:flex;align-items:center;gap:.8rem;background:var(--accent-bg);padding:.4rem 1rem;border-radius:40px;transition:background 0.8s ease}
         .user-name{font-weight:600;color:var(--accent)}
         .logout-btn{background:0 0;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8rem}
         .logout-btn:hover{color:var(--accent)}
-        .hero{background:var(--header-gradient);border-radius:2rem;padding:2.5rem 2rem;margin-bottom:3rem;color:#fff;box-shadow:var(--shadow-md);position:relative;overflow:hidden}
+        .hero{background:var(--header-gradient);border-radius:2rem;padding:2.5rem 2rem;margin-bottom:3rem;color:#fff;box-shadow:var(--shadow-md);position:relative;overflow:hidden;transition:background 0.8s cubic-bezier(.45,.05,.19,1.2),box-shadow 0.8s ease}
         .hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.4) var(--reveal, 0%),transparent var(--reveal, 0%));-webkit-mask-image:linear-gradient(to right,transparent 0%,black var(--reveal, 0%));mask-image:linear-gradient(to right,transparent 0%,black var(--reveal, 0%));animation:vapor-deposition 2s cubic-bezier(.65,.05,.36,1) forwards;z-index:1}
+        
+        /* 蒸镀动画控制 */
+        .hero.vapor-animation-active:not(.tsukuyomi-hero)::before {
+            animation: vapor-deposition 2s cubic-bezier(.65,.05,.36,1) forwards;
+        }
+        
+        /* 月读主题时禁用蒸镀效果 */
+        [data-theme="tsukuyomi"] .hero::before {
+            animation: none;
+            opacity: 0;
+        }
         .hero h1,.hero p,.hero .badge,.hero .feedback-btn{position:relative;z-index:2}
         .hero h1{font-size:2.5rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
         .hero p{font-size:1.1rem;opacity:.92;max-width:80%;margin-bottom:1.5rem}
@@ -213,7 +224,7 @@
         .feedback-btn{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent);padding:.7rem 1.5rem;border-radius:60px;font-weight:600;margin-top:.5rem;cursor:pointer;transition:transform .1s,background .3s,color .3s,border-color .3s;display:inline-flex;align-items:center;gap:.5rem}
         .section-title{font-size:1.8rem;font-weight:700;margin:2rem 0 1.5rem;border-left:5px solid var(--accent);padding-left:1rem}
         .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2rem;margin-bottom:3rem}
-        .game-card{background:var(--bg-card);border-radius:1.5rem;overflow:hidden;box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,0.6);border:1px solid var(--border);transition:transform .2s,box-shadow .2s;position:relative}
+        .game-card{background:var(--bg-card);border-radius:1.5rem;overflow:hidden;box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,0.6);border:1px solid var(--border);transition:background 0.8s cubic-bezier(.45,.05,.19,1.2),transform .3s cubic-bezier(.45,.05,.19,1.2),box-shadow .3s ease,border-color 0.8s ease;position:relative}
         .game-card::before{content:'';position:absolute;inset:-4px;border-radius:calc(1.5rem + 4px);background:conic-gradient(from 0deg,transparent,var(--accent-light) 15deg,transparent 30deg,var(--accent-light) 180deg,transparent 210deg,var(--accent-light) 345deg,transparent 360deg);opacity:0;transition:opacity 0.3s ease;z-index:-1;filter:blur(6px)}
         .game-card:hover::before{opacity:0.6;animation:orbital-rotation 3s linear infinite}
         @keyframes orbital-rotation{to{transform:rotate(360deg)}}
@@ -255,9 +266,9 @@
         .play-btn{background:var(--accent);color:#fff;border:none;padding:.5rem 1.2rem;border-radius:40px;font-weight:500;cursor:pointer;width:100%}
         .play-btn:hover{background:var(--accent-light)}
         .footnote{text-align:center;font-size:.75rem;color:var(--text-secondary);margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)}
-        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:1000}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:1000;transition:background 0.3s ease}
         .modal.active{display:flex}
-        .modal-content{background:var(--modal-bg);border-radius:2rem;padding:2rem;width:90%;max-width:450px;box-shadow:var(--shadow-md);border:1px solid var(--border)}
+        .modal-content{background:var(--modal-bg);border-radius:2rem;padding:2rem;width:90%;max-width:450px;box-shadow:var(--shadow-md);border:1px solid var(--border);transition:background 0.8s cubic-bezier(.45,.05,.19,1.2),border-color 0.8s ease,box-shadow 0.8s ease}
         .modal-content h3{margin-bottom:1.5rem}
         .modal-content input{width:100%;padding:.7rem;margin-bottom:1rem;border-radius:1rem;border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary)}
         .modal-buttons{display:flex;gap:1rem;justify-content:flex-end}
@@ -1115,6 +1126,27 @@
             opacity: 1;
         }
         
+        /* 月读主题分子消失动画 */
+        [data-theme="tsukuyomi"] #moleculeCanvas {
+            opacity: 1;
+            animation: molecule-fade-out 2s ease-in-out forwards;
+        }
+        
+        @keyframes molecule-fade-out {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.6);
+            }
+        }
+        
         body.loaded .hero .badge {
             animation: crystallization-fade-in 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.6s forwards;
             opacity: 1;
@@ -1359,6 +1391,433 @@
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
         
+        /* 月读主题霓虹云朵特效 */
+        [data-theme="tsukuyomi"] .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                url('effects/deco_neon-cloud1.png'),
+                url('effects/deco_neon-cloud2.png'),
+                url('effects/deco_neon-fish.png'),
+                url('effects/deco_neon-octopus.png');
+            background-position: 
+                10% 20%,
+                85% 30%,
+                15% 70%,
+                80% 80%;
+            background-repeat: no-repeat;
+            background-size: 
+                150px auto,
+                120px auto,
+                80px auto,
+                100px auto;
+            opacity: 0.15;
+            animation: neon-cloud-float 20s ease-in-out infinite;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        [data-theme="tsukuyomi"] .hero::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(224, 64, 144, 0.1) var(--reveal, 0%), transparent var(--reveal, 0%));
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        @keyframes neon-cloud-float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.15;
+            }
+            25% {
+                transform: translateY(-10px) rotate(1deg);
+                opacity: 0.2;
+            }
+            50% {
+                transform: translateY(5px) rotate(-1deg);
+                opacity: 0.18;
+            }
+            75% {
+                transform: translateY(-5px) rotate(0.5deg);
+                opacity: 0.22;
+            }
+        }
+        
+        /* 月读主题装饰元素 */
+        [data-theme="tsukuyomi"] .tsukuyomi-decoration {
+            position: absolute;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards;
+        }
+        
+        /* 月读装饰元素入场动画 */
+        @keyframes decoration-fade-in {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) translateY(20px);
+            }
+            40% {
+                opacity: 0;
+                transform: scale(0.7) translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        
+        [data-theme="tsukuyomi"] .neon-fish {
+            top: 15%;
+            right: 10%;
+            width: 80px;
+            height: 60px;
+            background-image: url('effects/deco_neon-fish.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards 0.8s, fish-swim 15s ease-in-out infinite 2.5s;
+        }
+        
+        [data-theme="tsukuyomi"] .neon-octopus {
+            bottom: 20%;
+            left: 8%;
+            width: 100px;
+            height: 80px;
+            background-image: url('effects/deco_neon-octopus.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards 1.2s, octopus-float 18s ease-in-out infinite 1.2s;
+        }
+        
+        [data-theme="tsukuyomi"] .neon-cloud-top {
+            top: 5%;
+            left: 20%;
+            width: 150px;
+            height: 80px;
+            background-image: url('effects/deco_neon-cloud1.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards 1.5s, cloud-drift 25s ease-in-out infinite 1.5s;
+        }
+        
+        [data-theme="tsukuyomi"] .neon-cloud-bottom {
+            bottom: 10%;
+            right: 15%;
+            width: 120px;
+            height: 60px;
+            background-image: url('effects/deco_neon-cloud2.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards 1.8s, cloud-drift-reverse 22s ease-in-out infinite 1.8s;
+        }
+        
+        /* 月读主题光效 */
+        [data-theme="tsukuyomi"] .tsukuyomi-light {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 150%;
+            height: 150%;
+            background-image: url('effects/introduction_light.png');
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            animation: light-entrance 3s ease-out forwards, light-pulse 8s ease-in-out infinite 3s;
+            mix-blend-mode: screen;
+            z-index: 2;
+            pointer-events: none;
+            transform-origin: center center;
+        }
+        
+        /* 月读主题光效入场动画 - 从下往上缓缓显现 */
+        @keyframes light-entrance {
+            0% {
+                opacity: 0;
+                transform: translateY(50px) scale(1.2);
+            }
+            30% {
+                opacity: 0.3;
+                transform: translateY(25px) scale(1.1);
+            }
+            60% {
+                opacity: 0.5;
+                transform: translateY(10px) scale(1.05);
+            }
+            100% {
+                opacity: 0.2;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* 月读主题镜球 - CSS精灵动画（辉夜姬官网方式） */
+        [data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+            position: relative;
+            width: 50px; /* nav-right中适当缩小 */
+            height: 50px;
+            background-image: url('effects/mirrorball.jpg');
+            background-repeat: no-repeat;
+            /* mirrorball.jpg是9帧水平排列的精灵图 */
+            background-size: auto 100%; /* 宽度自动，高度100% */
+            background-position: 0% 0%;
+            opacity: 0;
+            animation: 
+                mirrorball 1s steps(9) infinite,
+                mirrorball-float-navbar 4s ease-in-out infinite;
+            z-index: 10;
+            pointer-events: none;
+            filter: drop-shadow(0 0 12px rgba(224, 64, 144, 0.5));
+            margin-right: 1rem; /* 与主题切换按钮保持间距 */
+        }
+        
+        /* 月读主题切换时的镜球入场动画 */
+        body[data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+            animation: 
+                mirrorball-entrance 2s ease-out forwards 0.5s,
+                mirrorball 1s steps(9) infinite 1.5s,
+                mirrorball-float-navbar 4s ease-in-out infinite 1.5s;
+        }
+        
+        @keyframes mirrorball-entrance {
+            0% {
+                opacity: 0;
+                transform: scale(0) translateY(20px);
+                filter: drop-shadow(0 0 30px rgba(224, 64, 144, 0));
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1) translateY(-5px);
+                filter: drop-shadow(0 0 40px rgba(224, 64, 144, 0.8));
+            }
+            100% {
+                opacity: 0.9;
+                transform: scale(1) translateY(0);
+                filter: drop-shadow(0 0 12px rgba(224, 64, 144, 0.5));
+            }
+        }
+        
+        /* 导航栏镜球浮动动画 - 更轻柔 */
+        @keyframes mirrorball-float-navbar {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 12px rgba(224, 64, 144, 0.5));
+            }
+            25% {
+                transform: translateY(-3px) scale(1.05);
+                filter: drop-shadow(0 0 16px rgba(224, 64, 144, 0.7));
+            }
+            50% {
+                transform: translateY(2px) scale(0.95);
+                filter: drop-shadow(0 0 10px rgba(0, 184, 212, 0.4));
+            }
+            75% {
+                transform: translateY(-1px) scale(1.02);
+                filter: drop-shadow(0 0 14px rgba(255, 183, 77, 0.6));
+            }
+        }
+        
+        /* 月读主题镜球响应式设计 */
+        @media (max-width: 768px) {
+            [data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+                width: 45px;
+                height: 45px;
+                filter: drop-shadow(0 0 10px rgba(224, 64, 144, 0.5));
+            }
+        }
+        
+        @media (max-width: 680px) {
+            [data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+                width: 40px;
+                height: 40px;
+                filter: drop-shadow(0 0 8px rgba(224, 64, 144, 0.5));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            [data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+                width: 35px;
+                height: 35px;
+                filter: drop-shadow(0 0 6px rgba(224, 64, 144, 0.5));
+            }
+        }
+        
+        /* 镜球精灵动画 - 辉夜姬官网实现 */
+        @keyframes mirrorball {
+            0% {
+                background-position: 0% 0%;
+            }
+            100% {
+                background-position: 100% 0%;
+            }
+        }
+        
+        /* 月读主题聚光灯效果 */
+        [data-theme="tsukuyomi"] .tsukuyomi-spotlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 85% 15%, rgba(255, 255, 255, 0.15) 0%, transparent 30%),
+                radial-gradient(ellipse at 15% 85%, rgba(0, 184, 212, 0.1) 0%, transparent 25%);
+            opacity: 0;
+            animation: spotlight-entrance 3s ease-out forwards, spotlight-sweep 12s ease-in-out infinite 3s;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        /* 月读主题聚光灯入场动画 */
+        @keyframes spotlight-entrance {
+            0% {
+                opacity: 0;
+                background: 
+                    radial-gradient(ellipse at 50% 120%, rgba(255, 255, 255, 0) 0%, transparent 40%),
+                    radial-gradient(ellipse at 50% 120%, rgba(0, 184, 212, 0) 0%, transparent 35%);
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 0.6;
+                background: 
+                    radial-gradient(ellipse at 70% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 32%),
+                    radial-gradient(ellipse at 30% 60%, rgba(0, 184, 212, 0.08) 0%, transparent 28%);
+                transform: scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                background: 
+                    radial-gradient(ellipse at 85% 15%, rgba(255, 255, 255, 0.15) 0%, transparent 30%),
+                    radial-gradient(ellipse at 15% 85%, rgba(0, 184, 212, 0.1) 0%, transparent 25%);
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes fish-swim {
+            0%, 100% {
+                transform: translateX(0) translateY(0) rotate(0deg);
+                opacity: 0.6;
+            }
+            25% {
+                transform: translateX(-20px) translateY(-10px) rotate(-5deg);
+                opacity: 0.7;
+            }
+            50% {
+                transform: translateX(10px) translateY(5px) rotate(3deg);
+                opacity: 0.5;
+            }
+            75% {
+                transform: translateX(-10px) translateY(-5px) rotate(-2deg);
+                opacity: 0.8;
+            }
+        }
+        
+        @keyframes octopus-float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg) scale(1);
+                opacity: 0.5;
+            }
+            33% {
+                transform: translateY(-15px) rotate(5deg) scale(1.05);
+                opacity: 0.6;
+            }
+            66% {
+                transform: translateY(10px) rotate(-3deg) scale(0.95);
+                opacity: 0.4;
+            }
+        }
+        
+        @keyframes cloud-drift {
+            0%, 100% {
+                transform: translateX(0) translateY(0);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateX(30px) translateY(-10px);
+                opacity: 0.5;
+            }
+        }
+        
+        @keyframes cloud-drift-reverse {
+            0%, 100% {
+                transform: translateX(0) translateY(0);
+                opacity: 0.35;
+            }
+            50% {
+                transform: translateX(-25px) translateY(-8px);
+                opacity: 0.45;
+            }
+        }
+        
+        @keyframes light-pulse {
+            0%, 100% {
+                opacity: 0.15;
+                transform: scale(1);
+            }
+            25% {
+                opacity: 0.25;
+                transform: scale(1.02);
+            }
+            50% {
+                opacity: 0.2;
+                transform: scale(1.01);
+            }
+            75% {
+                opacity: 0.3;
+                transform: scale(1.03);
+            }
+        }
+        
+        @keyframes mirrorball-float {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 20px rgba(224, 64, 144, 0.4));
+            }
+            25% {
+                transform: translateY(-8px) scale(1.05);
+                filter: drop-shadow(0 0 30px rgba(224, 64, 144, 0.6));
+            }
+            50% {
+                transform: translateY(5px) scale(0.95);
+                filter: drop-shadow(0 0 15px rgba(0, 184, 212, 0.4));
+            }
+            75% {
+                transform: translateY(-3px) scale(1.02);
+                filter: drop-shadow(0 0 25px rgba(255, 183, 77, 0.5));
+            }
+        }
+        
+        @keyframes spotlight-sweep {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            25% {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+            50% {
+                opacity: 0.2;
+                transform: scale(0.95);
+            }
+            75% {
+                opacity: 0.4;
+                transform: scale(1.05);
+            }
+        }
+        
         [data-theme="tsukuyomi"] .tsukuyomi-pillar {
             display: block;
         }
@@ -1444,6 +1903,126 @@
             background: var(--tsuki-accent-cyan);
         }
         
+        /* 月读主题增强特效 */
+        [data-theme="tsukuyomi"] .container {
+            position: relative;
+        }
+        
+        [data-theme="tsukuyomi"] .container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(224, 64, 144, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 184, 212, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 183, 77, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+            animation: tsukuyomi-ambient-pulse 15s ease-in-out infinite;
+        }
+        
+        @keyframes tsukuyomi-ambient-pulse {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.05);
+            }
+        }
+        
+        /* 月读主题游戏卡片增强 */
+        [data-theme="tsukuyomi"] .game-card {
+            backdrop-filter: blur(12px);
+            background: linear-gradient(135deg, 
+                rgba(38, 43, 61, 0.9) 0%, 
+                rgba(30, 34, 53, 0.8) 100%);
+            border: 1px solid rgba(224, 64, 144, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        [data-theme="tsukuyomi"] .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(224, 64, 144, 0.1) 50%, 
+                transparent 100%);
+            transition: left 0.6s ease;
+            z-index: 1;
+        }
+        
+        [data-theme="tsukuyomi"] .game-card:hover::before {
+            left: 100%;
+        }
+        
+        /* 月读主题按钮特效 */
+        [data-theme="tsukuyomi"] .play-btn,
+        [data-theme="tsukuyomi"] .theme-toggle-btn,
+        [data-theme="tsukuyomi"] .auth-btn,
+        [data-theme="tsukuyomi"] .feedback-btn {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--tsuki-accent), var(--tsuki-accent-cyan));
+            border: 1px solid rgba(224, 64, 144, 0.3);
+            box-shadow: 
+                0 0 20px rgba(224, 64, 144, 0.2),
+                inset 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="tsukuyomi"] .play-btn::before,
+        [data-theme="tsukuyomi"] .theme-toggle-btn::before,
+        [data-theme="tsukuyomi"] .auth-btn::before,
+        [data-theme="tsukuyomi"] .feedback-btn::before {
+            background: linear-gradient(135deg, var(--tsuki-accent-cyan), var(--tsuki-accent-gold));
+        }
+        
+        /* 月读主题徽章特效 */
+        [data-theme="tsukuyomi"] .badge {
+            background: linear-gradient(135deg, 
+                rgba(224, 64, 144, 0.2), 
+                rgba(0, 184, 212, 0.15));
+            border: 1px solid rgba(224, 64, 144, 0.3);
+            color: var(--tsuki-text);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        [data-theme="tsukuyomi"] .badge::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 183, 77, 0.3) 50%, 
+                transparent 100%);
+            animation: badge-shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes badge-shimmer {
+            0% {
+                left: -100%;
+            }
+            50% {
+                left: 100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+        
         /* 月读主题彩蛋文案 */
         .tsukuyomi-easter-egg {
             display: none;
@@ -1474,6 +2053,8 @@
     <div class="navbar">
         <div class="logo">🧪 碘队 · 化学游戏工坊 <span>| Iodine Studio</span></div>
         <div class="nav-right">
+            <!-- 月读主题镜球 - 放在nav-right第一个位置 -->
+            <div class="tsukuyomi-mirrorball" aria-hidden="true"></div>
             <div class="theme-selector">
                 <button class="theme-toggle-btn" id="themeSwitcher">
                     <span class="reagent-icon">🧪</span>
@@ -1526,6 +2107,16 @@
         <canvas id="moleculeCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1"></canvas>
         <div class="tsukuyomi-pillar" aria-hidden="true"></div>
         <div class="iodine-formula">[Kr] 4d¹⁰ 5s² 5p⁵</div>
+        
+        <!-- 月读主题专属装饰元素 -->
+        <div class="tsukuyomi-decoration neon-fish" aria-hidden="true"></div>
+        <div class="tsukuyomi-decoration neon-octopus" aria-hidden="true"></div>
+        <div class="tsukuyomi-decoration neon-cloud-top" aria-hidden="true"></div>
+        <div class="tsukuyomi-decoration neon-cloud-bottom" aria-hidden="true"></div>
+        
+        <!-- 月读主题光效 -->
+        <div class="tsukuyomi-light" aria-hidden="true"></div>
+        <div class="tsukuyomi-spotlight" aria-hidden="true"></div>
         <h1><span>⚗️</span> 碘队 AI 化学游戏季</h1>
         <p>🎮 致第一批「碘化玩家」</p>
         <p>欢迎来到碘队化学游戏工坊！这里的每一个游戏，都是由站长_Tsukuyomi仅用 Deepseek网页版 辅助创作的化学主题小游戏。它们充满创意、略显稚嫩，遇到 bug 还请多多包涵～</p>
@@ -1882,6 +2473,9 @@
                     updateThemeUI(theme);
                     localStorage.setItem('chemical-theme', theme);
                     themeDropdown.classList.remove('show');
+                    
+                    // 添加震荡波特效
+                    createShockwave(option, false);
                 });
             });
             
@@ -1897,6 +2491,35 @@
         function applyTheme(theme) {
             document.body.setAttribute('data-theme', theme);
             document.body.classList.remove('dark'); // 移除旧的dark class
+            
+            // 管理hero类
+            const hero = document.querySelector('.hero');
+            if (hero) {
+                hero.classList.remove('vapor-animation-active');
+                
+                // 如果不是月读主题，添加蒸镀动画类
+                if (theme !== 'tsukuyomi') {
+                    setTimeout(() => {
+                        hero.classList.add('vapor-animation-active');
+                    }, 50);
+                }
+            }
+        }
+        
+        function resetVaporDeposition() {
+            const hero = document.querySelector('.hero');
+            if (!hero) return;
+            
+            // 强制重置动画 - 使用更可靠的方法
+            hero.classList.remove('vapor-animation-active');
+            
+            // 触发重排
+            hero.offsetHeight;
+            
+            // 延迟重新添加类，确保CSS重新计算
+            setTimeout(() => {
+                hero.classList.add('vapor-animation-active');
+            }, 50);
         }
 
         function updateThemeUI(theme) {
@@ -2301,12 +2924,17 @@
                 const shockwave = document.createElement('div');
                 shockwave.className = 'shockwave';
                 
-                // 月读主题使用品红→青蓝渐变
+                // 根据主题设置震荡波颜色
                 const isTsukuyomi = document.body.getAttribute('data-theme') === 'tsukuyomi';
                 if (isTsukuyomi) {
-                    shockwave.style.background = 'radial-gradient(circle, var(--tsuki-accent) 0%, var(--tsuki-accent-cyan) 50%, transparent 70%)';
+                    // 月读主题：白光加偏彩光的震荡波
+                    shockwave.style.background = 'radial-gradient(circle, rgba(255,255,255,0.6) 0%, var(--tsuki-accent) 30%, var(--tsuki-accent-cyan) 60%, transparent 70%)';
                 } else if (isDanger) {
+                    // 危险操作：红光震荡波
                     shockwave.style.background = 'radial-gradient(circle, rgba(255,0,0,0.3) 0%, transparent 70%)';
+                } else {
+                    // 普通主题：白光震荡波
+                    shockwave.style.background = 'radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%)';
                 }
                 
                 button.appendChild(shockwave);
