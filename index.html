@@ -3062,10 +3062,10 @@
                 ]
             };
 
-            // 音乐播放器状态
-            let currentMusic = null;
-            let isPlaying = false;
-            let currentVolume = 0.5;
+            // 音乐播放器状态 - 从localStorage恢复
+            let currentMusic = localStorage.getItem('currentMusic') || null;
+            let isPlaying = localStorage.getItem('musicPlaying') === 'true';
+            let currentVolume = parseFloat(localStorage.getItem('musicVolume')) || 0.5;
             let audioElement = null;
             let fadeTimeout = null;
 
@@ -3082,6 +3082,19 @@
                 // 播放结束事件
                 audioElement.addEventListener('ended', () => {
                     playNextMusic();
+                });
+                
+                // 保存状态
+                audioElement.addEventListener('play', () => {
+                    isPlaying = true;
+                    localStorage.setItem('musicPlaying', 'true');
+                    updateMusicUI();
+                });
+                
+                audioElement.addEventListener('pause', () => {
+                    isPlaying = false;
+                    localStorage.setItem('musicPlaying', 'false');
+                    updateMusicUI();
                 });
             }
 
@@ -3128,8 +3141,8 @@
                 audioElement.src = `voice/${musicFile}`;
                 
                 audioElement.play().then(() => {
-                    isPlaying = true;
                     currentMusic = musicFile;
+                    localStorage.setItem('currentMusic', musicFile);
                     updateMusicUI();
                     smoothVolumeChange(currentVolume, 500);
                 }).catch(err => {
@@ -3161,6 +3174,7 @@
                     audioElement.currentTime = 0;
                     isPlaying = false;
                     currentMusic = null;
+                    localStorage.removeItem('currentMusic');
                     updateMusicUI();
                 }, 300);
             }
@@ -3287,8 +3301,14 @@
 
                 // 音量控制
                 if (musicVolume) {
+                    musicVolume.value = currentVolume * 100;
+                    if (volumeValue) {
+                        volumeValue.textContent = `${Math.round(currentVolume * 100)}%`;
+                    }
+                    
                     musicVolume.addEventListener('input', (e) => {
                         currentVolume = e.target.value / 100;
+                        localStorage.setItem('musicVolume', currentVolume.toString());
                         if (audioElement && isPlaying) {
                             audioElement.volume = currentVolume;
                         }
@@ -3327,8 +3347,31 @@
                 }
             }
 
-            // 自动播放初始音乐
-            function autoPlayInitialMusic() {
+            // 恢复之前的播放状态
+            function restorePlaybackState() {
+                if (currentMusic) {
+                    // 如果有之前播放的音乐，尝试恢复
+                    createAudioElement();
+                    audioElement.src = `voice/${currentMusic}`;
+                    audioElement.volume = 0; // 开始时静音
+                    
+                    audioElement.play().then(() => {
+                        // 恢复音量
+                        smoothVolumeChange(currentVolume, 1000);
+                        updateMusicUI();
+                    }).catch(err => {
+                        console.error('恢复音乐播放失败:', err);
+                        // 恢复失败，播放随机音乐
+                        autoPlayRandomMusic();
+                    });
+                } else {
+                    // 没有之前的音乐，播放随机音乐
+                    autoPlayRandomMusic();
+                }
+            }
+
+            // 自动播放随机音乐
+            function autoPlayRandomMusic() {
                 const currentTheme = document.body.getAttribute('data-theme') || 'tsukuyomi';
                 const playlist = currentTheme === 'tsukuyomi' ? musicData.tsukuyomi : musicData.global;
                 
@@ -3346,9 +3389,7 @@
 
             // 初始化
             initMusicUI();
-            
-            // 自动播放初始音乐
-            autoPlayInitialMusic();
+            restorePlaybackState();
             
             // 暴露全局方法
             window.musicPlayer = {
