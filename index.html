@@ -2429,15 +2429,7 @@
 
         // ======================= 认证UI =======================
         let currentAuthMode = 'login';
-        const modal = document.getElementById('authModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const loginEmail = document.getElementById('loginEmail');
-        const loginPassword = document.getElementById('loginPassword');
-        const authError = document.getElementById('authError');
-        const switchBtn = document.getElementById('switchAuthBtn');
-        const submitBtn = document.getElementById('submitAuthBtn');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        let nicknameInput = null;
+        let modal, modalTitle, loginEmail, loginPassword, authError, switchBtn, submitBtn, closeModalBtn, nicknameInput = null;
 
         function updateModalForMode() {
             if (currentAuthMode === 'login') {
@@ -2697,7 +2689,7 @@
         function initTheme() {
             const themeBtn = document.getElementById('themeSwitcher');
             const themeDropdown = document.getElementById('themeDropdown');
-            const savedTheme = localStorage.getItem('chemical-theme') || 'tsukuyomi';
+            const savedTheme = localStorage.getItem('chemical-theme') || 'classic-light';
             
             // 应用保存的主题
             applyTheme(savedTheme);
@@ -3843,13 +3835,15 @@
             });
         }
 
-        initSupabase();
-        renderGames();
-        initTheme();
-        initMoleculeCanvas();
-        triggerEntranceAnimation();
-        initCombustionEffects();
-        initMusicPlayer();
+        // 初始化认证相关元素
+        modal = document.getElementById('authModal');
+        modalTitle = document.getElementById('modalTitle');
+        loginEmail = document.getElementById('loginEmail');
+        loginPassword = document.getElementById('loginPassword');
+        authError = document.getElementById('authError');
+        switchBtn = document.getElementById('switchAuthBtn');
+        submitBtn = document.getElementById('submitAuthBtn');
+        closeModalBtn = document.getElementById('closeModalBtn');
 
         // 绑定模态框按钮
         switchBtn.onclick = () => {
@@ -3859,6 +3853,14 @@
         submitBtn.onclick = handleAuthSubmit;
         closeModalBtn.onclick = hideAuthModal;
         modal.onclick = (e) => { if (e.target === modal) hideAuthModal(); };
+
+        initSupabase();
+        renderGames();
+        initTheme();
+        initMoleculeCanvas();
+        triggerEntranceAnimation();
+        initCombustionEffects();
+        initMusicPlayer();
     });
 </script>
 </body>
