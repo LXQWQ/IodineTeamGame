@@ -456,11 +456,35 @@
             <h3>📦 实验室资源</h3>
             <div class="resource-item"><span>⏱️ 剩余回合</span><span id="turnsLeft">15</span></div>
             <div class="resource-item"><span>🧪 碳预算 (C)</span><span id="carbonBudget">30</span></div>
-            <div class="resource-item"><span>⚡ 镁 (Mg)</span><span id="magnesium">3</span></div>
-            <div class="resource-item"><span>🔷 铜催化剂 (CuI)</span><span id="copper">2</span></div>
-            <div class="resource-item"><span>⚙️ 钯催化剂 (Pd)</span><span id="palladium">1</span></div>
+            
+            <h4 style="margin-top: 1rem; margin-bottom: 0.5rem;">⚗️ 试剂库存</h4>
+            <div class="resource-item"><span>⚡ 镁</span><span id="magnesium">3</span></div>
+            <div class="resource-item"><span>🧪 NaBH₄</span><span id="nabh4">2</span></div>
+            <div class="resource-item"><span>🧪 PCC</span><span id="pcc">2</span></div>
+            <div class="resource-item"><span>⚡ NaH</span><span id="nah">2</span></div>
+            
+            <h4 style="margin-top: 1rem; margin-bottom: 0.5rem;">🔬 催化剂</h4>
+            <div class="resource-item"><span>当前</span><span id="currentCatalyst">无催化剂</span></div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchCatalyst('none')">无</button>
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchCatalyst('cuI')">CuI (8点)</button>
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchCatalyst('pdCl2')">PdCl₂ (12点)</button>
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchCatalyst('niCl2')">NiCl₂ (10点)</button>
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchCatalyst('raneyNi')">雷尼Ni (15点)</button>
+            </div>
+            
+            <h4 style="margin-top: 1rem; margin-bottom: 0.5rem;">🧪 溶剂</h4>
+            <div class="resource-item"><span>当前</span><span id="currentSolvent">无溶剂</span></div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchSolvent('none')">无</button>
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchSolvent('ether')">无水乙醚</button>
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchSolvent('thf')">THF</button>
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchSolvent('dmf')">DMF</button>
+                <button class="tech-btn" style="font-size: 0.7rem;" onclick="switchSolvent('water')">水</button>
+            </div>
+            
             <div class="resource-item"><span>🔬 研究点数</span><span id="researchPoints">0</span></div>
-            <div class="turn-counter">🎯 目标碳链: <span id="targetCarbon">10</span> C</div>
+            <div class="turn-counter">🎯 目标分子: <span id="targetCarbon">10</span> C</div>
             <button id="techTreeBtn" class="tech-btn">📚 科技树升级</button>
             <button id="resetGameBtn" class="reset-btn">🔄 重新开局</button>
         </div>
@@ -482,13 +506,315 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-    // ---------- 游戏数据 (与之前完全一致) ----------
+    // ---------- 分子结构描述系统 ----------
+    class MoleculeState {
+        constructor(carbonCount = 1, functionalGroups = [], unsaturation = [], rings = [], chirality = null, stereochemistry = 'R') {
+            this.carbonCount = carbonCount;
+            this.functionalGroups = functionalGroups; // ['-OH', '=O', '-COOH', etc.]
+            this.unsaturation = unsaturation; // ['C1=C2', 'C2=C3', etc.]
+            this.rings = rings; // ['6-membered', '5-membered', etc.]
+            this.chirality = chirality; // chiral center positions
+            this.stereochemistry = stereochemistry; // 'R' or 'S'
+        }
+        
+        // 获取分子描述
+        getDescription() {
+            let desc = `C${this.carbonCount}`;
+            if (this.functionalGroups.length > 0) {
+                desc += ` [${this.functionalGroups.join(', ')}]`;
+            }
+            if (this.unsaturation.length > 0) {
+                desc += ` (${this.unsaturation.length}个不饱和键)`;
+            }
+            if (this.rings.length > 0) {
+                desc += ` (${this.rings.join(', ')})`;
+            }
+            return desc;
+        }
+        
+        // 检查是否含有特定官能团
+        hasFunctionalGroup(group) {
+            return this.functionalGroups.includes(group);
+        }
+        
+        // 检查是否含有羰基
+        hasCarbonyl() {
+            return this.functionalGroups.includes('=O') || 
+                   this.functionalGroups.includes('-CHO') ||
+                   this.functionalGroups.includes('-COOH');
+        }
+        
+        // 检查是否含有羟基
+        hasHydroxyl() {
+            return this.functionalGroups.includes('-OH');
+        }
+        
+        // 检查是否含有α-氢（醛酮的α位氢）
+        hasAlphaHydrogen() {
+            return this.hasCarbonyl() && this.carbonCount >= 2;
+        }
+        
+        // 检查是否含有共轭二烯
+        hasConjugatedDiene() {
+            return this.unsaturation.length >= 2 && this.carbonCount >= 4;
+        }
+        
+        // 添加官能团
+        addFunctionalGroup(group) {
+            if (!this.functionalGroups.includes(group)) {
+                this.functionalGroups.push(group);
+            }
+        }
+        
+        // 移除官能团
+        removeFunctionalGroup(group) {
+            const index = this.functionalGroups.indexOf(group);
+            if (index > -1) {
+                this.functionalGroups.splice(index, 1);
+            }
+        }
+        
+        // 添加不饱和键
+        addUnsaturation(bond) {
+            if (!this.unsaturation.includes(bond)) {
+                this.unsaturation.push(bond);
+            }
+        }
+        
+        // 克隆分子状态
+        clone() {
+            return new MoleculeState(
+                this.carbonCount,
+                [...this.functionalGroups],
+                [...this.unsaturation],
+                [...this.rings],
+                this.chirality,
+                this.stereochemistry
+            );
+        }
+    }
+    
+    // ---------- 目标分子库 ----------
+    const TARGET_MOLECULES = [
+        {
+            name: "正丁醇",
+            carbonCount: 4,
+            functionalGroups: ['-OH'],
+            unsaturation: [],
+            rings: [],
+            constraints: { allowAnyReaction: true },
+            description: "直链醇，无特殊限制"
+        },
+        {
+            name: "2-甲基-2-丁烯",
+            carbonCount: 5,
+            functionalGroups: [],
+            unsaturation: ['C1=C2'],
+            rings: [],
+            constraints: { forbidGrignard: true },
+            description: "含双键，不允许使用格式反应"
+        },
+        {
+            name: "环己醇",
+            carbonCount: 6,
+            functionalGroups: ['-OH'],
+            unsaturation: [],
+            rings: ['6-membered'],
+            constraints: { requireDielsAlder: true },
+            description: "环状结构，必须使用Diels-Alder反应"
+        },
+        {
+            name: "频哪醇",
+            carbonCount: 6,
+            functionalGroups: ['-OH', '-OH'],
+            unsaturation: [],
+            rings: [],
+            constraints: { forbidExternalOxidant: true },
+            description: "邻位二醇，不允许使用外部氧化剂"
+        },
+        {
+            name: "4-甲基-2-戊醇",
+            carbonCount: 6,
+            functionalGroups: ['-OH'],
+            unsaturation: [],
+            rings: [],
+            constraints: { requireComplexSynthesis: true },
+            description: "支链醇，需要多步合成"
+        },
+        {
+            name: "苯甲醛",
+            carbonCount: 7,
+            functionalGroups: ['-CHO'],
+            unsaturation: [],
+            rings: ['6-membered-aromatic'],
+            constraints: { requireAromatic: true },
+            description: "芳香醛，需要芳香环"
+        },
+        {
+            name: "乙酸乙酯",
+            carbonCount: 4,
+            functionalGroups: ['-COO-'],
+            unsaturation: [],
+            rings: [],
+            constraints: { requireEsterification: true },
+            description: "酯类化合物"
+        },
+        {
+            name: "3-己烯-2-醇",
+            carbonCount: 6,
+            functionalGroups: ['-OH'],
+            unsaturation: ['C2=C3'],
+            rings: [],
+            constraints: { requireUnsaturationAndAlcohol: true },
+            description: "同时含双键和羟基"
+        }
+    ];
+    
+    // ---------- 科学反应系统 ----------
     const REACTIONS = [
-        { id: "grignard", name: "格式反应 (Grignard)", desc: "卤代烃 + 羰基 → 醇 (+2C)", baseGain: 2, costTurn: 1, costMg: 1, costCu: 0, costPd: 0, minCarbon: 1, yieldBase: 0.9, sideEffectChance: 0.05, sideEffectDesc: "偶联副反应，碳链不变", requires: { mg: 1 }, tooltip: "消耗1镁，+2C，产率90%，5%副反应" },
-        { id: "aldol", name: "羟醛缩合 (Aldol)", desc: "醛/酮自身缩合 (碳链翻倍)", baseGain: "double", costTurn: 2, costMg: 0, costCu: 0, costPd: 0, minCarbon: 2, yieldBase: 0.85, sideEffectChance: 0.1, sideEffectDesc: "脱水不完全，碳链仅+1", requires: {}, tooltip: "耗时2回合，碳链翻倍，85%成功率，10%副反应" },
-        { id: "alkyne_coupling", name: "炔偶联 (Sonogashira)", desc: "末端炔烃偶联 (+2C)", baseGain: 2, costTurn: 1, costMg: 0, costCu: 1, costPd: 0, minCarbon: 2, yieldBase: 0.95, sideEffectChance: 0.05, sideEffectDesc: "自身偶联，碳链不变", requires: { cu: 1 }, tooltip: "消耗1铜，+2C，95%产率" },
-        { id: "diels_alder", name: "Diels-Alder", desc: "环加成 (+4C)", baseGain: 4, costTurn: 2, costMg: 0, costCu: 0, costPd: 0, minCarbon: 4, yieldBase: 0.9, sideEffectChance: 0.1, sideEffectDesc: "逆反应，碳链不变", requires: {}, tooltip: "耗时2回合，+4C，90%成功率" },
-        { id: "carbonylation", name: "羰基化", desc: "烯烃+CO (+1C)", baseGain: 1, costTurn: 1, costMg: 0, costCu: 0, costPd: 1, minCarbon: 2, yieldBase: 0.85, sideEffectChance: 0.1, sideEffectDesc: "CO中毒，无增长", requires: { pd: 1 }, tooltip: "消耗1钯，+1C" }
+        {
+            id: "grignard", 
+            name: "格式反应 (Grignard)", 
+            desc: "含羰基分子 + 卤代烃 → 二级醇 (+2C)",
+            precursorCheck: (molecule) => molecule.hasCarbonyl(),
+            costTurn: 1, 
+            costMg: 1, 
+            costCu: 0, 
+            costPd: 0, 
+            minCarbon: 1, 
+            yieldBase: 0.9, 
+            sideEffectChance: 0.05, 
+            sideEffectDesc: "格式试剂遇水分解，未与底物反应",
+            requires: { mg: 1 }, 
+            tooltip: "需要羰基，消耗1镁，+2C，产率90%",
+            transform: (molecule) => {
+                const newMol = molecule.clone();
+                newMol.carbonCount += 2;
+                newMol.removeFunctionalGroup('=O');
+                newMol.addFunctionalGroup('-OH');
+                return newMol;
+            },
+            equation: "R-CO-R' + R''-MgBr → R-C(OH)(R'')-R'"
+        },
+        {
+            id: "aldol", 
+            name: "羟醛缩合 (Aldol)", 
+            desc: "含α-氢的醛/酮 → β-羟基醛/酮 (碳链翻倍)",
+            precursorCheck: (molecule) => molecule.hasAlphaHydrogen(),
+            costTurn: 2, 
+            costMg: 0, 
+            costCu: 0, 
+            costPd: 0, 
+            minCarbon: 2, 
+            yieldBase: 0.85, 
+            sideEffectChance: 0.1, 
+            sideEffectDesc: "α-氢不足，自身缩合未发生",
+            requires: {}, 
+            tooltip: "需要α-氢，耗时2回合，碳链翻倍，85%成功率",
+            transform: (molecule) => {
+                const newMol = molecule.clone();
+                newMol.carbonCount *= 2;
+                newMol.addFunctionalGroup('-OH');
+                newMol.addFunctionalGroup('=O');
+                return newMol;
+            },
+            equation: "2R-CHO → R-CH(OH)-CH(R)-CHO"
+        },
+        {
+            id: "williamson", 
+            name: "威廉姆逊醚合成", 
+            desc: "含-OH分子 + 卤代烃 → 醚 (+2C)",
+            precursorCheck: (molecule) => molecule.hasHydroxyl(),
+            costTurn: 1, 
+            costMg: 0, 
+            costCu: 0, 
+            costPd: 0, 
+            minCarbon: 1, 
+            yieldBase: 0.95, 
+            sideEffectChance: 0.05, 
+            sideEffectDesc: "醇羟基反应活性不足",
+            requires: {}, 
+            tooltip: "需要羟基，+2C，95%产率",
+            transform: (molecule) => {
+                const newMol = molecule.clone();
+                newMol.carbonCount += 2;
+                newMol.removeFunctionalGroup('-OH');
+                newMol.addFunctionalGroup('-O-');
+                return newMol;
+            },
+            equation: "R-OH + R'-X → R-O-R'"
+        },
+        {
+            id: "reduction", 
+            name: "还原反应", 
+            desc: "羰基 → 醇基 (不增碳)",
+            precursorCheck: (molecule) => molecule.hasCarbonyl(),
+            costTurn: 1, 
+            costMg: 0, 
+            costCu: 0, 
+            costPd: 0, 
+            minCarbon: 1, 
+            yieldBase: 0.92, 
+            sideEffectChance: 0.08, 
+            sideEffectDesc: "还原不完全，生成混合物",
+            requires: {}, 
+            tooltip: "需要羰基，不增碳，92%产率",
+            transform: (molecule) => {
+                const newMol = molecule.clone();
+                newMol.removeFunctionalGroup('=O');
+                newMol.addFunctionalGroup('-OH');
+                return newMol;
+            },
+            equation: "R-CO-R' + NaBH₄ → R-CH(OH)-R'"
+        },
+        {
+            id: "oxidation", 
+            name: "氧化反应", 
+            desc: "醇基 → 羰基 (不增碳)",
+            precursorCheck: (molecule) => molecule.hasHydroxyl(),
+            costTurn: 1, 
+            costMg: 0, 
+            costCu: 0, 
+            costPd: 0, 
+            minCarbon: 1, 
+            yieldBase: 0.88, 
+            sideEffectChance: 0.12, 
+            sideEffectDesc: "过氧化，生成羧酸而非醛",
+            requires: {}, 
+            tooltip: "需要羟基，不增碳，88%产率",
+            transform: (molecule) => {
+                const newMol = molecule.clone();
+                newMol.removeFunctionalGroup('-OH');
+                newMol.addFunctionalGroup('=O');
+                return newMol;
+            },
+            equation: "R-CH₂-OH + PCC → R-CHO"
+        },
+        {
+            id: "diels_alder", 
+            name: "Diels-Alder", 
+            desc: "共轭二烯 + 烯烃 → 六元环 (+4C)",
+            precursorCheck: (molecule) => molecule.hasConjugatedDiene(),
+            costTurn: 2, 
+            costMg: 0, 
+            costCu: 0, 
+            costPd: 0, 
+            minCarbon: 4, 
+            yieldBase: 0.9, 
+            sideEffectChance: 0.1, 
+            sideEffectDesc: "二烯体构型不匹配，反应未发生",
+            requires: {}, 
+            tooltip: "需要共轭二烯，耗时2回合，+4C，90%成功率",
+            transform: (molecule) => {
+                const newMol = molecule.clone();
+                newMol.carbonCount += 4;
+                newMol.rings.push('6-membered');
+                // 清除共轭二烯
+                newMol.unsaturation = [];
+                return newMol;
+            },
+            equation: "共轭二烯 + 烯烃 → 六元环化合物"
+        }
     ];
     const TECH_TREE = [
         { id: "efficient_mg", name: "高效镁试剂", cost: 5, effect: "镁消耗减半", apply: () => { techMgEfficiency = true; } },
@@ -504,13 +830,13 @@
         { name: "安然无事", effect: () => { return "✨ 风平浪静，无事发生。"; }, weight: 40 }
     ];
 
-    let currentCarbon = 1;
+    let currentMolecule = new MoleculeState(1, [], [], [], null, 'R'); // 从甲烷开始
     let turnsLeft = 15;
     let carbonBudget = 30;
     let magnesium = 3;
     let copper = 2;
     let palladium = 1;
-    let targetCarbon = 10;
+    let targetMolecule = null; // 当前目标分子
     let gameActive = true;
     let gameWin = false;
     let reactionCount = 0;
@@ -519,22 +845,243 @@
     let techAldolGreen = false;
     let techAtomicDisplay = false;
     let techTandem = false;
+    
+    // 为了兼容现有UI，保留targetCarbon
+    let targetCarbon = 10;
+    
+    // ---------- 催化剂系统 ----------
+    const CATALYSTS = {
+        none: { name: "无催化剂", effect: 0, unlocked: true },
+        cuI: { name: "碘化亚铜", effect: 0.05, unlocked: false, cost: 8 },
+        pdCl2: { name: "氯化钯", effect: 0.08, unlocked: false, cost: 12 },
+        niCl2: { name: "氯化镍", effect: 0.06, unlocked: false, cost: 10 },
+        raneyNi: { name: "雷尼镍", effect: 0.10, unlocked: false, cost: 15 }
+    };
+    
+    // ---------- 试剂系统 ----------
+    const REAGENTS = {
+        mg: { name: "镁", stock: 3, cost: 1 },
+        nabh4: { name: "硼氢化钠", stock: 2, cost: 2 },
+        pcc: { name: "PCC", stock: 2, cost: 2 },
+        nah: { name: "氢化钠", stock: 2, cost: 1 },
+        grignardReagent: { name: "格式试剂", stock: 0, cost: 3 }
+    };
+    
+    // ---------- 溶剂系统 ----------
+    const SOLVENTS = {
+        none: { name: "无溶剂", effects: {} },
+        ether: { 
+            name: "无水乙醚", 
+            effects: { 
+                grignard: { yield: 0.15, speed: 0.1 },
+                williamson: { yield: 0.05, speed: 0.05 }
+            }
+        },
+        thf: { 
+            name: "THF", 
+            effects: { 
+                reduction: { yield: 0.10, speed: 0.20 },
+                grignard: { yield: 0.10, speed: 0.10 }
+            }
+        },
+        dmf: { 
+            name: "DMF", 
+            effects: { 
+                williamson: { yield: 0.10, speed: 0.15 },
+                oxidation: { yield: 0.05, speed: 0.05 }
+            }
+        },
+        water: { 
+            name: "水", 
+            effects: { 
+                grignard: { yield: -0.50, speed: -0.30 }, // 格式反应遇水分解
+                aldol: { yield: 0.05, speed: 0.10 }
+            }
+        }
+    };
+    
+    let currentCatalyst = 'none';
+    let currentSolvent = 'none';
+    let unlockedCatalysts = ['none'];
+    
+    // ---------- 目标分子管理 ----------
+    function selectRandomTarget() {
+        const randomIndex = Math.floor(Math.random() * TARGET_MOLECULES.length);
+        const targetData = TARGET_MOLECULES[randomIndex];
+        
+        targetMolecule = new MoleculeState(
+            targetData.carbonCount,
+            targetData.functionalGroups,
+            targetData.unsaturation,
+            targetData.rings,
+            null,
+            'R'
+        );
+        
+        targetMolecule.name = targetData.name;
+        targetMolecule.constraints = targetData.constraints;
+        targetMolecule.description = targetData.description;
+        
+        // 更新UI显示
+        targetCarbon = targetMolecule.carbonCount;
+        targetCarbonSpan.innerText = `${targetMolecule.carbonCount}C (${targetMolecule.name})`;
+        
+        return targetMolecule;
+    }
+    
+    function checkVictoryConditions() {
+        if (!targetMolecule) return false;
+        
+        // 检查碳数
+        if (currentMolecule.carbonCount !== targetMolecule.carbonCount) return false;
+        
+        // 检查官能团
+        if (currentMolecule.functionalGroups.length !== targetMolecule.functionalGroups.length) return false;
+        for (let group of targetMolecule.functionalGroups) {
+            if (!currentMolecule.hasFunctionalGroup(group)) return false;
+        }
+        
+        // 检查不饱和键
+        if (currentMolecule.unsaturation.length !== targetMolecule.unsaturation.length) return false;
+        
+        // 检查环结构
+        if (currentMolecule.rings.length !== targetMolecule.rings.length) return false;
+        for (let ring of targetMolecule.rings) {
+            if (!currentMolecule.rings.includes(ring)) return false;
+        }
+        
+        return true;
+    }
+    
+    function checkReactionConstraints(reaction) {
+        if (!targetMolecule || !targetMolecule.constraints) return true;
+        
+        const constraints = targetMolecule.constraints;
+        
+        // 检查禁用的反应
+        if (constraints.forbidGrignard && reaction.id === "grignard") {
+            showMessage(`❌ 目标分子限制：不允许使用格式反应`, false);
+            return false;
+        }
+        
+        // 检查必需的反应（这些检查比较复杂，暂时简化）
+        if (constraints.requireDielsAlder && reaction.id !== "diels_alder") {
+            showMessage(`💡 提示：目标分子需要使用Diels-Alder反应`, true);
+        }
+        
+        return true;
+    }
+    
+    // ---------- 催化剂和溶剂管理 ----------
+    function calculateEffectiveYield(reaction) {
+        let baseYield = reaction.yieldBase;
+        
+        // 催化剂效果
+        if (currentCatalyst !== 'none') {
+            const catalyst = CATALYSTS[currentCatalyst];
+            baseYield += catalyst.effect;
+        }
+        
+        // 溶剂效果
+        const solvent = SOLVENTS[currentSolvent];
+        if (solvent.effects[reaction.id]) {
+            baseYield += solvent.effects[reaction.id].yield || 0;
+        }
+        
+        return Math.max(0, Math.min(1, baseYield));
+    }
+    
+    function switchCatalyst(catalystId) {
+        if (!CATALYSTS[catalystId]) return;
+        
+        if (catalystId === 'none') {
+            currentCatalyst = 'none';
+            showMessage(`🔄 切换到无催化剂`, true);
+            updateUI();
+            return;
+        }
+        
+        const catalyst = CATALYSTS[catalystId];
+        if (!catalyst.unlocked) {
+            if (researchPoints >= catalyst.cost) {
+                researchPoints -= catalyst.cost;
+                catalyst.unlocked = true;
+                unlockedCatalysts.push(catalystId);
+                currentCatalyst = catalystId;
+                showMessage(`✅ 解锁并切换到${catalyst.name}`, true);
+            } else {
+                showMessage(`❌ 研究点不足，需要${catalyst.cost}点`, false);
+            }
+        } else {
+            currentCatalyst = catalystId;
+            showMessage(`🔄 切换到${catalyst.name}`, true);
+        }
+        updateUI();
+    }
+    
+    function switchSolvent(solventId) {
+        if (!SOLVENTS[solventId]) return;
+        
+        currentSolvent = solventId;
+        const solvent = SOLVENTS[solventId];
+        showMessage(`🔄 切换溶剂到${solvent.name}`, true);
+        updateUI();
+    }
+    
+    function purchaseReagent(reagentId) {
+        if (!REAGENTS[reagentId]) return;
+        
+        const reagent = REAGENTS[reagentId];
+        if (researchPoints >= reagent.cost) {
+            researchPoints -= reagent.cost;
+            reagent.stock += 1;
+            showMessage(`✅ 购买${reagent.name}，库存+1`, true);
+        } else {
+            showMessage(`❌ 研究点不足，需要${reagent.cost}点`, false);
+        }
+        updateUI();
+    }
 
-    // DOM 元素
-    const carbonCountSpan = document.getElementById('carbonCount');
-    const moleculeDetailSpan = document.getElementById('moleculeDetail');
-    const turnsLeftSpan = document.getElementById('turnsLeft');
-    const carbonBudgetSpan = document.getElementById('carbonBudget');
-    const magnesiumSpan = document.getElementById('magnesium');
-    const copperSpan = document.getElementById('copper');
-    const palladiumSpan = document.getElementById('palladium');
-    const researchPointsSpan = document.getElementById('researchPoints');
-    const targetCarbonSpan = document.getElementById('targetCarbon');
-    const reactionGrid = document.getElementById('reactionGrid');
-    const feedbackMsg = document.getElementById('feedbackMsg');
-    const resetBtn = document.getElementById('resetGameBtn');
-    const techTreeBtn = document.getElementById('techTreeBtn');
-    const darkModeToggle = document.getElementById('darkModeToggle');
+    // DOM 元素 - 将在init函数中初始化
+    let carbonCountSpan, moleculeDetailSpan, turnsLeftSpan, carbonBudgetSpan;
+    let magnesiumSpan, copperSpan, palladiumSpan, researchPointsSpan, targetCarbonSpan;
+    let reactionGrid, feedbackMsg, resetBtn, techTreeBtn, darkModeToggle;
+    
+    // 初始化DOM元素
+    function initDOMElements() {
+        carbonCountSpan = document.getElementById('carbonCount');
+        moleculeDetailSpan = document.getElementById('moleculeDetail');
+        turnsLeftSpan = document.getElementById('turnsLeft');
+        carbonBudgetSpan = document.getElementById('carbonBudget');
+        magnesiumSpan = document.getElementById('magnesium');
+        copperSpan = document.getElementById('copper');
+        palladiumSpan = document.getElementById('palladium');
+        researchPointsSpan = document.getElementById('researchPoints');
+        targetCarbonSpan = document.getElementById('targetCarbon');
+        reactionGrid = document.getElementById('reactionGrid');
+        feedbackMsg = document.getElementById('feedbackMsg');
+        resetBtn = document.getElementById('resetGameBtn');
+        techTreeBtn = document.getElementById('techTreeBtn');
+        darkModeToggle = document.getElementById('darkModeToggle');
+        
+        // DOM元素初始化完成后，设置主题按钮
+        setupThemeButton();
+    }
+    
+    // 设置主题按钮
+    function setupThemeButton() {
+        const isDark = localStorage.getItem('carbon_theme') === 'dark';
+        if (darkModeToggle) {
+            darkModeToggle.innerText = isDark ? '☀️ 浅色模式' : '🌙 深色模式';
+            darkModeToggle.onclick = () => {
+                document.body.classList.toggle('dark');
+                const darkNow = document.body.classList.contains('dark');
+                localStorage.setItem('carbon_theme', darkNow ? 'dark' : 'light');
+                darkModeToggle.innerText = darkNow ? '☀️ 浅色模式' : '🌙 深色模式';
+                updateSceneBackground(); // 更新3D场景背景
+            };
+        }
+    }
 
     // 清理3D对象内存
     function dispose3DObject(obj) {
@@ -558,37 +1105,63 @@
         }
     }
     
-    // 共享的碳原子位置计算函数
-    function calculateCarbonPositions(n) {
+    // 计算碳原子位置：正确实现sp3正四面体和sp2平面三角形构型
+    function calculateCarbonPositions(n, moleculeState = null) {
         const positions = [];
         const bondLength = 1.5;
-        const bondAngle = 109.5 * Math.PI / 180;
+        const sp3Angle = Math.PI * 109.5 / 180; // sp3键角 109.5°
+        const sp2Angle = Math.PI * 120 / 180;    // sp2键角 120°
         
         for (let i = 0; i < n; i++) {
-            if (i === 0) {
-                positions.push({ x: 0, y: 0, z: 0 });
-            } else {
-                const prevPos = positions[i-1];
-                let x, y, z;
-                
-                if (i === 1) {
-                    x = prevPos.x + bondLength;
-                    y = 0;
-                    z = 0;
-                } else {
-                    const angle = (i % 2 === 0) ? bondAngle : -bondAngle;
-                    const dx = prevPos.x - positions[i-2].x;
-                    const dy = prevPos.y - positions[i-2].y;
-                    const prevAngle = Math.atan2(dy, dx);
-                    const newAngle = prevAngle + angle;
-                    
-                    x = prevPos.x + bondLength * Math.cos(newAngle);
-                    y = prevPos.y + bondLength * Math.sin(newAngle);
-                    z = 0;
+            let x, y, z;
+            
+            // 检查当前碳原子的杂化类型
+            let hybridization = 'sp3'; // 默认sp3
+            if (moleculeState) {
+                // 检查是否有双键或羰基（sp2杂化）
+                if (moleculeState.unsaturation.some(unsat => unsat.includes(`C${i+1}=`)) ||
+                    moleculeState.functionalGroups.includes('=O') ||
+                    moleculeState.functionalGroups.includes('-CHO')) {
+                    hybridization = 'sp2';
                 }
-                
-                positions.push({ x, y, z });
             }
+            
+            if (i === 0) {
+                // 第一个碳原子在原点
+                x = 0; y = 0; z = 0;
+            } else if (i === 1) {
+                // 第二个碳原子沿x轴
+                x = bondLength; y = 0; z = 0;
+            } else {
+                const prev = positions[i-1];
+                const prevPrev = positions[i-2];
+                const direction = new THREE.Vector3(prev.x - prevPrev.x, prev.y - prevPrev.y, prev.z - prevPrev.z);
+                direction.normalize();
+                
+                // 根据杂化类型选择键角
+                const bondAngle = hybridization === 'sp2' ? sp2Angle : sp3Angle;
+                
+                // 计算下一个位置
+                if (i === 2) {
+                    // 第三个原子，创建锯齿构型
+                    const axis = new THREE.Vector3(0, 1, 0);
+                    const rotation = new THREE.Quaternion().setFromAxisAngle(axis, bondAngle - Math.PI);
+                    const rotated = direction.clone().applyQuaternion(rotation);
+                    x = prev.x + rotated.x * bondLength;
+                    y = prev.y + rotated.y * bondLength;
+                    z = prev.z + rotated.z * bondLength;
+                } else {
+                    // 后续原子，交替上下
+                    const upDown = (i % 2 === 0) ? 1 : -1;
+                    const axis = new THREE.Vector3(0, upDown, 0);
+                    const rotation = new THREE.Quaternion().setFromAxisAngle(axis, bondAngle - Math.PI);
+                    const rotated = direction.clone().applyQuaternion(rotation);
+                    x = prev.x + rotated.x * bondLength;
+                    y = prev.y + rotated.y * bondLength;
+                    z = prev.z + rotated.z * bondLength;
+                }
+            }
+            positions.push({ x, y, z, hybridization });
         }
         return positions;
     }
@@ -659,8 +1232,8 @@
         labelRenderer.render(scene, camera);
     }
     
-    // 根据碳原子数生成3D模型（烷烃，锯齿链，键角 ~109.5°）
-    function generateCarbonChain(n) {
+    // 根据分子状态生成3D模型（增强版本）
+    function generateCarbonChain(n, moleculeState = null, isTransition = false) {
         if (currentModelGroup) {
             scene.remove(currentModelGroup);
             // 清理材质等
@@ -676,34 +1249,471 @@
         // 原子半径和键半径
         const atomRadius = 0.4;
         const bondRadius = 0.08;
-        const carbonColor = 0x6c8c5e;
+        const carbonColor = isTransition ? 0x888888 : 0x6c8c5e;
         const hydrogenColor = 0xaaaaaa;
+        const oxygenColor = 0xff4444;
+        const nitrogenColor = 0x4444ff;
         
         // 计算碳原子位置: 正确的锯齿链，键角109.5°，键长1.54Å (缩放为1.5单位)
-        const positions = calculateCarbonPositions(n);
+        const positions = calculateCarbonPositions(n, moleculeState);
         
         // 添加碳原子球体
         for (let i = 0; i < n; i++) {
             const pos = positions[i];
             const geometry = new THREE.SphereGeometry(atomRadius, 32, 32);
-            const material = new THREE.MeshStandardMaterial({ color: carbonColor, roughness: 0.3, metalness: 0.1 });
+            const material = new THREE.MeshStandardMaterial({ 
+                color: carbonColor, 
+                roughness: 0.3, 
+                metalness: 0.1,
+                emissive: isTransition ? 0x222222 : 0x000000,
+                emissiveIntensity: isTransition ? 0.3 : 0
+            });
             const sphere = new THREE.Mesh(geometry, material);
             sphere.position.set(pos.x, pos.y, pos.z);
             group.add(sphere);
             
-            // 添加CSS2D文字标签 "C"
+            // 添加CSS2D文字标签
             const div = document.createElement('div');
             div.textContent = 'C';
             div.style.color = '#fff';
             div.style.fontSize = '18px';
             div.style.fontWeight = 'bold';
             div.style.textShadow = '1px 1px 0 #000';
-            div.style.background = 'rgba(0,0,0,0.5)';
+            div.style.background = isTransition ? 'rgba(255,165,0,0.5)' : 'rgba(0,0,0,0.5)';
             div.style.padding = '2px 4px';
             div.style.borderRadius = '12px';
             const label = new CSS2DObject(div);
             label.position.set(pos.x, pos.y + 0.5, pos.z);
             group.add(label);
+        }
+        
+        // 智能官能团定位和可视化
+        if (moleculeState && moleculeState.functionalGroups.length > 0) {
+            // 为每个官能团智能分配碳原子位置
+            const functionalGroupAssignments = assignFunctionalGroupsToCarbons(moleculeState.functionalGroups, positions);
+            
+            functionalGroupAssignments.forEach((assignment, index) => {
+                const { carbonIndex, groupType } = assignment;
+                const carbonPos = positions[carbonIndex];
+                const carbonHybridization = carbonPos.hybridization || 'sp3';
+                
+                // 根据官能团类型和杂化状态计算位置
+                let functionalGroupPositions = calculateFunctionalGroupPosition(groupType, carbonPos, carbonHybridization, carbonIndex, moleculeState);
+                
+                // 为每个位置添加原子
+                functionalGroupPositions.forEach(posInfo => {
+                    addFunctionalGroupAtom(groupType, posInfo.position, posInfo.symbol, posInfo.color, posInfo.size, carbonPos, bondRadius, isTransition, posInfo.bondType);
+                });
+            });
+        }
+        
+        // 智能分配官能团到碳原子
+        function assignFunctionalGroupsToCarbons(functionalGroups, positions) {
+            const assignments = [];
+            const carbonUsage = new Array(positions.length).fill(0); // 每个碳原子已使用的官能团数量
+            
+            functionalGroups.forEach((group, index) => {
+                let bestCarbonIndex = 0;
+                let minUsage = carbonUsage[0];
+                
+                // 找到使用最少的碳原子
+                for (let i = 1; i < positions.length; i++) {
+                    if (carbonUsage[i] < minUsage) {
+                        minUsage = carbonUsage[i];
+                        bestCarbonIndex = i;
+                    }
+                }
+                
+                // 特殊处理：羰基和醛基优先分配给链中心位置
+                if (group === '=O' || group === '-CHO') {
+                    bestCarbonIndex = Math.floor(positions.length / 2); // 链中心
+                }
+                
+                assignments.push({
+                    carbonIndex: bestCarbonIndex,
+                    groupType: group
+                });
+                
+                carbonUsage[bestCarbonIndex]++;
+            });
+            
+            return assignments;
+        }
+        
+        // 计算官能团位置的函数（改进版）
+        function calculateFunctionalGroupPosition(groupType, carbonPos, hybridization, carbonIndex, moleculeState) {
+            const positions = [];
+            const bondLength = 1.2; // C-O键长
+            
+            // 计算可用的键方向
+            const availableDirections = getAvailableBondDirections(carbonPos, carbonIndex, positions);
+            
+            if (groupType === '=O' || groupType === '-CHO') {
+                // 羰基：强制sp2杂化，垂直于碳链平面
+                const carbonylPos = {
+                    x: carbonPos.x,
+                    y: carbonPos.y + bondLength,
+                    z: carbonPos.z
+                };
+                
+                positions.push({
+                    position: carbonylPos,
+                    symbol: 'O',
+                    color: oxygenColor,
+                    size: atomRadius * 0.8,
+                    bondType: 'double'
+                });
+                
+                if (groupType === '-CHO') {
+                    // 醛基的氢原子，在sp2平面内
+                    const hydrogenPos = {
+                        x: carbonPos.x - bondLength * 0.8,
+                        y: carbonPos.y,
+                        z: carbonPos.z
+                    };
+                    
+                    positions.push({
+                        position: hydrogenPos,
+                        symbol: 'H',
+                        color: hydrogenColor,
+                        size: atomRadius * 0.6,
+                        bondType: 'single'
+                    });
+                }
+                
+            } else if (groupType === '-OH') {
+                // 羟基：使用可用的四面体方向
+                const ohDirection = availableDirections[0] || { x: 1, y: 0.5, z: 0 };
+                const normalized = normalizeVector(ohDirection);
+                
+                const ohPos = {
+                    x: carbonPos.x + normalized.x * bondLength,
+                    y: carbonPos.y + normalized.y * bondLength,
+                    z: carbonPos.z + normalized.z * bondLength
+                };
+                
+                positions.push({
+                    position: ohPos,
+                    symbol: 'O',
+                    color: oxygenColor,
+                    size: atomRadius * 0.8,
+                    bondType: 'single'
+                });
+                
+            } else if (groupType === '-COOH') {
+                // 羧基：羰基+羟基
+                // 羰基部分
+                const carbonylPos = {
+                    x: carbonPos.x,
+                    y: carbonPos.y + bondLength,
+                    z: carbonPos.z
+                };
+                
+                positions.push({
+                    position: carbonylPos,
+                    symbol: 'O',
+                    color: oxygenColor,
+                    size: atomRadius * 0.8,
+                    bondType: 'double'
+                });
+                
+                // 羟基部分，在sp2平面内
+                const ohDirection = availableDirections[0] || { x: 0.866, y: 0, z: 0.5 };
+                const normalized = normalizeVector(ohDirection);
+                
+                const ohPos = {
+                    x: carbonPos.x + normalized.x * bondLength,
+                    y: carbonPos.y + normalized.y * bondLength,
+                    z: carbonPos.z + normalized.z * bondLength
+                };
+                
+                positions.push({
+                    position: ohPos,
+                    symbol: 'O',
+                    color: oxygenColor,
+                    size: atomRadius * 0.8,
+                    bondType: 'single'
+                });
+                
+            } else if (groupType === '-O-') {
+                // 醚基：使用可用方向
+                const etherDirection = availableDirections[0] || { x: 1, y: 0, z: 0 };
+                const normalized = normalizeVector(etherDirection);
+                
+                const etherPos = {
+                    x: carbonPos.x + normalized.x * bondLength,
+                    y: carbonPos.y + normalized.y * bondLength,
+                    z: carbonPos.z + normalized.z * bondLength
+                };
+                
+                positions.push({
+                    position: etherPos,
+                    symbol: 'O',
+                    color: oxygenColor,
+                    size: atomRadius * 0.8,
+                    bondType: 'single'
+                });
+            }
+            
+            return positions;
+        }
+        
+        // 获取可用的键方向
+        function getAvailableBondDirections(carbonPos, carbonIndex, allPositions) {
+            const directions = [];
+            
+            // 计算已占用的方向（碳-碳键）
+            const occupiedDirections = [];
+            
+            // 检查与前后碳原子的连接
+            if (carbonIndex > 0) {
+                const prevCarbon = allPositions[carbonIndex - 1];
+                const dir = {
+                    x: prevCarbon.x - carbonPos.x,
+                    y: prevCarbon.y - carbonPos.y,
+                    z: prevCarbon.z - carbonPos.z
+                };
+                occupiedDirections.push(normalizeVector(dir));
+            }
+            
+            if (carbonIndex < allPositions.length - 1) {
+                const nextCarbon = allPositions[carbonIndex + 1];
+                const dir = {
+                    x: nextCarbon.x - carbonPos.x,
+                    y: nextCarbon.y - carbonPos.y,
+                    z: nextCarbon.z - carbonPos.z
+                };
+                occupiedDirections.push(normalizeVector(dir));
+            }
+            
+            // 生成四面体方向
+            const tetraDirections = [
+                { x: 1, y: 1, z: 1 },
+                { x: -1, y: 1, z: -1 },
+                { x: 1, y: -1, z: -1 },
+                { x: -1, y: -1, z: 1 },
+                { x: 1, y: 0, z: -1 },
+                { x: -1, y: 0, z: 1 }
+            ];
+            
+            // 过滤掉已占用的方向
+            tetraDirections.forEach(dir => {
+                const normalized = normalizeVector(dir);
+                let isOccupied = false;
+                
+                occupiedDirections.forEach(occupied => {
+                    if (Math.abs(normalized.x - occupied.x) < 0.3 &&
+                        Math.abs(normalized.y - occupied.y) < 0.3 &&
+                        Math.abs(normalized.z - occupied.z) < 0.3) {
+                        isOccupied = true;
+                    }
+                });
+                
+                if (!isOccupied) {
+                    directions.push(normalized);
+                }
+            });
+            
+            return directions.length > 0 ? directions : [{ x: 0, y: 1, z: 0 }];
+        }
+        
+        // 向量归一化
+        function normalizeVector(vector) {
+            const length = Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+            if (length === 0) return { x: 0, y: 1, z: 0 };
+            
+            return {
+                x: vector.x / length,
+                y: vector.y / length,
+                z: vector.z / length
+            };
+        }
+        
+        // 添加氢原子到碳原子（修复版）
+        function addHydrogenAtoms(positions, group, bondRadius, isTransition) {
+            const hydrogenBondLength = 1.0;
+            
+            // 首先计算每个碳原子的官能团分配
+            const carbonFunctionalGroups = new Array(positions.length).fill(0);
+            if (moleculeState && moleculeState.functionalGroups.length > 0) {
+                const assignments = assignFunctionalGroupsToCarbons(moleculeState.functionalGroups, positions);
+                assignments.forEach(assignment => {
+                    carbonFunctionalGroups[assignment.carbonIndex]++;
+                });
+            }
+            
+            positions.forEach((carbonPos, carbonIndex) => {
+                const hybridization = carbonPos.hybridization || 'sp3';
+                
+                if (hybridization === 'sp3') {
+                    // sp3杂化碳的氢原子，按四面体构型排列
+                    let hydrogenCount = 4; // 饱和碳最多4个键
+                    
+                    // 减去已连接的官能团数量
+                    hydrogenCount -= carbonFunctionalGroups[carbonIndex];
+                    
+                    // 减去碳-碳键数量
+                    if (carbonIndex > 0) hydrogenCount -= 1; // 连接到前一个碳
+                    if (carbonIndex < positions.length - 1) hydrogenCount -= 1; // 连接到后一个碳
+                    
+                    // 获取可用的键方向
+                    const availableDirections = getAvailableBondDirections(carbonPos, carbonIndex, positions);
+                    
+                    // 添加剩余的氢原子
+                    for (let h = 0; h < Math.max(0, hydrogenCount); h++) {
+                        let direction;
+                        if (h < availableDirections.length) {
+                            direction = availableDirections[h];
+                        } else {
+                            // 如果可用方向不够，生成默认方向
+                            const angle = (h * 72) * Math.PI / 180; // 72度间隔
+                            direction = {
+                                x: Math.cos(angle),
+                                y: 0.5,
+                                z: Math.sin(angle)
+                            };
+                        }
+                        
+                        const normalized = normalizeVector(direction);
+                        const x = carbonPos.x + normalized.x * hydrogenBondLength;
+                        const y = carbonPos.y + normalized.y * hydrogenBondLength;
+                        const z = carbonPos.z + normalized.z * hydrogenBondLength;
+                        
+                        addFunctionalGroupAtom('H', { x, y, z }, 'H', hydrogenColor, atomRadius * 0.5, carbonPos, bondRadius, isTransition, 'single');
+                    }
+                } else if (hybridization === 'sp2') {
+                    // sp2杂化碳的氢原子，按平面三角形排列
+                    let hydrogenCount = 3; // sp2碳最多3个键
+                    
+                    // 减去已连接的官能团数量
+                    hydrogenCount -= carbonFunctionalGroups[carbonIndex];
+                    
+                    // 减去碳-碳键数量
+                    if (carbonIndex > 0) hydrogenCount -= 1;
+                    if (carbonIndex < positions.length - 1) hydrogenCount -= 1;
+                    
+                    // 添加剩余的氢原子（在sp2平面内）
+                    for (let h = 0; h < Math.max(0, hydrogenCount); h++) {
+                        const angle = (h * 120 + carbonIndex * 60) * Math.PI / 180;
+                        const x = carbonPos.x + hydrogenBondLength * Math.cos(angle);
+                        const y = carbonPos.y;
+                        const z = carbonPos.z + hydrogenBondLength * Math.sin(angle);
+                        
+                        addFunctionalGroupAtom('H', { x, y, z }, 'H', hydrogenColor, atomRadius * 0.5, carbonPos, bondRadius, isTransition, 'single');
+                    }
+                }
+            });
+        }
+        
+        // 添加氢原子
+        addHydrogenAtoms(positions, group, bondRadius, isTransition);
+        
+        // 添加官能团原子的辅助函数
+        function addFunctionalGroupAtom(group, position, symbol, color, size, carbonPos, bondRadius, isTransition, bondType = 'single') {
+            // 创建官能团原子
+            const atomGeometry = new THREE.SphereGeometry(size, 20, 20);
+            const atomMaterial = new THREE.MeshStandardMaterial({ 
+                color: color, 
+                roughness: 0.15, 
+                metalness: 0.05,
+                emissive: isTransition ? color : 0x000000,
+                emissiveIntensity: isTransition ? 0.6 : 0
+            });
+            const atomSphere = new THREE.Mesh(atomGeometry, atomMaterial);
+            atomSphere.position.set(position.x, position.y, position.z);
+            if (group && typeof group.add === 'function') {
+                group.add(atomSphere);
+            }
+            
+            // 添加发光效果
+            if (isTransition) {
+                const glowGeometry = new THREE.SphereGeometry(size * 1.3, 16, 16);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glowSphere = new THREE.Mesh(glowGeometry, glowMaterial);
+                glowSphere.position.set(position.x, position.y, position.z);
+                if (group && typeof group.add === 'function') {
+                    group.add(glowSphere);
+                }
+            }
+            
+            // 添加原子标签
+            const atomDiv = document.createElement('div');
+            atomDiv.textContent = symbol;
+            atomDiv.style.color = '#fff';
+            atomDiv.style.fontSize = '12px';
+            atomDiv.style.fontWeight = 'bold';
+            atomDiv.style.textShadow = '1px 1px 0 #000';
+            atomDiv.style.background = isTransition ? 
+                `linear-gradient(135deg, ${color.toString(16)}88, ${color.toString(16)}cc)` : 
+                `${color.toString(16).padStart(2, '0')}cc`;
+            atomDiv.style.padding = '3px 6px';
+            atomDiv.style.borderRadius = '10px';
+            atomDiv.style.border = isTransition ? '2px solid rgba(255,255,255,0.8)' : 'none';
+            const atomLabel = new CSS2DObject(atomDiv);
+            atomLabel.position.set(position.x, position.y + size + 0.3, position.z);
+            if (group && typeof group.add === 'function') {
+                group.add(atomLabel);
+            }
+            
+            // 添加化学键
+            const bondStart = new THREE.Vector3(carbonPos.x, carbonPos.y, carbonPos.z);
+            const bondEnd = new THREE.Vector3(position.x, position.y, position.z);
+            const bondDirection = new THREE.Vector3().subVectors(bondEnd, bondStart);
+            const bondLength = bondDirection.length();
+            const bondCenter = bondStart.clone().add(bondEnd).multiplyScalar(0.5);
+            
+            // 根据键类型设置键的粗细
+            let bondRadiusMultiplier = 1.0;
+            if (bondType === 'double') bondRadiusMultiplier = 1.4;
+            else if (bondType === 'triple') bondRadiusMultiplier = 1.8;
+            
+            const bondCylinder = new THREE.Mesh(
+                new THREE.CylinderGeometry(
+                    bondRadius * bondRadiusMultiplier, 
+                    bondRadius * bondRadiusMultiplier, 
+                    bondLength, 12
+                ),
+                new THREE.MeshStandardMaterial({ 
+                    color: isTransition ? 0xffffff : 0xccccaa, 
+                    roughness: 0.3,
+                    metalness: 0.1,
+                    emissive: isTransition ? 0x666666 : 0x000000,
+                    emissiveIntensity: isTransition ? 0.3 : 0
+                })
+            );
+            bondCylinder.position.copy(bondCenter);
+            bondCylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), bondDirection.clone().normalize());
+            if (group && typeof group.add === 'function') {
+                group.add(bondCylinder);
+            }
+            
+            // 双键添加第二个键
+            if (bondType === 'double') {
+                const offset = 0.15;
+                const perpDir = new THREE.Vector3(-bondDirection.z, 0, bondDirection.x).normalize();
+                const doubleBondStart = bondStart.clone().add(perpDir.multiplyScalar(offset));
+                const doubleBondEnd = bondEnd.clone().add(perpDir.multiplyScalar(offset));
+                const doubleBondCenter = doubleBondStart.clone().add(doubleBondEnd).multiplyScalar(0.5);
+                
+                const doubleBondCylinder = new THREE.Mesh(
+                    new THREE.CylinderGeometry(bondRadius * 0.6, bondRadius * 0.6, bondLength, 8),
+                    new THREE.MeshStandardMaterial({ 
+                        color: isTransition ? 0xffffff : 0xccccaa, 
+                        roughness: 0.3,
+                        emissive: isTransition ? 0x666666 : 0x000000,
+                        emissiveIntensity: isTransition ? 0.3 : 0
+                    })
+                );
+                doubleBondCylinder.position.copy(doubleBondCenter);
+                doubleBondCylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), bondDirection.clone().normalize());
+                if (group && typeof group.add === 'function') {
+                    group.add(doubleBondCylinder);
+                }
+            }
         }
         // 添加碳-碳键 (圆柱体)
         for (let i = 0; i < n-1; i++) {
@@ -824,75 +1834,162 @@
         return group;
     }
     
-    function update3DModel() {
+    let isTransitioning = false;
+    let transitionStartMolecule = null;
+    let transitionEndMolecule = null;
+    let transitionProgress = 0;
+    
+    function update3DModel(withTransition = false) {
         if (!scene) return;
-        const newGroup = generateCarbonChain(currentCarbon);
         
-        // 清理旧模型
-        if (currentModelGroup) {
-            scene.remove(currentModelGroup);
-            disposeGroup(currentModelGroup);
-        }
-        
-        currentModelGroup = newGroup;
-        scene.add(currentModelGroup);
-        
-        // 调整相机视口适应分子大小 - 包括氢原子
-        if (currentCarbon > 1) {
-            // 计算所有原子位置（包括氢原子）的边界框
-            const positions = calculateCarbonPositions(currentCarbon);
-            let allPositions = [...positions];
+        if (withTransition && !isTransitioning) {
+            // 启动过渡动画
+            transitionStartMolecule = currentModelGroup ? generateCarbonChain(currentMolecule.carbonCount, currentMolecule, false) : new THREE.Group();
+            transitionEndMolecule = generateCarbonChain(currentMolecule.carbonCount, currentMolecule, true);
+            transitionProgress = 0;
+            isTransitioning = true;
+            animateTransition();
+        } else {
+            // 直接更新模型
+            const newGroup = generateCarbonChain(currentMolecule.carbonCount, currentMolecule, false);
             
-            // 估算氢原子位置用于边界框计算
-            for (let i = 0; i < currentCarbon; i++) {
-                const pos = positions[i];
-                const hCount = (i === 0 && currentCarbon === 1) ? 4 : 
-                              (i === 0 || i === currentCarbon-1) ? 3 : 2;
-                
-                // 简化估算氢原子位置范围
-                for (let j = 0; j < hCount; j++) {
-                    allPositions.push({
-                        x: pos.x + (j % 2 === 0 ? 0.7 : -0.7),
-                        y: pos.y + (j % 3 === 0 ? 0.7 : -0.7),
-                        z: pos.z + (j % 2 === 0 ? 0.5 : -0.5)
-                    });
-                }
+            // 清理旧模型
+            if (currentModelGroup) {
+                scene.remove(currentModelGroup);
+                disposeGroup(currentModelGroup);
             }
             
-            // 计算边界框
-            const minX = Math.min(...allPositions.map(p => p.x));
-            const maxX = Math.max(...allPositions.map(p => p.x));
-            const minY = Math.min(...allPositions.map(p => p.y));
-            const maxY = Math.max(...allPositions.map(p => p.y));
-            const minZ = Math.min(...allPositions.map(p => p.z));
-            const maxZ = Math.max(...allPositions.map(p => p.z));
+            currentModelGroup = newGroup;
+            scene.add(currentModelGroup);
             
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-            const centerZ = (minZ + maxZ) / 2;
-            
-            const sizeX = maxX - minX;
-            const sizeY = maxY - minY;
-            const sizeZ = maxZ - minZ;
-            const maxSize = Math.max(sizeX, sizeY, sizeZ);
-            
-            // 调整相机距离和位置
-            const distance = Math.max(10, maxSize * 3);
-            camera.position.set(distance * 0.8, distance * 0.6, distance * 0.8);
-            camera.lookAt(centerX, centerY, centerZ);
-            controls.target.set(centerX, centerY, centerZ);
-            controls.update();
+            // 调整相机视口适应分子大小 - 包括氢原子
+            if (currentMolecule.carbonCount > 1) {
+                // 计算所有原子位置（包括氢原子）的边界框
+                const positions = calculateCarbonPositions(currentMolecule.carbonCount);
+                let allPositions = [...positions];
+                
+                // 估算氢原子位置用于边界框计算
+                for (let i = 0; i < currentMolecule.carbonCount; i++) {
+                    const pos = positions[i];
+                    const hCount = (i === 0 && currentMolecule.carbonCount === 1) ? 4 : 
+                                  (i === 0 || i === currentMolecule.carbonCount-1) ? 3 : 2;
+                    
+                    // 简化估算氢原子位置范围
+                    for (let j = 0; j < hCount; j++) {
+                        allPositions.push({
+                            x: pos.x + (j % 2 === 0 ? 0.7 : -0.7),
+                            y: pos.y + (j % 3 === 0 ? 0.7 : -0.7),
+                            z: pos.z + (j % 2 === 0 ? 0.5 : -0.5)
+                        });
+                    }
+                }
+                
+                // 计算边界框
+                const minX = Math.min(...allPositions.map(p => p.x));
+                const maxX = Math.max(...allPositions.map(p => p.x));
+                const minY = Math.min(...allPositions.map(p => p.y));
+                const maxY = Math.max(...allPositions.map(p => p.y));
+                const minZ = Math.min(...allPositions.map(p => p.z));
+                const maxZ = Math.max(...allPositions.map(p => p.z));
+                
+                const centerX = (minX + maxX) / 2;
+                const centerY = (minY + maxY) / 2;
+                const centerZ = (minZ + maxZ) / 2;
+                
+                const sizeX = maxX - minX;
+                const sizeY = maxY - minY;
+                const sizeZ = maxZ - minZ;
+                const maxSize = Math.max(sizeX, sizeY, sizeZ);
+                
+                // 调整相机距离和位置
+                const distance = Math.max(10, maxSize * 3);
+                camera.position.set(distance * 0.8, distance * 0.6, distance * 0.8);
+                camera.lookAt(centerX, centerY, centerZ);
+                controls.target.set(centerX, centerY, centerZ);
+                controls.update();
+            }
         }
     }
     
-    // ---------- 游戏逻辑 (与之前相同) ----------
+    function animateTransition() {
+        if (!isTransitioning) return;
+        
+        transitionProgress += 0.02; // 2% per frame
+        
+        if (transitionProgress >= 1.0) {
+            // 过渡完成
+            isTransitioning = false;
+            if (transitionStartMolecule) {
+                scene.remove(transitionStartMolecule);
+                disposeGroup(transitionStartMolecule);
+            }
+            currentModelGroup = transitionEndMolecule;
+            transitionProgress = 0;
+            return;
+        }
+        
+        // 插值动画
+        const easeProgress = easeInOutCubic(transitionProgress);
+        
+        // 更新开始模型的透明度
+        if (transitionStartMolecule) {
+            transitionStartMolecule.children.forEach(child => {
+                if (child.isMesh && child.material) {
+                    child.material.opacity = 1 - easeProgress;
+                    child.material.transparent = true;
+                }
+            });
+        }
+        
+        // 更新结束模型的透明度和位置
+        if (transitionEndMolecule) {
+            transitionEndMolecule.children.forEach(child => {
+                if (child.isMesh && child.material) {
+                    child.material.opacity = easeProgress;
+                    child.material.transparent = true;
+                }
+            });
+        }
+    }
+    
+    function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+    
+    // ---------- 游戏逻辑 ----------
     function updateResourceUI() {
-        turnsLeftSpan.innerText = turnsLeft;
-        carbonBudgetSpan.innerText = carbonBudget;
-        magnesiumSpan.innerText = magnesium;
-        copperSpan.innerText = copper;
-        palladiumSpan.innerText = palladium;
-        researchPointsSpan.innerText = researchPoints;
+        // 确保DOM元素存在
+        if (!turnsLeftSpan || !carbonBudgetSpan || !magnesiumSpan || !copperSpan || !palladiumSpan || !researchPointsSpan) {
+            initDOMElements();
+        }
+        
+        // 安全地更新UI元素
+        if (turnsLeftSpan) turnsLeftSpan.innerText = turnsLeft;
+        if (carbonBudgetSpan) carbonBudgetSpan.innerText = carbonBudget;
+        if (magnesiumSpan) magnesiumSpan.innerText = REAGENTS.mg.stock;
+        if (copperSpan) copperSpan.innerText = REAGENTS.mg.stock; // 临时兼容，实际应该移除
+        if (palladiumSpan) palladiumSpan.innerText = REAGENTS.mg.stock; // 临时兼容，实际应该移除
+        if (researchPointsSpan) researchPointsSpan.innerText = researchPoints;
+        
+        // 更新试剂库存显示
+        const nabh4Span = document.getElementById('nabh4');
+        const pccSpan = document.getElementById('pcc');
+        const nahSpan = document.getElementById('nah');
+        if (nabh4Span) nabh4Span.innerText = REAGENTS.nabh4.stock;
+        if (pccSpan) pccSpan.innerText = REAGENTS.pcc.stock;
+        if (nahSpan) nahSpan.innerText = REAGENTS.nah.stock;
+        
+        // 更新催化剂显示
+        const currentCatalystSpan = document.getElementById('currentCatalyst');
+        if (currentCatalystSpan) {
+            currentCatalystSpan.innerText = CATALYSTS[currentCatalyst].name;
+        }
+        
+        // 更新溶剂显示
+        const currentSolventSpan = document.getElementById('currentSolvent');
+        if (currentSolventSpan) {
+            currentSolventSpan.innerText = SOLVENTS[currentSolvent].name;
+        }
     }
     
     function showMessage(msg, isSuccess) {
@@ -920,6 +2017,26 @@
     
     async function performReaction(reaction, isTandem = false) {
         if (!gameActive || gameWin) { showMessage("游戏已结束，请重新开局。", false); return false; }
+        
+        // 检查目标分子约束
+        if (!checkReactionConstraints(reaction)) {
+            return false;
+        }
+        
+        // 检查前体要求
+        if (!reaction.precursorCheck(currentMolecule)) {
+            let requirement = "";
+            if (reaction.id === "grignard") requirement = "羰基 (=O, -CHO, -COOH)";
+            else if (reaction.id === "aldol") requirement = "含α-氢的羰基化合物";
+            else if (reaction.id === "williamson") requirement = "羟基 (-OH)";
+            else if (reaction.id === "reduction") requirement = "羰基 (=O, -CHO, -COOH)";
+            else if (reaction.id === "oxidation") requirement = "羟基 (-OH)";
+            else if (reaction.id === "diels_alder") requirement = "共轭二烯结构";
+            
+            showMessage(`❌ 当前分子不符合反应要求：需要${requirement}`, false);
+            return false;
+        }
+        
         let mgCost = reaction.costMg;
         if (techMgEfficiency && reaction.id === "grignard") mgCost = Math.ceil(mgCost / 2);
         if (mgCost > magnesium) { showMessage(`❌ 镁不足，需要 ${mgCost}`, false); return false; }
@@ -933,7 +2050,10 @@
         }
         
         if (turnsLeft < turnCost) { showMessage(`❌ 回合不足，需要 ${turnCost}`, false); return false; }
-        if (currentCarbon < reaction.minCarbon) { showMessage(`❌ 碳链太短 (${currentCarbon}C)，需要至少 ${reaction.minCarbon}C`, false); return false; }
+        if (currentMolecule.carbonCount < reaction.minCarbon) { 
+            showMessage(`❌ 碳链太短 (${currentMolecule.carbonCount}C)，需要至少 ${reaction.minCarbon}C`, false); 
+            return false; 
+        }
         
         magnesium -= mgCost;
         copper -= reaction.costCu;
@@ -942,41 +2062,50 @@
         reactionCount++;
         
         let success = true;
-        let gain = reaction.baseGain;
         let extraMsg = "";
         const yieldRoll = Math.random();
-        if (yieldRoll > reaction.yieldBase) {
+        
+        // 显示反应方程式
+        if (reaction.equation) {
+            showReactionEquation(reaction.equation);
+        }
+        
+        const effectiveYield = calculateEffectiveYield(reaction);
+        if (yieldRoll > effectiveYield) {
             success = false;
-            extraMsg = " 产率不足，反应失败！";
+            extraMsg = ` 产率不足，反应失败！(有效产率: ${Math.round(effectiveYield * 100)}%)`;
         } else {
             const sideRoll = Math.random();
             if (sideRoll < reaction.sideEffectChance) {
                 success = false;
-                extraMsg = ` 副反应：${reaction.sideEffectDesc}，碳链未增长！`;
+                extraMsg = ` 副反应：${reaction.sideEffectDesc}`;
             }
         }
-        let oldCarbon = currentCarbon;
+        
+        let oldMolecule = currentMolecule.clone();
+        let oldDescription = currentMolecule.getDescription();
+        
         if (success) {
-            if (reaction.id === "aldol") {
-                currentCarbon = currentCarbon * 2;
-                if (techAldolGreen) extraMsg += " (绿色羟醛缩合，无副产物)";
-            } else {
-                let add = (typeof gain === 'number') ? gain : 2;
-                currentCarbon += add;
+            // 应用反应转换
+            currentMolecule = reaction.transform(currentMolecule);
+            if (techAldolGreen && reaction.id === "aldol") {
+                extraMsg += " (绿色羟醛缩合，无副产物)";
             }
         } else {
-            // 处理副反应情况 - 羟醛缩合副反应只增加1个碳
+            // 处理副反应情况 - 保持原分子不变
             if (reaction.id === "aldol" && extraMsg.includes("脱水不完全")) {
-                currentCarbon += 1;
+                // 特殊处理：羟醛缩合部分成功
+                currentMolecule.carbonCount += 1;
                 extraMsg += " (实际增加1个碳)";
             }
         }
-        if (currentCarbon > carbonBudget) {
+        
+        if (currentMolecule.carbonCount > carbonBudget) {
             showMessage(`⚠️ 碳链超过预算 (${carbonBudget}C)，但游戏继续`, true);
         }
         if (success) researchPoints++;
         
-        let msg = `${success ? '✅' : '❌'} ${reaction.name}！碳链 ${oldCarbon} → ${currentCarbon} (${success ? '+' + (currentCarbon-oldCarbon) : '0'})。${extraMsg}`;
+        let msg = `${success ? '✅' : '❌'} ${reaction.name}！\n${oldDescription} → ${currentMolecule.getDescription()}\n${extraMsg}`;
         showMessage(msg, success);
         
         if (reactionCount % 3 === 0 && gameActive && !gameWin) {
@@ -984,30 +2113,64 @@
         }
         
         updateResourceUI();
-        carbonCountSpan.innerText = currentCarbon;
-        moleculeDetailSpan.innerText = `官能团: ${currentCarbon >= 8 ? '长链烷烃' : '烷烃'}`;
-        update3DModel();  // 更新3D分子模型
+        carbonCountSpan.innerText = currentMolecule.carbonCount;
+        moleculeDetailSpan.innerText = `分子结构: ${currentMolecule.getDescription()}`;
+        update3DModel(success);  // 使用过渡动画更新3D分子模型
         
-        if (currentCarbon >= targetCarbon) {
+        // 检查胜利条件
+        if (checkVictoryConditions()) {
             gameActive = false;
             gameWin = true;
             const finalScore = calculateScore();
             saveHighScore(finalScore);
-            showMessage(`🎉 胜利！碳链达到 ${currentCarbon}C！最终得分: ${finalScore} 🎉`, true);
+            showMessage(`🎉 胜利！成功合成目标分子 ${targetMolecule.name}！\n${currentMolecule.getDescription()}\n最终得分: ${finalScore} 🎉`, true);
             updateUI(); return true;
         }
         if (turnsLeft <= 0) {
             gameActive = false;
             gameWin = false;
-            showMessage(`💀 回合耗尽，未达到目标碳数 ${targetCarbon}C。游戏失败。`, false);
+            showMessage(`💀 回合耗尽，未达到目标分子 ${targetMolecule.name}。游戏失败。`, false);
             updateUI(); return false;
         }
         updateUI();
         return true;
     }
     
+    // 显示反应方程式浮动标签
+    function showReactionEquation(equation) {
+        const equationDiv = document.createElement('div');
+        equationDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 10000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border: 2px solid #4CAF50;
+            text-align: center;
+            max-width: 80%;
+        `;
+        equationDiv.innerHTML = `
+            <div style="margin-bottom: 10px; color: #4CAF50;">⚗️ 反应方程式</div>
+            <div>${equation}</div>
+        `;
+        document.body.appendChild(equationDiv);
+        
+        setTimeout(() => {
+            if (equationDiv.parentNode) {
+                equationDiv.parentNode.removeChild(equationDiv);
+            }
+        }, 3000);
+    }
+    
     function calculateScore() {
-        let score = (currentCarbon / targetCarbon) * 100;
+        let score = (currentMolecule.carbonCount / targetCarbon) * 100;
         score -= (15 - turnsLeft) * 2;
         score -= (3 - magnesium) * 5;
         score -= (2 - copper) * 3;
@@ -1018,7 +2181,7 @@
     
     function saveHighScore(score) {
         let scores = JSON.parse(localStorage.getItem('carbon_highscores') || '[]');
-        scores.push({ score: score, date: new Date().toLocaleString(), carbon: currentCarbon });
+        scores.push({ score: score, date: new Date().toLocaleString(), carbon: currentMolecule.carbonCount, molecule: currentMolecule.getDescription() });
         scores.sort((a,b) => b.score - a.score);
         scores = scores.slice(0, 8);
         localStorage.setItem('carbon_highscores', JSON.stringify(scores));
@@ -1028,7 +2191,7 @@
     function displayHighScores() {
         let scores = JSON.parse(localStorage.getItem('carbon_highscores') || '[]');
         if (scores.length) {
-            let topText = "🏆 高分榜: " + scores.slice(0,3).map(s=>s.score).join(", ");
+            let topText = "🏆 高分榜: " + scores.slice(0,3).map((s,i) => `${i+1}. ${s.score}分`).join(", ");
             feedbackMsg.innerHTML = topText + "<br>" + (feedbackMsg.innerHTML.split("<br>")[1] || "");
         }
     }
@@ -1065,20 +2228,45 @@
             if (r.costCu > copper) disabled = true;
             if (r.costPd > palladium) disabled = true;
             if (turnsLeft < r.costTurn) disabled = true;
-            if (currentCarbon < (r.minCarbon || 0)) disabled = true;
+            if (currentMolecule.carbonCount < (r.minCarbon || 0)) disabled = true;
+            
+            // 检查前体要求
+            if (!r.precursorCheck(currentMolecule)) {
+                disabled = true;
+            }
             
             const card = document.createElement('div');
             card.className = `reaction-card ${disabled ? 'disabled' : ''}`;
-            let gainText = r.id === "aldol" ? "翻倍" : `+${r.baseGain}`;
+            
+            // 计算碳数变化
+            const testMol = currentMolecule.clone();
+            const newMol = r.transform(testMol);
+            const carbonChange = newMol.carbonCount - currentMolecule.carbonCount;
+            let gainText = carbonChange > 0 ? `+${carbonChange}C` : carbonChange < 0 ? `${carbonChange}C` : "不变";
+            
             let turnCost = r.costTurn;
             if (techTandem && turnCost > 1) {
                 turnCost = turnCost - 1;
             }
             let turnText = techTandem && r.costTurn > 1 ? `${turnCost}(${r.costTurn-1})` : `${r.costTurn}`;
-            let yieldText = techAtomicDisplay ? ` 产率: ${r.yieldBase*100}%` : "";
+            const effectiveYield = calculateEffectiveYield(r);
+            let yieldText = techAtomicDisplay ? ` 产率: ${Math.round(effectiveYield * 100)}%` : "";
+            
+            // 显示前体要求状态
+            let requirementStatus = r.precursorCheck(currentMolecule) ? "✅" : "❌";
+            
+            // 显示溶剂效果
+            let solventEffect = "";
+            const solvent = SOLVENTS[currentSolvent];
+            if (solvent.effects[r.id]) {
+                const effect = solvent.effects[r.id];
+                if (effect.yield !== 0) {
+                    solventEffect = ` 溶剂: ${effect.yield > 0 ? '+' : ''}${Math.round(effect.yield * 100)}%`;
+                }
+            }
             
             card.innerHTML = `
-                <div class="reaction-name">${r.name}</div>
+                <div class="reaction-name">${r.name} ${requirementStatus}</div>
                 <div class="reaction-desc">${r.desc}</div>
                 <div class="reaction-stats">
                     <span class="stat-badge">📈 ${gainText}</span>
@@ -1087,7 +2275,11 @@
                     ${r.costCu ? `<span class="stat-badge">🔷 Cu x${r.costCu}</span>` : ''}
                     ${r.costPd ? `<span class="stat-badge">⚙️ Pd x${r.costPd}</span>` : ''}
                     ${yieldText}
+                    ${solventEffect ? `<span class="stat-badge">🧪 ${solventEffect}</span>` : ''}
                     ${techTandem && r.costTurn > 1 ? `<span class="stat-badge">⚡ 串联</span>` : ''}
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">
+                    ${r.tooltip}
                 </div>
             `;
             if (!disabled) card.addEventListener('click', () => performReaction(r, techTandem && r.costTurn > 1));
@@ -1096,21 +2288,44 @@
     }
     
     function updateUI() {
-        carbonCountSpan.innerText = currentCarbon;
+        // 确保DOM元素存在
+        if (!carbonCountSpan || !moleculeDetailSpan || !feedbackMsg) {
+            initDOMElements();
+        }
+        
+        // 安全地更新UI元素
+        if (carbonCountSpan) carbonCountSpan.innerText = currentMolecule.carbonCount;
+        if (moleculeDetailSpan) moleculeDetailSpan.innerText = `分子结构: ${currentMolecule.getDescription()}`;
+        
         updateResourceUI();
         renderReactions();
-        if (gameWin) feedbackMsg.innerHTML = "🎉 胜利！点击重新开局继续挑战。";
-        else if (!gameActive && !gameWin) feedbackMsg.innerHTML = "💀 失败！点击重新开局继续挑战。";
+        
+        if (feedbackMsg) {
+            if (gameWin) feedbackMsg.innerHTML = "🎉 胜利！点击重新开局继续挑战。";
+            else if (!gameActive && !gameWin) feedbackMsg.innerHTML = "💀 失败！点击重新开局继续挑战。";
+        }
     }
     
     function resetGame() {
-        currentCarbon = 1;
+        // 提供起始分子选择
+        const startOptions = [
+            { name: "甲烷", molecule: new MoleculeState(1, [], [], [], null, 'R') },
+            { name: "乙醇", molecule: new MoleculeState(2, ['-OH'], [], [], null, 'R') },
+            { name: "乙醛", molecule: new MoleculeState(2, ['-CHO'], [], [], null, 'R') },
+            { name: "乙烯", molecule: new MoleculeState(2, [], ['C1=C2'], [], null, 'R') }
+        ];
+        
+        let choice = prompt("选择起始分子：\n1. 甲烷 (C1)\n2. 乙醇 (C2, -OH)\n3. 乙醛 (C2, -CHO)\n4. 乙烯 (C2, C=C)\n输入编号 (默认为1):");
+        
+        let startIndex = parseInt(choice) || 1;
+        startIndex = Math.max(1, Math.min(4, startIndex));
+        
+        currentMolecule = startOptions[startIndex - 1].molecule;
         turnsLeft = 15;
         carbonBudget = 30;
         magnesium = 3;
         copper = 2;
         palladium = 1;
-        targetCarbon = 10;
         researchPoints = 0;
         gameActive = true;
         gameWin = false;
@@ -1119,9 +2334,30 @@
         techAldolGreen = false;
         techAtomicDisplay = false;
         techTandem = false;
+        
+        // 重置催化剂和溶剂
+        currentCatalyst = 'none';
+        currentSolvent = 'none';
+        
+        // 重置试剂库存
+        REAGENTS.mg.stock = 3;
+        REAGENTS.nabh4.stock = 2;
+        REAGENTS.pcc.stock = 2;
+        REAGENTS.nah.stock = 2;
+        REAGENTS.grignardReagent.stock = 0;
+        
+        // 重置催化剂解锁状态
+        for (let key in CATALYSTS) {
+            CATALYSTS[key].unlocked = key === 'none';
+        }
+        unlockedCatalysts = ['none'];
+        
+        // 选择随机目标分子
+        selectRandomTarget();
+        
         updateUI();
         update3DModel();
-        showMessage("✨ 游戏已重置！从甲烷开始，合理规划合成路线。", true);
+        showMessage(`✨ 游戏已重置！从${startOptions[startIndex - 1].name}开始，合成目标：${targetMolecule.name}。`, true);
         displayHighScores();
     }
     
@@ -1134,14 +2370,7 @@
     function initTheme() {
         const isDark = localStorage.getItem('carbon_theme') === 'dark';
         if (isDark) document.body.classList.add('dark');
-        darkModeToggle.innerText = isDark ? '☀️ 浅色模式' : '🌙 深色模式';
-        darkModeToggle.onclick = () => {
-            document.body.classList.toggle('dark');
-            const darkNow = document.body.classList.contains('dark');
-            localStorage.setItem('carbon_theme', darkNow ? 'dark' : 'light');
-            darkModeToggle.innerText = darkNow ? '☀️ 浅色模式' : '🌙 深色模式';
-            updateSceneBackground(); // 更新3D场景背景
-        };
+        // 主题按钮设置现在在setupThemeButton()中处理
     }
     
     // ======================= 共享音乐管理器 =======================
@@ -1484,10 +2713,11 @@
     // 初始化3D和游戏
     function init() {
         initTheme();
+        initDOMElements(); // 首先初始化DOM元素
         init3D();
         resetGame();
-        resetBtn.addEventListener('click', resetGame);
-        techTreeBtn.addEventListener('click', openTechTree);
+        if (resetBtn) resetBtn.addEventListener('click', resetGame);
+        if (techTreeBtn) techTreeBtn.addEventListener('click', openTechTree);
         displayHighScores();
         initSharedMusicPlayer(); // 初始化共享音乐播放器
     }
