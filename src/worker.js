@@ -7,14 +7,28 @@
  * 3. /api/*    → hteamgame.com 反向代理（puzzles, scores 等）
  */
 
-import { DEEPSEEK_PROMPT, DEFAULT_PROMPT } from './prompt.js';
-
 // DeepSeek API 配置
 const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
 const DEEPSEEK_MODEL = 'deepseek-chat';
 
 // hteamgame Gemini 端点
 const GEMINI_URL = 'https://hteamgame.com/api/gemini/generate';
+
+// 提示词缓存（首次请求时从 public/prompts/ 加载）
+let cachedDSPrompt = null;
+let cachedDefaultPrompt = null;
+
+async function loadPrompts(env) {
+  if (!cachedDSPrompt) {
+    const dsResp = await env.ASSETS.fetch(new Request('https://dummy/prompts/dsv4flash.txt'));
+    cachedDSPrompt = await dsResp.text();
+  }
+  if (!cachedDefaultPrompt) {
+    const dfResp = await env.ASSETS.fetch(new Request('https://dummy/prompts/default.txt'));
+    cachedDefaultPrompt = await dfResp.text();
+  }
+  return { ds: cachedDSPrompt, df: cachedDefaultPrompt };
+}
 
 /**
  * 调用 Gemini（hteamgame）
@@ -65,7 +79,8 @@ async function callDeepSeek(env, messages) {
  * @param {'deepseek'|'gemini'} model - 用户选择的模型
  */
 async function callAI(env, puzzle, userMessage, history, model) {
-  const promptTemplate = model === 'deepseek' ? DEEPSEEK_PROMPT : DEFAULT_PROMPT;
+  const { ds, df } = await loadPrompts(env);
+  const promptTemplate = model === 'deepseek' ? ds : df;
   const systemPrompt = promptTemplate.replace(/\{PUZZLE_CONTEXT\}/g, puzzle);
 
   // 构建 DeepSeek 格式 messages（也用于 Gemini 降级场景）
