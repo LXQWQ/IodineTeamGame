@@ -153,7 +153,55 @@
       /* 链接高亮 */
       a:hover { color: var(--tsuki-accent-cyan) !important; }
 
-      /* === 月读装饰物件 === */
+      /* === 月读光柱 === */
+      .tsuki-pillar {
+        position: fixed; pointer-events: none; z-index: 3;
+        left: 50%; width: 6px; height: 50vh;
+        transform: translateX(-50%);
+        background: linear-gradient(to bottom,
+          var(--tsuki-accent) 0%,
+          var(--tsuki-accent-gold) 33%,
+          var(--tsuki-accent-cyan) 66%,
+          var(--tsuki-accent) 100%
+        );
+        box-shadow:
+          0 0 18px var(--tsuki-glow),
+          0 0 36px var(--tsuki-glow),
+          0 0 54px rgba(224,64,144,0.15),
+          0 0 72px rgba(224,64,144,0.08);
+        opacity: 0.35;
+        transition: opacity 1.5s ease;
+      }
+      .tsuki-pillar-top {
+        top: -10%;
+        animation: pillar-breathe-top 5s ease-in-out infinite;
+      }
+      .tsuki-pillar-bot {
+        bottom: -10%;
+        animation: pillar-breathe-bot 6s ease-in-out infinite 1s;
+      }
+      .tsuki-pillar--active {
+        opacity: 0.7 !important;
+        transition: opacity 0.3s ease;
+        box-shadow:
+          0 0 28px var(--tsuki-glow),
+          0 0 56px var(--tsuki-glow),
+          0 0 84px rgba(0,184,212,0.25),
+          0 0 112px rgba(224,64,144,0.12) !important;
+      }
+      @keyframes pillar-breathe-top {
+        0%,100% { opacity: 0.3; transform: translateX(-50%) scaleY(1); }
+        50% { opacity: 0.55; transform: translateX(-50%) scaleY(1.08); }
+      }
+      @keyframes pillar-breathe-bot {
+        0%,100% { opacity: 0.25; transform: translateX(-50%) scaleY(1); }
+        50% { opacity: 0.5; transform: translateX(-50%) scaleY(1.06); }
+      }
+      @media (max-width: 768px) {
+        .tsuki-pillar { width: 4px; }
+        .tsuki-pillar-top { height: 35vh; }
+        .tsuki-pillar-bot { height: 35vh; }
+      }
       .neon-fish, .neon-cloud-top, .neon-cloud-bottom, .neon-octopus, .sparkle {
         position: fixed; pointer-events: none; z-index: 2;
         background-size: contain; background-repeat: no-repeat;
@@ -236,5 +284,31 @@
     <div class="sparkle sparkle-1" aria-hidden="true"></div>
     <div class="sparkle sparkle-2" aria-hidden="true"></div>
     <div class="sparkle sparkle-3" aria-hidden="true"></div>
+    <div class="tsuki-pillar tsuki-pillar-top" aria-hidden="true"></div>
+    <div class="tsuki-pillar tsuki-pillar-bot" aria-hidden="true"></div>
+    <script>
+      /* 交互光柱：检测新消息气泡，闪烁对应光柱 */
+      (function(){
+        var top = document.querySelector('.tsuki-pillar-top');
+        var bot = document.querySelector('.tsuki-pillar-bot');
+        if(!top||!bot) return;
+        function flash(el){ el.classList.add('tsuki-pillar--active'); setTimeout(function(){ el.classList.remove('tsuki-pillar--active'); }, 1000); }
+        // 检测新消息 — 用户消息靠右(ml-auto)，AI消息靠左
+        var obs = new MutationObserver(function(ms){
+          ms.forEach(function(m){
+            m.addedNodes.forEach(function(n){
+              if(n.nodeType!==1) return;
+              if(n.classList.contains('ml-auto')){ flash(bot); }
+              else if(n.classList.contains('items-start') && n.textContent && n.textContent.length>20){ flash(top); }
+            });
+          });
+        });
+        function watch(){
+          var root = document.getElementById('root');
+          if(root){ obs.observe(root, {childList:true,subtree:true}); }
+        }
+        setTimeout(watch, 1500);
+      })();
+    </script>
   </body>
 </html>
