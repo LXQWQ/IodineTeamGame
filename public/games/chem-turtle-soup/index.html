@@ -23,32 +23,100 @@
         --color-zinc-800: #262b3d;
         --color-zinc-900: #1e2235;
         --color-zinc-950: #151322;
+        --tsuki-accent: #e04090;
+        --tsuki-accent-cyan: #00b8d4;
+        --tsuki-accent-gold: #ffb74d;
+        --tsuki-glow: rgba(224, 64, 144, 0.25);
+        --tsuki-bg: #1e2235;
+        --tsuki-card: #262b3d;
+        --tsuki-text: #e8e4ef;
+        --tsuki-text-dim: #9a96b5;
+        --tsuki-border: #3b3850;
       }
       html, body {
         height: 100%; overflow: hidden;
         background: #1e2235 !important;
         font-family: system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;
       }
-      /* 覆盖硬编码暗色背景 */
       .bg-\[\#0a0a0c\] { background-color: #1e2235 !important; }
-      /* 主页背景渐变 */
+
+      /* 背景氛围 */
       body::before {
         content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
-          radial-gradient(ellipse 80% 60% at 30% 20%, rgba(224, 64, 144, 0.06) 0%, transparent 60%),
-          radial-gradient(ellipse 60% 50% at 70% 70%, rgba(0, 184, 212, 0.04) 0%, transparent 50%),
+          radial-gradient(ellipse 80% 40% at 20% 15%, rgba(224,64,144,0.08) 0%, transparent 55%),
+          radial-gradient(ellipse 50% 35% at 75% 60%, rgba(0,184,212,0.05) 0%, transparent 50%),
+          radial-gradient(ellipse 60% 50% at 50% 85%, rgba(255,183,77,0.04) 0%, transparent 50%),
           linear-gradient(180deg, #0d0a1a 0%, #1e2235 40%, #1a1d2e 100%);
+        animation: tsuki-bg-breathe 12s ease-in-out infinite;
       }
+      @keyframes tsuki-bg-breathe {
+        0%,100% { opacity: 1; }
+        50% { opacity: 0.85; }
+      }
+
+      /* 粒子星光层 */
+      body::after {
+        content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background:
+          radial-gradient(1px 1px at 10% 20%, rgba(224,64,144,0.6), transparent),
+          radial-gradient(1px 1px at 25% 55%, rgba(255,183,77,0.5), transparent),
+          radial-gradient(1px 1px at 45% 15%, rgba(0,184,212,0.5), transparent),
+          radial-gradient(1px 1px at 60% 70%, rgba(224,64,144,0.4), transparent),
+          radial-gradient(1px 1px at 75% 35%, rgba(255,183,77,0.5), transparent),
+          radial-gradient(1px 1px at 90% 80%, rgba(0,184,212,0.4), transparent),
+          radial-gradient(2px 2px at 15% 75%, rgba(224,64,144,0.3), transparent),
+          radial-gradient(2px 2px at 80% 10%, rgba(255,183,77,0.35), transparent);
+        animation: tsuki-stars-drift 20s linear infinite;
+      }
+      @keyframes tsuki-stars-drift {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-30px); }
+      }
+
       #root { height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; position: relative; z-index: 1; }
+
       /* 滚动条 */
-      ::-webkit-scrollbar { width: 6px; }
-      ::-webkit-scrollbar-track { background: #1e2235; }
-      ::-webkit-scrollbar-thumb { background: #3b3850; border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: #e04090; }
-      /* 链接/按钮悬停 */
-      a:hover, button:hover { transition: all 0.3s ease; }
+      ::-webkit-scrollbar { width: 5px; }
+      ::-webkit-scrollbar-track { background: var(--tsuki-card); }
+      ::-webkit-scrollbar-thumb { background: var(--tsuki-accent); border-radius: 3px; border: 1px solid var(--tsuki-border); }
+      ::-webkit-scrollbar-thumb:hover { background: var(--tsuki-accent-cyan); }
+
       /* 选中文字 */
-      ::selection { background: rgba(224, 64, 144, 0.3); color: #e8e4ef; }
+      ::selection { background: rgba(224,64,144,0.3); color: #e8e4ef; }
+
+      /* 卡片：顶部发光边框 */
+      .bg-zinc-900\\/50 {
+        box-shadow: 0 0 30px var(--tsuki-glow), inset 0 1px 0 rgba(224,64,144,0.15) !important;
+        border-color: var(--tsuki-border) !important;
+      }
+      .bg-zinc-900\\/80 {
+        box-shadow: inset 0 1px 0 rgba(224,64,144,0.12) !important;
+        border-color: var(--tsuki-border) !important;
+      }
+
+      /* 标题发光 */
+      .text-emerald-400 { text-shadow: 0 0 20px var(--tsuki-glow); }
+
+      /* 输入框聚焦发光 */
+      input:focus, textarea:focus {
+        border-color: var(--tsuki-accent) !important;
+        box-shadow: 0 0 12px var(--tsuki-glow) !important;
+      }
+
+      /* 提交按钮渐变 */
+      .bg-emerald-500 {
+        background: linear-gradient(135deg, var(--tsuki-accent), var(--tsuki-accent-cyan)) !important;
+        border: none !important;
+      }
+      .bg-emerald-500:hover {
+        background: linear-gradient(135deg, var(--tsuki-accent-cyan), var(--tsuki-accent-gold)) !important;
+      }
+
+      /* 难度指示器发光 */
+      .shadow-\\[0_0_8px_rgba\\(16\\,185\\,129\\,0\\.5\\)\\] {
+        box-shadow: 0 0 8px var(--tsuki-glow) !important;
+      }
     </style>
     <script type="module" crossorigin src="./assets/index-B79EhL8X.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-DeP_rnF9.css">
