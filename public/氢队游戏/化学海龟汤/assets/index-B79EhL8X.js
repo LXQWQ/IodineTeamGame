@@ -28929,7 +28929,7 @@ function TD() {
                     throw sn
                 }
             }
-              , Mn = ((te = (gt = (Mt = (bt = (nt = (await Le()).candidates) == null ? void 0 : nt[0]) == null ? void 0 : bt.content) == null ? void 0 : Mt.parts) == null ? void 0 : gt[0]) == null ? void 0 : te.text) || "唔……抱歉呢神明大人，八千代刚才不小心走神了🌙能再问一次吗？";
+              , Mn = ((te = (gt = (Mt = (bt = (nt = (await Le()).candidates) == null ? void 0 : nt[0]) == null ? void 0 : bt.content) == null ? void 0 : Mt.parts) == null ? void 0 : gt[0]) == null ? void 0 : te.text) || "唔……抱歉呢神明大人，小八刚才不小心走神了🌙能再问一次吗？";
             Mn.includes("[SOLVED]") ? (v(!0),
             D(!0),
             it(Ne => {
@@ -28958,7 +28958,7 @@ function TD() {
             }])
         } catch (he) {
             console.error(he);
-            let Le = "	啊呀，网络好像出了点小问题呢🌙不过没关系，八千代活了八千年，这点小故障早就见惯啦~再试一次就好，神明大人⛩";
+            let Le = "	啊呀，网络好像出了点小问题呢🌙不过没关系，小八活了八千年，这点小故障早就见惯啦~再试一次就好，神明大人⛩";
             ((xe = he.message) != null && xe.includes("429") || he.status === 429 || he.code === 429) && (Le = "啊啦，提问太频繁了✨连八千代都来不及思考了呢~稍微休息一下，泡杯茶，再来找八千代聊天吧🍵"),
             d(ve => [...ve, {
                 role: "assistant",
@@ -28974,14 +28974,14 @@ function TD() {
                 const L = G.hints[O];
                 d(I => [...I, {
                     role: "assistant",
-                    content: `来，别那么紧张嘛~，让八千代和你一起，慢慢地、一点一点地，把眼前的真相看清楚。⛩${L}`,
+                    content: `来，别那么紧张嘛~，让小八和你一起，慢慢地、一点一点地，把眼前的真相看清楚。⛩${L}`,
                     isSystem: !0
                 }]),
                 M(I => I + 1)
             } else
                 d(L => [...L, {
                     role: "assistant",
-                    content: "今晚的提示呀，就到这里啦。如果还是猜不到……那也没关系呀✨从头开始，不是失败，是另一种出发呢。八千代可以陪着你，一起慢慢翻开《格林伍德》的第一页哦。📖！",
+                    content: "今晚的提示呀，就到这里啦。如果还是猜不到……那也没关系呀✨从头开始，不是失败，是另一种出发呢。小八可以陪着你，一起慢慢翻开《格林伍德》的第一页哦。📖！",
                     isSystem: !0
                 }])
     }
@@ -28990,7 +28990,7 @@ function TD() {
         D(!0),
         d(L => [...L, {
             role: "assistant",
-            content: "承认自己也有不懂的事……这可不是平庸，这是勇敢的开始呢。因为只有先看见自己的边界，才能迈出走向更广阔世界的第一步呀。",
+            content: "承认自己也有不懂的事……这可不是平庸，这是勇敢的开始呢。因为只有先看见自己的边界，才能迈出走向更广阔世界的第一步呀✨。",
             isSystem: !0
         }])
     }
@@ -29037,7 +29037,7 @@ function TD() {
         J(null)
     }
       , T = async L => {
-        confirm("确定要删除这道汤吗？嗯……如果它已经凉了，或者味道不对了，那放手也是一种温柔哦。") && (await fetch(`/api/puzzles/${L}`, {
+        confirm("确定要删除这道汤吗？嗯……如果它已经凉了，或者味道不对了，那放手也是一种温柔哦~。") && (await fetch(`/api/puzzles/${L}`, {
             method: "DELETE"
         }),
         et())
@@ -29359,11 +29359,11 @@ function TD() {
                                     className: "w-3 h-3 text-zinc-500"
                                 }), z.jsx("span", {
                                     className: "text-[11px] font-medium text-zinc-500",
-                                    children: "主持人：八千代"
+                                    children: "主持人：月见八千代"
                                 })]
                             }), z.jsx("p", {
                                 className: "text-[11px] text-zinc-600 leading-relaxed",
-                                children: '极其傲慢的化学大魔王。他只会回答"是"、"不是"或"无关"。'
+                                children: '极其温柔的月读管理员。她会热心陪伴您猜试剂'
                             })]
                         })]
                     })
@@ -29504,7 +29504,7 @@ function TD() {
                             type: "text",
                             value: p,
                             onChange: L => m(L.target.value),
-                            placeholder: x ? "谜题已揭晓..." : "向八千代提问...",
+                            placeholder: x ? "谜题已揭晓..." : "向月见八千代提问...",
                             disabled: x || g,
                             className: "flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-emerald-500/50 transition-all disabled:opacity-50 min-h-[44px]"
                         }), z.jsx("button", {
@@ -29631,11 +29631,11 @@ function TD() {
                             className: "w-4 h-4 text-zinc-500"
                         }), z.jsx("span", {
                             className: "text-xs font-medium text-zinc-500 uppercase tracking-wider",
-                            children: "主持人：八千代"
+                            children: "主持人：月见八千代"
                         })]
                     }), z.jsx("p", {
                         className: "text-xs text-zinc-600 leading-relaxed",
-                        children: '极其傲慢的化学大魔王。他只会回答"是"、"不是"或"无关"。如果你能让他感到一丝惊讶，那将是你毕生的荣幸。'
+                        children: '极其温柔的月读管理员。她会热心陪伴您猜试剂。如果您能让她感到一丝惊讶——那意味着，您已经准备好，成为自己故事的主角了。'
                     })]
                 })]
             }), z.jsxs("div", {
@@ -29724,7 +29724,7 @@ function TD() {
                             type: "text",
                             value: p,
                             onChange: L => m(L.target.value),
-                            placeholder: x ? "谜题已揭晓..." : "向八千代提问（例如：这和金属有关吗？）",
+                            placeholder: x ? "谜题已揭晓..." : "向月见八千代提问（例如：这和金属有关吗？）",
                             disabled: x || g,
                             className: "flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-all disabled:opacity-50"
                         }), z.jsx("button", {
@@ -29737,7 +29737,7 @@ function TD() {
                         })]
                     }), z.jsx("p", {
                         className: "text-[10px] text-zinc-600 mt-3 text-center uppercase tracking-widest",
-                        children: "基于格林伍德《元素化学》、Cotton & Wilkinson《高等无机化学》、Housecroft《无机化学》 · AI 主持人：八千代"
+                        children: "基于格林伍德《元素化学》、Cotton & Wilkinson《高等无机化学》、Housecroft《无机化学》 · AI 主持人：月见八千代"
                     })]
                 })]
             })]
