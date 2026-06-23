@@ -318,35 +318,71 @@
     <div class="tsuki-light tsuki-light-main" aria-hidden="true"></div>
     <div class="tsuki-light tsuki-light-sub" aria-hidden="true"></div>
     <script>
-      /* 小八千代精灵动画：可变帧数 */
+      /* 小八千代精灵动画 + 游戏事件响应 */
       (function(){
         var el = document.querySelector('.yachiyo-sprite');
         if(!el) return;
-        /* 每行帧数: 0:6 1:8 2:8 3:4 4:5 5:8 6:6 7:6 8:6 */
-        var rows = [6,8,8,4,5,8,6,6,6];
-        /* 动画序列: 眨眼→小跳→乐眨眼→单双眼→眨眼 */
-        var seq = [0,4,6,7];
-        var seqIdx = 0;
-        var frame = 0;
-        var row = 0;
-        var fps = 8; /* frames per second */
-        var w = el.offsetWidth;   /* frame width in px (scaled) */
-        var h = el.offsetHeight;  /* frame height in px (scaled) */
-        var totalW = w * 8;       /* total row width */
-        var totalH = h * 9;       /* total sheet height */
-        function anim(){
-          var maxFrame = rows[row];
-          frame++;
-          if(frame >= maxFrame){ frame = 0; seqIdx = (seqIdx+1) % seq.length; row = seq[seqIdx]; }
+        /* 每行帧数: 0眨眼(6) 1右跑(8) 2左跑(8) 3招手(4) 4小跳(5) 5哭(8) 6乐眨眼(6) 7单双眼(6) 8说话(8) */
+        var FRAMES = [6,8,8,4,5,8,6,6,8];
+        var fps = 8;
+        var frame = 0, row = 3; /* 初始：招手 */
+        var timer = null;
+        var idleTimer = null;
+        var w = el.offsetWidth, h = el.offsetHeight;
+
+        function tick(){
+          var maxF = FRAMES[row];
+          frame = (frame + 1) % maxF;
           el.style.backgroundPositionX = -(frame * w) + 'px';
           el.style.backgroundPositionY = -(row * h) + 'px';
-          el.style.backgroundSize = totalW + 'px ' + totalH + 'px';
+          el.style.backgroundSize = (w * 8) + 'px ' + (h * 9) + 'px';
         }
-        setInterval(anim, 1000/fps);
-        /* handle resize */
+
+        function setRow(r, duration){
+          row = r; frame = 0;
+          if(timer) clearInterval(timer);
+          timer = setInterval(tick, 1000/fps);
+          if(idleTimer) clearTimeout(idleTimer);
+          if(duration){
+            idleTimer = setTimeout(function(){ setRow(0); }, duration);
+          }
+        }
+
+        /* 初始招手 3s → 待机 */
+        setTimeout(function(){ setRow(0); }, 3000);
+
+        /* 观察游戏状态 */
+        var obs = new MutationObserver(function(ms){
+          ms.forEach(function(m){
+            m.addedNodes.forEach(function(n){
+              if(n.nodeType!==1) return;
+              var t = n.textContent||'';
+              /* 玩家发消息 → 待机 */
+              if(n.classList.contains('ml-auto')){ setRow(0, 8000); }
+              /* AI 回复 → 说话 */
+              if(n.classList.contains('items-start') && t.length>30){
+                setRow(8, 5000);
+                /* 包含 SOLVED → 乐眨眼→小跳 */
+                if(t.indexOf('[SOLVED]')>=0 || t.indexOf('【SOLVED】')>=0){
+                  setRow(6, 1200);
+                  setTimeout(function(){ setRow(4, 1500); }, 1400);
+                }
+              }
+            });
+            /* 检测错误 */
+            if(m.target.textContent && m.target.textContent.indexOf('抱歉')>=0 && m.target.textContent.indexOf('走神')>=0){
+              setRow(5, 2500);
+            }
+          });
+        });
+        (function watch(){
+          var root = document.getElementById('root');
+          if(root){ obs.observe(root, {childList:true,subtree:true,characterData:true}); }
+          else setTimeout(watch, 500);
+        })();
+
         window.addEventListener('resize',function(){
           w = el.offsetWidth; h = el.offsetHeight;
-          totalW = w * 8; totalH = h * 9;
         });
       })();
     </script>
