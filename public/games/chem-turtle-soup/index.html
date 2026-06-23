@@ -153,6 +153,15 @@
       /* 链接高亮 */
       a:hover { color: var(--tsuki-accent-cyan) !important; }
 
+      /* === 月读概念背景图 === */
+      .tsuki-bg-layer {
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background-image: url('../../effects/tsukuyomi-bg.png');
+        background-size: cover; background-position: center;
+        opacity: 0.15;
+        mix-blend-mode: screen;
+      }
+
       /* === 月读光束（introduction_light 图片叠加） === */
       .tsuki-light {
         position: fixed; pointer-events: none; z-index: 3;
@@ -253,12 +262,36 @@
         0%,100% { transform: translateX(0); }
         50% { transform: translateX(-30px); }
       }
+      /* === 小八千代精灵动画 === */
+      .yachiyo-sprite {
+        position: fixed; pointer-events: none; z-index: 4;
+        bottom: 100px; right: 20px;
+        width: 128px; height: 156px;
+        background-image: url('../../effects/spritesheet.webp');
+        background-size: 512px 624px;
+        background-repeat: no-repeat;
+        opacity: 0.85;
+        animation: yachiyo-idle 1.6s steps(4) infinite,
+                   yachiyo-float 6s ease-in-out infinite;
+      }
+      @keyframes yachiyo-idle {
+        0% { background-position: 0 0; }
+        25% { background-position: -128px 0; }
+        50% { background-position: -256px 0; }
+        75% { background-position: -384px 0; }
+        100% { background-position: 0 -156px; }
+      }
+      @keyframes yachiyo-float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+      }
       @media (max-width: 768px) {
         .neon-fish { width: 40px; height: 30px; top: 6%; right: 2%; }
         .neon-octopus { width: 55px; height: 42px; bottom: 30%; left: 2%; }
         .neon-cloud-top { width: 80px; height: 40px; left: 3%; }
         .neon-cloud-bottom { width: 65px; height: 35px; bottom: 12%; right: 2%; }
         .sparkle { width: 20px; height: 20px; }
+        .yachiyo-sprite { width: 96px; height: 117px; background-size: 384px 468px; bottom: 80px; right: 10px; }
       }
     </style>
     <script type="module" crossorigin src="./assets/index-B79EhL8X.js"></script>
@@ -267,6 +300,8 @@
   <body>
     <div id="root"></div>
     <!-- 月读装饰物件 -->
+    <!-- 月读概念背景 -->
+    <div class="tsuki-bg-layer" aria-hidden="true"></div>
     <div class="neon-cloud-top" aria-hidden="true"></div>
     <div class="neon-cloud-bottom" aria-hidden="true"></div>
     <div class="neon-fish" aria-hidden="true"></div>
@@ -274,6 +309,8 @@
     <div class="sparkle sparkle-1" aria-hidden="true"></div>
     <div class="sparkle sparkle-2" aria-hidden="true"></div>
     <div class="sparkle sparkle-3" aria-hidden="true"></div>
+    <!-- 小八千代精灵动画 -->
+    <div class="yachiyo-sprite" aria-hidden="true"></div>
     <div class="tsuki-light tsuki-light-main" aria-hidden="true"></div>
     <div class="tsuki-light tsuki-light-sub" aria-hidden="true"></div>
     <script>
