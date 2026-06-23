@@ -7,7 +7,7 @@
  * 3. /api/*    → hteamgame.com 反向代理（puzzles, scores 等）
  */
 
-import { SYSTEM_PROMPT } from './prompt.js';
+import { DEEPSEEK_PROMPT, DEFAULT_PROMPT } from './prompt.js';
 
 // DeepSeek API 配置
 const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
@@ -65,7 +65,8 @@ async function callDeepSeek(env, messages) {
  * @param {'deepseek'|'gemini'} model - 用户选择的模型
  */
 async function callAI(env, puzzle, userMessage, history, model) {
-  const systemPrompt = SYSTEM_PROMPT.replace(/\{PUZZLE_CONTEXT\}/g, puzzle);
+  const promptTemplate = model === 'deepseek' ? DEEPSEEK_PROMPT : DEFAULT_PROMPT;
+  const systemPrompt = promptTemplate.replace(/\{PUZZLE_CONTEXT\}/g, puzzle);
 
   // Gemini 模式：直接走 hteamgame
   if (model === 'gemini') {
