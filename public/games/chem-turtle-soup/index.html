@@ -153,8 +153,8 @@
       /* 链接高亮 */
       a:hover { color: var(--tsuki-accent-cyan) !important; }
 
-      /* === 月读装饰物件（参考主页 hero 霓虹元素） === */
-      .neon-fish, .neon-cloud-top, .neon-cloud-bottom {
+      /* === 月读装饰物件 === */
+      .neon-fish, .neon-cloud-top, .neon-cloud-bottom, .neon-octopus, .sparkle {
         position: fixed; pointer-events: none; z-index: 2;
         background-size: contain; background-repeat: no-repeat;
         opacity: 0;
@@ -163,38 +163,64 @@
         top: 12%; right: 5%;
         width: 70px; height: 50px;
         background-image: url('../../effects/deco_neon-fish.webp');
-        animation: deco-fade-in 2s ease-out forwards 0.8s, fish-swim 12s ease-in-out infinite 2s;
+        animation: deco-fade-in 2s ease-out forwards 0.8s, fish-swim 13s ease-in-out infinite 2s;
+      }
+      .neon-octopus {
+        bottom: 25%; left: 5%;
+        width: 85px; height: 65px;
+        background-image: url('../../effects/deco_neon-octopus.webp');
+        animation: deco-fade-in 2s ease-out forwards 1.6s, octo-float 16s ease-in-out infinite 2s;
       }
       .neon-cloud-top {
-        top: 3%; left: 15%;
-        width: 120px; height: 60px;
+        top: 3%; left: 18%;
+        width: 130px; height: 65px;
         background-image: url('../../effects/deco_neon-cloud1.webp');
-        animation: deco-fade-in 2s ease-out forwards 1.4s, cloud-drift 20s ease-in-out infinite 2s;
+        animation: deco-fade-in 2s ease-out forwards 1.2s, cloud-drift 20s ease-in-out infinite 2s;
       }
       .neon-cloud-bottom {
-        bottom: 8%; right: 10%;
-        width: 100px; height: 50px;
+        bottom: 8%; right: 8%;
+        width: 105px; height: 55px;
         background-image: url('../../effects/deco_neon-cloud2.webp');
-        animation: deco-fade-in 2s ease-out forwards 1.8s, cloud-drift 22s ease-in-out infinite 2s;
+        animation: deco-fade-in 2s ease-out forwards 1.8s, cloud-drift 24s ease-in-out infinite 2s;
+      }
+      /* 闪烁星光 */
+      .sparkle {
+        width: 30px; height: 30px;
+        background-image: url('../../effects/icon_flash1.webp');
+      }
+      .sparkle-1 { top: 18%; left: 40%; animation: sparkle-flicker 4s ease-in-out infinite 0.5s; }
+      .sparkle-2 { top: 55%; right: 22%; animation: sparkle-flicker 5s ease-in-out infinite 1.5s; background-image: url('../../effects/icon_flash2.webp'); }
+      .sparkle-3 { top: 35%; left: 60%; animation: sparkle-flicker 4.5s ease-in-out infinite 2.5s; background-image: url('../../effects/icon_flash3.webp'); }
+      @keyframes sparkle-flicker {
+        0%,100% { opacity: 0; transform: scale(0.3); }
+        30% { opacity: 0.6; transform: scale(1); }
+        60% { opacity: 0.15; transform: scale(0.5); }
       }
       @keyframes deco-fade-in {
-        0% { opacity: 0; transform: scale(0.5) translateY(20px); }
-        100% { opacity: 0.7; transform: scale(1) translateY(0); }
+        0% { opacity: 0; transform: scale(0.4) translateY(20px); }
+        100% { opacity: 0.65; transform: scale(1) translateY(0); }
       }
       @keyframes fish-swim {
-        0%,100% { transform: translate(0, 0) rotate(0deg); }
-        25% { transform: translate(-20px, -10px) rotate(3deg); }
-        50% { transform: translate(-40px, 5px) rotate(-2deg); }
-        75% { transform: translate(-15px, -8px) rotate(2deg); }
+        0%,100% { transform: translate(0,0) rotate(0deg); }
+        25% { transform: translate(-25px,-12px) rotate(4deg); }
+        50% { transform: translate(-45px,6px) rotate(-3deg); }
+        75% { transform: translate(-18px,-10px) rotate(3deg); }
+      }
+      @keyframes octo-float {
+        0%,100% { transform: translate(0,0) rotate(0deg); }
+        33% { transform: translate(15px,-18px) rotate(5deg); }
+        66% { transform: translate(-10px,-8px) rotate(-4deg); }
       }
       @keyframes cloud-drift {
         0%,100% { transform: translateX(0); }
-        50% { transform: translateX(-25px); }
+        50% { transform: translateX(-30px); }
       }
       @media (max-width: 768px) {
-        .neon-fish { width: 45px; height: 35px; top: 8%; right: 2%; }
-        .neon-cloud-top { width: 80px; height: 40px; left: 5%; }
-        .neon-cloud-bottom { width: 65px; height: 35px; bottom: 15%; right: 3%; }
+        .neon-fish { width: 40px; height: 30px; top: 6%; right: 2%; }
+        .neon-octopus { width: 55px; height: 42px; bottom: 30%; left: 2%; }
+        .neon-cloud-top { width: 80px; height: 40px; left: 3%; }
+        .neon-cloud-bottom { width: 65px; height: 35px; bottom: 12%; right: 2%; }
+        .sparkle { width: 20px; height: 20px; }
       }
     </style>
     <script type="module" crossorigin src="./assets/index-B79EhL8X.js"></script>
@@ -206,5 +232,9 @@
     <div class="neon-cloud-top" aria-hidden="true"></div>
     <div class="neon-cloud-bottom" aria-hidden="true"></div>
     <div class="neon-fish" aria-hidden="true"></div>
+    <div class="neon-octopus" aria-hidden="true"></div>
+    <div class="sparkle sparkle-1" aria-hidden="true"></div>
+    <div class="sparkle sparkle-2" aria-hidden="true"></div>
+    <div class="sparkle sparkle-3" aria-hidden="true"></div>
   </body>
 </html>
