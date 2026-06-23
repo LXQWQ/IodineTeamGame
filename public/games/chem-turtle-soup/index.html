@@ -162,33 +162,33 @@
         opacity: 0;
       }
       .tsuki-light-main {
-        top: 5%; left: 2%;
-        width: 55%; height: 70%;
+        top: -15%; left: -10%;
+        width: 80%; height: 90%;
         animation: light-entrance 3s ease-out forwards, light-pulse 8s ease-in-out infinite 3s;
         transform-origin: left top;
       }
       .tsuki-light-sub {
-        bottom: 5%; right: 5%;
-        width: 40%; height: 50%;
+        bottom: -10%; right: -5%;
+        width: 55%; height: 65%;
         transform: rotate(180deg);
         animation: light-entrance 3.5s ease-out forwards 0.5s, light-pulse 10s ease-in-out infinite 3.5s;
-        opacity: 0.12;
+        opacity: 0.1;
       }
       .tsuki-light--active {
-        opacity: 0.6 !important;
+        opacity: 0.5 !important;
         transition: opacity 0.3s ease;
       }
       @keyframes light-entrance {
         0% { opacity: 0; transform: translateY(30px) scale(1.1); }
-        100% { opacity: 0.25; transform: translateY(0) scale(1); }
+        100% { opacity: 0.22; transform: translateY(0) scale(1); }
       }
       @keyframes light-pulse {
-        0%,100% { opacity: 0.25; }
-        50% { opacity: 0.35; }
+        0%,100% { opacity: 0.22; }
+        50% { opacity: 0.3; }
       }
       @media (max-width: 768px) {
-        .tsuki-light-main { top: 2%; left: 0; width: 60%; height: 55%; }
-        .tsuki-light-sub { bottom: 3%; right: 0; width: 35%; height: 40%; }
+        .tsuki-light-main { top: -10%; left: -5%; width: 75%; height: 70%; }
+        .tsuki-light-sub { bottom: -5%; right: 0; width: 45%; height: 50%; }
       }
       .neon-fish, .neon-cloud-top, .neon-cloud-bottom, .neon-octopus, .sparkle {
         position: fixed; pointer-events: none; z-index: 2;
