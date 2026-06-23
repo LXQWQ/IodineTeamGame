@@ -53,7 +53,7 @@
 
       /* === 背景氛围（参考辉夜姬官网三层叠加灯光） === */
       body::before {
-        content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        content: '' !important; display: block !important; position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
           /* 月亮光晕 */
           radial-gradient(ellipse 60vw 50vh at 50% 30%, rgba(224,64,144,0.07) 0%, transparent 60%),
@@ -71,7 +71,7 @@
 
       /* 星光粒子（辉夜姬官网风格多点星光） */
       body::after {
-        content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        content: '' !important; display: block !important; position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
           radial-gradient(1.5px 1.5px at 8% 18%, rgba(255,183,77,0.7), transparent),
           radial-gradient(1px 1px at 22% 12%, rgba(224,64,144,0.6), transparent),
