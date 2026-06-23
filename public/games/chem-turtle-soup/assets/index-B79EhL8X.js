@@ -28844,6 +28844,7 @@ function TD() {
       , [H,J] = rt.useState(null)
       , [B,tt] = rt.useState(!1)
       , [Y,it] = rt.useState(0)
+      , [C,S] = rt.useState("deepseek")
       , at = rt.useRef(null)
       , et = async () => {
         try {
@@ -28909,7 +28910,8 @@ function TD() {
                         body: JSON.stringify({
                             puzzle: he,
                             userMessage: p,
-                            history: f
+                            history: f,
+                            model: C
                         })
                     })).json()
                 } catch (sn) {
@@ -29486,8 +29488,8 @@ function TD() {
                         })]
                     })]
                 }), z.jsx("div", {
-                    className: "px-3 pb-3 pt-1",
-                    children: z.jsxs("form", {
+                    className: "px-3 pb-1",
+                    children: [z.jsx("div", { className: "flex gap-1 mb-2", children: [z.jsx("button", { type: "button", onClick: function(){S("deepseek")}, className: ca("px-2 py-1 text-xs rounded-lg transition-colors", C === "deepseek" ? "bg-purple-900/20 text-purple-400 border border-purple-900/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "DS Flash"), z.jsx("button", { type: "button", onClick: function(){S("gemini")}, className: ca("px-2 py-1 text-xs rounded-lg transition-colors", C === "gemini" ? "bg-purple-900/20 text-purple-400 border border-purple-900/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "Gemini")] }), z.jsxs("form", {
                         onSubmit: ut,
                         className: "flex items-center gap-2",
                         children: [z.jsx("input", {
