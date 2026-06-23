@@ -68,6 +68,13 @@ async function callAI(env, puzzle, userMessage, history, model) {
   const promptTemplate = model === 'deepseek' ? DEEPSEEK_PROMPT : DEFAULT_PROMPT;
   const systemPrompt = promptTemplate.replace(/\{PUZZLE_CONTEXT\}/g, puzzle);
 
+  // 构建 DeepSeek 格式 messages（也用于 Gemini 降级场景）
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...history,
+    { role: 'user', content: `玩家提问：${userMessage}` },
+  ];
+
   // Gemini 模式：直接走 hteamgame
   if (model === 'gemini') {
     console.log('[AI] using Gemini (user selected)');
@@ -76,16 +83,21 @@ async function callAI(env, puzzle, userMessage, history, model) {
       return { reply, source: 'gemini' };
     } catch (e) {
       console.warn(`[AI] Gemini error: ${e.message}, falling back to DeepSeek`);
+      try {
+        const reply = await callDeepSeek(env, messages);
+        return { reply, source: 'deepseek-fallback' };
+      } catch (e2) {
+        console.warn(`[AI] DeepSeek fallback also failed: ${e2.message}`);
+      }
+      return {
+        reply: '唔……抱歉呢神明大人，小八刚才不小心走神了🌙能再问一次吗？',
+        source: 'error',
+      };
     }
   }
 
   // DeepSeek 模式（默认）：主路径
   console.log('[AI] using DeepSeek Flash');
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...history,
-    { role: 'user', content: `玩家提问：${userMessage}` },
-  ];
 
   try {
     const reply = await callDeepSeek(env, messages);
