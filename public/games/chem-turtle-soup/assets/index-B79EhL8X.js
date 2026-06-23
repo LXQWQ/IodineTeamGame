@@ -28901,25 +28901,15 @@ function TD() {
               , Le = async (Ne=3, kn=1e3) => {
                 var Gi;
                 try {
-                    return await (await fetch("/api/gemini/generate", {
+                    return await (await fetch("/api/chat", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                            contents: [{
-                                parts: [{
-                                    text: `玩家提问：${p}`
-                                }]
-                            }],
-                            systemInstruction: {
-                                parts: [{
-                                    text: SD.replace("{PUZZLE_CONTEXT}", he)
-                                }]
-                            },
-                            generationConfig: {
-                                temperature: .8
-                            }
+                            puzzle: he,
+                            userMessage: p,
+                            history: f
                         })
                     })).json()
                 } catch (sn) {
@@ -28929,7 +28919,7 @@ function TD() {
                     throw sn
                 }
             }
-              , Mn = ((te = (gt = (Mt = (bt = (nt = (await Le()).candidates) == null ? void 0 : nt[0]) == null ? void 0 : bt.content) == null ? void 0 : Mt.parts) == null ? void 0 : gt[0]) == null ? void 0 : te.text) || "唔……抱歉呢神明大人，小八刚才不小心走神了🌙能再问一次吗？";
+              , Mn = ((await Le()).reply) || "唔……抱歉呢神明大人，小八刚才不小心走神了🌙能再问一次吗？";
             Mn.includes("[SOLVED]") ? (v(!0),
             D(!0),
             it(Ne => {
