@@ -35,10 +35,21 @@
       }
       html, body {
         height: 100%; overflow: hidden;
-        background: #1e2235 !important;
+        background: transparent !important;
         font-family: system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;
       }
-      .bg-\[\#0a0a0c\] { background-color: #1e2235 !important; }
+      /* 覆盖所有硬编码背景为透明，让 pseudo-elements 透出来 */
+      .bg-\[\#0a0a0c\], [class*="bg-zinc-950"], [class*="bg-zinc-900"] {
+        background-color: transparent !important;
+      }
+      /* 确保容器有半透明背景 */
+      .bg-zinc-900\\/50, .bg-zinc-900\\/80, .bg-zinc-900\\/95 {
+        background-color: rgba(30,34,53,0.7) !important;
+      }
+      /* 底部输入栏保留实色 */
+      .bg-zinc-900\\/80.border-t {
+        background-color: rgba(21,19,34,0.92) !important;
+      }
 
       /* === 背景氛围（参考辉夜姬官网三层叠加灯光） === */
       body::before {
