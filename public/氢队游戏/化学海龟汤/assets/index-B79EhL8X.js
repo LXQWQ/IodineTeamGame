@@ -29382,7 +29382,7 @@ function TD() {
                         className: "w-10 h-10 mb-3 text-zinc-600"
                     }), z.jsx("p", {
                         className: "text-sm font-serif italic",
-                        children: '"开始你的表演吧，凡人。"'
+                        children: '"那么，开始我们的对话吧——你想从哪里说起呢？✨"'
                     })]
                 }), z.jsx(yf, {
                     mode: "popLayout",
@@ -29648,7 +29648,7 @@ function TD() {
                             className: "w-12 h-12 mb-4 text-zinc-600"
                         }), z.jsx("p", {
                             className: "text-sm font-serif italic",
-                            children: '"开始你的表演吧，凡人。向我提问，或者在无知中沉沦。"'
+                            children: '"开始我们的对话吧，神明大人✨向我提问也好，分享你的故事也好——当然，如果你想安静地坐一会儿，八千代也会在这里陪着你的。🌙"'
                         })]
                     }), z.jsx(yf, {
                         mode: "popLayout",
