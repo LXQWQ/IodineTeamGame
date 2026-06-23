@@ -1,0 +1,2053 @@
+        /* 蒸镀动画控制 */
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg-primary:#f9fafc;--bg-card:#ffffff;--text-primary:#1e293b;--text-secondary:#475569;--border:#e2e8f0;--accent:#5c2d91;--accent-light:#9b3d6b;--accent-bg:#f3edf7;--accent-starch:#1e3d59;--crystal-dark:#3a3a4a;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.05);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.05);--header-gradient:linear-gradient(135deg,#1a0a2e 0%,#5c2d91 40%,#9b3d6b 100%);--modal-bg:#ffffff;--game-bg:var(--bg-primary);--game-card-bg:var(--bg-card);--game-text:var(--text-primary);--game-accent:var(--accent);--game-border:var(--border)}
+        /* 碘蒸气主题 - 深紫幻境 */
+        [data-theme="iodine-vapor"] {
+            --bg-primary: #1a0a2e;
+            --bg-card: #2d1b3a;
+            --text-primary: #f0e6ff;
+            --text-secondary: #b8a0d0;
+            --border: #4a2e5c;
+            --accent: #9b59b6;
+            --accent-light: #c39bd3;
+            --accent-bg: #2a1a35;
+            --accent-starch: #6c3483;
+            --crystal-dark: #1a0a2e;
+            --header-gradient: linear-gradient(135deg, #0d0420 0%, #4a1a6b 40%, #8e44ad 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.5);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.6);
+            --modal-bg: #2d1b3a;
+        }
+        [data-theme="mercury"] {
+            --bg-primary: #1a1a1a;
+            --bg-card: #2d2d2d;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a8a8a8;
+            --border: #404040;
+            --accent: #c0c0c0;
+            --accent-light: #d4d4d4;
+            --accent-bg: #252525;
+            --accent-starch: #87ceeb;
+            --crystal-dark: #1a1a1a;
+            --header-gradient: linear-gradient(135deg, #0a0a0a 0%, #404040 50%, #c0c0c0 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.6);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.7);
+            --modal-bg: #2d2d2d;
+        }
+        [data-theme="sulfur"] {
+            --bg-primary: #2d1810;
+            --bg-card: #4a2c1a;
+            --text-primary: #fff8e1;
+            --text-secondary: #ffd4a3;
+            --border: #6b4423;
+            --accent: #ffa500;
+            --accent-light: #ffb347;
+            --accent-bg: #3d2414;
+            --accent-starch: #9370db;
+            --crystal-dark: #2d1810;
+            --header-gradient: linear-gradient(135deg, #1a0e08 0%, #4a2c1a 40%, #ffa500 100%);
+            --shadow-sm: 0 4px 8px rgba(255,165,0,0.3);
+            --shadow-md: 0 10px 18px rgba(255,165,0,0.4);
+            --modal-bg: #4a2c1a;
+            --game-bg: linear-gradient(135deg, #2d1810 0%, #4a2c1a 100%);
+        }
+        [data-theme="cinnabar"] {
+            --bg-primary: #4a0e0e;
+            --bg-card: #6b1a1a;
+            --text-primary: #ffe4e1;
+            --text-secondary: #ffb3ba;
+            --border: #8b2635;
+            --accent: #dc143c;
+            --accent-light: #ff6b6b;
+            --accent-bg: #5a1515;
+            --accent-starch: #ffd700;
+            --crystal-dark: #4a0e0e;
+            --header-gradient: linear-gradient(135deg, #2a0808 0%, #6b1a1a 40%, #dc143c 100%);
+            --shadow-sm: 0 4px 8px rgba(220,20,60,0.4);
+            --shadow-md: 0 10px 18px rgba(220,20,60,0.5);
+            --modal-bg: #6b1a1a;
+            --game-bg: linear-gradient(135deg, #4a0e0e 0%, #6b1a1a 100%);
+        }
+        [data-theme="copper-sulfate"] {
+            --bg-primary: #0a2e4a;
+            --bg-card: #1a4d6b;
+            --text-primary: #e0f2f7;
+            --text-secondary: #a8dadc;
+            --border: #2e5a7a;
+            --accent: #4682b4;
+            --accent-light: #5f9ea0;
+            --accent-bg: #1a3a52;
+            --accent-starch: #ffffff;
+            --crystal-dark: #0a2e4a;
+            --header-gradient: linear-gradient(135deg, #051a2e 0%, #1a4d6b 40%, #4682b4 100%);
+            --shadow-sm: 0 4px 8px rgba(70,130,180,0.3);
+            --shadow-md: 0 10px 18px rgba(70,130,180,0.4);
+            --modal-bg: #1a4d6b;
+        }
+        [data-theme="carbon"] {
+            --bg-primary: #000000;
+            --bg-card: #1a1a1a;
+            --text-primary: #d0d0d0;
+            --text-secondary: #808080;
+            --border: #333333;
+            --accent: #666666;
+            --accent-light: #808080;
+            --accent-bg: #0d0d0d;
+            --accent-starch: #999999;
+            --crystal-dark: #000000;
+            --header-gradient: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #333333 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.8);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.9);
+            --modal-bg: #1a1a1a;
+            --game-bg: #000000;
+        }
+        [data-theme="classic-light"] {
+            --bg-primary: #f9fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --accent-bg: #ede9fe;
+            --accent-starch: #1e3d59;
+            --crystal-dark: #3a3a4a;
+            --header-gradient: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.05);
+            --modal-bg: #ffffff;
+        }
+        [data-theme="classic-dark"] {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+            --accent: #a78bfa;
+            --accent-light: #c4b5fd;
+            --accent-bg: #312e81;
+            --accent-starch: #2a4d7a;
+            --crystal-dark: #5c5c6e;
+            --header-gradient: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%);
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.3);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.4);
+            --modal-bg: #1e293b;
+        }
+        /* 月读主题时禁用蒸镀效果 */
+        [data-theme="tsukuyomi"] {
+            /* Hero 文字层叠顺序 */
+            --tsuki-accent: #e04090;
+            --tsuki-accent-cyan: #00b8d4;
+            --tsuki-accent-gold: #ffb74d;
+            --tsuki-glow: rgba(224, 64, 144, 0.3);
+            /* Hero 标题样式 */
+            --tsuki-bg: #1e2235;
+            --tsuki-card: #262b3d;
+            --tsuki-text: #e8e4ef;
+            --tsuki-text-dim: #9a96b5;
+            --tsuki-border: #3b3850;
+            /* Hero 描述文字 */
+            --bg-primary: #1e2235;
+            --bg-card: #262b3d;
+            --text-primary: #e8e4ef;
+            --text-secondary: #9a96b5;
+            --border: #3b3850;
+            --accent: #e04090;
+            --accent-light: #ff6bb5;
+            --accent-bg: rgba(224, 64, 144, 0.08);
+            --header-gradient: linear-gradient(135deg, #0d0a1a 0%, #1a0a2e 40%, #2d1044 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.45);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.55);
+            --modal-bg: #1e1d2f;
+        }
+        @property --reveal {
+            syntax: '<percentage>';
+            inherits: false;
+            initial-value: 0%;
+        }
+        body.dark{--bg-primary:#0f172a;--bg-card:#1e293b;--text-primary:#f1f5f9;--text-secondary:#cbd5e1;--border:#334155;--accent:#7b4fb8;--accent-light:#c46b8b;--accent-bg:#2a1f35;--accent-starch:#2a4d7a;--crystal-dark:#5c5c6e;--shadow-sm:0 4px 6px -1px rgba(0,0,0,0.3);--shadow-md:0 10px 15px -3px rgba(0,0,0,0.4);--header-gradient:linear-gradient(135deg,#0d0620 0%,#3a1a5c 40%,#6b1e3d 100%);--modal-bg:#1e293b}
+        body{background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;line-height:1.5;transition:background 0.8s cubic-bezier(.45,.05,.19,1.2),color 0.8s ease}
+        .container{max-width:1280px;margin:0 auto;padding:2rem 1.5rem}
+        .navbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:3rem;padding-bottom:1rem;border-bottom:1px solid var(--border);transition:border-color 0.8s ease}
+        .logo{font-size:1.8rem;font-weight:800;background:var(--header-gradient);background-size:200% auto;background-clip:text;-webkit-background-clip:text;color:transparent;letter-spacing:-0.5px;animation:gradient-flow 4s ease infinite}
+@keyframes gradient-flow{0%,100%{background-position:0% center}50%{background-position:100% center}}
+        .nav-right{display:flex;align-items:center;gap:1rem}
+        .theme-toggle,.auth-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;font-weight:500;color:var(--accent);transition:all .3s cubic-bezier(.45,.05,.19,1.2);position:relative;overflow:hidden}
+        .theme-toggle::before,.auth-btn::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:var(--accent);border-radius:50%;transform:translate(-50%,-50%);transition:width 0.4s ease,height 0.4s ease}
+        .theme-toggle:hover::before,.auth-btn:hover::before{width:100%;height:100%}
+        .theme-toggle:hover,.auth-btn:hover{background:var(--accent);color:#fff;z-index:1}
+        /* 碘遇淀粉变蓝交互触点 */
+        .theme-toggle:active, .auth-btn:active, .play-btn:active, .feedback-btn:active {
+            background: var(--accent-starch) !important;
+            transition: background 0.3s ease;
+        }
+        .theme-toggle, .auth-btn, .play-btn, .feedback-btn {
+            transition: background 0.3s ease;
+        }
+        .user-info{display:flex;align-items:center;gap:.8rem;background:var(--accent-bg);padding:.4rem 1rem;border-radius:40px;transition:background 0.8s ease}
+        .user-name{font-weight:600;color:var(--accent)}
+        .logout-btn{background:0 0;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8rem}
+        .logout-btn:hover{color:var(--accent)}
+        .hero{background:var(--header-gradient);border-radius:2rem;padding:2.5rem 2rem;margin-bottom:3rem;color:#fff;box-shadow:var(--shadow-md);position:relative;overflow:hidden;transition:background 0.8s cubic-bezier(.45,.05,.19,1.2),box-shadow 0.8s ease}
+        .hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.4) var(--reveal, 0%),transparent var(--reveal, 0%));-webkit-mask-image:linear-gradient(to right,transparent 0%,black var(--reveal, 0%));mask-image:linear-gradient(to right,transparent 0%,black var(--reveal, 0%));animation:vapor-deposition 2s cubic-bezier(.65,.05,.36,1) forwards;z-index:1}
+        /* 蒸镀动画控制 */
+        .hero.vapor-animation-active:not(.tsukuyomi-hero)::before {
+            animation: vapor-deposition 2s cubic-bezier(.65,.05,.36,1) forwards;
+        }
+        /* 月读主题时禁用蒸镀效果 */
+        [data-theme="tsukuyomi"] .hero::before {
+            animation: none;
+            opacity: 0;
+        }
+        .hero h1,.hero p,.hero .badge,.hero .feedback-btn,.hero .tutorial-trigger-btn{position:relative;z-index:2}
+        .hero h1{font-size:2.5rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;background:linear-gradient(135deg,var(--accent-light),#fff,var(--accent-light));background-size:200% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:gradient-flow 3s ease infinite}
+        .hero p{font-size:1.1rem;opacity:.92;max-width:80%;margin-bottom:1.5rem}
+        .badge{background:rgba(255,255,255,.2);backdrop-filter:blur(4px);display:inline-block;padding:.4rem 1rem;border-radius:40px;font-size:.8rem;font-weight:500}
+        .feedback-btn{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent);padding:.7rem 1.5rem;border-radius:60px;font-weight:600;margin-top:.5rem;cursor:pointer;transition:transform .1s,background .3s,color .3s,border-color .3s;display:inline-flex;align-items:center;gap:.5rem}
+        .section-title{font-size:1.8rem;font-weight:700;margin:2rem 0 1.5rem;border-left:5px solid var(--accent);padding-left:1rem}
+        .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2rem;margin-bottom:3rem;perspective:1200px}
+.game-grid.stagger-cards .game-card{opacity:0;animation:card-pop-in .5s cubic-bezier(.25,1,.5,1) forwards}
+.game-grid.stagger-cards .game-card:nth-child(1){animation-delay:.05s}
+.game-grid.stagger-cards .game-card:nth-child(2){animation-delay:.12s}
+.game-grid.stagger-cards .game-card:nth-child(3){animation-delay:.19s}
+.game-grid.stagger-cards .game-card:nth-child(4){animation-delay:.26s}
+.game-grid.stagger-cards .game-card:nth-child(5){animation-delay:.33s}
+.game-grid.stagger-cards .game-card:nth-child(6){animation-delay:.4s}
+.game-grid.stagger-cards .game-card:nth-child(7){animation-delay:.47s}
+.game-grid.stagger-cards .game-card:nth-child(8){animation-delay:.54s}
+@keyframes card-pop-in{0%{opacity:0;transform:translateY(30px) scale(.92)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        .game-tabs{display:flex;gap:1rem;margin-bottom:2rem;border-bottom:2px solid var(--border);padding-bottom:1rem}
+        .tab-btn{background:var(--bg-card);border:2px solid var(--border);color:var(--text-primary);padding:.8rem 1.5rem;border-radius:40px;font-weight:600;cursor:pointer;transition:all .3s cubic-bezier(.45,.05,.19,1.2);position:relative;overflow:hidden}
+        .tab-btn::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:var(--accent);border-radius:50%;transform:translate(-50%,-50%);transition:width .4s ease,height .4s ease;z-index:0}
+        .tab-btn:hover::before{width:100%;height:100%}
+        .tab-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+        .tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(1.05)}
+        .tab-btn span{position:relative;z-index:1}
+        .tab-content{margin-top:2rem}
+        .tab-pane{display:none;animation:fadeInUp .5s ease forwards}
+        .tab-pane.active{display:block}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .game-card{background:var(--bg-card);border-radius:1.5rem;overflow:hidden;box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,0.6);border:1px solid var(--border);transition:background 0.8s cubic-bezier(.45,.05,.19,1.2),transform .3s cubic-bezier(.45,.05,.19,1.2),box-shadow .3s ease,border-color 0.8s ease;position:relative}
+        .game-img{background:linear-gradient(145deg,var(--accent-bg),var(--bg-primary));height:160px;display:flex;align-items:center;justify-content:center;font-size:4rem;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+        .game-info{padding:1.5rem}
+        .game-info h3{font-size:1.4rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+        .game-tag{background:var(--accent-bg);color:var(--accent);font-size:.7rem;padding:.2rem .7rem;border-radius:20px;font-weight:500}
+        /* 碘的氧化性进度指示 */
+        .oxidation-indicator {
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 50%, var(--accent) 100%);
+            border-radius: 2px;
+            margin: 0.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .oxidation-indicator::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--oxidation-level, 30%);
+            background: var(--accent-light);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 8px var(--accent-light);
+        }
+        .oxidation-progress {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin: 0.2rem 0;
+        }
+        .game-desc{color:var(--text-secondary);margin:.8rem 0 1rem;font-size:.9rem}
+        .play-btn{background:var(--accent);color:#fff;border:none;padding:.5rem 1.2rem;border-radius:40px;font-weight:500;cursor:pointer;width:100%}
+        .play-btn:hover{background:var(--accent-light)}
+        .footnote{text-align:center;font-size:.75rem;color:var(--text-secondary);margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:1000;transition:background 0.3s ease}
+        .modal.active{display:flex}
+        .modal-content{background:var(--modal-bg);border-radius:2rem;padding:2rem;width:90%;max-width:450px;box-shadow:var(--shadow-md);border:1px solid var(--border);transition:background 0.8s cubic-bezier(.45,.05,.19,1.2),border-color 0.8s ease,box-shadow 0.8s ease}
+        .modal-content h3{margin-bottom:1.5rem}
+        .modal-content input{width:100%;padding:.7rem;margin-bottom:1rem;border-radius:1rem;border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary)}
+        .modal-buttons{display:flex;gap:1rem;justify-content:flex-end}
+        .modal-buttons button{padding:.5rem 1.2rem;border-radius:2rem;border:none;cursor:pointer}
+        .btn-primary{background:var(--accent);color:#fff}
+        .btn-secondary{background:var(--border);color:var(--text-primary)}
+        .error-msg{color:#ef4444;font-size:.8rem;margin-top:-.5rem;margin-bottom:.8rem}
+        @keyframes vapor-deposition{0%{--reveal:0%}50%{--reveal:100%}100%{--reveal:0%}}
+        /* 碘的升华特性加载动画 */
+        .iodine-sublimation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 60px;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+        .iodine-crystal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            background: var(--crystal-dark);
+            border-radius: 4px;
+            transform: translate(-50%, -50%);
+            animation: crystal-emerge 3s ease-in-out forwards;
+            box-shadow: 0 4px 12px rgba(58,44,106,0.3);
+        }
+        .iodine-vapor {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            animation: vapor-expand 3s ease-in-out 1.5s forwards;
+        }
+        @keyframes crystal-emerge {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0);
+            }
+            30% {
+                width: 40px;
+                height: 40px;
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                width: 40px;
+                height: 40px;
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+        }
+        @keyframes vapor-expand {
+            0% {
+                width: 80px;
+                height: 80px;
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% {
+                width: 200px;
+                height: 200px;
+                opacity: 0.8;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+        .micro-reaction{width:60px;height:60px;position:relative}
+        .crucible{width:40px;height:30px;background:linear-gradient(135deg,#8b5cf6,#a78bfa);border-radius:0 0 20px 20px;margin:0 auto;position:relative;overflow:hidden;animation:crucible-glow 3s ease-in-out infinite}
+        .crucible::before{content:'';position:absolute;bottom:0;left:0;right:0;height:15px;background-color:#10b981;animation:alchemical-color 3s ease-in-out infinite}
+        @keyframes crucible-glow{0%,100%{box-shadow:0 0 15px rgba(16,185,129,0.3)}33%{box-shadow:0 0 20px rgba(251,191,36,0.5)}66%{box-shadow:0 0 25px rgba(239,68,68,0.6)}}
+        @keyframes alchemical-color{0%,25%{background-color:#10b981}26%,35%{background-color:#fbbf24}36%,45%{background-color:#fbbf24}46%,60%{background-color:#ef4444}61%,100%{background-color:#10b981}}
+        .electron-orbit{width:50px;height:50px;border:2px solid rgba(139,92,246,0.3);border-radius:50%;position:relative;margin:0 auto;animation:orbital-rotate 4s linear infinite}
+        .electron{position:absolute;width:6px;height:6px;background:#8b5cf6;border-radius:50%;top:-3px;left:50%;transform:translateX(-50%);animation:electron-energy 2s ease-in-out infinite}
+        @keyframes orbital-rotate{to{transform:rotate(360deg)}}
+        @keyframes electron-energy{0%,100%{background:#8b5cf6;box-shadow:0 0 8px #8b5cf6}25%{background:#3b82f6;box-shadow:0 0 8px #3b82f6}50%{background:#10b981;box-shadow:0 0 8px #10b981}75%{background:#f59e0b;box-shadow:0 0 8px #f59e0b}}
+        .phase-transfer .phase-transfer{width:60px;height:40px;display:flex;gap:5px;justify-content:center;align-items:center;position:relative}
+        .phase-drop{width:20px;height:30px;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;position:relative}
+        .phase-drop:first-child{background:#3b82f6}
+        .phase-drop:last-child{background:#f59e0b}
+        .solute{position:absolute;width:4px;height:4px;background:#ef4444;border-radius:50%;animation:phase-migration 4s ease-in-out infinite}
+        @keyframes phase-migration{0%,100%{left:8px;transform:translateY(0);animation-timing-function:ease-in-out}20%{left:18px;transform:translateY(-2px);animation-timing-function:ease-out}25%,35%{left:20px;transform:translateY(-5px);animation-timing-function:ease-in-out}40%{left:22px;transform:translateY(-3px);animation-timing-function:ease-out}45%,55%{left:24px;transform:translateY(0);animation-timing-function:ease-in-out}60%{left:26px;transform:translateY(2px);animation-timing-function:ease-out}65%,75%{left:28px;transform:translateY(5px);animation-timing-function:ease-in-out}80%{left:30px;transform:translateY(3px);animation-timing-function:ease-out}85%,95%{left:32px;transform:translateY(0);animation-timing-function:ease-in-out}98%{left:34px;transform:translateY(-2px);animation-timing-function:ease-out}}
+        /* 分子飘浮随机抖动 */
+        .floating-molecule {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.6;
+            animation: molecule-float 8s ease-in-out infinite;
+        }
+        .floating-molecule:nth-child(1) {
+            top: 10%;
+            left: 15%;
+            animation-delay: 0s;
+            animation-duration: 7s;
+        }
+        .floating-molecule:nth-child(2) {
+            top: 20%;
+            left: 80%;
+            animation-delay: 1s;
+            animation-duration: 9s;
+        }
+        .floating-molecule:nth-child(3) {
+            top: 60%;
+            left: 25%;
+            animation-delay: 2s;
+            animation-duration: 8s;
+        }
+        .floating-molecule:nth-child(4) {
+            top: 70%;
+            left: 70%;
+            animation-delay: 3s;
+            animation-duration: 10s;
+        }
+        @keyframes molecule-float {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0.6;
+            }
+            15% {
+                transform: translate(3px, -2px) rotate(5deg);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translate(-2px, 3px) rotate(-3deg);
+                opacity: 0.5;
+            }
+            45% {
+                transform: translate(4px, 1px) rotate(7deg);
+                opacity: 0.8;
+            }
+            60% {
+                transform: translate(-3px, -4px) rotate(-5deg);
+                opacity: 0.6;
+            }
+            75% {
+                transform: translate(2px, 3px) rotate(3deg);
+                opacity: 0.7;
+            }
+            90% {
+                transform: translate(-1px, -2px) rotate(-2deg);
+                opacity: 0.5;
+            }
+        }
+        /* 色谱斑点线分隔符 */
+        .chromatography-separator {
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                #e63946 5%, 
+                #f4a261 10%, 
+                transparent 15%,
+                transparent 20%,
+                #2ec4b6 25%,
+                #5e60ce 30%,
+                transparent 35%,
+                transparent 40%,
+                #48cae4 45%,
+                #ffb703 50%,
+                transparent 55%,
+                transparent 60%,
+                #e63946 65%,
+                #f4a261 70%,
+                transparent 75%,
+                transparent 80%,
+                #2ec4b6 85%,
+                #5e60ce 90%,
+                transparent 95%,
+                transparent 100%
+            );
+            position: relative;
+            margin: 30px 0;
+            border-radius: 2px;
+        }
+        .chromatography-separator::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 5%;
+            width: 90%;
+            height: 8px;
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(230,57,70,0.3) 0px,
+                rgba(244,162,97,0.3) 8px,
+                rgba(46,196,182,0.3) 16px,
+                rgba(94,96,206,0.3) 24px,
+                rgba(72,202,228,0.3) 32px,
+                rgba(255,183,3,0.3) 40px,
+                rgba(230,57,70,0.3) 48px
+            );
+            border-radius: 4px;
+            opacity: 0.8;
+        }
+        /* 试剂瓶标签角标 */
+        .reagent-label {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 0.7em;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 3px;
+            z-index: 2;
+            backdrop-filter: blur(4px);
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .reagent-label::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 6px;
+            height: 6px;
+            background: var(--game-color-1, #3a7bd5);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--game-color-1, #3a7bd5);
+        }
+        .reagent-label::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            width: 12px;
+            height: 2px;
+            background: var(--game-color-1, #3a7bd5);
+            transform: translateX(-50%);
+            border-radius: 1px;
+        }
+        /* 结晶生长动画 */
+        .crystal-loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            z-index: 9999;
+        }
+        .crystal-loader::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: linear-gradient(45deg, var(--game-color-1, #3a7bd5), var(--game-color-2, #ffb347));
+            transform: translate(-50%, -50%) rotate(45deg);
+            animation: crystal-grow 2s ease-in-out infinite;
+            border-radius: 2px;
+        }
+        .crystal-loader::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: linear-gradient(-45deg, var(--game-color-2, #ffb347), var(--game-color-1, #3a7bd5));
+            transform: translate(-50%, -50%) rotate(-45deg);
+            animation: crystal-grow-secondary 2s ease-in-out infinite 0.5s;
+            border-radius: 2px;
+        }
+        @keyframes crystal-grow {
+            0%, 100% {
+                width: 0;
+                height: 0;
+                opacity: 0.3;
+            }
+            50% {
+                width: 40px;
+                height: 40px;
+                opacity: 0.8;
+            }
+            80% {
+                width: 30px;
+                height: 30px;
+                opacity: 1;
+            }
+        }
+        @keyframes crystal-grow-secondary {
+            0%, 100% {
+                width: 0;
+                height: 0;
+                opacity: 0.2;
+            }
+            50% {
+                width: 25px;
+                height: 25px;
+                opacity: 0.6;
+            }
+            80% {
+                width: 20px;
+                height: 20px;
+                opacity: 0.8;
+            }
+        }
+        /* 页面加载结晶效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(230,57,70,0.1) 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, rgba(244,162,97,0.1) 0%, transparent 50%),
+                          radial-gradient(circle at 50% 50%, rgba(46,196,182,0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+            animation: crystal-float 20s ease-in-out infinite;
+        }
+        @keyframes crystal-float {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.1);
+            }
+        }
+        /* 碘蒸气扩散 */
+        .iodine-vapor-feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 60%);
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .iodine-vapor-feedback.active {
+            animation: vapor-pulse 0.6s ease-out forwards;
+        }
+        @keyframes vapor-pulse {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            50% {
+                opacity: 0.8;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+        /* 碘化学式品牌标记 */
+        .iodine-formula {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 3rem;
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            opacity: 0.06;
+            z-index: 0;
+            letter-spacing: 0.2rem;
+            font-weight: 400;
+            user-select: none;
+            pointer-events: none;
+        }
+        /* 化学主题切换器 */
+        .theme-selector {
+            position: relative;
+        }
+        .theme-toggle-btn {
+            background: var(--accent-bg);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--accent);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .theme-toggle-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: var(--accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease, height 0.4s ease;
+        }
+        .theme-toggle-btn:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+        .theme-toggle-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            z-index: 1;
+        }
+        .reagent-icon {
+            font-size: 1.2rem;
+        }
+        .theme-name {
+            font-size: 0.9rem;
+        }
+        .theme-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            min-width: 200px;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .theme-dropdown.show {
+            max-height: 400px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid var(--border);
+        }
+        .theme-option:last-child {
+            border-bottom: none;
+        }
+        .theme-option:hover {
+            background: var(--accent-bg);
+        }
+        .theme-option.active {
+            background: var(--accent-bg);
+            border-left: 3px solid var(--accent);
+        }
+        .theme-color-preview {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--theme-color);
+            border: 2px solid var(--border);
+            flex-shrink: 0;
+        }
+        .theme-option span {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        /* 硫磺焰主题 - 炽热橙黄 */
+        [data-theme="sulfur"] .hero::before {
+            background: linear-gradient(90deg, transparent 0%, rgba(255,165,0,0.3) var(--reveal, 0%), transparent var(--reveal, 0%));
+        }
+        [data-theme="cinnabar"] .hero::before {
+            background: linear-gradient(90deg, transparent 0%, rgba(220,20,60,0.3) var(--reveal, 0%), transparent var(--reveal, 0%));
+        }
+        [data-theme="carbon"] .hero::before {
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) var(--reveal, 0%), transparent var(--reveal, 0%));
+        }
+        [data-theme="mercury"] .hero::before {
+            background: linear-gradient(90deg, transparent 0%, rgba(192,192,192,0.3) var(--reveal, 0%), transparent var(--reveal, 0%));
+        }
+        /* 碘特征颜色映射卡片系统 */
+        .game-card.dandao {
+            --game-color-1: var(--crystal-dark); /* 勋章标签 */
+            --game-color-2: var(--accent); /* 反馈按钮 */
+        }
+        .game-card.dandao:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 32px rgba(92,45,145,0.3);
+        }
+        .game-card.evz {
+            --game-color-1: var(--accent-light); /* 区域标题 */
+            --game-color-2: var(--accent-starch); /* 游戏卡片网格 */
+        }
+        .game-card.evz:hover {
+            border-color: var(--accent-light);
+            box-shadow: 0 8px 32px rgba(155,61,107,0.3);
+        }
+        .game-card.phase-transfer {
+            --game-color-1: var(--accent); /* 游戏标签页 */
+            --game-color-2: var(--accent-light); /* 标签按钮 */
+        }
+        .game-card.phase-transfer:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 32px rgba(92,45,145,0.3);
+        }
+        .game-card.chain-craft {
+            --game-color-1: var(--accent-light); /* 标签按钮涟漪效果 */
+            --game-color-2: var(--accent-starch); /* 标签按钮悬停 */
+        }
+        .game-card.chain-craft:hover {
+            border-color: var(--accent-light);
+            box-shadow: 0 8px 32px rgba(46,125,50,0.3);
+        }
+        .game-card.chem-territory {
+            --game-color-1: var(--crystal-dark);
+            --game-color-2: var(--accent);
+        }
+        .game-card.chem-territory:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 32px rgba(92,45,145,0.3);
+        }
+        /* 开发中卡片 — 灰色调 */
+        .dev-grid .game-card {
+            opacity: 0.5;
+            filter: grayscale(0.6);
+            transition: opacity 0.4s, filter 0.4s, transform 0.3s;
+        }
+        .dev-grid .game-card:hover {
+            opacity: 0.75;
+            filter: grayscale(0.3);
+        }
+        .dev-grid .game-card .game-img {
+            background: linear-gradient(145deg, #1e293b, #334155) !important;
+        }
+        /* 碘特征卡片背景 */
+        .game-card.dandao .game-img {
+            background: linear-gradient(145deg, var(--crystal-dark), var(--accent));
+        }
+        .game-card.evz .game-img {
+            background: linear-gradient(145deg, var(--game-color-1), var(--game-color-2));
+        }
+        .game-card.phase-transfer .game-img {
+            background: linear-gradient(145deg, var(--game-color-1), var(--game-color-2));
+        }
+        .game-card.chem-territory .game-img {
+            background: linear-gradient(145deg, var(--game-color-1), var(--game-color-2));
+        }
+        .game-card.chain-craft .game-img {
+            background: linear-gradient(145deg, var(--game-color-1), var(--game-color-2));
+        }
+        /* 色谱展开式入场动画 */
+        @keyframes chromatography-reveal {
+            0% {
+                clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+            }
+            100% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            }
+        }
+        @keyframes crystallization-fade-in {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        @keyframes molecule-crystallization {
+            0% {
+                opacity: 0;
+                filter: blur(2px);
+            }
+            50% {
+                opacity: 0.6;
+                filter: blur(1px);
+            }
+            100% {
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+        /* 入场动画初始状态 */
+        .hero h1 {
+            clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+            opacity: 0;
+        }
+        .hero p,
+        .hero .badge,
+        .hero .feedback-btn {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        #moleculeCanvas {
+            opacity: 0;
+        }
+        .game-card {
+            opacity: 0;
+            transform: translateY(30px) scale(0.9);
+        }
+        /* 入场动画激活状态 */
+        body.loaded .hero h1 {
+            animation: chromatography-reveal 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            opacity: 1;
+        }
+        /* 月读主题卡片粒子拼合动画 */
+        [data-theme="tsukuyomi"] .game-card {
+            opacity: 0;
+            transform: none;
+            transition: none;
+        }
+        [data-theme="tsukuyomi"] body.loaded .game-card {
+            opacity: 1;
+            transform: none;
+            transition: opacity 0.2s ease;
+        }
+        [data-theme="tsukuyomi"] .game-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(224, 64, 144, 0.1) 100%);
+            animation: card-scan 1.2s ease-out 1s forwards;
+            pointer-events: none;
+            z-index: 10;
+        }
+        @keyframes card-scan {
+            0% { transform: translateY(-100%); opacity: 0; }
+            50% { transform: translateY(0); opacity: 0.3; }
+            100% { transform: translateY(100%); opacity: 0; }
+        }
+        /* 月读主题光柱先现 */
+        [data-theme="tsukuyomi"] body.loaded .tsukuyomi-pillar {
+            animation: pillar-emerge 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            opacity: 1;
+        }
+        @keyframes pillar-emerge {
+            0% {
+                transform: translateX(-50%) scaleY(0);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(-50%) scaleY(1);
+                opacity: 1;
+            }
+        }
+        body.loaded .hero p {
+            animation: crystallization-fade-in 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.4s forwards;
+            opacity: 1;
+        }
+        /* 月读主题分子消失动画 */
+        [data-theme="tsukuyomi"] #moleculeCanvas {
+            opacity: 1;
+            animation: molecule-fade-out 2s ease-in-out forwards;
+        }
+        @keyframes molecule-fade-out {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.6);
+            }
+        }
+        body.loaded .hero .badge {
+            animation: crystallization-fade-in 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.6s forwards;
+            opacity: 1;
+        }
+        body.loaded .hero .feedback-btn {
+            animation: crystallization-fade-in 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.8s forwards;
+            opacity: 1;
+        }
+        body.loaded #moleculeCanvas {
+            animation: molecule-crystallization 1s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
+        }
+        body.loaded .game-card {
+            animation: crystallization-fade-in 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        /* 卡片入场 */
+        body.loaded .game-card:nth-child(1) { animation-delay: 1.2s; }
+        body.loaded .game-card:nth-child(2) { animation-delay: 1.28s; }
+        body.loaded .game-card:nth-child(3) { animation-delay: 1.36s; }
+        body.loaded .game-card:nth-child(4) { animation-delay: 1.44s; }
+        body.loaded .game-card:nth-child(5) { animation-delay: 1.52s; }
+        body.loaded .game-card:nth-child(6) { animation-delay: 1.6s; }
+        /* 单分子层吸附悬停效果 */
+        .game-card {
+            position: relative;
+            overflow: visible;
+            transform-style: preserve-3d;
+            transition: transform 0.15s ease-out,
+                        box-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .game-card .game-img,
+        .game-card .game-info {
+            transform: translateZ(20px);
+        }
+        .game-card::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: calc(1.5rem + 4px);
+            background: conic-gradient(from 0deg, transparent, var(--accent-light) 15deg, transparent 30deg, var(--accent-light) 180deg, transparent 210deg, var(--accent-light) 345deg, transparent 360deg);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+            filter: blur(6px);
+            pointer-events: none;
+        }
+        .game-card::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: calc(1.5rem + 2px);
+            background: 
+                radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.3) 0%, transparent 40%),
+                radial-gradient(circle at 20% 30%, rgba(255,255,255,0.2) 0%, transparent 8%),
+                radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 6%),
+                radial-gradient(circle at 40% 80%, rgba(255,255,255,0.1) 0%, transparent 4%);
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .game-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.15),
+                0 8px 16px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .game-card:hover::before {
+            opacity: 0.6;
+            animation: orbital-rotation 3s linear infinite;
+        }
+        .game-card:hover::after {
+            opacity: 1;
+            transform: scale(1);
+            animation: molecule-adsorption 2s ease-in-out infinite;
+        }
+        @keyframes orbital-rotation {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes molecule-adsorption {
+            0%, 100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            25% {
+                transform: scale(1.05) rotate(2deg);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(0.95) rotate(-1deg);
+                opacity: 1;
+            }
+            75% {
+                transform: scale(1.02) rotate(1deg);
+                opacity: 0.9;
+            }
+        }
+        /* 吸附热效应 - 鼠标位置的光点 */
+        .game-card .adsorption-heat {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, 
+                                      rgba(255,255,255,0.4) 0%, 
+                                      rgba(255,255,255,0.2) 30%, 
+                                      transparent 60%);
+            border-radius: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+            z-index: 3;
+        }
+        .game-card:hover .adsorption-heat {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        /* 标签按钮悬停动效 */
+        @keyframes combustion-flash {
+            0% {
+                background: var(--accent);
+                box-shadow: 0 0 0 0 rgba(255,255,255,0.7);
+            }
+            20% {
+                background: #ffffff;
+                box-shadow: 0 0 20px 10px rgba(255,255,255,0.9);
+            }
+            40% {
+                background: var(--accent);
+                box-shadow: 0 0 40px 20px rgba(255,255,255,0.4);
+            }
+            60% {
+                background: var(--accent);
+                box-shadow: 0 0 60px 30px rgba(255,255,255,0.2);
+            }
+            100% {
+                background: var(--accent);
+                box-shadow: 0 0 0 0 rgba(255,255,255,0);
+            }
+        }
+        @keyframes combustion-danger-flash {
+            0% {
+                background: var(--accent);
+                box-shadow: 0 0 0 0 rgba(255,0,0,0.7);
+            }
+            20% {
+                background: #ffffff;
+                box-shadow: 0 0 20px 10px rgba(255,0,0,0.9);
+            }
+            40% {
+                background: var(--accent);
+                box-shadow: 0 0 40px 20px rgba(255,0,0,0.4);
+            }
+            60% {
+                background: var(--accent);
+                box-shadow: 0 0 60px 30px rgba(255,0,0,0.2);
+            }
+            100% {
+                background: var(--accent);
+                box-shadow: 0 0 0 0 rgba(255,0,0,0);
+            }
+        }
+        .combustion-active {
+            animation: combustion-flash 0.6s ease-out forwards;
+            position: relative;
+        }
+        .combustion-danger {
+            animation: combustion-danger-flash 0.6s ease-out forwards;
+            position: relative;
+        }
+        /* 标签按钮激活状态 */
+        .shockwave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        @keyframes shockwave-expand {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            100% {
+                width: 200px;
+                height: 200px;
+                opacity: 0;
+            }
+        }
+        .shockwave.active {
+            animation: shockwave-expand 0.6s ease-out forwards;
+        }
+        /* 标签文字层叠 */
+        .tsukuyomi-pillar {
+            display: none;
+            position: absolute;
+            left: 50%;
+            top: -20%;
+            width: 8px;
+            height: 140%;
+            transform: translateX(-50%);
+            background: linear-gradient(
+                to bottom,
+                var(--tsuki-accent) 0%,
+                var(--tsuki-accent-gold) 33%,
+                var(--tsuki-accent-cyan) 66%,
+                var(--tsuki-accent) 100%
+            );
+            box-shadow: 
+                0 0 20px var(--tsuki-glow),
+                0 0 40px var(--tsuki-glow),
+                0 0 60px rgba(224, 64, 144, 0.2),
+                0 0 80px rgba(224, 64, 144, 0.1);
+            z-index: 2;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        /* 月读主题时禁用蒸镀效果 */
+        [data-theme="tsukuyomi"] .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                url('effects/deco_neon-cloud1.png'),
+                url('effects/deco_neon-cloud2.png'),
+                url('effects/deco_neon-fish.png'),
+                url('effects/deco_neon-octopus.png');
+            background-position: 
+                10% 20%,
+                85% 30%,
+                15% 70%,
+                80% 80%;
+            background-repeat: no-repeat;
+            background-size: 
+                150px auto,
+                120px auto,
+                80px auto,
+                100px auto;
+            opacity: 0.15;
+            animation: neon-cloud-float 20s ease-in-out infinite;
+            z-index: 1;
+            pointer-events: none;
+        }
+        [data-theme="tsukuyomi"] .hero::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(224, 64, 144, 0.1) var(--reveal, 0%), transparent var(--reveal, 0%));
+            z-index: 2;
+            pointer-events: none;
+        }
+        @keyframes neon-cloud-float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.15;
+            }
+            25% {
+                transform: translateY(-10px) rotate(1deg);
+                opacity: 0.2;
+            }
+            50% {
+                transform: translateY(5px) rotate(-1deg);
+                opacity: 0.18;
+            }
+            75% {
+                transform: translateY(-5px) rotate(0.5deg);
+                opacity: 0.22;
+            }
+        }
+        /* 标签内容容器 */
+        [data-theme="tsukuyomi"] .tsukuyomi-decoration {
+            position: absolute;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards;
+        }
+        /* 标签面板 */
+        @keyframes decoration-fade-in {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) translateY(20px);
+            }
+            40% {
+                opacity: 0;
+                transform: scale(0.7) translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        [data-theme="tsukuyomi"] .neon-fish {
+            top: 15%;
+            right: 10%;
+            width: 80px;
+            height: 60px;
+            background-image: url('effects/deco_neon-fish.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards 0.8s, fish-swim 15s ease-in-out infinite 2.5s;
+        }
+        [data-theme="tsukuyomi"] .neon-octopus {
+            bottom: 20%;
+            left: 8%;
+            width: 100px;
+            height: 80px;
+            background-image: url('effects/deco_neon-octopus.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards 1.2s, octopus-float 18s ease-in-out infinite 1.2s;
+        }
+        [data-theme="tsukuyomi"] .neon-cloud-top {
+            top: 5%;
+            left: 20%;
+            width: 150px;
+            height: 80px;
+            background-image: url('effects/deco_neon-cloud1.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards 1.5s, cloud-drift 25s ease-in-out infinite 1.5s;
+        }
+        [data-theme="tsukuyomi"] .neon-cloud-bottom {
+            bottom: 10%;
+            right: 15%;
+            width: 120px;
+            height: 60px;
+            background-image: url('effects/deco_neon-cloud2.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0;
+            animation: decoration-fade-in 2.5s ease-out forwards 1.8s, cloud-drift-reverse 22s ease-in-out infinite 1.8s;
+        }
+        /* 淡入上升动画 */
+        [data-theme="tsukuyomi"] .tsukuyomi-light {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 150%;
+            height: 150%;
+            background-image: url('effects/introduction_light.png');
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            animation: light-entrance 3s ease-out forwards, light-pulse 8s ease-in-out infinite 3s;
+            mix-blend-mode: screen;
+            z-index: 2;
+            pointer-events: none;
+            transform-origin: center center;
+        }
+        /* 游戏卡片样式 */
+        @keyframes light-entrance {
+            0% {
+                opacity: 0;
+                transform: translateY(50px) scale(1.2);
+            }
+            30% {
+                opacity: 0.3;
+                transform: translateY(25px) scale(1.1);
+            }
+            60% {
+                opacity: 0.5;
+                transform: translateY(10px) scale(1.05);
+            }
+            100% {
+                opacity: 0.2;
+                transform: translateY(0) scale(1);
+            }
+        }
+        /* 卡片边框光晕 */
+        [data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            background-image: url('effects/mirrorball.jpg');
+            background-repeat: no-repeat;
+            background-size: auto 100%;
+            background-position: 0% 0%;
+            opacity: 0;
+            animation: mirrorball 1s steps(9) infinite, mirrorball-float-navbar 4s ease-in-out infinite;
+            z-index: 10;
+            pointer-events: none;
+            filter: drop-shadow(0 0 12px rgba(224, 64, 144, 0.5));
+            margin-right: 1rem;
+        }
+        /* 几何光环轨道 */
+        .orbital-ring{position:absolute;top:50%;left:50%;border-radius:50%;border:1.5px solid transparent;pointer-events:none;opacity:0;transform-origin:center center}
+        [data-theme="tsukuyomi"] .orbital-ring{opacity:1}
+        .ring-1{width:70px;height:70px;margin:-35px 0 0 -35px;border-color:rgba(224,64,144,0.5);animation:ring-spin-1 3s linear infinite}
+        .ring-2{width:90px;height:90px;margin:-45px 0 0 -45px;border-color:rgba(0,184,212,0.4);animation:ring-spin-2 4s linear infinite;border-style:dashed}
+        .ring-3{width:110px;height:110px;margin:-55px 0 0 -55px;border-color:rgba(255,183,77,0.35);animation:ring-spin-3 5s linear infinite;border-style:dotted}
+        @keyframes ring-spin-1{to{transform:rotateX(60deg) rotateZ(360deg)}}
+        @keyframes ring-spin-2{to{transform:rotateX(75deg) rotateZ(-360deg)}}
+        @keyframes ring-spin-3{to{transform:rotateX(50deg) rotateY(30deg) rotateZ(360deg)}}
+
+        /* 数据流飘带 */
+        .data-stream{display:none;position:absolute;height:2px;border-radius:1px;pointer-events:none;opacity:0;z-index:1}
+        [data-theme="tsukuyomi"] .data-stream{display:block}
+        .stream-1{top:25%;left:-10%;width:120%;background:linear-gradient(90deg,transparent,rgba(224,64,144,0.5),rgba(0,184,212,0.3),transparent);animation:stream-drift-1 8s ease-in-out infinite;transform:rotate(-15deg)}
+        .stream-2{top:55%;left:-10%;width:100%;background:linear-gradient(90deg,transparent,rgba(0,184,212,0.4),rgba(255,183,77,0.3),transparent);animation:stream-drift-2 10s ease-in-out infinite;transform:rotate(-8deg)}
+        .stream-3{top:75%;left:-10%;width:110%;background:linear-gradient(90deg,transparent,rgba(255,183,77,0.35),rgba(224,64,144,0.25),transparent);animation:stream-drift-3 12s ease-in-out infinite;transform:rotate(-22deg)}
+        @keyframes stream-drift-1{0%,100%{opacity:0;transform:translateX(-5%) rotate(-15deg)}50%{opacity:0.6;transform:translateX(5%) rotate(-12deg)}}
+        @keyframes stream-drift-2{0%,100%{opacity:0.1;transform:translateX(3%) rotate(-8deg)}50%{opacity:0.5;transform:translateX(-3%) rotate(-6deg)}}
+        @keyframes stream-drift-3{0%,100%{opacity:0.05;transform:translateX(-8%) rotate(-22deg)}30%,70%{opacity:0.45;transform:translateX(2%) rotate(-18deg)}}
+
+        /* 逆光强化层 */
+        .backlight-burst{display:none;position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+        [data-theme="tsukuyomi"] .backlight-burst{display:block;background:radial-gradient(ellipse at 50% 30%,rgba(255,255,255,0.15) 0%,transparent 60%),radial-gradient(ellipse at 50% 70%,rgba(224,64,144,0.08) 0%,transparent 50%);animation:backlight-pulse 6s ease-in-out infinite}
+        @keyframes backlight-pulse{0%,100%{opacity:0.5}50%{opacity:1}}
+
+        /* 主题切换粒子爆发 */
+        .theme-burst-particle{position:fixed;pointer-events:none;z-index:9999;border-radius:50%;animation:burst-fly 1.2s cubic-bezier(0,1,0.3,1) forwards}
+        @keyframes burst-fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--bx),var(--by)) scale(0)}}
+        /* 游戏卡片信息区 */
+        body[data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+            animation: 
+                mirrorball-entrance 2s ease-out forwards 0.5s,
+                mirrorball 1s steps(9) infinite 1.5s,
+                mirrorball-float-navbar 4s ease-in-out infinite 1.5s;
+        }
+        @keyframes mirrorball-entrance {
+            0% {
+                opacity: 0;
+                transform: scale(0) translateY(20px);
+                filter: drop-shadow(0 0 30px rgba(224, 64, 144, 0));
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1) translateY(-5px);
+                filter: drop-shadow(0 0 40px rgba(224, 64, 144, 0.8));
+            }
+            100% {
+                opacity: 0.9;
+                transform: scale(1) translateY(0);
+                filter: drop-shadow(0 0 12px rgba(224, 64, 144, 0.5));
+            }
+        }
+        /* 游戏名称 */
+        @keyframes mirrorball-float-navbar {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 12px rgba(224, 64, 144, 0.5));
+            }
+            25% {
+                transform: translateY(-3px) scale(1.05);
+                filter: drop-shadow(0 0 16px rgba(224, 64, 144, 0.7));
+            }
+            50% {
+                transform: translateY(2px) scale(0.95);
+                filter: drop-shadow(0 0 10px rgba(0, 184, 212, 0.4));
+            }
+            75% {
+                transform: translateY(-1px) scale(1.02);
+                filter: drop-shadow(0 0 14px rgba(255, 183, 77, 0.6));
+            }
+        }
+        /* 游戏标签 */
+        @media (max-width: 768px) {
+            [data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+                width: 45px;
+                height: 45px;
+                filter: drop-shadow(0 0 10px rgba(224, 64, 144, 0.5));
+            }
+        }
+        @media (max-width: 680px) {
+            [data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+                width: 40px;
+                height: 40px;
+                filter: drop-shadow(0 0 8px rgba(224, 64, 144, 0.5));
+            }
+        }
+        @media (max-width: 480px) {
+            [data-theme="tsukuyomi"] .tsukuyomi-mirrorball {
+                width: 35px;
+                height: 35px;
+                filter: drop-shadow(0 0 6px rgba(224, 64, 144, 0.5));
+            }
+        }
+        /* 碘的氧化性进度指示 */
+        @keyframes mirrorball {
+            0% {
+                background-position: 0% 0%;
+            }
+            100% {
+                background-position: 100% 0%;
+            }
+        }
+        /* 氧化进度条光晕 */
+        [data-theme="tsukuyomi"] .tsukuyomi-spotlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 85% 15%, rgba(255, 255, 255, 0.15) 0%, transparent 30%),
+                radial-gradient(ellipse at 15% 85%, rgba(0, 184, 212, 0.1) 0%, transparent 25%);
+            opacity: 0;
+            animation: spotlight-entrance 3s ease-out forwards, spotlight-sweep 12s ease-in-out infinite 3s;
+            z-index: 1;
+            pointer-events: none;
+        }
+        /* 氧化进度文字 */
+        @keyframes spotlight-entrance {
+            0% {
+                opacity: 0;
+                background: 
+                    radial-gradient(ellipse at 50% 120%, rgba(255, 255, 255, 0) 0%, transparent 40%),
+                    radial-gradient(ellipse at 50% 120%, rgba(0, 184, 212, 0) 0%, transparent 35%);
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 0.6;
+                background: 
+                    radial-gradient(ellipse at 70% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 32%),
+                    radial-gradient(ellipse at 30% 60%, rgba(0, 184, 212, 0.08) 0%, transparent 28%);
+                transform: scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                background: 
+                    radial-gradient(ellipse at 85% 15%, rgba(255, 255, 255, 0.15) 0%, transparent 30%),
+                    radial-gradient(ellipse at 15% 85%, rgba(0, 184, 212, 0.1) 0%, transparent 25%);
+                transform: scale(1);
+            }
+        }
+        @keyframes fish-swim {
+            0%, 100% {
+                transform: translateX(0) translateY(0) rotate(0deg);
+                opacity: 0.6;
+            }
+            25% {
+                transform: translateX(-20px) translateY(-10px) rotate(-5deg);
+                opacity: 0.7;
+            }
+            50% {
+                transform: translateX(10px) translateY(5px) rotate(3deg);
+                opacity: 0.5;
+            }
+            75% {
+                transform: translateX(-10px) translateY(-5px) rotate(-2deg);
+                opacity: 0.8;
+            }
+        }
+        @keyframes octopus-float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg) scale(1);
+                opacity: 0.5;
+            }
+            33% {
+                transform: translateY(-15px) rotate(5deg) scale(1.05);
+                opacity: 0.6;
+            }
+            66% {
+                transform: translateY(10px) rotate(-3deg) scale(0.95);
+                opacity: 0.4;
+            }
+        }
+        @keyframes cloud-drift {
+            0%, 100% {
+                transform: translateX(0) translateY(0);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateX(30px) translateY(-10px);
+                opacity: 0.5;
+            }
+        }
+        @keyframes cloud-drift-reverse {
+            0%, 100% {
+                transform: translateX(0) translateY(0);
+                opacity: 0.35;
+            }
+            50% {
+                transform: translateX(-25px) translateY(-8px);
+                opacity: 0.45;
+            }
+        }
+        @keyframes light-pulse {
+            0%, 100% {
+                opacity: 0.15;
+                transform: scale(1);
+            }
+            25% {
+                opacity: 0.25;
+                transform: scale(1.02);
+            }
+            50% {
+                opacity: 0.2;
+                transform: scale(1.01);
+            }
+            75% {
+                opacity: 0.3;
+                transform: scale(1.03);
+            }
+        }
+        @keyframes mirrorball-float {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 20px rgba(224, 64, 144, 0.4));
+            }
+            25% {
+                transform: translateY(-8px) scale(1.05);
+                filter: drop-shadow(0 0 30px rgba(224, 64, 144, 0.6));
+            }
+            50% {
+                transform: translateY(5px) scale(0.95);
+                filter: drop-shadow(0 0 15px rgba(0, 184, 212, 0.4));
+            }
+            75% {
+                transform: translateY(-3px) scale(1.02);
+                filter: drop-shadow(0 0 25px rgba(255, 183, 77, 0.5));
+            }
+        }
+        @keyframes spotlight-sweep {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            25% {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+            50% {
+                opacity: 0.2;
+                transform: scale(0.95);
+            }
+            75% {
+                opacity: 0.4;
+                transform: scale(1.05);
+            }
+        }
+        [data-theme="tsukuyomi"] .tsukuyomi-pillar {
+            display: block;
+        }
+        [data-theme="tsukuyomi"] .hero:hover .tsukuyomi-pillar {
+            width: 12px;
+            filter: brightness(1.3);
+        }
+        /* 游戏描述 */
+        [data-theme="tsukuyomi"] .hero h1 {
+            text-shadow: 
+                0 0 10px var(--tsuki-accent),
+                0 0 20px var(--tsuki-accent-cyan),
+                0 0 30px var(--tsuki-accent),
+                0 0 40px var(--tsuki-accent-cyan);
+            letter-spacing: 0.1em;
+            animation: neon-flicker 3s ease-in-out infinite;
+        }
+        @keyframes neon-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+            75% { opacity: 0.95; }
+        }
+        /* 游玩按钮 */
+        [data-theme="tsukuyomi"] .iodine-formula {
+            opacity: 0.04;
+        }
+        /* 游玩按钮悬停 */
+        [data-theme="tsukuyomi"] .game-card {
+            backdrop-filter: blur(12px);
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        [data-theme="tsukuyomi"] .game-card:hover {
+            transform: translateY(-8px) rotateX(2deg);
+            box-shadow: 
+                0 -5px 20px var(--tsuki-glow),
+                0 20px 40px rgba(224, 64, 144, 0.3),
+                0 30px 60px rgba(224, 64, 144, 0.1);
+        }
+        [data-theme="tsukuyomi"] .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                var(--tsuki-accent) 0%, 
+                transparent 50%, 
+                var(--tsuki-accent) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        [data-theme="tsukuyomi"] .game-card:hover::before {
+            opacity: 1;
+        }
+        /* 页脚注释 */
+        [data-theme="tsukuyomi"] ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        [data-theme="tsukuyomi"] ::-webkit-scrollbar-track {
+            background: var(--tsuki-card);
+            border-radius: 4px;
+        }
+        [data-theme="tsukuyomi"] ::-webkit-scrollbar-thumb {
+            background: var(--tsuki-accent);
+            border-radius: 4px;
+            border: 1px solid var(--tsuki-border);
+        }
+        [data-theme="tsukuyomi"] ::-webkit-scrollbar-thumb:hover {
+            background: var(--tsuki-accent-cyan);
+        }
+        /* 模态框 */
+        [data-theme="tsukuyomi"] .container {
+            position: relative;
+        }
+        [data-theme="tsukuyomi"] .container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(224, 64, 144, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 184, 212, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 183, 77, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+            animation: tsukuyomi-ambient-pulse 15s ease-in-out infinite;
+        }
+        @keyframes tsukuyomi-ambient-pulse {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.05);
+            }
+        }
+        /* 模态框激活 */
+        [data-theme="tsukuyomi"] .game-card {
+            backdrop-filter: blur(12px);
+            background: linear-gradient(135deg, 
+                rgba(38, 43, 61, 0.9) 0%, 
+                rgba(30, 34, 53, 0.8) 100%);
+            border: 1px solid rgba(224, 64, 144, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        [data-theme="tsukuyomi"] .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(224, 64, 144, 0.1) 50%, 
+                transparent 100%);
+            transition: left 0.6s ease;
+            z-index: 1;
+        }
+        [data-theme="tsukuyomi"] .game-card:hover::before {
+            left: 100%;
+        }
+        /* 模态框内容 */
+        [data-theme="tsukuyomi"] .play-btn,
+        [data-theme="tsukuyomi"] .theme-toggle-btn,
+        [data-theme="tsukuyomi"] .auth-btn,
+        [data-theme="tsukuyomi"] .feedback-btn {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--tsuki-accent), var(--tsuki-accent-cyan));
+            border: 1px solid rgba(224, 64, 144, 0.3);
+            box-shadow: 
+                0 0 20px rgba(224, 64, 144, 0.2),
+                inset 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        [data-theme="tsukuyomi"] .play-btn::before,
+        [data-theme="tsukuyomi"] .theme-toggle-btn::before,
+        [data-theme="tsukuyomi"] .auth-btn::before,
+        [data-theme="tsukuyomi"] .feedback-btn::before {
+            background: linear-gradient(135deg, var(--tsuki-accent-cyan), var(--tsuki-accent-gold));
+        }
+        /* 模态框标题 */
+        [data-theme="tsukuyomi"] .badge {
+            background: linear-gradient(135deg, 
+                rgba(224, 64, 144, 0.2), 
+                rgba(0, 184, 212, 0.15));
+            border: 1px solid rgba(224, 64, 144, 0.3);
+            color: var(--tsuki-text);
+            position: relative;
+            overflow: hidden;
+        }
+        [data-theme="tsukuyomi"] .badge::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 183, 77, 0.3) 50%, 
+                transparent 100%);
+            animation: badge-shimmer 3s ease-in-out infinite;
+        }
+        @keyframes badge-shimmer {
+            0% {
+                left: -100%;
+            }
+            50% {
+                left: 100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+        /* 模态框输入框 */
+        .tsukuyomi-easter-egg {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            color: var(--tsuki-text-dim);
+            opacity: 0;
+            animation: tsukuyomi-breath 4s ease-in-out infinite;
+        }
+        [data-theme="tsukuyomi"] .tsukuyomi-easter-egg {
+            display: block;
+        }
+        @keyframes tsukuyomi-breath {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        /* 模态框按钮组 */
+        .music-player {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .music-toggle-btn {
+            background: var(--accent-bg);
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+            color: var(--accent);
+            transition: all 0.3s ease;
+        }
+        .music-toggle-btn:hover {
+            background: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .music-icon {
+            animation: music-pulse 2s ease-in-out infinite;
+        }
+        @keyframes music-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .music-status {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .music-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            min-width: 280px;
+            box-shadow: var(--shadow-md);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .music-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .music-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .music-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.2rem;
+        }
+        .music-close-btn:hover {
+            color: var(--accent);
+        }
+        .music-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .music-control-btn {
+            background: var(--accent-bg);
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            color: var(--accent);
+            transition: all 0.2s ease;
+        }
+        .music-control-btn:hover {
+            background: var(--accent);
+            color: white;
+            transform: translateY(-1px);
+        }
+        .music-volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+        .volume-slider {
+            flex: 1;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        #volumeValue {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            min-width: 35px;
+        }
+        .music-playlist {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .music-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            font-size: 0.8rem;
+        }
+        .music-item:hover {
+            background: var(--accent-bg);
+        }
+        .music-item.active {
+            background: var(--accent);
+            color: white;
+        }
+        .music-item-title {
+            flex: 1;
+        }
+        .music-item-duration {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-left: 0.5rem;
+        }
+        .music-item.active .music-item-duration {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        /* 模态框按钮 */
+        [data-theme="tsukuyomi"] .music-toggle-btn {
+            background: rgba(224, 64, 144, 0.1);
+            border: 1px solid rgba(224, 64, 144, 0.3);
+            color: var(--tsuki-accent);
+            box-shadow: 0 0 10px rgba(224, 64, 144, 0.2);
+        }
+        [data-theme="tsukuyomi"] .music-toggle-btn:hover {
+            background: linear-gradient(135deg, var(--tsuki-accent), var(--tsuki-accent-cyan));
+            color: white;
+            box-shadow: 0 0 20px rgba(224, 64, 144, 0.4);
+        }
+        [data-theme="tsukuyomi"] .music-dropdown {
+            background: rgba(38, 43, 61, 0.95);
+            border: 1px solid rgba(224, 64, 144, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        [data-theme="tsukuyomi"] .music-control-btn {
+            background: rgba(224, 64, 144, 0.1);
+            border: 1px solid rgba(224, 64, 144, 0.3);
+            color: var(--tsuki-accent);
+        }
+        [data-theme="tsukuyomi"] .music-control-btn:hover {
+            background: linear-gradient(135deg, var(--tsuki-accent), var(--tsuki-accent-cyan));
+            color: white;
+        }
+        [data-theme="tsukuyomi"] .music-volume-control {
+            background: rgba(30, 34, 53, 0.8);
+        }
+        [data-theme="tsukuyomi"] .music-item.active {
+            background: linear-gradient(135deg, var(--tsuki-accent), var(--tsuki-accent-cyan));
+            color: white;
+        }
+        @media (max-width:680px){.container{padding:1.2rem}.hero h1{font-size:1.8rem}.hero p{max-width:100%}.section-title{font-size:1.4rem}}
+
+/* ========== 新手引导遮罩 ========== */
+.tutorial-overlay{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.75);z-index:9999;
+    display:flex;justify-content:center;align-items:center;
+    animation:tutorial-fade-in .4s ease;
+}
+@keyframes tutorial-fade-in{from{opacity:0}to{opacity:1}}
+.tutorial-dialog{
+    background:var(--bg-card);border-radius:1.5rem;padding:2rem;
+    max-width:480px;width:90%;text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    border:2px solid var(--accent);
+    animation:tutorial-slide-up .4s ease;
+    color:var(--text-primary);
+}
+@keyframes tutorial-slide-up{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.tutorial-step-indicator{
+    display:flex;justify-content:center;gap:.5rem;margin-bottom:1.2rem;
+}
+.tutorial-dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--border);transition:all .3s;
+}
+.tutorial-dot.active{background:var(--accent);transform:scale(1.3)}
+.tutorial-dot.done{background:var(--accent-light)}
+.tutorial-emoji{font-size:3.5rem;margin-bottom:.8rem}
+.tutorial-title{font-size:1.3rem;font-weight:bold;color:var(--accent);margin-bottom:.6rem}
+.tutorial-desc{font-size:.95rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem}
+.tutorial-highlight{
+    display:inline-block;background:var(--accent-bg);color:var(--accent);
+    padding:.15rem .5rem;border-radius:.4rem;font-weight:bold;
+}
+.tutorial-buttons{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap}
+.tutorial-btn{
+    padding:.7rem 1.8rem;border-radius:2rem;border:none;
+    font-size:.9rem;font-weight:bold;cursor:pointer;transition:all .2s;
+}
+.tutorial-btn:hover{transform:translateY(-2px)}
+.tutorial-btn.primary{background:var(--accent);color:white}
+.tutorial-btn.ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border)}
+.tutorial-btn.ghost:hover{color:var(--text-primary);border-color:var(--text-secondary)}
+.tutorial-trigger-btn{
+    display:inline-flex;align-items:center;gap:.3rem;
+    padding:.6rem 1.2rem;border-radius:2rem;border:2px dashed var(--accent);
+    background:var(--accent-bg);color:var(--accent);font-size:.85rem;
+    font-weight:bold;cursor:pointer;transition:all .2s;
+    text-decoration:none;
+}
+.tutorial-trigger-btn:hover{
+    background:var(--accent);color:white;border-style:solid;
+    transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}

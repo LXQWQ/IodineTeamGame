@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>元素跃迁：周期表飞行棋</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+    --bg:#0a0e17;--panel:#111827;--border:#1e293b;--text:#e2e8f0;--text2:#94a3b8;
+    --alkali:#ef4444;--alkaline:#3b82f6;--halogen:#22c55e;--carbon:#f59e0b;
+    --react:#a855f7;--decay:#ef4444;--catalyst:#facc15;--noble:#64748b;
+}
+body{
+    background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;
+    min-height:100vh;display:flex;justify-content:center;align-items:flex-start;
+    padding:0.5rem;
+}
+.game-container{
+    display:flex;gap:0.8rem;max-width:1400px;width:100%;flex-wrap:wrap;
+    justify-content:center;
+}
+/* 棋盘区 */
+.board-area{
+    flex-shrink:0;background:var(--panel);border-radius:1rem;
+    border:1px solid var(--border);padding:0.5rem;
+}
+canvas{display:block;border-radius:0.5rem;cursor:pointer}
+/* 右侧面板 */
+.side-panel{
+    flex:1;min-width:280px;max-width:380px;display:flex;flex-direction:column;gap:0.6rem;
+}
+/* 玩家信息 */
+.player-cards{display:flex;flex-direction:column;gap:0.4rem}
+.player-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:0.8rem;
+    padding:0.6rem 0.8rem;display:flex;align-items:center;gap:0.6rem;
+    transition:all .2s;opacity:0.6;
+}
+.player-card.active{border-color:#fff;opacity:1;box-shadow:0 0 12px rgba(255,255,255,0.1)}
+.player-card.finished{opacity:0.4}
+.player-dot{
+    width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-weight:bold;font-size:0.85rem;color:#fff;
+    flex-shrink:0;
+}
+.player-info{flex:1;min-width:0}
+.player-name{font-weight:bold;font-size:0.9rem}
+.player-pieces{font-size:0.7rem;color:var(--text2);margin-top:0.15rem}
+.player-score{font-weight:bold;font-size:0.8rem;text-align:right}
+/* 骰子区 */
+.dice-area{
+    background:var(--panel);border:1px solid var(--border);border-radius:0.8rem;
+    padding:1rem;text-align:center;
+}
+.dice-display{
+    width:80px;height:80px;background:#1a1f2e;border:2px solid var(--border);
+    border-radius:1rem;margin:0 auto;display:flex;align-items:center;
+    justify-content:center;font-size:2.5rem;font-weight:bold;
+    transition:transform .1s;
+}
+.dice-display.rolling{animation:dice-shake .15s infinite}
+@keyframes dice-shake{
+    0%,100%{transform:rotate(0)}
+    25%{transform:rotate(-8deg)}
+    75%{transform:rotate(8deg)}
+}
+.dice-info{font-size:0.75rem;color:var(--text2);margin-top:0.4rem}
+/* 按钮 */
+.btn{
+    padding:0.6rem 1.2rem;border-radius:2rem;border:none;font-weight:bold;
+    font-size:0.85rem;cursor:pointer;transition:all .15s;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.btn-roll{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;width:100%}
+.btn-skip{background:transparent;color:var(--text2);border:1px solid var(--border)}
+/* 消息区 */
+.message-area{
+    background:var(--panel);border:1px solid var(--border);border-radius:0.8rem;
+    padding:0.6rem;font-size:0.8rem;color:var(--text2);min-height:3em;
+    max-height:6em;overflow-y:auto;
+}
+.message-area .highlight{color:#facc15;font-weight:bold}
+.message-area .danger{color:#ef4444;font-weight:bold}
+/* 反应卡弹窗 */
+.card-modal{
+    display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.8);z-index:100;justify-content:center;align-items:center;
+}
+.card-modal.show{display:flex}
+.card-content{
+    background:var(--panel);border:2px solid #a855f7;border-radius:1.5rem;
+    padding:1.5rem;max-width:380px;width:90%;text-align:center;
+    box-shadow:0 0 40px rgba(168,85,247,0.3);
+}
+.card-emoji{font-size:3rem;margin-bottom:0.5rem}
+.card-title{font-size:1.2rem;font-weight:bold;color:#a855f7;margin-bottom:0.5rem}
+.card-desc{font-size:0.9rem;color:var(--text2);margin-bottom:1rem;line-height:1.5}
+.card-btn{
+    background:#a855f7;color:#fff;border:none;padding:0.6rem 1.5rem;
+    border-radius:2rem;font-weight:bold;cursor:pointer;font-size:0.9rem;
+}
+.card-btn:hover{filter:brightness(1.1)}
+/* 胜利弹窗 */
+.win-overlay{
+    display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.85);z-index:200;justify-content:center;align-items:center;
+}
+.win-overlay.show{display:flex}
+.win-box{
+    background:var(--panel);border:3px solid #facc15;border-radius:1.5rem;
+    padding:2rem;text-align:center;max-width:400px;width:90%;
+    box-shadow:0 0 60px rgba(250,204,21,0.4);
+}
+.win-box h2{font-size:1.8rem;color:#facc15;margin-bottom:0.5rem}
+.win-box .win-emoji{font-size:4rem}
+.win-box .win-name{font-size:1.2rem;color:var(--text);margin:0.8rem 0}
+/* 响应式 */
+@media(max-width:900px){
+    .game-container{flex-direction:column;align-items:center}
+    canvas{max-width:100%;height:auto}
+    .side-panel{max-width:100%;width:100%}
+}
+</style>
+</head>
+<body>
+<div class="game-container">
+    <div class="board-area">
+        <canvas id="board" width="600" height="600"></canvas>
+    </div>
+    <div class="side-panel">
+        <div class="player-cards" id="playerCards"></div>
+        <div class="dice-area">
+            <div class="dice-display" id="diceDisplay">?</div>
+            <div class="dice-info" id="diceInfo">点击按钮掷骰子</div>
+            <button class="btn btn-roll" id="btnRoll" style="margin-top:0.6rem">🎲 掷骰子</button>
+            <button class="btn btn-skip" id="btnSkip" style="margin-top:0.4rem;display:none">跳过回合</button>
+        </div>
+        <div class="message-area" id="messages">
+            🧪 欢迎来到元素跃迁！碱金属家族先手。
+        </div>
+    </div>
+</div>
+<div class="card-modal" id="cardModal">
+    <div class="card-content">
+        <div class="card-emoji" id="cardEmoji"></div>
+        <div class="card-title" id="cardTitle"></div>
+        <div class="card-desc" id="cardDesc"></div>
+        <button class="card-btn" id="cardBtn">确认</button>
+    </div>
+</div>
+<div class="win-overlay" id="winOverlay">
+    <div class="win-box">
+        <div class="win-emoji">🏆</div>
+        <h2>周期表大师！</h2>
+        <div class="win-name" id="winName"></div>
+        <p style="color:var(--text2);margin-bottom:1rem">所有元素已完成外层8电子稳定结构</p>
+        <button class="btn btn-roll" onclick="location.reload()">🔄 再来一局</button>
+    </div>
+</div>
+
+<script>
+// ==================== 游戏常量 ====================
+const ELEMENTS = [
+    {sym:'H',n:1},{sym:'He',n:2},{sym:'Li',n:3},{sym:'Be',n:4},
+    {sym:'B',n:5},{sym:'C',n:6},{sym:'N',n:7},{sym:'O',n:8},
+    {sym:'F',n:9},{sym:'Ne',n:10},{sym:'Na',n:11},{sym:'Mg',n:12},
+    {sym:'Al',n:13},{sym:'Si',n:14},{sym:'P',n:15},{sym:'S',n:16},
+    {sym:'Cl',n:17},{sym:'Ar',n:18},{sym:'K',n:19},{sym:'Ca',n:20},
+    {sym:'Sc',n:21},{sym:'Ti',n:22},{sym:'V',n:23},{sym:'Cr',n:24},
+    {sym:'Mn',n:25},{sym:'Fe',n:26},{sym:'Co',n:27},{sym:'Ni',n:28},
+    {sym:'Cu',n:29},{sym:'Zn',n:30},{sym:'Ga',n:31},{sym:'Ge',n:32},
+    {sym:'As',n:33},{sym:'Se',n:34},{sym:'Br',n:35},{sym:'Kr',n:36},
+    {sym:'Rb',n:37},{sym:'Sr',n:38},{sym:'Y',n:39},{sym:'Zr',n:40},
+    {sym:'Nb',n:41},{sym:'Mo',n:42},{sym:'Tc',n:43},{sym:'Ru',n:44},
+    {sym:'Rh',n:45},{sym:'Pd',n:46},{sym:'Ag',n:47},{sym:'Cd',n:48},
+    {sym:'In',n:49},{sym:'Sn',n:50},{sym:'Sb',n:51},{sym:'Te',n:52}
+];
+
+const NOBLE_GASES = new Set(['He','Ne','Ar','Kr']);
+const START_TILES = { alkali:2, alkaline:3, carbon:5, halogen:8 }; // board index
+
+// 特殊格：在52格中均匀分布
+const REACTION_TILES = new Set([7,13,20,26,33,39,45,50]);   // 8个 ⚗️
+const DECAY_TILES = new Set([5,16,24,31,38,47]);             // 6个 ☢️
+const CATALYST_TILES = new Set([10,21,29,35,43,51]);         // 6个 ⚡
+const NOBLE_INDICES = new Set([1,9,17,35]); // He(1), Ne(10), Ar(18), Kr(36)
+
+// 金属活动性顺序（从强到弱）
+const METAL_REACTIVITY = ['Rb','K','Na','Li','Sr','Ca','Mg','Be','Sn','Ge','Si','Al','Zn','Fe','Cu','Ag'];
+// 非金属活性顺序
+const NONMETAL_REACTIVITY = ['F','Cl','Br','I','O','S','Se','N','P','C','B','Si','Ge','As','Te','H'];
+
+const FAMILIES = {
+    alkali: {
+        name:'碱金属',color:'#ef4444',colorLight:'#fca5a5',
+        pieces:[{sym:'Li',n:3},{sym:'Na',n:11},{sym:'K',n:19},{sym:'Rb',n:37}],
+        startIdx:2, emoji:'🔴'
+    },
+    alkaline: {
+        name:'碱土金属',color:'#3b82f6',colorLight:'#93c5fd',
+        pieces:[{sym:'Be',n:4},{sym:'Mg',n:12},{sym:'Ca',n:20},{sym:'Sr',n:38}],
+        startIdx:3, emoji:'🔵'
+    },
+    halogen: {
+        name:'卤素',color:'#22c55e',colorLight:'#86efac',
+        pieces:[{sym:'F',n:9},{sym:'Cl',n:17},{sym:'Br',n:35},{sym:'I',n:53}],
+        startIdx:8, emoji:'🟢'
+    },
+    carbon: {
+        name:'碳族',color:'#f59e0b',colorLight:'#fcd34d',
+        pieces:[{sym:'C',n:6},{sym:'Si',n:14},{sym:'Ge',n:32},{sym:'Sn',n:50}],
+        startIdx:5, emoji:'🟡'
+    }
+};
+
+// ==================== 化学反应卡 ====================
+const REACTION_CARDS = [
+    {emoji:'🔥',title:'放热反应',desc:'任选自己一枚棋子前进3格',action:'advance3'},
+    {emoji:'❄️',title:'吸热反应',desc:'任选一名对手棋子后退2格',action:'pushBack2'},
+    {emoji:'⚖️',title:'酸碱中和',desc:'场上所有棋子后退1格',action:'allBack1'},
+    {emoji:'⚡',title:'催化合成',desc:'你的棋子直接前进到下一个催化剂格',action:'toCatalyst'},
+    {emoji:'💧',title:'电解食盐水',desc:'将一名对手棋子送回基地',action:'sendHome'},
+    {emoji:'🧲',title:'离子键',desc:'将你自己一枚棋子和对手一枚棋子同时送回各自基地',action:'ionBond'},
+    {emoji:'🔗',title:'共价键',desc:'将你两枚棋子组成化合体(叠子)',action:'formBond'},
+    {emoji:'💥',title:'剧烈爆炸',desc:'所有玩家各选一枚棋子送回基地',action:'allSendOne'},
+    {emoji:'🧪',title:'溶液反应',desc:'从基地直接起飞一枚棋子(无需掷6)',action:'freeTakeoff'},
+    {emoji:'🔬',title:'还原反应',desc:'将一枚在基地的棋子直接放到启动格',action:'toStart'},
+    {emoji:'💊',title:'中和剂',desc:'本回合免疫一次被撞击',action:'immuneOnce'},
+    {emoji:'🌡️',title:'加热反应',desc:'再掷一次骰子并立即移动',action:'extraRoll'},
+    {emoji:'🧊',title:'冷却结晶',desc:'跳过下一位玩家的回合',action:'skipNext'},
+    {emoji:'⚛️',title:'核裂变',desc:'掷骰：奇→前进骰数×2，偶→后退骰数',action:'fission'},
+    {emoji:'☢️',title:'放射性衰变',desc:'你的棋子后退至最近惰性气体格',action:'toNoble'},
+    {emoji:'🛡️',title:'钝化保护',desc:'本回合你的棋子不会受任何负面效果',action:'shield'},
+    {emoji:'💫',title:'激发态',desc:'掷两次骰子，选择其中一个点数移动',action:'doubleDice'},
+    {emoji:'🔋',title:'原电池',desc:'获得2个电子币(可抵消一次被撞)',action:'gainElectron'},
+    {emoji:'🧫',title:'沉淀反应',desc:'对手正在移动的棋子停下，本回合不能动',action:'freezeEnemy'},
+    {emoji:'🌟',title:'焰色反应',desc:'查看下一张反应卡并选择是否立即执行',action:'peekNext'},
+    {emoji:'💨',title:'气体逸出',desc:'你的棋子前进到下一个空位',action:'toEmpty'},
+    {emoji:'🔨',title:'金属键',desc:'叠子状态下额外前进2格',action:'bondAdvance'},
+    {emoji:'🧬',title:'分子重排',desc:'与一名对手交换一枚棋子的位置',action:'swapPiece'},
+    {emoji:'🪐',title:'电子跃迁',desc:'任选一枚棋子跳到前方第6格',action:'leap6'},
+    {emoji:'💎',title:'晶格能',desc:'本回合掷出的点数+1',action:'dicePlus1'},
+    {emoji:'🌋',title:'火山反应',desc:'前进3格，但停下的位置若是反应格则再抽一张卡',action:'volcano'},
+    {emoji:'🧊',title:'凝固',desc:'指定一名对手的棋子，下回合该棋子只能移动一半点数(向下取整)',action:'freezeHalf'},
+    {emoji:'⚗️',title:'蒸馏',desc:'你的棋子向前移动，步数=当前棋子的原子序数个位数',action:'distill'},
+    {emoji:'🔱',title:'三重键',desc:'若你有3枚以上棋子在场上，选3枚各前进1格',action:'tripleBond'},
+    {emoji:'🌀',title:'自旋耦合',desc:'所有棋子顺时针旋转2格(沿棋盘移动)',action:'spinCouple'},
+    {emoji:'💢',title:'链式反应',desc:'连续抽卡直到抽到非攻击性卡牌',action:'chainReaction'},
+    {emoji:'🧪',title:'缓冲溶液',desc:'抵消一次即将发生的被撞击',action:'buffer'},
+    {emoji:'🔮',title:'激发光谱',desc:'查看接下来5张反应卡，选一张执行',action:'spectrum'},
+    {emoji:'💣',title:'氮气爆炸',desc:'场上所有叠子分解，对手的叠子中的棋子各回基地',action:'nitroExplode'},
+    {emoji:'🧬',title:'聚合反应',desc:'将你的2枚棋子与任一对手1枚棋子组成3子叠堆',action:'polymerize'},
+    {emoji:'🔥',title:'燃烧反应',desc:'选任意格：该格及相邻2格上的所有棋子送回基地',action:'combustion'},
+    {emoji:'💧',title:'水合反应',desc:'恢复一枚已被送回基地的棋子到启动格',action:'hydrate'},
+    {emoji:'🌟',title:'光化学反应',desc:'立即获得一次额外回合',action:'extraTurn'},
+    {emoji:'🛡️',title:'惰性气体护盾',desc:'你的棋子本回合视为停在惰性气体格上',action:'nobleShield'},
+    {emoji:'⚛️',title:'同位素效应',desc:'复制上一位玩家刚执行过的行动',action:'isotope'},
+];
+let usedCards = [];
+
+function drawCard() {
+    if (usedCards.length >= REACTION_CARDS.length) usedCards = [];
+    const available = REACTION_CARDS.filter((_,i) => !usedCards.includes(i));
+    const idx = Math.floor(Math.random() * available.length);
+    const realIdx = REACTION_CARDS.indexOf(available[idx]);
+    usedCards.push(realIdx);
+    return { ...REACTION_CARDS[realIdx], idx: realIdx };
+}
+
+// ==================== 游戏状态 ====================
+let players = [];
+let currentPlayer = 0;
+let diceValue = null;
+let consecutive6 = 0;
+let gamePhase = 'roll'; // roll | move | card | wait
+let selectedPiece = null;
+let extraDice = null; // for catalyst/double dice
+let immunePlayer = null;
+let skipNextPlayer = false;
+let frozenPieces = {}; // {playerIdx_pieceIdx: true}
+let electronCoins = [0,0,0,0]; // per player
+let pendingCardAction = null;
+let messages = [];
+
+function initGame() {
+    players = Object.entries(FAMILIES).map(([key, fam]) => ({
+        key, ...fam,
+        pieces: fam.pieces.map((p, i) => ({
+            ...p,
+            boardPos: -1,   // -1=基地, 0-51=主路径, 100-107=终点道(100+i)
+            finished: false,
+            bonded: null,    // 叠子: 另一枚棋子的引用
+            frozen: false
+        })),
+        finishedCount: 0
+    }));
+    currentPlayer = 0;
+    diceValue = null;
+    consecutive6 = 0;
+    gamePhase = 'roll';
+    selectedPiece = null;
+    extraDice = null;
+    immunePlayer = null;
+    skipNextPlayer = false;
+    frozenPieces = {};
+    electronCoins = [0,0,0,0];
+    usedCards = [];
+    pendingCardAction = null;
+    messages = ['🧪 欢迎来到元素跃迁！碱金属家族先手。'];
+}
+
+// ==================== 棋盘计算 ====================
+const BOARD_SIZE = 600;
+const CX = BOARD_SIZE / 2;
+const CY = BOARD_SIZE / 2;
+const RING_R = 235;  // 主路径半径
+const FINISH_R = 170; // 终点道内半径
+
+// 每个格子在圆上的角度（从顶部顺时针）
+function tileAngle(index) {
+    // 0号(H)在顶部(12点钟方向)，顺时针
+    return -Math.PI / 2 + (index / 52) * Math.PI * 2;
+}
+function tileXY(index, r) {
+    const a = tileAngle(index);
+    return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) };
+}
+
+// ==================== Canvas 渲染 ====================
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+
+function drawBoard() {
+    ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
+
+    // 背景
+    ctx.fillStyle = '#0a0e17';
+    ctx.fillRect(0, 0, BOARD_SIZE, BOARD_SIZE);
+
+    // 中心原子模型
+    const grad = ctx.createRadialGradient(CX, CY, 20, CX, CY, 80);
+    grad.addColorStop(0, '#facc15');
+    grad.addColorStop(0.5, '#f59e0b');
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(CX, CY, 70, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#facc15';
+    ctx.font = 'bold 1.5rem system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('⚛️', CX, CY - 8);
+    ctx.fillText('原子核', CX, CY + 22);
+
+    // 终点道（4条）
+    const finishFamilies = ['alkali','alkaline','carbon','halogen'];
+    finishFamilies.forEach((key, fi) => {
+        const fam = FAMILIES[key];
+        const startIdx = fam.startIdx;
+        // 终点道从 startIdx 前1格岔出，向内到 FINISH_R
+        const entryAngle = tileAngle((startIdx - 1 + 52) % 52);
+        const entryX = CX + (RING_R - 20) * Math.cos(entryAngle);
+        const entryY = CY + (RING_R - 20) * Math.sin(entryAngle);
+
+        // 终点道的方向（向内）
+        const innerR = FINISH_R;
+        for (let i = 0; i < 8; i++) {
+            const t = (i + 1) / 9;
+            const rr = RING_R - 25 - t * (RING_R - 25 - innerR);
+            const x = CX + rr * Math.cos(entryAngle);
+            const y = CY + rr * Math.sin(entryAngle);
+            ctx.fillStyle = i === 7 ? '#facc15' : (fam.color + '44');
+            ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = fam.color;
+            ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.stroke();
+            if (i === 7) {
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 7px system-ui';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('8e⁻', x, y);
+            }
+        }
+        // 标签
+        const labelR = RING_R - 40;
+        const lx = CX + labelR * Math.cos(entryAngle);
+        const ly = CY + labelR * Math.sin(entryAngle);
+        ctx.fillStyle = fam.color;
+        ctx.font = 'bold 10px system-ui';
+        ctx.fillText(fam.name, lx, ly);
+    });
+
+    // 主路径
+    for (let i = 0; i < 52; i++) {
+        const a = tileAngle(i);
+        const { x, y } = tileXY(i, RING_R);
+        const el = ELEMENTS[i];
+
+        // 格子底色
+        let fillColor = '#1a1f2e';
+        let borderColor = '#334155';
+        if (REACTION_TILES.has(i)) { fillColor = '#3b1f5e'; borderColor = '#a855f7'; }
+        if (DECAY_TILES.has(i)) { fillColor = '#3b1520'; borderColor = '#ef4444'; }
+        if (CATALYST_TILES.has(i)) { fillColor = '#3b3010'; borderColor = '#facc15'; }
+        if (NOBLE_INDICES.has(i)) { fillColor = '#1a2530'; borderColor = '#64748b'; }
+        // 启动格
+        const famForStart = Object.entries(START_TILES).find(([k,v]) => v === i);
+        if (famForStart) { fillColor = FAMILIES[famForStart[0]].color + '33'; borderColor = FAMILIES[famForStart[0]].color; }
+
+        ctx.fillStyle = fillColor;
+        ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.stroke();
+
+        // 特殊标记
+        if (REACTION_TILES.has(i)) { ctx.fillStyle = '#a855f7'; ctx.font = '9px system-ui'; ctx.fillText('⚗️', x, y - 6); }
+        if (DECAY_TILES.has(i)) { ctx.fillStyle = '#ef4444'; ctx.font = '9px system-ui'; ctx.fillText('☢️', x, y - 6); }
+        if (CATALYST_TILES.has(i)) { ctx.fillStyle = '#facc15'; ctx.font = '9px system-ui'; ctx.fillText('⚡', x, y - 6); }
+
+        // 元素符号
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'bold 9px system-ui';
+        if (!REACTION_TILES.has(i) && !DECAY_TILES.has(i) && !CATALYST_TILES.has(i)) {
+            ctx.fillText(el.sym, x, y + 5);
+        }
+
+        // 原子序数
+        ctx.fillStyle = '#64748b';
+        ctx.font = '6px system-ui';
+        ctx.fillText(el.n, x, y + 14);
+    }
+
+    // 家族基地（四角）
+    const baseDefs = [
+        { x: 45, y: 45, key: 'alkali' },
+        { x: BOARD_SIZE - 45, y: 45, key: 'alkaline' },
+        { x: 45, y: BOARD_SIZE - 45, key: 'carbon' },
+        { x: BOARD_SIZE - 45, y: BOARD_SIZE - 45, key: 'halogen' },
+    ];
+    baseDefs.forEach((c, bi) => {
+        const fam = FAMILIES[c.key];
+        const isCurrent = bi === currentPlayer;
+        const isSelectPhase = gamePhase === 'select';
+        const hasBasePieces = players[bi].pieces.some(p => p.boardPos === -1 && !p.finished);
+
+        // 基地背景
+        ctx.fillStyle = fam.color + '22';
+        ctx.strokeStyle = isCurrent && isSelectPhase && hasBasePieces ? '#fff' : fam.color;
+        ctx.lineWidth = isCurrent && isSelectPhase && hasBasePieces ? 3 : 1;
+        if (isCurrent && isSelectPhase && hasBasePieces && diceValue === 6) {
+            ctx.shadowColor = fam.color;
+            ctx.shadowBlur = 20;
+        }
+        ctx.beginPath(); ctx.roundRect(c.x - 30, c.y - 30, 60, 60, 10); ctx.fill(); ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = fam.color;
+        ctx.font = 'bold 11px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(fam.name, c.x, c.y - 8);
+        ctx.fillText('基地', c.x, c.y + 10);
+
+        // 显示基地中棋子数
+        if (hasBasePieces) {
+            const cnt = players[bi].pieces.filter(p => p.boardPos === -1 && !p.finished).length;
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 9px system-ui';
+            ctx.fillText(cnt + '枚待命', c.x, c.y - 24);
+        }
+    });
+
+    // 棋子
+    Object.entries(players).forEach(([pi, player]) => {
+        player.pieces.forEach((piece, i) => {
+            if (piece.finished) return;
+            let px, py;
+            if (piece.boardPos === -1) {
+                // 在基地
+                const basePos = getBasePosition(parseInt(pi), i);
+                px = basePos.x; py = basePos.y;
+            } else if (piece.boardPos >= 100) {
+                // 在终点道
+                const fi = parseInt(pi);
+                const famKey = player.key;
+                const startIdx = FAMILIES[famKey].startIdx;
+                const entryAngle = tileAngle((startIdx - 1 + 52) % 52);
+                const finishIdx = piece.boardPos - 100;
+                const t = (finishIdx + 1) / 9;
+                const rr = RING_R - 25 - t * (RING_R - 25 - FINISH_R);
+                px = CX + rr * Math.cos(entryAngle);
+                py = CY + rr * Math.sin(entryAngle);
+            } else {
+                const pos = tileXY(piece.boardPos, RING_R);
+                px = pos.x; py = pos.y;
+            }
+
+            // 叠子标记
+            const isBonded = piece.bonded !== null;
+
+            // 棋子圆圈
+            ctx.fillStyle = player.color;
+            ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = isBonded ? '#fff' : '#000';
+            ctx.lineWidth = isBonded ? 2 : 1;
+            ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI * 2); ctx.stroke();
+
+            // 符号
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 8px system-ui';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(piece.sym, px, py);
+
+            // 高亮选中的棋子
+            if (selectedPiece && selectedPiece.player === parseInt(pi) && selectedPiece.idx === i) {
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([3, 2]);
+                ctx.beginPath(); ctx.arc(px, py, 13, 0, Math.PI * 2); ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        });
+    });
+
+    // 选择阶段：高亮可选棋子
+    if (gamePhase === 'select' || gamePhase === 'catalyst') {
+        const available = getAvailablePieces(currentPlayer);
+        available.forEach(a => {
+            if (a.piece.boardPos === -1) return;
+            let px, py;
+            if (a.piece.boardPos >= 100) {
+                const famKey = players[currentPlayer].key;
+                const startIdx = FAMILIES[famKey].startIdx;
+                const entryAngle = tileAngle((startIdx - 1 + 52) % 52);
+                const finishIdx = a.piece.boardPos - 100;
+                const t = (finishIdx + 1) / 9;
+                const rr = RING_R - 25 - t * (RING_R - 25 - FINISH_R);
+                px = CX + rr * Math.cos(entryAngle);
+                py = CY + rr * Math.sin(entryAngle);
+            } else {
+                const pos = tileXY(a.piece.boardPos, RING_R);
+                px = pos.x; py = pos.y;
+            }
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#fff';
+            ctx.shadowBlur = 12;
+            ctx.setLineDash([4, 2]);
+            ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.shadowBlur = 0;
+        });
+    }
+
+    // 回合指示器 + 提示
+    const curP = players[currentPlayer];
+    ctx.fillStyle = curP.color;
+    ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(`▶ ${curP.name}的回合`, CX, BOARD_SIZE - 15);
+    if (gamePhase === 'select') {
+        ctx.fillStyle = '#facc15';
+        ctx.font = 'bold 11px system-ui';
+        ctx.fillText('👆 点击高亮棋子或己方基地', CX, BOARD_SIZE - 32);
+    }
+}
+
+function getBasePosition(playerIdx, pieceIdx) {
+    const bases = [
+        { x: 50, y: 50 },   // alkali
+        { x: BOARD_SIZE - 50, y: 50 },  // alkaline
+        { x: 50, y: BOARD_SIZE - 50 },  // carbon
+        { x: BOARD_SIZE - 50, y: BOARD_SIZE - 50 }, // halogen
+    ];
+    const base = bases[playerIdx];
+    const offsets = [[-10,-10],[10,-10],[-10,10],[10,10]];
+    return { x: base.x + offsets[pieceIdx][0], y: base.y + offsets[pieceIdx][1] };
+}
+
+// ==================== 游戏逻辑 ====================
+function isMetal(sym) {
+    return ['Li','Na','K','Rb','Be','Mg','Ca','Sr','Al','Sn','Ge','Si','Zn','Fe','Cu','Ag','Sc','Ti','V','Cr','Mn','Co','Ni','Ga','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Cd','In','Sb','Te'].includes(sym);
+}
+function isNonmetal(sym) {
+    return ['F','Cl','Br','I','O','S','Se','N','P','C','B','As','H','He','Ne','Ar','Kr'].includes(sym);
+}
+
+function addMessage(msg, cls) {
+    messages.push({ text: msg, cls: cls || '' });
+    if (messages.length > 20) messages.shift();
+    updateMessages();
+}
+function updateMessages() {
+    const div = document.getElementById('messages');
+    div.innerHTML = messages.map(m =>
+        `<div class="${m.cls}">${m.text}</div>`
+    ).join('');
+    div.scrollTop = div.scrollHeight;
+}
+
+function getPieceOwner(boardPos, excludePlayer, excludePieceIdx) {
+    for (let pi = 0; pi < players.length; pi++) {
+        for (let i = 0; i < players[pi].pieces.length; i++) {
+            if (pi === excludePlayer && i === excludePieceIdx) continue;
+            const p = players[pi].pieces[i];
+            if (p.boardPos === boardPos && !p.finished && p.bonded === null) {
+                return { player: pi, idx: i, piece: p };
+            }
+        }
+    }
+    return null;
+}
+
+function getAvailablePieces(playerIdx) {
+    const player = players[playerIdx];
+    return player.pieces.map((p, i) => ({ piece: p, idx: i })).filter(function(a) {
+        if (a.piece.finished) return false;
+        if (a.piece.bonded !== null) return false;
+        if (frozenPieces[playerIdx + '_' + a.idx]) return false;
+        return true;
+    });
+}
+
+function handleDiceRoll() {
+    if (gamePhase !== 'roll') return;
+    const val = Math.floor(Math.random() * 6) + 1;
+    diceValue = val;
+    document.getElementById('diceDisplay').textContent = val;
+    document.getElementById('diceDisplay').classList.add('rolling');
+    setTimeout(() => document.getElementById('diceDisplay').classList.remove('rolling'), 300);
+
+    const player = players[currentPlayer];
+    const available = getAvailablePieces(currentPlayer);
+
+    if (val === 6) {
+        consecutive6++;
+        if (consecutive6 >= 3) {
+            // 过度激发：最近起飞的棋子电离回基地
+            addMessage(`⚡ 连续3次6点！过度激发→电离！最近起飞的棋子退回基地`, 'danger');
+            const lastPiece = findLastTakeoffPiece(currentPlayer);
+            if (lastPiece) {
+                lastPiece.boardPos = -1;
+                lastPiece.bonded = null;
+                addMessage(`${lastPiece.sym} 电离退回基地`, 'danger');
+            }
+            consecutive6 = 0;
+            endTurn();
+            return;
+        }
+        // 检查是否有棋子可以起飞
+        const inBase = player.pieces.filter(p => p.boardPos === -1 && !p.finished);
+        const onBoard = available.filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+        if (inBase.length > 0) {
+            addMessage(`🎲 掷出6点！选择一个棋子激发(起飞)或移动场上棋子`, 'highlight');
+            gamePhase = 'select';
+            document.getElementById('diceInfo').textContent = '选择一个棋子起飞(点基地)或移动';
+            renderUI();
+            drawBoard();
+            return;
+        } else if (onBoard.length > 0) {
+            addMessage(`🎲 掷出6点！所有棋子已在场上，选择一枚移动`, 'highlight');
+            gamePhase = 'select';
+            document.getElementById('diceInfo').textContent = '点击场上棋子移动6步，可再掷一次';
+            renderUI();
+            drawBoard();
+            return;
+        }
+    }
+
+    // 不是6点
+    consecutive6 = 0;
+    if (available.length === 0) {
+        addMessage(`😞 没有可移动的棋子（需掷6起飞），跳过回合`);
+        endTurn();
+        return;
+    }
+    // 只有一个可选棋子，自动移动
+    const movable = available.filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+    if (available.length === 1) {
+        executeMove(currentPlayer, available[0].idx, val);
+        return;
+    }
+    // 需要点击选择
+    gamePhase = 'select';
+    document.getElementById('diceInfo').textContent = `点击棋子移动${val}步`;
+    renderUI();
+    drawBoard();
+}
+
+function findLastTakeoffPiece(playerIdx) {
+    // 找最近起飞（boardPos离启动格最近）的非基地棋子
+    const player = players[playerIdx];
+    const startIdx = player.startIdx;
+    let last = null;
+    let minDist = Infinity;
+    player.pieces.forEach(p => {
+        if (p.boardPos >= 0 && p.boardPos < 52 && !p.finished) {
+            // 计算从启动格到当前位置走过的步数（顺时针）
+            let dist = p.boardPos - startIdx;
+            if (dist < 0) dist += 52;
+            if (dist < minDist) { minDist = dist; last = p; }
+        }
+    });
+    return last;
+}
+
+function executeMove(playerIdx, pieceIdx, steps) {
+    const piece = players[playerIdx].pieces[pieceIdx];
+    if (piece.finished) return;
+
+    // 处理叠子：移动整个叠子
+    let movingPieces = [piece];
+    if (piece.bonded !== null) {
+        movingPieces = [piece, piece.bonded];
+    }
+
+    // 从基地起飞
+    if (piece.boardPos === -1) {
+        if (steps !== 6 && gamePhase !== 'freeTakeoff') {
+            addMessage(`${piece.sym} 在基地，需掷6或使用卡牌起飞`);
+            gamePhase = 'roll';
+            renderUI();
+            return;
+        }
+        piece.boardPos = players[playerIdx].startIdx;
+        addMessage(`🚀 ${piece.sym} 激发跃迁！到达启动格 ${ELEMENTS[piece.boardPos].sym}`);
+        gamePhase = 'roll';
+        consecutive6 = 0;
+        document.getElementById('diceInfo').textContent = '可再掷一次骰子';
+        renderUI(); drawBoard(); saveGame();
+        return;
+    }
+
+    // 已在终点道
+    if (piece.boardPos >= 100) {
+        const finishIdx = piece.boardPos - 100;
+        const newFinishIdx = finishIdx + steps;
+        if (newFinishIdx === 7) {
+            // 精确到达满壳层！
+            piece.boardPos = 200; // 标记完成
+            piece.finished = true;
+            players[playerIdx].finishedCount++;
+            addMessage(`✨ ${piece.sym} 达到8电子满壳层！稳定！`, 'highlight');
+            if (players[playerIdx].finishedCount >= 4) {
+                gamePhase = 'win';
+                document.getElementById('winName').innerHTML =
+                    `<span style="color:${players[playerIdx].color}">${players[playerIdx].emoji} ${players[playerIdx].name}</span>`;
+                document.getElementById('winOverlay').classList.add('show');
+                return;
+            }
+        } else if (newFinishIdx > 7) {
+            // 反弹
+            const bounce = 7 - (newFinishIdx - 7);
+            piece.boardPos = 100 + bounce;
+            addMessage(`💫 ${piece.sym} 超出满壳层！反弹回第${bounce + 1}格`);
+        } else {
+            piece.boardPos = 100 + newFinishIdx;
+            addMessage(`${piece.sym} 移动到终点道第${newFinishIdx + 1}格`);
+        }
+        endTurn();
+        return;
+    }
+
+    // 正常路径移动
+    const oldPos = piece.boardPos;
+    let newPos = (oldPos + steps) % 52;
+
+    // 检查是否到达终点道入口
+    const startIdx = players[playerIdx].startIdx;
+    const entryIdx = (startIdx - 1 + 52) % 52;
+    // 判断是否经过entryIdx进入终点道
+    let enteredFinish = false;
+    if (oldPos < 52 && oldPos >= 0) {
+        // 检查是否跨越或到达entryIdx
+        let crossedEntry = false;
+        if (oldPos <= entryIdx && newPos >= entryIdx && !(oldPos === entryIdx && steps === 0)) crossedEntry = true;
+        if (oldPos > entryIdx && newPos >= entryIdx + 52) crossedEntry = true;
+        // 简化：oldPos到newPos的路径中经过entryIdx
+        for (let s = 1; s <= steps; s++) {
+            const checkPos = (oldPos + s) % 52;
+            if (checkPos === entryIdx) {
+                // 检查是否已经绕过一圈（从启动格出发绕一圈才进终点）
+                // 简化：如果棋子之前经过启动格（即至少绕了一圈）
+                if (piece._hasLooped) {
+                    enteredFinish = true;
+                    const remainingSteps = steps - s;
+                    piece.boardPos = 100 + Math.min(remainingSteps, 7);
+                    if (piece.boardPos > 107) piece.boardPos = 107 - (piece.boardPos - 107);
+                    addMessage(`🏁 ${piece.sym} 进入终点电子填充轨道！第${piece.boardPos - 100 + 1}格`);
+                    break;
+                }
+            }
+            if (checkPos === startIdx && s < steps) piece._hasLooped = true;
+        }
+    }
+
+    if (!enteredFinish) {
+        piece.boardPos = newPos;
+        addMessage(`${piece.sym} 移动到 ${ELEMENTS[newPos].sym}(${ELEMENTS[newPos].n})`);
+    }
+
+    // 检查碰撞
+    if (piece.boardPos >= 0 && piece.boardPos < 52 && piece.bonded === null) {
+        const other = getPieceOwner(piece.boardPos, playerIdx, pieceIdx);
+        if (other && other.piece.bonded === null) {
+            handleCollision(playerIdx, pieceIdx, other);
+        }
+    }
+
+    // 检查特殊格
+    if (piece.boardPos >= 0 && piece.boardPos < 52) {
+        checkSpecialTile(playerIdx, pieceIdx);
+    }
+
+    endTurn();
+}
+
+function handleCollision(p1Idx, piece1Idx, other) {
+    const piece1 = players[p1Idx].pieces[piece1Idx];
+    const piece2 = other.piece;
+    const p2Idx = other.player;
+
+    if (immunePlayer === p1Idx || immunePlayer === p2Idx) {
+        addMessage('🛡️ 免疫护盾抵挡了碰撞！');
+        immunePlayer = null;
+        return;
+    }
+
+    if (electronCoins[p2Idx] > 0) {
+        electronCoins[p2Idx]--;
+        addMessage(`🔋 ${players[p2Idx].pieces[other.idx].sym} 消耗电子币抵消被撞！`);
+        return;
+    }
+
+    const s1 = piece1.sym, s2 = piece2.sym;
+    const m1 = isMetal(s1), m2 = isMetal(s2);
+    const n1 = isNonmetal(s1), n2 = isNonmetal(s2);
+
+    if (m1 && m2) {
+        // 金属置换反应
+        const r1 = METAL_REACTIVITY.indexOf(s1);
+        const r2 = METAL_REACTIVITY.indexOf(s2);
+        if (r1 < r2) {
+            // piece1更活泼，置换piece2
+            piece2.boardPos = -1; piece2.bonded = null;
+            addMessage(`⚡ ${s1} 置换 ${s2}！${s2} 被送回基地`, 'danger');
+        } else {
+            piece1.boardPos = -1; piece1.bonded = null;
+            addMessage(`⚡ ${s2} 更活泼！${s1} 被置换送回基地`, 'danger');
+        }
+    } else if (n1 && n2) {
+        const r1 = NONMETAL_REACTIVITY.indexOf(s1);
+        const r2 = NONMETAL_REACTIVITY.indexOf(s2);
+        if (r1 < r2) {
+            piece2.boardPos = -1; piece2.bonded = null;
+            addMessage(`💨 ${s1} 置换 ${s2}！${s2} 退回基地`, 'danger');
+        } else {
+            piece1.boardPos = -1; piece1.bonded = null;
+            addMessage(`💨 ${s2} 更活泼！${s1} 被置换退回基地`, 'danger');
+        }
+    } else if ((m1 && n2) || (n1 && m2)) {
+        // 化合反应
+        piece1.boardPos = -1; piece1.bonded = null;
+        piece2.boardPos = -1; piece2.bonded = null;
+        addMessage(`💥 ${s1} + ${s2} → 化合反应！双双沉淀回基地！各抽一张反应卡`, 'highlight');
+        // 双方各抽卡
+        showCard(p1Idx);
+        setTimeout(() => showCard(p2Idx), 500);
+    }
+}
+
+function checkSpecialTile(playerIdx, pieceIdx) {
+    const piece = players[playerIdx].pieces[pieceIdx];
+    const pos = piece.boardPos;
+    if (pos < 0 || pos >= 52) return;
+
+    if (REACTION_TILES.has(pos)) {
+        addMessage(`⚗️ ${piece.sym} 停在反应格！抽取化学反应卡`, 'highlight');
+        showCard(playerIdx);
+    }
+    if (DECAY_TILES.has(pos)) {
+        const decayRoll = Math.floor(Math.random() * 6) + 1;
+        if (decayRoll % 2 === 1) {
+            piece.boardPos = (pos - decayRoll + 52) % 52;
+            addMessage(`☢️ 衰变！奇数${decayRoll}→后退${decayRoll}格至 ${ELEMENTS[piece.boardPos].sym}`, 'danger');
+        } else {
+            piece.boardPos = (pos + decayRoll) % 52;
+            addMessage(`☢️ 衰变！偶数${decayRoll}→前进${decayRoll}格至 ${ELEMENTS[piece.boardPos].sym}`);
+        }
+    }
+    if (CATALYST_TILES.has(pos)) {
+        addMessage(`⚡ ${piece.sym} 停在催化剂格！可再掷一次并选择点数`, 'highlight');
+        extraDice = Math.floor(Math.random() * 6) + 1;
+        document.getElementById('diceInfo').textContent = `额外骰子: ${extraDice}，选择用哪个点数`;
+        gamePhase = 'catalyst';
+        renderUI();
+    }
+}
+
+async function showCard(playerIdx) {
+    const card = drawCard();
+    document.getElementById('cardEmoji').textContent = card.emoji;
+    document.getElementById('cardTitle').textContent = card.title;
+    document.getElementById('cardDesc').textContent = card.desc;
+    document.getElementById('cardModal').classList.add('show');
+    pendingCardAction = { card, playerIdx };
+
+    return new Promise(resolve => {
+        document.getElementById('cardBtn').onclick = () => {
+            document.getElementById('cardModal').classList.remove('show');
+            executeCardAction(card, playerIdx);
+            pendingCardAction = null;
+            resolve();
+        };
+    });
+}
+
+function executeCardAction(card, playerIdx) {
+    const player = players[playerIdx];
+    const others = players.map((_, i) => i).filter(i => i !== playerIdx);
+    const otherIdx = others[Math.floor(Math.random() * others.length)];
+
+    switch (card.action) {
+        case 'advance3': {
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            if (avail.length > 0) {
+                const p = avail[Math.floor(Math.random() * avail.length)];
+                p.piece.boardPos = (p.piece.boardPos + 3) % 52;
+                addMessage(`🔥 ${p.piece.sym} 前进3格至 ${ELEMENTS[p.piece.boardPos].sym}`);
+            }
+            break;
+        }
+        case 'pushBack2': {
+            const other = players[otherIdx];
+            const avail = other.pieces.filter(p => p.boardPos >= 0 && p.boardPos < 52 && !p.finished);
+            if (avail.length > 0) {
+                const p = avail[Math.floor(Math.random() * avail.length)];
+                p.boardPos = (p.boardPos - 2 + 52) % 52;
+                addMessage(`❄️ ${p.sym} 后退2格至 ${ELEMENTS[p.boardPos].sym}`);
+            }
+            break;
+        }
+        case 'allBack1':
+            players.forEach(pl => pl.pieces.forEach(p => {
+                if (p.boardPos >= 0 && p.boardPos < 52 && !p.finished) {
+                    p.boardPos = (p.boardPos - 1 + 52) % 52;
+                }
+            }));
+            addMessage('⚖️ 酸碱中和！所有棋子后退1格');
+            break;
+        case 'toCatalyst': {
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            if (avail.length > 0) {
+                const p = avail[0];
+                let target = p.piece.boardPos;
+                while (!CATALYST_TILES.has(target)) target = (target + 1) % 52;
+                p.piece.boardPos = target;
+                addMessage(`⚡ ${p.piece.sym} 催化合成至 ${ELEMENTS[target].sym}`);
+            }
+            break;
+        }
+        case 'sendHome': {
+            const other = players[otherIdx];
+            const avail = other.pieces.filter(p => p.boardPos >= 0 && p.boardPos < 52 && !p.finished);
+            if (avail.length > 0) {
+                const p = avail[Math.floor(Math.random() * avail.length)];
+                p.boardPos = -1; p.bonded = null;
+                addMessage(`💧 ${p.sym} 被电解送回基地！`, 'danger');
+            }
+            break;
+        }
+        case 'freeTakeoff': {
+            const inBase = player.pieces.filter(p => p.boardPos === -1 && !p.finished);
+            if (inBase.length > 0) {
+                const p = inBase[0];
+                p.boardPos = player.startIdx;
+                addMessage(`🧪 ${p.sym} 直接从基地起飞！`);
+            }
+            break;
+        }
+        case 'extraRoll': {
+            const extra = Math.floor(Math.random() * 6) + 1;
+            addMessage(`🌡️ 加热反应！额外掷出${extra}点`);
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            if (avail.length > 0) {
+                avail[0].piece.boardPos = (avail[0].piece.boardPos + extra) % 52;
+            }
+            break;
+        }
+        case 'skipNext':
+            skipNextPlayer = true;
+            addMessage('🧊 冷却结晶！下一位玩家跳过回合');
+            break;
+        case 'extraTurn':
+            addMessage('🌟 光化学反应！当前玩家获得额外回合', 'highlight');
+            // 当前回合结束后不切换玩家
+            skipNextPlayer = false; // 抵消任何skip
+            // 用标志位：回合结束时不递增currentPlayer
+            window._extraTurn = true;
+            break;
+        case 'allSendOne':
+            players.forEach((pl, i) => {
+                const avail = pl.pieces.filter(p => p.boardPos >= 0 && p.boardPos < 52 && !p.finished);
+                if (avail.length > 0) {
+                    const p = avail[0];
+                    p.boardPos = -1; p.bonded = null;
+                    addMessage(`💥 ${pl.name}的${p.sym} 被爆炸送回基地`);
+                }
+            });
+            break;
+        case 'formBond': {
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52 && a.piece.bonded === null);
+            if (avail.length >= 2) {
+                const p1 = avail[0].piece, p2 = avail[1].piece;
+                // 将p2移到p1的位置
+                p2.boardPos = p1.boardPos;
+                p1.bonded = p2;
+                p2.bonded = p1;
+                addMessage(`🔗 ${p1.sym}+${p2.sym} 形成共价键叠子！`);
+            }
+            break;
+        }
+        case 'toStart': {
+            const inBase = player.pieces.filter(p => p.boardPos === -1 && !p.finished);
+            if (inBase.length > 0) {
+                inBase[0].boardPos = player.startIdx;
+                addMessage(`🔬 ${inBase[0].sym} 还原至启动格`);
+            }
+            break;
+        }
+        case 'immuneOnce':
+            immunePlayer = playerIdx;
+            addMessage(`💊 ${player.name} 获得一次免疫护盾`);
+            break;
+        case 'fission': {
+            const fr = Math.floor(Math.random() * 6) + 1;
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            if (avail.length > 0) {
+                const p = avail[0].piece;
+                if (fr % 2 === 1) {
+                    p.boardPos = (p.boardPos + fr * 2) % 52;
+                    addMessage(`⚛️ 核裂变！奇数→前进${fr * 2}格`);
+                } else {
+                    p.boardPos = (p.boardPos - fr + 52) % 52;
+                    addMessage(`⚛️ 核裂变！偶数→后退${fr}格`, 'danger');
+                }
+            }
+            break;
+        }
+        case 'toNoble': {
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            if (avail.length > 0) {
+                const p = avail[0].piece;
+                let target = p.boardPos;
+                while (!NOBLE_INDICES.has(target)) target = (target - 1 + 52) % 52;
+                p.boardPos = target;
+                addMessage(`☢️ ${p.sym} 衰变至惰性气体格 ${ELEMENTS[target].sym}`);
+            }
+            break;
+        }
+        case 'shield':
+            immunePlayer = playerIdx;
+            addMessage(`🛡️ ${player.name} 获得钝化保护`);
+            break;
+        case 'doubleDice': {
+            const d1 = Math.floor(Math.random() * 6) + 1;
+            const d2 = Math.floor(Math.random() * 6) + 1;
+            extraDice = Math.max(d1, d2);
+            addMessage(`💫 激发态！掷出${d1}和${d2}，选择点数移动`);
+            gamePhase = 'catalyst';
+            break;
+        }
+        case 'gainElectron':
+            electronCoins[playerIdx] += 2;
+            addMessage(`🔋 ${player.name} 获得2个电子币`);
+            break;
+        case 'freezeEnemy': {
+            const other = players[otherIdx];
+            const avail = other.pieces.filter(p => p.boardPos >= 0 && !p.finished);
+            if (avail.length > 0) {
+                const p = avail[Math.floor(Math.random() * avail.length)];
+                frozenPieces[otherIdx + '_' + other.pieces.indexOf(p)] = true;
+                addMessage(`🧫 ${p.sym} 被沉淀冻结一回合`);
+                setTimeout(() => { delete frozenPieces[otherIdx + '_' + other.pieces.indexOf(p)]; }, 30000);
+            }
+            break;
+        }
+        case 'bondAdvance': {
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52 && a.piece.bonded !== null);
+            if (avail.length > 0) {
+                avail[0].piece.boardPos = (avail[0].piece.boardPos + 2) % 52;
+                addMessage(`🔨 金属键！叠子额外前进2格`);
+            }
+            break;
+        }
+        case 'swapPiece': {
+            const myAvail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            const otherP = players[otherIdx];
+            const otherAvail = otherP.pieces.filter(p => p.boardPos >= 0 && p.boardPos < 52 && !p.finished);
+            if (myAvail.length > 0 && otherAvail.length > 0) {
+                const mp = myAvail[0].piece;
+                const op = otherAvail[0];
+                const temp = mp.boardPos;
+                mp.boardPos = op.boardPos;
+                op.boardPos = temp;
+                addMessage(`🧬 ${mp.sym} ↔ ${op.sym} 交换位置`);
+            }
+            break;
+        }
+        case 'leap6': {
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            if (avail.length > 0) {
+                avail[0].piece.boardPos = (avail[0].piece.boardPos + 6) % 52;
+                addMessage(`🪐 ${avail[0].piece.sym} 电子跃迁6格`);
+            }
+            break;
+        }
+        case 'dicePlus1':
+            if (diceValue) { diceValue = Math.min(6, diceValue + 1); addMessage(`💎 晶格能！点数+1=${diceValue}`); }
+            break;
+        case 'volcano': {
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            if (avail.length > 0) {
+                avail[0].piece.boardPos = (avail[0].piece.boardPos + 3) % 52;
+                addMessage(`🌋 火山反应！前进3格`);
+                if (REACTION_TILES.has(avail[0].piece.boardPos)) {
+                    addMessage(`🌋 停在反应格！再抽一张`);
+                    setTimeout(() => showCard(playerIdx), 800);
+                }
+            }
+            break;
+        }
+        case 'freezeHalf':
+            addMessage(`🧊 指定对手棋子下回合移动减半`);
+            break;
+        case 'distill': {
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            if (avail.length > 0) {
+                const steps = avail[0].piece.n % 10;
+                avail[0].piece.boardPos = (avail[0].piece.boardPos + steps) % 52;
+                addMessage(`⚗️ 蒸馏！移动${steps}步`);
+            }
+            break;
+        }
+        case 'tripleBond': {
+            const avail = getAvailablePieces(playerIdx).filter(a => a.piece.boardPos >= 0 && a.piece.boardPos < 52);
+            avail.slice(0, 3).forEach(a => {
+                a.piece.boardPos = (a.piece.boardPos + 1) % 52;
+            });
+            addMessage(`🔱 三重键！3枚棋子各前进1格`);
+            break;
+        }
+        case 'spinCouple':
+            players.forEach(pl => pl.pieces.forEach(p => {
+                if (p.boardPos >= 0 && p.boardPos < 52 && !p.finished) {
+                    p.boardPos = (p.boardPos + 2) % 52;
+                }
+            }));
+            addMessage('🌀 自旋耦合！所有棋子顺时针转2格');
+            break;
+        case 'combustion': {
+            const pos = Math.floor(Math.random() * 52);
+            [pos, (pos+1)%52, (pos+51)%52].forEach(p => {
+                players.forEach(pl => pl.pieces.forEach(pp => {
+                    if (pp.boardPos === p && !pp.finished) {
+                        pp.boardPos = -1; pp.bonded = null;
+                    }
+                }));
+            });
+            addMessage(`🔥 燃烧反应！${ELEMENTS[pos].sym}附近棋子被烧回基地`);
+            break;
+        }
+        case 'hydrate': {
+            const dead = player.pieces.filter(p => p.boardPos === -1 && !p.finished);
+            if (dead.length > 0) {
+                dead[0].boardPos = player.startIdx;
+                addMessage(`💧 ${dead[0].sym} 水合恢复至启动格`);
+            }
+            break;
+        }
+        case 'nobleShield':
+            immunePlayer = playerIdx;
+            addMessage(`🛡️ ${player.name} 获得惰性气体护盾`);
+            break;
+        // 简化的兜底
+        default:
+            addMessage(`${card.emoji} ${card.title}：${card.desc}`);
+    }
+}
+
+function endTurn() {
+    if (gamePhase === 'win') return;
+    // 检查是否有叠子掷出1分解
+    if (diceValue === 1) {
+        players.forEach(pl => pl.pieces.forEach(p => {
+            if (p.bonded !== null) {
+                p.bonded.bonded = null;
+                p.bonded = null;
+                addMessage(`💔 掷出1点！叠子分解`, 'danger');
+            }
+        }));
+    }
+    selectedPiece = null;
+    diceValue = null;
+    extraDice = null;
+
+    if (window._extraTurn) {
+        window._extraTurn = false;
+    } else if (skipNextPlayer) {
+        currentPlayer = (currentPlayer + 2) % 4;
+        skipNextPlayer = false;
+    } else {
+        currentPlayer = (currentPlayer + 1) % 4;
+    }
+
+    gamePhase = 'roll';
+    document.getElementById('diceInfo').textContent = `轮到 ${players[currentPlayer].name}`;
+    document.getElementById('btnSkip').style.display = 'none';
+    updateMessages();
+    renderUI();
+    drawBoard();
+    saveGame();
+}
+
+// ==================== Canvas 点击处理 ====================
+canvas.addEventListener('click', (e) => {
+    if (gamePhase !== 'select' && gamePhase !== 'catalyst') return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = BOARD_SIZE / rect.width;
+    const scaleY = BOARD_SIZE / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    const player = players[currentPlayer];
+
+    // 检查是否点击了基地
+    const bases = [
+        { x: 45, y: 45 }, { x: BOARD_SIZE - 45, y: 45 },
+        { x: 45, y: BOARD_SIZE - 45 }, { x: BOARD_SIZE - 45, y: BOARD_SIZE - 45 },
+    ];
+    const base = bases[currentPlayer];
+    if (Math.abs(mx - base.x) < 40 && Math.abs(my - base.y) < 40) {
+        // 点击了基地
+        const inBase = player.pieces.filter((p, i) => p.boardPos === -1 && !p.finished && p.bonded === null);
+        if (inBase.length > 0 && diceValue === 6) {
+            const p = inBase[0];
+            const idx = player.pieces.indexOf(p);
+            executeMove(currentPlayer, idx, 6);
+            return;
+        }
+    }
+
+    // 检查是否点击了场上的棋子
+    let clickedPiece = null;
+    let clickedIdx = -1;
+    let minDist = 20; // 点击容差
+
+    player.pieces.forEach((p, i) => {
+        if (p.finished || p.boardPos === -1) return;
+        let px, py;
+        if (p.boardPos >= 100) {
+            const famKey = player.key;
+            const startIdx = FAMILIES[famKey].startIdx;
+            const entryAngle = tileAngle((startIdx - 1 + 52) % 52);
+            const finishIdx = p.boardPos - 100;
+            const t = (finishIdx + 1) / 9;
+            const rr = RING_R - 25 - t * (RING_R - 25 - FINISH_R);
+            px = CX + rr * Math.cos(entryAngle);
+            py = CY + rr * Math.sin(entryAngle);
+        } else {
+            const pos = tileXY(p.boardPos, RING_R);
+            px = pos.x; py = pos.y;
+        }
+        const dist = Math.hypot(mx - px, my - py);
+        if (dist < minDist) {
+            minDist = dist;
+            clickedPiece = p;
+            clickedIdx = i;
+        }
+    });
+
+    if (clickedPiece) {
+        let steps = diceValue;
+        if (gamePhase === 'catalyst' && extraDice) {
+            steps = extraDice;
+        }
+        if (steps) {
+            executeMove(currentPlayer, clickedIdx, steps);
+        }
+    }
+});
+
+// ==================== UI ====================
+function renderUI() {
+    const container = document.getElementById('playerCards');
+    container.innerHTML = players.map((p, i) => {
+        const activeClass = i === currentPlayer ? ' active' : '';
+        const finishedClass = p.finishedCount >= 4 ? ' finished' : '';
+        const baseCount = p.pieces.filter(pp => pp.boardPos === -1 && !pp.finished).length;
+        const fieldCount = p.pieces.filter(pp => pp.boardPos >= 0 && !pp.finished).length;
+        const finishCount = p.finishedCount;
+        return `
+        <div class="player-card${activeClass}${finishedClass}">
+            <div class="player-dot" style="background:${p.color}">${p.emoji}</div>
+            <div class="player-info">
+                <div class="player-name">${p.name}</div>
+                <div class="player-pieces">
+                    基地:${baseCount} | 场上:${fieldCount} | 完成:${finishCount}/4
+                    ${electronCoins[i] > 0 ? ` | 🔋×${electronCoins[i]}` : ''}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    const btnRoll = document.getElementById('btnRoll');
+    const btnSkip = document.getElementById('btnSkip');
+    btnRoll.disabled = gamePhase !== 'roll';
+    btnSkip.style.display = gamePhase === 'select' ? 'inline-block' : 'none';
+}
+
+function saveGame() {
+    const state = { players, currentPlayer, consecutive6, diceValue, gamePhase, electronCoins, skipNextPlayer, frozenPieces };
+    try { localStorage.setItem('element_leap_save', JSON.stringify(state)); } catch(e) {}
+}
+
+function loadGame() {
+    try {
+        const raw = localStorage.getItem('element_leap_save');
+        if (raw) {
+            const state = JSON.parse(raw);
+            players = state.players;
+            currentPlayer = state.currentPlayer;
+            consecutive6 = state.consecutive6 || 0;
+            gamePhase = 'roll';
+            electronCoins = state.electronCoins || [0,0,0,0];
+            skipNextPlayer = state.skipNextPlayer || false;
+            frozenPieces = state.frozenPieces || {};
+            addMessage('📂 已加载存档');
+        }
+    } catch(e) {}
+}
+
+// ==================== 按钮事件 ====================
+document.getElementById('btnRoll').addEventListener('click', () => {
+    if (gamePhase !== 'roll') return;
+    document.getElementById('diceDisplay').textContent = '?';
+    handleDiceRoll();
+});
+document.getElementById('btnSkip').addEventListener('click', () => {
+    if (gamePhase === 'select') {
+        addMessage('跳过移动，结束回合');
+        endTurn();
+    }
+});
+
+// ==================== 初始化 ====================
+initGame();
+loadGame();
+drawBoard();
+renderUI();
+updateMessages();
+document.getElementById('diceInfo').textContent = `轮到 ${players[currentPlayer].name}`;
+</script>
+</body>
+</html>

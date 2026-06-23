@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>反应对决 · 炼金术士</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="game-wrap" id="app">
+  <header>
+    <h1>⚗️ 反应对决 · 炼金术士</h1>
+    <div class="header-btns">
+      <button onclick="toggleTheme()">🎨 主题</button>
+      <button onclick="showHelp()">📖 规则</button>
+      <button onclick="Game.instance.reset()">🔄 重开</button>
+    </div>
+  </header>
+  <div class="board" id="board"><div style="text-align:center;padding:2rem;color:var(--text2);font-size:0.9rem">载入中...</div></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

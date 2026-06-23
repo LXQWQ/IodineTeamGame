@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KASSEN · 超时空合战</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="gameCanvas" width="1060" height="720"></canvas>
+
+  <div id="overlay">
+    <!-- Title -->
+    <div id="titlePanel" class="panel active">
+      <div class="logo">KASSEN</div>
+      <div class="sub">— 超 时 空 合 战 —</div>
+      <div class="controls-hint">
+        <b>P1</b> WASD移动 · Q E R F 技能1~4 · SPACE攻击 · F敲钟<br>
+        <b>P2</b> ↑↓←→移动 · 7 8 9 0 技能1~4 · ENTER攻击 · 5敲钟
+      </div>
+      <div class="btn" onclick="showPlayerMode()">开 始 游 戏</div>
+    </div>
+
+    <!-- Player Mode Select (单人/双人) -->
+    <div id="playerModePanel" class="panel">
+      <h2 style="color:var(--gold);margin-bottom:24px;letter-spacing:6px">— 选 择 玩 家 模 式 —</h2>
+      <div style="display:flex;gap:24px;margin-bottom:32px">
+        <div class="mode-card" onclick="selectPlayerMode('single')">
+          <div class="mode-icon">🧑</div>
+          <div class="mode-name">单 人</div>
+          <div class="mode-desc">控制一名角色<br>队友与对手均为AI<br>适合独自挑战</div>
+        </div>
+        <div class="mode-card" onclick="selectPlayerMode('dual')">
+          <div class="mode-icon">👥</div>
+          <div class="mode-name">双 人</div>
+          <div class="mode-desc">两名玩家各自控制<br>一方的领队角色<br>适合本地对战/合作</div>
+        </div>
+      </div>
+      <div class="btn btn-sm" onclick="showTitle()" style="border-color:var(--dim);color:var(--dim)">返 回</div>
+    </div>
+
+    <!-- Mode Select -->
+    <div id="modePanel" class="panel">
+      <h2 style="color:var(--gold);margin-bottom:24px;letter-spacing:6px">— 选 择 模 式 —</h2>
+      <div class="mode-grid">
+        <div class="mode-card" data-mode="instant" onclick="selectMode('instant')">
+          <div class="mode-icon">⚔️</div>
+          <div class="mode-name">瞬 杀</div>
+          <div class="mode-desc">1 VS 1<br>一对一决战<br>先杀死对方者获胜</div>
+        </div>
+        <div class="mode-card" data-mode="warring" onclick="selectMode('warring')">
+          <div class="mode-icon">🏯</div>
+          <div class="mode-name">战 国</div>
+          <div class="mode-desc">3 VS 3 · 三局两胜<br>攻占箭塔·击破天守阁<br>需使用突破类技能打入圆盘</div>
+        </div>
+        <div class="mode-card" data-mode="bamboo" onclick="selectMode('bamboo')">
+          <div class="mode-icon">🎋</div>
+          <div class="mode-name">竹 取</div>
+          <div class="mode-desc">7 VS 7 · 限时激战<br>定时模式<br>规定时间内击杀最多者获胜</div>
+        </div>
+      </div>
+      <div class="btn btn-sm" onclick="showTitle()" style="border-color:var(--dim);color:var(--dim)">返 回</div>
+    </div>
+
+    <!-- Weapon Select -->
+    <div id="weaponPanel" class="panel">
+      <h2 id="wpTitle" style="color:var(--gold);margin-bottom:12px;letter-spacing:4px">— 选择武器 —</h2>
+      <div id="wpSub" style="color:var(--dim);font-size:0.9rem;margin-bottom:8px"></div>
+      <div id="weaponGrid" class="weapon-grid"></div>
+      <div id="wpConfirm" style="margin-top:16px;display:none">
+        <div class="btn btn-sm" onclick="confirmWeapon()">确 认 武 器</div>
+      </div>
+      <div style="margin-top:16px"><div class="btn btn-sm" onclick="showModeSelect()" style="border-color:var(--dim);color:var(--dim)">返 回</div></div>
+    </div>
+
+    <!-- Result -->
+    <div id="resultPanel" class="panel">
+      <div id="resultTitle" class="result-title">胜 利</div>
+      <div id="resultScore" class="result-score">3 - 2</div>
+      <div id="resultStats" class="result-stats"></div>
+      <div class="result-btns">
+        <div class="btn btn-sm" onclick="restartGame()">再 来 一 局</div>
+        <div class="btn btn-sm" onclick="showTitle()" style="border-color:var(--dim);color:var(--dim)">主 菜 单</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-info">
+      <span class="team-red" id="hudRedInfo">🔴 红方 0</span>
+      <span class="hud-round" id="hudRound">第 1 局</span>
+      <span class="hud-timer" id="hudTimer"></span>
+      <span class="hud-score" id="hudScore">0 - 0</span>
+      <span class="team-blue" id="hudBlueInfo">🔵 蓝方 0</span>
+    </div>
+    <div class="hud-resurrect" id="hudResurrect"></div>
+    <div id="skillBar"></div>
+    <div id="hpBar"><div id="hpFill" class="hp-fill p1" style="width:100%"></div><div class="hp-text" id="hpText">100 / 100</div></div>
+    <div id="notification" class="notification"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Chemcraft: 元素觉醒 - 难度选择</title>
+    <link rel="stylesheet" href="./assets/index-NYFlYBef.css">
+    <script type="module" crossorigin="" src="./assets/index-CIOzvIe8.js"></script>
+</head>
+<body>
+    <div id="root">
+        <div class="min-h-screen bg-slate-950 flex items-center justify-center p-6 font-sans relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                <div class="absolute top-10 left-10 w-64 h-64 bg-emerald-500 rounded-full blur-[120px]"></div>
+                <div class="absolute bottom-10 right-10 w-64 h-64 bg-blue-500 rounded-full blur-[120px]"></div>
+            </div>
+            <div class="w-full max-w-xl z-10" style="opacity: 1; transform: none;">
+                <div class="bg-slate-900/50 border border-slate-800 p-10 rounded-[3rem] backdrop-blur-2xl shadow-3xl">
+                    <button class="mb-8 text-slate-500 hover:text-white flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right rotate-180" aria-hidden="true">
+                            <path d="M5 12h14"></path>
+                            <path d="m12 5 7 7 7"></path>
+                        </svg>
+                        返回主菜单
+                    </button>
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-4xl font-black text-white tracking-tight italic">难度选择 <span class="text-emerald-500">DIFFICULTY</span></h2>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button class="relative p-8 rounded-[2rem] border-2 transition-all text-left flex flex-col justify-between h-48 overflow-hidden group bg-slate-900 border-slate-800 hover:border-emerald-500 hover:bg-emerald-500/5">
+                            <div class="relative z-10">
+                                <div class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-emerald-500">适合新手</div>
+                                <div class="text-2xl font-black text-white italic">有手就行</div>
+                            </div>
+                            <div class="relative z-10 text-[10px] font-bold text-slate-600 uppercase">Tier 1</div>
+                        </button>
+                        <button class="relative p-8 rounded-[2rem] border-2 transition-all text-left flex flex-col justify-between h-48 overflow-hidden group bg-slate-900 border-slate-800 hover:border-emerald-500 hover:bg-emerald-500/5">
+                            <div class="relative z-10">
+                                <div class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-emerald-500">正常挑战</div>
+                                <div class="text-2xl font-black text-white italic">中规中矩</div>
+                            </div>
+                            <div class="relative z-10 text-[10px] font-bold text-slate-600 uppercase">Tier 2</div>
+                        </button>
+                        <button class="relative p-8 rounded-[2rem] border-2 transition-all text-left flex flex-col justify-between h-48 overflow-hidden group bg-slate-900 border-slate-800 hover:border-emerald-500 hover:bg-emerald-500/5">
+                            <div class="relative z-10">
+                                <div class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-emerald-500">高压对抗</div>
+                                <div class="text-2xl font-black text-white italic">超越自我</div>
+                            </div>
+                            <div class="relative z-10 text-[10px] font-bold text-slate-600 uppercase">Tier 3</div>
+                        </button>
+                        <button disabled="" class="relative p-8 rounded-[2rem] border-2 transition-all text-left flex flex-col justify-between h-48 overflow-hidden group bg-black/50 border-white/5 opacity-50 grayscale cursor-not-allowed">
+                            <div class="relative z-10">
+                                <div class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-slate-600">极致挑战</div>
+                                <div class="text-2xl font-black text-white italic">NBSR</div>
+                            </div>
+                            <div class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-20">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-skull text-slate-500" aria-hidden="true">
+                                    <path d="m12.5 17-.5-1-.5 1h1z"></path>
+                                    <path d="M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 1 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z"></path>
+                                    <circle cx="15" cy="12" r="1"></circle>
+                                    <circle cx="9" cy="12" r="1"></circle>
+                                </svg>
+                            </div>
+                            <div class="relative z-10 text-[10px] font-bold text-slate-600 uppercase">Tier 4</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"667223696c724ce7bff4685ee91058d9","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>碘化留言板 · 全服反馈</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+                
+        /* 化学多主题系统 */
+        [data-theme="iodine-vapor"] {
+            --bg-primary: #1a0a2e;
+            --bg-card: #2d1b3a;
+            --text-primary: #f0e6ff;
+            --text-secondary: #b8a0d0;
+            --border: #4a2e5c;
+            --accent: #9b59b6;
+            --accent-light: #c39bd3;
+            --accent-bg: #2a1a35;
+            --accent-starch: #6c3483;
+            --crystal-dark: #1a0a2e;
+            --header-gradient: linear-gradient(135deg, #0d0420 0%, #4a1a6b 40%, #8e44ad 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.5);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.6);
+            --modal-bg: #2d1b3a;
+        }
+        
+        [data-theme="mercury"] {
+            --bg-primary: #1a1a1a;
+            --bg-card: #2d2d2d;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a8a8a8;
+            --border: #404040;
+            --accent: #c0c0c0;
+            --accent-light: #d4d4d4;
+            --accent-bg: #252525;
+            --accent-starch: #87ceeb;
+            --crystal-dark: #1a1a1a;
+            --header-gradient: linear-gradient(135deg, #0a0a0a 0%, #404040 50%, #c0c0c0 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.6);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.7);
+            --modal-bg: #2d2d2d;
+        }
+        
+        [data-theme="sulfur"] {
+            --bg-primary: #2d1810;
+            --bg-card: #4a2c1a;
+            --text-primary: #fff8e1;
+            --text-secondary: #ffd4a3;
+            --border: #6b4423;
+            --accent: #ffa500;
+            --accent-light: #ffb347;
+            --accent-bg: #3d2414;
+            --accent-starch: #9370db;
+            --crystal-dark: #2d1810;
+            --header-gradient: linear-gradient(135deg, #1a0e08 0%, #4a2c1a 40%, #ffa500 100%);
+            --shadow-sm: 0 4px 8px rgba(255,165,0,0.3);
+            --shadow-md: 0 10px 18px rgba(255,165,0,0.4);
+            --modal-bg: #4a2c1a;
+        }
+        
+        [data-theme="cinnabar"] {
+            --bg-primary: #4a0e0e;
+            --bg-card: #6b1a1a;
+            --text-primary: #ffe4e1;
+            --text-secondary: #ffb3ba;
+            --border: #8b2635;
+            --accent: #dc143c;
+            --accent-light: #ff6b6b;
+            --accent-bg: #5a1515;
+            --accent-starch: #ffd700;
+            --crystal-dark: #4a0e0e;
+            --header-gradient: linear-gradient(135deg, #2a0808 0%, #6b1a1a 40%, #dc143c 100%);
+            --shadow-sm: 0 4px 8px rgba(220,20,60,0.4);
+            --shadow-md: 0 10px 18px rgba(220,20,60,0.5);
+            --modal-bg: #6b1a1a;
+        }
+        
+        [data-theme="copper-sulfate"] {
+            --bg-primary: #0a2e4a;
+            --bg-card: #1a4d6b;
+            --text-primary: #e0f2f7;
+            --text-secondary: #a8dadc;
+            --border: #2e5a7a;
+            --accent: #4682b4;
+            --accent-light: #5f9ea0;
+            --accent-bg: #1a3a52;
+            --accent-starch: #ffffff;
+            --crystal-dark: #0a2e4a;
+            --header-gradient: linear-gradient(135deg, #051a2e 0%, #1a4d6b 40%, #4682b4 100%);
+            --shadow-sm: 0 4px 8px rgba(70,130,180,0.3);
+            --shadow-md: 0 10px 18px rgba(70,130,180,0.4);
+            --modal-bg: #1a4d6b;
+        }
+        
+        [data-theme="carbon"] {
+            --bg-primary: #000000;
+            --bg-card: #1a1a1a;
+            --text-primary: #d0d0d0;
+            --text-secondary: #808080;
+            --border: #333333;
+            --accent: #666666;
+            --accent-light: #808080;
+            --accent-bg: #0d0d0d;
+            --accent-starch: #999999;
+            --crystal-dark: #000000;
+            --header-gradient: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #333333 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.8);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.9);
+            --modal-bg: #1a1a1a;
+        }
+        
+        /* 月读主题 */
+        [data-theme="tsukuyomi"] {
+            --tsuki-accent: #e04090;
+            --tsuki-accent-cyan: #00b8d4;
+            --tsuki-accent-gold: #ffb74d;
+            --tsuki-glow: rgba(224, 64, 144, 0.3);
+            
+            --bg-primary: #1e2235;
+            --bg-card: #262b3d;
+            --text-primary: #e8e4ef;
+            --text-secondary: #9a96b5;
+            --border: #3b3850;
+            --accent: #e04090;
+            --accent-light: #ff6bb5;
+            --accent-bg: rgba(224, 64, 144, 0.08);
+            --header-gradient: linear-gradient(135deg, #0d0a1a 0%, #1a0a2e 40%, #2d1044 100%);
+            --shadow-sm: 0 4px 8px rgba(0,0,0,0.45);
+            --shadow-md: 0 10px 18px rgba(0,0,0,0.55);
+            --modal-bg: #1e1d2f;
+        }
+        
+        /* 默认主题（与主页保持一致） */
+        :root {
+            --bg-primary: #f9fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --accent: #7c3aed;
+            --accent-light: #a78bfa;
+            --accent-bg: #ede9fe;
+            --accent-starch: #1e3d59;
+            --crystal-dark: #3a3a4a;
+            --header-gradient: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.05);
+            --modal-bg: #ffffff;
+        }
+        
+        body.dark {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+            --accent: #a78bfa;
+            --accent-light: #c4b5fd;
+            --accent-bg: #312e81;
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.3);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.4);
+            --header-gradient: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%);
+            --modal-bg: #1e293b;
+        }
+        body{background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,'Segoe UI','Poppins',sans-serif;transition:background .2s;line-height:1.5;padding:2rem}
+        .container{max-width:900px;margin:0 auto}
+        header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid var(--accent)}
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        h1{font-size:1.8rem;background:var(--header-gradient);background-clip:text;-webkit-background-clip:text;color:transparent}
+        .back-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;color:var(--accent);text-decoration:none;font-weight:500}
+        .back-btn:hover{background:var(--accent);color:white}
+        
+        /* 音乐播放器样式 */
+        .music-player {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .music-toggle-btn {
+            background: var(--accent-bg);
+            border: 2px solid var(--border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+            color: var(--accent);
+            transition: all 0.3s ease;
+        }
+        
+        .music-toggle-btn:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .music-icon {
+            animation: music-pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes music-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .music-status {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        
+        .music-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            min-width: 280px;
+            box-shadow: var(--shadow-md);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .music-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .music-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .music-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.2rem;
+        }
+        
+        .music-close-btn:hover {
+            color: var(--text-primary);
+        }
+        
+        .music-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .music-control-btn {
+            background: var(--accent-bg);
+            border: 2px solid var(--border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            color: var(--accent);
+            transition: all 0.2s ease;
+        }
+        
+        .music-control-btn:hover {
+            background: var(--accent);
+            transform: translateY(-1px);
+        }
+        
+        .music-volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+        
+        .volume-slider {
+            flex: 1;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        #volumeValue {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            min-width: 35px;
+        }
+        
+        .music-playlist {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .music-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+        }
+        
+        .music-item:hover {
+            background: var(--accent-bg);
+        }
+        
+        .music-item.active {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+        
+        .music-item-title {
+            flex: 1;
+        }
+        
+        .music-item-duration {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-left: 0.5rem;
+        }
+        
+        .music-item.active .music-item-duration {
+            color: rgba(15, 23, 42, 0.8);
+        }
+        .user-info{background:var(--accent-bg);padding:.4rem 1rem;border-radius:40px;display:inline-block;margin-bottom:1rem}
+        .msg-list{background:var(--bg-card);border-radius:1.5rem;border:1px solid var(--border);padding:1.5rem;max-height:600px;overflow-y:auto;margin-bottom:1.5rem}
+        .feedback-item{background:var(--bg-primary);border-radius:1rem;padding:.8rem 1rem;border-left:3px solid var(--accent);margin-bottom:1.2rem}
+        .fb-name{font-weight:700;font-size:.85rem;color:var(--accent)}
+        .fb-time{font-size:.7rem;color:var(--text-secondary);margin-left:.5rem}
+        .fb-text{margin-top:.3rem;word-break:break-word;font-size:.9rem}
+        .reply-section{margin-top:0.8rem;margin-left:1rem;border-left:2px dashed var(--border);padding-left:0.8rem}
+        .reply-item{background:var(--bg-card);border-radius:0.8rem;padding:0.5rem 0.7rem;margin-bottom:0.5rem;font-size:0.85rem;border:1px solid var(--border)}
+        .reply-name{font-weight:600;color:var(--accent-light);font-size:0.75rem}
+        .reply-time{font-size:0.65rem;color:var(--text-secondary);margin-left:0.5rem}
+        .reply-text{margin-top:0.2rem;word-break:break-word}
+        .reply-delete{float:right;font-size:0.7rem;color:var(--danger,#e05a3a);cursor:pointer;opacity:0.7}
+        .reply-delete:hover{opacity:1}
+        .reply-btn{background:none;border:none;color:var(--accent);font-size:0.7rem;cursor:pointer;padding:0;margin-top:0.5rem}
+        .reply-input-container{display:none;margin-top:0.5rem}
+        .reply-input-container textarea{width:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:0.8rem;padding:0.4rem 0.6rem;font-size:0.8rem;margin-bottom:0.4rem}
+        .reply-submit{background:var(--accent);color:white;border:none;border-radius:1rem;padding:0.2rem 0.8rem;font-size:0.7rem;cursor:pointer}
+        .input-area{background:var(--bg-card);border-radius:1.5rem;border:1px solid var(--border);padding:1.5rem}
+        textarea{width:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:1rem;padding:.7rem 1rem;font-family:inherit;color:var(--text-primary);resize:vertical;margin-bottom:1rem}
+        button{background:var(--accent);color:white;border:none;border-radius:2rem;padding:.6rem 1.2rem;font-weight:600;cursor:pointer}
+        .login-prompt{background:var(--accent-bg);border-radius:1rem;padding:1rem;text-align:center;margin-bottom:1rem}
+        .login-prompt a{color:var(--accent);font-weight:bold}
+        footer{text-align:center;margin-top:2rem;font-size:.7rem;color:var(--text-secondary)}
+        @media (max-width:680px){body{padding:1rem}}
+        
+        /* 月读主题特效 */
+        [data-theme="tsukuyomi"] {
+            --tsuki-accent: #e04090;
+            --tsuki-accent-cyan: #00b8d4;
+            --tsuki-accent-gold: #ffb74d;
+            --tsuki-glow: rgba(224, 64, 144, 0.3);
+        }
+        
+        /* 月读主题按钮震荡波特效 */
+        [data-theme="tsukuyomi"] button {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        [data-theme="tsukuyomi"] button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: var(--tsuki-glow);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease, height 0.4s ease;
+        }
+        
+        [data-theme="tsukuyomi"] button:active::before {
+            width: 200px;
+            height: 200px;
+            opacity: 0;
+        }
+        
+        /* 月读主题背景装饰 */
+        [data-theme="tsukuyomi"] body {
+            background: linear-gradient(135deg, #1e2235 0%, #262b3d 40%, #2d1044 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        [data-theme="tsukuyomi"] body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(224, 64, 144, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 184, 212, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 183, 77, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+            animation: tsukuyomi-bg-pulse 8s ease-in-out infinite;
+        }
+        
+        @keyframes tsukuyomi-bg-pulse {
+            0%, 100% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+        
+        /* 月读主题卡片特效 */
+        [data-theme="tsukuyomi"] .msg-list,
+        [data-theme="tsukuyomi"] .feedback-item,
+        [data-theme="tsukuyomi"] .input-area,
+        [data-theme="tsukuyomi"] .reply-item {
+            border: 1px solid rgba(224, 64, 144, 0.3);
+            background: rgba(38, 43, 61, 0.8);
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        [data-theme="tsukuyomi"] .msg-list::before,
+        [data-theme="tsukuyomi"] .feedback-item::before,
+        [data-theme="tsukuyomi"] .input-area::before,
+        [data-theme="tsukuyomi"] .reply-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(224, 64, 144, 0.2), transparent);
+            transition: left 0.8s ease;
+            z-index: 1;
+        }
+        
+        [data-theme="tsukuyomi"] .msg-list:hover::before,
+        [data-theme="tsukuyomi"] .feedback-item:hover::before,
+        [data-theme="tsukuyomi"] .input-area:hover::before,
+        [data-theme="tsukuyomi"] .reply-item:hover::before {
+            left: 100%;
+        }
+        
+        /* 月读主题文字特效 */
+        [data-theme="tsukuyomi"] .fb-name,
+        [data-theme="tsukuyomi"] .reply-name {
+            color: var(--tsuki-accent);
+            text-shadow: 0 0 10px var(--tsuki-glow);
+            animation: tsukuyomi-text-glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes tsukuyomi-text-glow {
+            0% {
+                text-shadow: 0 0 10px var(--tsuki-glow);
+            }
+            100% {
+                text-shadow: 0 0 20px var(--tsuki-glow);
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>💬 碘化留言板 · 全服反馈</h1>
+        <div class="header-controls">
+            <!-- 音乐播放器 -->
+            <div class="music-player">
+                <button class="music-toggle-btn" id="musicToggleBtn" title="音乐播放控制">
+                    <span class="music-icon">🎵</span>
+                    <span class="music-status" id="musicStatus">暂停</span>
+                </button>
+                <div class="music-dropdown" id="musicDropdown">
+                    <div class="music-header">
+                        <span>🎵 背景音乐</span>
+                        <button class="music-close-btn" id="musicCloseBtn">✕</button>
+                    </div>
+                    <div class="music-controls">
+                        <button class="music-control-btn" id="musicPlayPauseBtn">▶️ 播放</button>
+                        <button class="music-control-btn" id="musicStopBtn">⏹️ 停止</button>
+                        <button class="music-control-btn" id="musicNextBtn">⏭️ 下一首</button>
+                    </div>
+                    <div class="music-volume-control">
+                        <span>🔊 音量</span>
+                        <input type="range" id="musicVolume" min="0" max="100" value="50" class="volume-slider">
+                        <span id="volumeValue">50%</span>
+                    </div>
+                    <div class="music-playlist" id="musicPlaylist">
+                        <!-- 音乐列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+            <a href="index.html" class="back-btn">← 返回工坊</a>
+        </div>
+    </header>
+    <div id="userInfoArea" class="user-info">加载中...</div>
+    <div class="msg-list" id="msgList">加载留言中...</div>
+    <div class="input-area" id="inputArea"></div>
+    <footer>所有留言基于真实账号，可回复他人留言～</footer>
+</div>
+
+<script>
+    // 如果需要使用回复功能，请先在 Supabase 数据库中执行以下 SQL 创建 replies 表：
+    /*
+    CREATE TABLE IF NOT EXISTS replies (
+        id BIGSERIAL PRIMARY KEY,
+        feedback_time BIGINT NOT NULL,
+        nickname TEXT NOT NULL,
+        message TEXT NOT NULL,
+        time BIGINT NOT NULL,
+        time_fmt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_replies_feedback_time ON replies(feedback_time);
+    */
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const SUPABASE_URL = 'https://supabase.iteamgame.dpdns.org';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const MAX_FEEDBACK = 50;
+        
+        // 主题同步功能 - 只跟随主页
+        function initThemeSync() {
+            const savedTheme = localStorage.getItem('chemical-theme') || 'tsukuyomi';
+            
+            // 应用保存的主题
+            applyTheme(savedTheme);
+            
+            // 监听主页的主题变化
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'chemical-theme' && e.newValue) {
+                    applyTheme(e.newValue);
+                }
+            });
+        }
+        
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            document.body.classList.remove('dark'); // 移除旧的dark class
+        }
+        
+        initThemeSync();
+        initShockwaveEffects();
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
+        }
+
+        // 获取当前用户昵称
+        async function getCurrentUserNickname() {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) return null;
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('username')
+                .eq('uid', user.id)
+                .maybeSingle();
+            if (error || !data) return null;
+            return data.username;
+        }
+
+        // 加载所有留言及其回复
+        async function loadAllFeedbacksAndReplies() {
+            // 获取留言
+            const { data: feedbacks, error: fbError } = await supabase
+                .from('feedbacks')
+                .select('*')
+                .order('time', { ascending: false })
+                .limit(MAX_FEEDBACK);
+            if (fbError) {
+                console.error(fbError);
+                return { feedbacks: [], replies: [] };
+            }
+            // 获取所有回复
+            const { data: replies, error: repError } = await supabase
+                .from('replies')
+                .select('*')
+                .order('time', { ascending: true });
+            if (repError) {
+                console.error(repError);
+                return { feedbacks: feedbacks || [], replies: [] };
+            }
+            return { feedbacks: feedbacks || [], replies: replies || [] };
+        }
+
+        // 渲染留言列表（包含回复）
+        async function renderFeedbacks() {
+            const container = document.getElementById('msgList');
+            if (!container) return;
+            const { feedbacks, replies } = await loadAllFeedbacksAndReplies();
+            const currentUser = await getCurrentUserNickname();
+            if (!feedbacks || feedbacks.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:1rem;">✨ 暂无留言，成为第一个留言的玩家吧～</div>';
+                return;
+            }
+            // 将回复按 feedback_time 分组
+            const repliesMap = new Map();
+            for (const rep of replies) {
+                const key = rep.feedback_time;
+                if (!repliesMap.has(key)) repliesMap.set(key, []);
+                repliesMap.get(key).push(rep);
+            }
+            let html = '';
+            for (const fb of feedbacks) {
+                const fbReplies = repliesMap.get(fb.time) || [];
+                html += `
+                    <div class="feedback-item" data-fb-time="${fb.time}">
+                        <div><span class="fb-name">🧪 ${escapeHtml(fb.nickname)}</span><span class="fb-time">${fb.time_fmt}</span></div>
+                        <div class="fb-text">${escapeHtml(fb.message)}</div>
+                        <button class="reply-btn" data-time="${fb.time}">💬 回复</button>
+                        <div class="reply-section" id="reply-section-${fb.time}">
+                            ${renderReplies(fbReplies, currentUser)}
+                        </div>
+                        <div class="reply-input-container" id="reply-input-${fb.time}" style="display:none;">
+                            <textarea id="reply-text-${fb.time}" rows="2" placeholder="写下你的回复..." maxlength="200"></textarea>
+                            <button class="reply-submit" data-time="${fb.time}">提交回复</button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            // 绑定回复按钮事件
+            document.querySelectorAll('.reply-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const fbTime = btn.dataset.time;
+                    const inputDiv = document.getElementById(`reply-input-${fbTime}`);
+                    if (inputDiv) inputDiv.style.display = inputDiv.style.display === 'none' ? 'block' : 'none';
+                });
+            });
+            // 绑定提交回复事件
+            document.querySelectorAll('.reply-submit').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const fbTime = btn.dataset.time;
+                    const textarea = document.getElementById(`reply-text-${fbTime}`);
+                    const message = textarea.value.trim();
+                    if (!message) {
+                        alert("回复内容不能为空");
+                        return;
+                    }
+                    const nickname = await getCurrentUserNickname();
+                    if (!nickname) {
+                        alert("请先登录后再回复");
+                        return;
+                    }
+                    const newReply = {
+                        feedback_time: parseInt(fbTime),
+                        nickname: nickname,
+                        message: message,
+                        time: Date.now(),
+                        time_fmt: new Date().toLocaleString('zh-CN', { hour12: false })
+                    };
+                    const { error } = await supabase.from('replies').insert([newReply]);
+                    if (error) {
+                        console.error(error);
+                        alert("回复失败，请重试");
+                    } else {
+                        textarea.value = '';
+                        const inputDiv = document.getElementById(`reply-input-${fbTime}`);
+                        if (inputDiv) inputDiv.style.display = 'none';
+                        await renderFeedbacks(); // 重新渲染
+                    }
+                });
+            });
+            // 绑定删除回复事件（动态绑定，因为回复是动态生成的）
+            document.querySelectorAll('.reply-delete').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const replyId = btn.dataset.id;
+                    const currentUserNick = await getCurrentUserNickname();
+                    if (!currentUserNick) {
+                        alert("请先登录");
+                        return;
+                    }
+                    // 确认删除权限（后端会验证，前端先获取该回复的昵称）
+                    const { data: reply, error: fetchErr } = await supabase
+                        .from('replies')
+                        .select('nickname')
+                        .eq('id', replyId)
+                        .single();
+                    if (fetchErr || !reply) {
+                        alert("回复不存在");
+                        return;
+                    }
+                    if (reply.nickname !== currentUserNick) {
+                        alert("只能删除自己的回复");
+                        return;
+                    }
+                    const { error } = await supabase.from('replies').delete().eq('id', replyId);
+                    if (error) {
+                        alert("删除失败");
+                    } else {
+                        await renderFeedbacks();
+                    }
+                });
+            });
+        }
+
+        // 渲染回复列表
+        function renderReplies(replies, currentUser) {
+            if (!replies.length) return '<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.3rem;">暂无回复</div>';
+            let replyHtml = '';
+            for (const rep of replies) {
+                const isOwner = (currentUser === rep.nickname);
+                replyHtml += `
+                    <div class="reply-item">
+                        <div>
+                            <span class="reply-name">💬 ${escapeHtml(rep.nickname)}</span>
+                            <span class="reply-time">${rep.time_fmt}</span>
+                            ${isOwner ? `<span class="reply-delete" data-id="${rep.id}">删除</span>` : ''}
+                        </div>
+                        <div class="reply-text">${escapeHtml(rep.message)}</div>
+                    </div>
+                `;
+            }
+            return replyHtml;
+        }
+
+        // 发布留言
+        async function publishFeedback(message) {
+            const user = await getCurrentUserNickname();
+            if (!user) return false;
+            const newFb = {
+                nickname: user,
+                message: message,
+                time: Date.now(),
+                time_fmt: new Date().toLocaleString('zh-CN', { hour12: false })
+            };
+            const { error } = await supabase.from('feedbacks').insert([newFb]);
+            if (error) {
+                console.error(error);
+                return false;
+            }
+            return true;
+        }
+
+        // 渲染输入区域
+        async function renderInputArea() {
+            const container = document.getElementById('inputArea');
+            if (!container) return;
+            const user = await getCurrentUserNickname();
+            if (user) {
+                container.innerHTML = `
+                    <div style="margin-bottom: 0.5rem;">👤 当前登录：<strong>${escapeHtml(user)}</strong></div>
+                    <textarea id="fbMessage" rows="3" placeholder="写下你对游戏的建议、捉虫或任何想法～" maxlength="200"></textarea>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button id="sendBtn">📢 提交反馈</button>
+                    </div>
+                `;
+                const sendBtn = document.getElementById('sendBtn');
+                if (sendBtn) sendBtn.onclick = () => sendFeedbackHandler();
+                const msgArea = document.getElementById('fbMessage');
+                if (msgArea) {
+                    msgArea.onkeypress = (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendFeedbackHandler();
+                        }
+                    };
+                }
+            } else {
+                container.innerHTML = `
+                    <div class="login-prompt">
+                        🔐 请先 <a href="index.html">登录/注册</a> 后再留言，你的昵称会自动显示。
+                    </div>
+                `;
+            }
+        }
+
+        async function sendFeedbackHandler() {
+            const msgInput = document.getElementById('fbMessage');
+            if (!msgInput) return;
+            const message = msgInput.value.trim();
+            if (!message) {
+                alert("反馈内容不能为空～");
+                return;
+            }
+            const success = await publishFeedback(message);
+            if (success) {
+                msgInput.value = '';
+                await renderFeedbacks();
+                alert("感谢反馈！AI-Yachiyo会认真阅读~");
+            } else {
+                alert("发送失败，请稍后重试");
+            }
+        }
+
+        // 震荡波特效函数
+        function createShockwave(element, isDanger = false) {
+            const shockwave = document.createElement('div');
+            shockwave.className = 'shockwave';
+            shockwave.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                transition: width 0.6s ease, height 0.6s ease, opacity 0.6s ease;
+                pointer-events: none;
+                z-index: 1000;
+            `;
+            
+            // 根据主题设置震荡波颜色
+            const isTsukuyomi = document.body.getAttribute('data-theme') === 'tsukuyomi';
+            if (isTsukuyomi) {
+                // 月读主题：白光加偏彩光的震荡波
+                shockwave.style.background = 'radial-gradient(circle, rgba(255,255,255,0.6) 0%, var(--tsuki-accent) 30%, var(--tsuki-accent-cyan) 60%, transparent 70%)';
+            } else if (isDanger) {
+                // 危险操作：红光震荡波
+                shockwave.style.background = 'radial-gradient(circle, rgba(255,0,0,0.3) 0%, transparent 70%)';
+            } else {
+                // 普通主题：白光震荡波
+                shockwave.style.background = 'radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%)';
+            }
+            
+            element.style.position = 'relative';
+            element.appendChild(shockwave);
+            
+            // 触发动画
+            setTimeout(() => {
+                shockwave.style.width = '200px';
+                shockwave.style.height = '200px';
+                shockwave.style.opacity = '0';
+            }, 10);
+            
+            // 清理元素
+            setTimeout(() => {
+                shockwave.remove();
+            }, 600);
+        }
+        
+        // 为所有按钮添加震荡波特效
+        function initShockwaveEffects() {
+            document.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                
+                // 判断是否为危险操作
+                const isDanger = button.textContent?.includes('删除') || button.classList?.contains('danger');
+                
+                createShockwave(button, isDanger);
+            });
+        }
+        
+        // 更新用户信息显示
+        async function updateUserInfo() {
+            const container = document.getElementById('userInfoArea');
+            if (!container) return;
+            const user = await getCurrentUserNickname();
+            if (user) {
+                container.innerHTML = `🧪 当前登录：${escapeHtml(user)} <span style="font-size:0.7rem;">(不是本人？<a href="index.html" style="color: var(--accent);">重新登录</a>)</span>`;
+            } else {
+                container.innerHTML = `🔐 未登录 | <a href="index.html" style="color: var(--accent);">前往登录/注册</a>`;
+            }
+        }
+
+        // 深色主题
+        function initTheme() {
+            const isDark = localStorage.getItem('theme') === 'dark';
+            if (isDark) document.body.classList.add('dark');
+        }
+
+        // ======================= 共享音乐管理器 =======================
+        function initSharedMusicPlayer() {
+            // 音乐数据
+            const musicData = {
+                global: [
+                    { file: 'ALL-FUSHI.mp3', title: 'FUSHI', duration: '3:40' },
+                    { file: 'ALL-ヤチヨ降臨.mp3', title: 'ヤチヨ降臨', duration: '4:02' },
+                    { file: 'ALL-私の好きだったもの.mp3', title: '私の好きだったもの', duration: '1:48' },
+                    { file: 'All-月影.mp3', title: '月影', duration: '4:32' },
+                    { file: 'IROHA.mp3', title: 'IROHA', duration: '1:30' }
+                ],
+                tsukuyomi: [
+                    { file: 'OPENING ACT@TSUKUYOMI.mp3', title: 'OPENING ACT@TSUKUYOMI', duration: '3:38' },
+                    { file: 'TSUKUYOMI.mp3', title: 'TSUKUYOMI', duration: '6:44' },
+                    { file: 'IROHA.mp3', title: 'IROHA', duration: '1:30' },
+                    { file: 'うつし世の姫.mp3', title: 'うつし世の姫', duration: '6:43' },
+                    { file: 'かぐやと彩葉.mp3', title: 'かぐやと彩葉', duration: '3:08' }
+                ]
+            };
+
+            // 音乐播放器状态 - 从localStorage恢复
+            let currentMusic = localStorage.getItem('currentMusic') || null;
+            let isPlaying = localStorage.getItem('musicPlaying') === 'true';
+            let currentVolume = parseFloat(localStorage.getItem('musicVolume')) || 0.5;
+            let audioElement = null;
+
+            // 创建音频元素
+            function createAudioElement() {
+                if (audioElement) {
+                    audioElement.pause();
+                    audioElement.remove();
+                }
+                audioElement = new Audio();
+                audioElement.volume = currentVolume;
+                audioElement.loop = false;
+                
+                // 播放结束事件
+                audioElement.addEventListener('ended', () => {
+                    playNextMusic();
+                });
+                
+                // 保存状态
+                audioElement.addEventListener('play', () => {
+                    isPlaying = true;
+                    localStorage.setItem('musicPlaying', 'true');
+                    updateMusicUI();
+                });
+                
+                audioElement.addEventListener('pause', () => {
+                    isPlaying = false;
+                    localStorage.setItem('musicPlaying', 'false');
+                    updateMusicUI();
+                });
+            }
+
+            // 平滑音量切换
+            function smoothVolumeChange(targetVolume, duration = 500) {
+                if (!audioElement) return;
+                
+                const startVolume = audioElement.volume;
+                const volumeDiff = targetVolume - startVolume;
+                const startTime = Date.now();
+                
+                function updateVolume() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    audioElement.volume = startVolume + (volumeDiff * progress);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(updateVolume);
+                    }
+                }
+                
+                updateVolume();
+            }
+
+            // 播放音乐
+            function playMusic(musicFile) {
+                if (!musicFile) return;
+                
+                // 如果正在播放，先淡出
+                if (isPlaying && audioElement) {
+                    smoothVolumeChange(0, 300);
+                    setTimeout(() => {
+                        loadAndPlayMusic(musicFile);
+                    }, 300);
+                } else {
+                    loadAndPlayMusic(musicFile);
+                }
+            }
+
+            // 加载并播放音乐
+            function loadAndPlayMusic(musicFile) {
+                createAudioElement();
+                audioElement.src = `../voice/${musicFile}`; // 相对路径，因为留言板在根目录
+                
+                audioElement.play().then(() => {
+                    currentMusic = musicFile;
+                    localStorage.setItem('currentMusic', musicFile);
+                    updateMusicUI();
+                    smoothVolumeChange(currentVolume, 500);
+                }).catch(err => {
+                    console.error('音乐播放失败:', err);
+                    isPlaying = false;
+                    updateMusicUI();
+                });
+            }
+
+            // 暂停音乐
+            function pauseMusic() {
+                if (!audioElement || !isPlaying) return;
+                
+                smoothVolumeChange(0, 300);
+                setTimeout(() => {
+                    audioElement.pause();
+                    isPlaying = false;
+                    updateMusicUI();
+                }, 300);
+            }
+
+            // 停止音乐
+            function stopMusic() {
+                if (!audioElement) return;
+                
+                smoothVolumeChange(0, 300);
+                setTimeout(() => {
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                    isPlaying = false;
+                    currentMusic = null;
+                    localStorage.removeItem('currentMusic');
+                    updateMusicUI();
+                }, 300);
+            }
+
+            // 播放下一首
+            function playNextMusic() {
+                const currentTheme = document.body.getAttribute('data-theme');
+                const playlist = currentTheme === 'tsukuyomi' ? musicData.tsukuyomi : musicData.global;
+                
+                const currentIndex = playlist.findIndex(music => music.file === currentMusic);
+                const nextIndex = (currentIndex + 1) % playlist.length;
+                const nextMusic = playlist[nextIndex];
+                
+                playMusic(nextMusic.file);
+            }
+
+            // 获取当前播放列表
+            function getCurrentPlaylist() {
+                const currentTheme = document.body.getAttribute('data-theme');
+                return currentTheme === 'tsukuyomi' ? musicData.tsukuyomi : musicData.global;
+            }
+
+            // 更新音乐UI
+            function updateMusicUI() {
+                const musicStatus = document.getElementById('musicStatus');
+                const playPauseBtn = document.getElementById('musicPlayPauseBtn');
+                
+                if (musicStatus) {
+                    musicStatus.textContent = isPlaying ? '播放中' : '暂停';
+                }
+                
+                if (playPauseBtn) {
+                    playPauseBtn.textContent = isPlaying ? '⏸️ 暂停' : '▶️ 播放';
+                }
+                
+                // 更新播放列表UI
+                updatePlaylistUI();
+            }
+
+            // 更新播放列表UI
+            function updatePlaylistUI() {
+                const playlistContainer = document.getElementById('musicPlaylist');
+                if (!playlistContainer) return;
+                
+                const playlist = getCurrentPlaylist();
+                playlistContainer.innerHTML = '';
+                
+                playlist.forEach((music, index) => {
+                    const musicItem = document.createElement('div');
+                    musicItem.className = 'music-item';
+                    musicItem.classList.toggle('active', music.file === currentMusic);
+                    
+                    musicItem.innerHTML = `
+                        <span class="music-item-title">${music.title}</span>
+                        <span class="music-item-duration">${music.duration}</span>
+                    `;
+                    
+                    musicItem.addEventListener('click', () => {
+                        playMusic(music.file);
+                    });
+                    
+                    playlistContainer.appendChild(musicItem);
+                });
+            }
+
+            // 初始化音乐播放器UI
+            function initMusicUI() {
+                const musicToggleBtn = document.getElementById('musicToggleBtn');
+                const musicDropdown = document.getElementById('musicDropdown');
+                const musicCloseBtn = document.getElementById('musicCloseBtn');
+                const musicPlayPauseBtn = document.getElementById('musicPlayPauseBtn');
+                const musicStopBtn = document.getElementById('musicStopBtn');
+                const musicNextBtn = document.getElementById('musicNextBtn');
+                const musicVolume = document.getElementById('musicVolume');
+                const volumeValue = document.getElementById('volumeValue');
+
+                // 音乐按钮点击事件
+                if (musicToggleBtn) {
+                    musicToggleBtn.addEventListener('click', () => {
+                        musicDropdown.classList.toggle('show');
+                    });
+                }
+
+                // 关闭按钮
+                if (musicCloseBtn) {
+                    musicCloseBtn.addEventListener('click', () => {
+                        musicDropdown.classList.remove('show');
+                    });
+                }
+
+                // 播放/暂停按钮
+                if (musicPlayPauseBtn) {
+                    musicPlayPauseBtn.addEventListener('click', () => {
+                        if (isPlaying) {
+                            pauseMusic();
+                        } else {
+                            if (currentMusic) {
+                                // 继续播放当前音乐
+                                audioElement.play().then(() => {
+                                    isPlaying = true;
+                                    smoothVolumeChange(currentVolume, 500);
+                                    updateMusicUI();
+                                });
+                            } else {
+                                // 播放第一首
+                                const playlist = getCurrentPlaylist();
+                                if (playlist.length > 0) {
+                                    playMusic(playlist[0].file);
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // 停止按钮
+                if (musicStopBtn) {
+                    musicStopBtn.addEventListener('click', stopMusic);
+                }
+
+                // 下一首按钮
+                if (musicNextBtn) {
+                    musicNextBtn.addEventListener('click', playNextMusic);
+                }
+
+                // 音量控制
+                if (musicVolume) {
+                    musicVolume.value = currentVolume * 100;
+                    if (volumeValue) {
+                        volumeValue.textContent = `${Math.round(currentVolume * 100)}%`;
+                    }
+                    
+                    musicVolume.addEventListener('input', (e) => {
+                        currentVolume = e.target.value / 100;
+                        localStorage.setItem('musicVolume', currentVolume.toString());
+                        if (audioElement && isPlaying) {
+                            audioElement.volume = currentVolume;
+                        }
+                        if (volumeValue) {
+                            volumeValue.textContent = `${e.target.value}%`;
+                        }
+                    });
+                }
+
+                // 点击外部关闭下拉菜单
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.music-player')) {
+                        musicDropdown.classList.remove('show');
+                    }
+                });
+
+                // 初始化播放列表
+                updatePlaylistUI();
+                updateMusicUI();
+            }
+
+            // 恢复之前的播放状态
+            function restorePlaybackState() {
+                if (currentMusic) {
+                    // 如果有之前播放的音乐，尝试恢复
+                    createAudioElement();
+                    audioElement.src = `../voice/${currentMusic}`;
+                    audioElement.volume = 0; // 开始时静音
+                    
+                    audioElement.play().then(() => {
+                        // 恢复音量
+                        smoothVolumeChange(currentVolume, 1000);
+                        updateMusicUI();
+                    }).catch(err => {
+                        console.error('恢复音乐播放失败:', err);
+                        // 恢复失败，播放随机音乐
+                        autoPlayRandomMusic();
+                    });
+                } else {
+                    // 没有之前的音乐，播放随机音乐
+                    autoPlayRandomMusic();
+                }
+            }
+
+            // 自动播放随机音乐
+            function autoPlayRandomMusic() {
+                const playlist = getCurrentPlaylist();
+                if (playlist.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * playlist.length);
+                    const randomMusic = playlist[randomIndex];
+                    
+                    // 延迟1秒后播放
+                    setTimeout(() => {
+                        playMusic(randomMusic.file);
+                    }, 1000);
+                }
+            }
+
+            // 初始化
+            initMusicUI();
+            restorePlaybackState();
+            
+            // 暴露全局方法
+            window.sharedMusicPlayer = {
+                play: playMusic,
+                pause: pauseMusic,
+                stop: stopMusic,
+                next: playNextMusic,
+                getCurrentMusic: () => currentMusic,
+                isPlaying: () => isPlaying
+            };
+        }
+
+        initTheme();
+        initSharedMusicPlayer(); // 初始化共享音乐播放器
+        await updateUserInfo();
+        await renderFeedbacks();
+        await renderInputArea();
+
+        // 监听登录状态变化
+        supabase.auth.onAuthStateChange(async () => {
+            await updateUserInfo();
+            await renderInputArea();
+            await renderFeedbacks();
+        });
+    });
+</script>
+</body>
+</html>

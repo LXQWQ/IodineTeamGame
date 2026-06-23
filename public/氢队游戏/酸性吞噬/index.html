@@ -1,0 +1,1284 @@
+<html lang="zh-CN"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>酸性吞噬 · Acid Arena</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg1: #07111f;
+      --bg2: #0a1630;
+      --bg3: #08101d;
+      --cyan: #56e0ff;
+      --blue: #5b8cff;
+      --violet: #9b6cff;
+      --pink: #ff67c8;
+      --panel: rgba(10, 18, 36, 0.62);
+      --panel-border: rgba(102, 224, 255, 0.22);
+      --text: #eaf6ff;
+      --muted: #8db6cf;
+      --danger: #ff5c7a;
+      --success: #49f2c2;
+    }
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(86, 224, 255, 0.14), transparent 28%),
+        radial-gradient(circle at 80% 16%, rgba(155, 108, 255, 0.16), transparent 24%),
+        radial-gradient(circle at 50% 82%, rgba(255, 103, 200, 0.10), transparent 26%),
+        linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+    }
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(110, 170, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(110, 170, 255, 0.05) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at center, black 60%, transparent 98%);
+      pointer-events: none; z-index: 0;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; position: relative; z-index: 1; touch-action: none; }
+    .hud {
+      position: fixed; top: 14px; left: 14px; right: 14px;
+      display: grid; grid-template-columns: 1.2fr 1fr 0.95fr;
+      gap: 12px; z-index: 10; pointer-events: none;
+    }
+    .panel {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px; padding: 14px 16px;
+      backdrop-filter: blur(16px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 0 24px rgba(86,224,255,0.08), 0 12px 36px rgba(0,0,0,0.28);
+      overflow: hidden;
+    }
+    .panel::before {
+      content: ""; position: absolute; inset: -1px;
+      background: linear-gradient(120deg, transparent 0%, rgba(86,224,255,0.12) 20%, transparent 45%, transparent 55%, rgba(155,108,255,0.12) 80%, transparent 100%);
+      opacity: 0.8; pointer-events: none;
+    }
+    .eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #7ccde8; margin-bottom: 4px; }
+    .panel-title { font-size: 18px; font-weight: 800; line-height: 1.15; text-shadow: 0 0 16px rgba(86,224,255,0.20); margin-bottom: 2px; }
+    .panel-sub { font-size: 13px; color: var(--muted); }
+    .sub { font-size: 14px; color: var(--muted); line-height: 1.5; }
+    .accent { color: white; font-weight: 700; }
+    .score-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px; }
+    .metric { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 8px 12px; }
+    .metric-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #7fb6d5; margin-bottom: 4px; }
+    .metric-value { font-size: 20px; font-weight: 800; color: white; text-shadow: 0 0 12px rgba(91,140,255,0.24); }
+    .metric-note { font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 6px; }
+    .overlay {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(1,6,18,0.55); backdrop-filter: blur(8px); z-index: 20;
+    }
+    .card {
+      width: min(720px, calc(100vw - 32px));
+      background: rgba(8,16,32,0.92);
+      border: 1px solid rgba(86,224,255,0.22);
+      border-radius: 28px; padding: 28px;
+      box-shadow: 0 0 40px rgba(86,224,255,0.10), 0 30px 90px rgba(0,0,0,0.40);
+      color: var(--text); max-height: 94vh; overflow-y: auto;
+    }
+    .wide-card { width: min(900px, calc(100vw - 32px)); }
+    .card h1 { margin: 0 0 10px; font-size: 28px; line-height: 1.1; text-shadow: 0 0 20px rgba(86,224,255,0.18); }
+    .card p, .card li { font-size: 14px; line-height: 1.75; color: #c9e8f6; }
+    .card strong { color: white; }
+    .card ul { padding-left: 18px; margin: 8px 0; }
+    .sub-desc { color: #8db6cf; font-size: 14px; margin: 0 0 16px; }
+    .level-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 0 0 16px; }
+    @media (max-width: 600px) { .level-grid { grid-template-columns: 1fr; } }
+    .level-card {
+      border: 1px solid rgba(86,224,255,0.18); border-radius: 18px; padding: 16px;
+      background: rgba(255,255,255,0.03); position: relative; transition: border-color 0.2s;
+    }
+    .level-card.unlocked { cursor: pointer; }
+    .level-card.unlocked:hover { border-color: rgba(86,224,255,0.5); background: rgba(86,224,255,0.04); }
+    .level-card.locked { opacity: 0.5; }
+    .level-num {
+      display: inline-block; width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, rgba(43,126,255,0.8), rgba(104,75,255,0.8));
+      text-align: center; line-height: 32px; font-weight: 800; font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .level-card.locked .level-num { background: rgba(255,255,255,0.1); }
+    .level-name { font-size: 16px; font-weight: 800; color: white; margin-bottom: 4px; }
+    .level-desc { font-size: 12px; color: #8db6cf; line-height: 1.5; margin-bottom: 8px; }
+    .level-pool-tag {
+      display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      background: rgba(86,224,255,0.1); border: 1px solid rgba(86,224,255,0.2); color: #7ccde8;
+      margin-bottom: 8px;
+    }
+    .level-req { font-size: 11px; color: #ff9f62; margin-top: 4px; }
+    .level-best { font-size: 11px; color: var(--success); margin-top: 4px; }
+    .lock-icon { position: absolute; top: 14px; right: 14px; font-size: 18px; }
+    .level-start-btn {
+      margin-top: 8px; width: 100%; padding: 8px; border-radius: 10px; font-size: 13px; font-weight: 700;
+      border: 1px solid rgba(86,224,255,0.28); cursor: pointer; color: white;
+      background: linear-gradient(135deg, rgba(43,126,255,0.85), rgba(104,75,255,0.85));
+      box-shadow: 0 0 12px rgba(86,224,255,0.12);
+    }
+    .legend {
+      margin-top: 12px; padding: 12px 16px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; color: #d9f7ff; line-height: 1.7; font-size: 13px;
+    }
+    .failure-box {
+      background: rgba(255,92,122,0.08); border: 1px solid rgba(255,92,122,0.3);
+      border-radius: 14px; padding: 14px 16px; margin: 12px 0;
+      font-size: 14px; line-height: 1.8; color: #ffd0dc;
+    }
+    .failure-box strong { color: #ff9fb8; }
+    .tip-box {
+      background: rgba(73,242,194,0.06); border: 1px solid rgba(73,242,194,0.25);
+      border-radius: 14px; padding: 14px 16px; margin: 8px 0 12px;
+      font-size: 13px; line-height: 1.7; color: #b8f5e4;
+    }
+    .tip-box .tip-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #49f2c2; margin-bottom: 6px; }
+    .level-badge {
+      display: inline-block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #7ccde8; background: rgba(86,224,255,0.1); border: 1px solid rgba(86,224,255,0.2);
+      padding: 3px 10px; border-radius: 999px; margin-bottom: 8px;
+    }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    button {
+      border: 1px solid rgba(86,224,255,0.28); border-radius: 12px;
+      padding: 11px 18px; font-size: 14px; font-weight: 800; letter-spacing: 0.02em;
+      cursor: pointer; color: white;
+      background: linear-gradient(135deg, rgba(43,126,255,0.92), rgba(104,75,255,0.92));
+      box-shadow: 0 0 18px rgba(86,224,255,0.15), 0 8px 20px rgba(22,48,118,0.25);
+      font-family: inherit;
+    }
+    button:hover { filter: brightness(1.15); }
+    button.secondary { background: rgba(255,255,255,0.06); box-shadow: none; color: #d4f0ff; }
+    button.secondary:hover { background: rgba(255,255,255,0.1); }
+    .footer-hint {
+      position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+      z-index: 9; padding: 8px 14px; border-radius: 999px;
+      background: rgba(7,14,28,0.62); border: 1px solid rgba(86,224,255,0.14);
+      color: #a4cfe3; font-size: 12px; letter-spacing: 0.02em;
+      backdrop-filter: blur(12px); pointer-events: none; white-space: nowrap;
+    }
+    @media (max-width: 1020px) {
+      .hud { grid-template-columns: 1fr; }
+      .footer-hint { display: none; }
+    }
+  </style>
+<style>#hgame-help-btn{position:fixed;top:12px;right:12px;z-index:99999;width:40px;height:40px;border-radius:50%;background:#fff;color:#1a1a2e;border:none;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+#hgame-help-btn:hover{transform:scale(1.1);box-shadow:0 4px 16px rgba(0,0,0,.45)}
+#hgame-help-overlay{position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;z-index:100000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .25s;pointer-events:none;box-sizing:border-box}
+#hgame-help-overlay.show{opacity:1;pointer-events:auto}
+#hgame-help-card{background:#0f172a;color:#e2e8f0;border-radius:16px;max-width:420px;width:92vw;max-height:80vh;max-height:80dvh;overflow-y:auto;padding:28px 24px 20px;box-shadow:0 8px 32px rgba(0,0,0,.5);transform:translateY(20px);transition:transform .25s;box-sizing:border-box;margin:auto}
+#hgame-help-overlay.show #hgame-help-card{transform:translateY(0)}
+#hgame-help-card h2{margin:0 0 6px;font-size:1.5em;text-align:center}
+#hgame-help-card .goal{text-align:center;color:#94a3b8;margin:0 0 18px;font-size:.95em;line-height:1.5}
+#hgame-help-card .section-title{font-size:.85em;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+#hgame-help-card table{width:100%;border-collapse:collapse;margin-bottom:4px}
+#hgame-help-card table td{padding:8px 10px;font-size:.9em;line-height:1.4}
+#hgame-help-card table tr:nth-child(odd){background:rgba(255,255,255,.04)}
+#hgame-help-card table tr:nth-child(even){background:rgba(255,255,255,.08)}
+#hgame-help-card table td:first-child{font-weight:600;color:#60a5fa;white-space:nowrap;width:40%}
+#hgame-help-card .tips{list-style:none;padding:0;margin:0 0 8px}
+#hgame-help-card .tips li{position:relative;padding:5px 0 5px 18px;font-size:.9em;line-height:1.5;color:#cbd5e1}
+#hgame-help-card .tips li::before{content:"";position:absolute;left:0;top:12px;width:8px;height:8px;border-radius:50%;background:#22c55e}
+#hgame-help-footer{display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:10px;flex-wrap:wrap}
+#hgame-help-footer label{font-size:.8em;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none}
+#hgame-help-footer label input{accent-color:#22c55e;width:15px;height:15px}
+#hgame-start-btn{background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 32px;font-size:1.05em;font-weight:700;cursor:pointer;transition:background .2s;flex-shrink:0}
+#hgame-start-btn:hover{background:#16a34a}
+#hgame-help-card::-webkit-scrollbar{width:5px}
+#hgame-help-card::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+@media(max-width:480px){#hgame-help-card{padding:20px 16px 16px}#hgame-help-card h2{font-size:1.3em}#hgame-help-footer{flex-direction:column;align-items:stretch;text-align:center}#hgame-start-btn{width:100%}}</style><style>
+    #hgame-lb-btn {
+      position: fixed; bottom: 80px; right: 16px; z-index: 99998;
+      background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+      color: #1a1a2e; border: none; border-radius: 14px;
+      padding: 10px 16px; font-size: 14px; font-weight: 800;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(255,215,0,0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #hgame-lb-btn:hover { transform: scale(1.06); box-shadow: 0 6px 24px rgba(255,215,0,0.5); }
+    #hgame-lb-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      width: 100vw; height: 100vh; z-index: 100001;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.25s; pointer-events: none;
+      box-sizing: border-box;
+    }
+    #hgame-lb-overlay.show { opacity: 1; pointer-events: auto; }
+    #hgame-lb-card {
+      background: linear-gradient(160deg, #0c1829 0%, #0f1f3a 55%, #0a1425 100%);
+      color: #e2e8f0; border-radius: 22px;
+      max-width: 440px; width: 92vw; max-height: 82vh; max-height: 82dvh;
+      overflow-y: auto; padding: 24px 20px 18px;
+      box-shadow: 0 0 40px rgba(86,224,255,0.12), 0 20px 60px rgba(0,0,0,0.5);
+      border: 1px solid rgba(86,224,255,0.2);
+      transform: translateY(20px) scale(0.96);
+      transition: transform 0.25s; box-sizing: border-box; margin: auto;
+    }
+    #hgame-lb-overlay.show #hgame-lb-card { transform: translateY(0) scale(1); }
+    #hgame-lb-card h2 {
+      margin: 0 0 4px; font-size: 1.4em; text-align: center;
+      background: linear-gradient(90deg, #ffd700, #ff8c00);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    #hgame-lb-card .lb-subtitle {
+      text-align: center; color: #7fb6d5; font-size: 0.85em; margin: 0 0 16px;
+    }
+    #hgame-lb-card .lb-empty {
+      text-align: center; color: #64748b; padding: 32px 0; font-size: 0.95em;
+    }
+    #hgame-lb-card .lb-loading {
+      text-align: center; color: #7fb6d5; padding: 32px 0; font-size: 0.95em;
+    }
+    .lb-table { width: 100%; border-collapse: collapse; }
+    .lb-table th {
+      font-size: 0.72em; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #5a8faa; padding: 8px 6px; text-align: left;
+      border-bottom: 1px solid rgba(86,224,255,0.15);
+    }
+    .lb-table td {
+      padding: 10px 6px; font-size: 0.9em; border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: middle;
+    }
+    .lb-table tr:hover td { background: rgba(86,224,255,0.04); }
+    .lb-rank { font-weight: 800; width: 42px; text-align: center; font-size: 1.1em; }
+    .lb-rank-1 { color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.4); }
+    .lb-rank-2 { color: #c0c0c0; text-shadow: 0 0 8px rgba(192,192,192,0.3); }
+    .lb-rank-3 { color: #cd7f32; text-shadow: 0 0 8px rgba(205,127,50,0.3); }
+    .lb-rank-other { color: #5a8faa; }
+    .lb-name { font-weight: 600; color: #e2e8f0; }
+    .lb-name.lb-me { color: #56e0ff; }
+    .lb-score { font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+    .lb-time { color: #5a8faa; font-size: 0.82em; }
+    .lb-my-rank {
+      margin-top: 12px; padding: 10px 14px;
+      background: rgba(86,224,255,0.06); border: 1px solid rgba(86,224,255,0.15);
+      border-radius: 12px; font-size: 0.88em; color: #7fb6d5; text-align: center;
+    }
+    .lb-my-rank strong { color: #56e0ff; }
+    #hgame-lb-close {
+      display: block; margin: 16px auto 0; padding: 10px 32px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px; color: #d4f0ff; font-size: 0.95em; font-weight: 700;
+      cursor: pointer; transition: background 0.2s;
+      font-family: inherit;
+    }
+    #hgame-lb-close:hover { background: rgba(255,255,255,0.14); }
+    #hgame-lb-card::-webkit-scrollbar { width: 5px; }
+    #hgame-lb-card::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    @media (max-width: 480px) {
+      #hgame-lb-btn { bottom: 76px; right: 12px; padding: 8px 12px; font-size: 13px; }
+      #hgame-lb-card { padding: 18px 14px 14px; }
+      #hgame-lb-card h2 { font-size: 1.2em; }
+      .lb-table td { padding: 8px 4px; font-size: 0.82em; }
+      .lb-time { display: none; }
+    }
+  </style></head>
+<body>
+  <canvas id="game" width="1094" height="890" style="width: 912px; height: 742px;"></canvas>
+
+  <!-- Back to Main Menu -->
+  <a href="/" style="position:fixed;top:12px;left:12px;z-index:9999;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,0.3);" title="返回主菜单">←</a>
+
+  <div class="hud">
+    <div class="panel">
+      <div class="eyebrow" id="hudLevelTag">Acid Arena</div>
+      <div class="panel-title" id="hudMolName">—</div>
+      <div class="panel-sub" id="hudMolInfo">—</div>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Mission Rule</div>
+      <div class="sub">只能吃 <span class="accent">酸性更弱</span> 的酸；碰到 <span class="accent">酸性更强</span> 的酸就失败。</div>
+      <div class="metric-note" id="statusInfo">选择关卡开始游戏。</div>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Run Data</div>
+      <div class="score-grid">
+        <div class="metric"><div class="metric-label">Score</div><div class="metric-value" id="scoreValue">0</div></div>
+        <div class="metric"><div class="metric-label">Streak</div><div class="metric-value" id="streakValue">0</div></div>
+      </div>
+      <div class="metric-note" id="gapInfo">—</div>
+    </div>
+  </div>
+
+  <div class="footer-hint">WASD / 方向键移动 ｜ 触屏可拖动 ｜ 游戏中不显示 pKa，靠知识直觉判断</div>
+
+  <!-- ① 关卡选择 -->
+  <div class="overlay" id="levelOverlay">
+    <div class="card wide-card">
+      <h1>⚗️ Acid Arena · 选择关卡</h1>
+      <p class="sub-desc">吞噬酸性更弱的分子，躲避酸性更强的威胁。选择你想训练的模块，前一关 50 分解锁下一关。</p>
+      <div class="level-grid" id="levelGrid"><div class="level-card unlocked">
+        <div class="level-num">1</div>
+        
+        <div class="level-name">入门·羧酸</div>
+        <div class="level-desc">从最基本的脂肪族羧酸开始，感受碳链长度和支链对酸性的微妙影响</div>
+        <span class="level-pool-tag">15种分子</span>
+        <div class="level-best">最高分: 100</div>
+        
+        <button class="level-start-btn">进入关卡</button>
+      </div><div class="level-card unlocked">
+        <div class="level-num">2</div>
+        
+        <div class="level-name">取代基效应</div>
+        <div class="level-desc">从卤代羧酸出发，一路吃向更弱的普通羧酸！感受卤素吸电子效应对酸性的巨大影响</div>
+        <span class="level-pool-tag">27种分子</span>
+        <div class="level-best">最高分: 100</div>
+        
+        <button class="level-start-btn">进入关卡</button>
+      </div><div class="level-card unlocked">
+        <div class="level-num">3</div>
+        
+        <div class="level-name">芳香世界</div>
+        <div class="level-desc">芳环上的取代基效应 + 共轭稳定，苯甲酸和苯酚的较量</div>
+        <span class="level-pool-tag">24种分子</span>
+        <div class="level-best">最高分: 100</div>
+        
+        <button class="level-start-btn">进入关卡</button>
+      </div><div class="level-card unlocked">
+        <div class="level-num">4</div>
+        
+        <div class="level-name">终极混战</div>
+        <div class="level-desc">所有类型混合，羧酸 vs 酚 vs 醇 vs 多元酸，考验你的综合判断</div>
+        <span class="level-pool-tag">116种分子</span>
+        <div class="level-best">最高分: 100</div>
+        
+        <button class="level-start-btn">进入关卡</button>
+      </div><div class="level-card unlocked">
+        <div class="level-num">5</div>
+        
+        <div class="level-name">氮的较量·胺盐</div>
+        <div class="level-desc">铵离子的酸性：芳香胺 vs 脂肪胺 vs 杂环胺，感受氮上取代基对pKa的影响</div>
+        <span class="level-pool-tag">15种分子</span>
+        <div class="level-best">最高分: 100</div>
+        
+        <button class="level-start-btn">进入关卡</button>
+      </div><div class="level-card unlocked">
+        <div class="level-num">6</div>
+        
+        <div class="level-name">碳氢键的秘密</div>
+        <div class="level-desc">从炔烃到羰基化合物，探索C-H键的酸性世界</div>
+        <span class="level-pool-tag">15种分子</span>
+        <div class="level-best">最高分: 100</div>
+        
+        <button class="level-start-btn">进入关卡</button>
+      </div><div class="level-card unlocked">
+        <div class="level-num">7</div>
+        
+        <div class="level-name">硫的世界</div>
+        <div class="level-desc">Week 3：磺酸→亚磺酸→硫醇→醇，感受硫如何改变酸性</div>
+        <span class="level-pool-tag">13种分子</span>
+        
+        
+        <button class="level-start-btn">进入关卡</button>
+      </div></div>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 4px;">
+        <button class="secondary" id="unlockAllBtn" style="font-size:12px;padding:8px 14px;">解锁全部（教师演示）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 开始确认 -->
+  <div class="overlay" id="startOverlay" style="display:none">
+    <div class="card">
+      <div class="level-badge" id="startBadge">关卡 1</div>
+      <h1 id="startName">入门·羧酸</h1>
+      <p id="startDesc" style="color:#8db6cf;margin:0 0 12px;font-size:14px;"></p>
+      <ul>
+        <li>操控一个酸分子，吞噬 <strong>酸性更弱（pKa更大）</strong> 的目标。</li>
+        <li>撞到 <strong>酸性更强（pKa更小）</strong> 的酸，立即失败。</li>
+        <li>连胜越多，目标 pKa 差距越来越小——挑战精准判断！</li>
+        <li>游戏中 <strong>不显示 pKa</strong>，失败时才显示数据与知识点。</li>
+      </ul>
+      <div class="btn-row">
+        <button id="startBtn">开始游戏</button>
+        <button class="secondary" id="startRandBtn">随机开局</button>
+        <button class="secondary" id="backLevelBtn">返回选关</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 游戏结束 -->
+  <div class="overlay" id="gameOverOverlay" style="display:none">
+    <div class="card">
+      <h1>本轮结束</h1>
+      <div class="failure-box" id="failureBox"></div>
+      <div class="tip-box" id="tipBox"></div>
+      <div class="legend" id="statsBox"></div>
+      <div class="btn-row">
+        <button id="restartBtn">再来一局</button>
+        <button class="secondary" id="backLevel2Btn">选择关卡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 暂停菜单 -->
+  <div class="overlay" id="pauseOverlay" style="display:none">
+    <div class="card">
+      <h1>游戏已暂停</h1>
+      <div class="btn-row">
+        <button id="resumeBtn">继续游戏</button>
+        <button class="secondary" id="pauseRestartBtn">重新开始</button>
+        <button class="secondary" id="pauseBackBtn">返回选关</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 暂停按钮 -->
+  <button id="pauseBtn" style="display:none; position:fixed; top:70px; left:14px; z-index:15; width:44px; height:44px; border-radius:50%; background:var(--panel); border:1px solid var(--panel-border); backdrop-filter:blur(16px); cursor:pointer; color:var(--text); font-size:20px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">⏸</button>
+
+  <script>
+  // ─────────────────────────────────────────────
+  // 酸库数据（73种）
+  // ─────────────────────────────────────────────
+  const ACID_POOL = [
+    // 羧酸 (15)
+    {name:"甲酸",formula:"HCOOH",pKa:3.75,family:"羧酸",color:"#ff5db8"},
+    {name:"乙酸",formula:"CH₃COOH",pKa:4.76,family:"羧酸",color:"#ffc14d"},
+    {name:"丙酸",formula:"C₂H₅COOH",pKa:4.87,family:"羧酸",color:"#9df55a"},
+    {name:"丁酸",formula:"C₃H₇COOH",pKa:4.82,family:"羧酸",color:"#ffd547"},
+    {name:"戊酸",formula:"C₄H₉COOH",pKa:4.84,family:"羧酸",color:"#ffca40"},
+    {name:"己酸",formula:"C₅H₁₁COOH",pKa:4.85,family:"羧酸",color:"#ffc233"},
+    {name:"庚酸",formula:"C₆H₁₃COOH",pKa:4.89,family:"羧酸",color:"#ffb826"},
+    {name:"辛酸",formula:"C₇H₁₅COOH",pKa:4.89,family:"羧酸",color:"#ffaf20"},
+    {name:"异丁酸",formula:"(CH₃)₂CHCOOH",pKa:4.86,family:"羧酸",color:"#d5ef4f"},
+    {name:"新戊酸",formula:"(CH₃)₃CCOOH",pKa:5.03,family:"羧酸",color:"#bde83a"},
+    {name:"2-甲基丁酸",formula:"CH₃CH(C₂H₅)COOH",pKa:4.80,family:"羧酸",color:"#e8e040"},
+    {name:"丙酮酸",formula:"CH₃COCOOH",pKa:2.49,family:"羧酸",color:"#ff8040"},
+    {name:"乙醛酸",formula:"CHOCOOH",pKa:3.30,family:"羧酸",color:"#ff9050"},
+    {name:"环己烷甲酸",formula:"C₆H₁₁COOH",pKa:4.90,family:"羧酸",color:"#a8e840"},
+    {name:"壬酸",formula:"C₈H₁₇COOH",pKa:4.96,family:"羧酸",color:"#98dc30"},
+    // 卤代羧酸 (12)
+    {name:"三氟乙酸",formula:"CF₃COOH",pKa:0.23,family:"卤代羧酸",color:"#00d4ff"},
+    {name:"三氯乙酸",formula:"CCl₃COOH",pKa:0.70,family:"卤代羧酸",color:"#00b8ff"},
+    {name:"二氟乙酸",formula:"CHF₂COOH",pKa:1.24,family:"卤代羧酸",color:"#1a9fff"},
+    {name:"二氯乙酸",formula:"CHCl₂COOH",pKa:1.48,family:"卤代羧酸",color:"#2e8cff"},
+    {name:"氟乙酸",formula:"FCH₂COOH",pKa:2.59,family:"卤代羧酸",color:"#4278ff"},
+    {name:"氯乙酸",formula:"ClCH₂COOH",pKa:2.86,family:"卤代羧酸",color:"#5664ff"},
+    {name:"溴乙酸",formula:"BrCH₂COOH",pKa:2.90,family:"卤代羧酸",color:"#6a50ff"},
+    {name:"碘乙酸",formula:"ICH₂COOH",pKa:3.12,family:"卤代羧酸",color:"#7e40f0"},
+    {name:"2-氯丙酸",formula:"CH₃CHClCOOH",pKa:2.83,family:"卤代羧酸",color:"#5060ff"},
+    {name:"3-氯丙酸",formula:"ClCH₂CH₂COOH",pKa:4.06,family:"卤代羧酸",color:"#9030e0"},
+    {name:"4-氯丁酸",formula:"Cl(CH₂)₃COOH",pKa:4.52,family:"卤代羧酸",color:"#a020d0"},
+    {name:"2-溴丙酸",formula:"CH₃CHBrCOOH",pKa:2.98,family:"卤代羧酸",color:"#6878ff"},
+    // 芳香酸 (12)
+    {name:"苯甲酸",formula:"C₆H₅COOH",pKa:4.20,family:"芳香酸",color:"#ff9f62"},
+    {name:"邻甲基苯甲酸",formula:"2-CH₃C₆H₄COOH",pKa:3.91,family:"芳香酸",color:"#ff8058"},
+    {name:"间甲基苯甲酸",formula:"3-CH₃C₆H₄COOH",pKa:4.27,family:"芳香酸",color:"#ffac78"},
+    {name:"对甲基苯甲酸",formula:"4-CH₃C₆H₄COOH",pKa:4.38,family:"芳香酸",color:"#ffb888"},
+    {name:"邻氯苯甲酸",formula:"2-ClC₆H₄COOH",pKa:2.94,family:"芳香酸",color:"#c564ff"},
+    {name:"间氯苯甲酸",formula:"3-ClC₆H₄COOH",pKa:3.83,family:"芳香酸",color:"#d358f0"},
+    {name:"对氯苯甲酸",formula:"4-ClC₆H₄COOH",pKa:3.98,family:"芳香酸",color:"#e04ce0"},
+    {name:"对硝基苯甲酸",formula:"4-NO₂C₆H₄COOH",pKa:3.43,family:"芳香酸",color:"#af69ff"},
+    {name:"水杨酸",formula:"2-HOC₆H₄COOH",pKa:2.98,family:"芳香酸",color:"#9a6cff"},
+    {name:"阿司匹林",formula:"2-AcOC₆H₄COOH",pKa:3.49,family:"芳香酸",color:"#ff7d88"},
+    {name:"对氨基苯甲酸",formula:"4-NH₂C₆H₄COOH",pKa:4.87,family:"芳香酸",color:"#ffc498"},
+    {name:"对甲氧基苯甲酸",formula:"4-CH₃OC₆H₄COOH",pKa:4.47,family:"芳香酸",color:"#ffb454"},
+    // 酚 (12)
+    {name:"苯酚",formula:"C₆H₅OH",pKa:9.95,family:"酚",color:"#49f2c2"},
+    {name:"邻甲苯酚",formula:"2-CH₃C₆H₄OH",pKa:10.28,family:"酚",color:"#3de0c8"},
+    {name:"间甲苯酚",formula:"3-CH₃C₆H₄OH",pKa:10.01,family:"酚",color:"#42f0b8"},
+    {name:"对甲苯酚",formula:"4-CH₃C₆H₄OH",pKa:10.27,family:"酚",color:"#3de8a8"},
+    {name:"邻氯苯酚",formula:"2-ClC₆H₄OH",pKa:8.56,family:"酚",color:"#4be0d0"},
+    {name:"间氯苯酚",formula:"3-ClC₆H₄OH",pKa:9.12,family:"酚",color:"#44e8c0"},
+    {name:"对氯苯酚",formula:"4-ClC₆H₄OH",pKa:9.42,family:"酚",color:"#38f0b0"},
+    {name:"邻硝基苯酚",formula:"2-NO₂C₆H₄OH",pKa:7.23,family:"酚",color:"#30d4e8"},
+    {name:"间硝基苯酚",formula:"3-NO₂C₆H₄OH",pKa:8.36,family:"酚",color:"#38dcd0"},
+    {name:"对硝基苯酚",formula:"4-NO₂C₆H₄OH",pKa:7.15,family:"酚",color:"#28c8e0"},
+    {name:"2,4-二氯苯酚",formula:"2,4-Cl₂C₆H₃OH",pKa:7.89,family:"酚",color:"#3cc8d8"},
+    {name:"2,4-二硝基苯酚",formula:"2,4-(NO₂)₂C₆H₃OH",pKa:4.07,family:"酚",color:"#20b8d0"},
+    // 羟基酸 (8)
+    {name:"乙醇酸",formula:"HOCH₂COOH",pKa:3.83,family:"羟基酸",color:"#e854d7"},
+    {name:"乳酸",formula:"CH₃CH(OH)COOH",pKa:3.86,family:"羟基酸",color:"#ff6d9e"},
+    {name:"苹果酸",formula:"HOOCCH(OH)CH₂COOH",pKa:3.46,family:"羟基酸",color:"#f050c8"},
+    {name:"酒石酸",formula:"HOOCCH(OH)₂COOH",pKa:2.98,family:"羟基酸",color:"#e040b8"},
+    {name:"柠檬酸",formula:"C₆H₈O₇",pKa:3.13,family:"羟基酸",color:"#f860d0"},
+    {name:"扁桃酸",formula:"C₆H₅CH(OH)COOH",pKa:3.41,family:"羟基酸",color:"#d835c0"},
+    {name:"葡萄糖酸",formula:"(CHOH)₄(CH₂OH)COOH",pKa:3.86,family:"羟基酸",color:"#e868d8"},
+    {name:"抗坏血酸",formula:"C₆H₈O₆",pKa:4.10,family:"羟基酸",color:"#f080e0"},
+    // 多元酸 (8)
+    {name:"草酸",formula:"HOOCCOOH",pKa:1.25,family:"多元酸",color:"#318cff"},
+    {name:"丙二酸",formula:"CH₂(COOH)₂",pKa:2.83,family:"多元酸",color:"#4b7cff"},
+    {name:"马来酸",formula:"顺-HOOCCH=CHCOOH",pKa:1.94,family:"多元酸",color:"#3a80ff"},
+    {name:"富马酸",formula:"反-HOOCCH=CHCOOH",pKa:3.03,family:"多元酸",color:"#5878ff"},
+    {name:"丁二酸",formula:"HOOC(CH₂)₂COOH",pKa:4.21,family:"多元酸",color:"#6870ff"},
+    {name:"戊二酸",formula:"HOOC(CH₂)₃COOH",pKa:4.34,family:"多元酸",color:"#7868ff"},
+    {name:"己二酸",formula:"HOOC(CH₂)₄COOH",pKa:4.41,family:"多元酸",color:"#8860ff"},
+    {name:"邻苯二甲酸",formula:"1,2-C₆H₄(COOH)₂",pKa:2.98,family:"多元酸",color:"#9060ff"},
+    // 醇/弱酸 (6)
+    {name:"苯甲醇",formula:"C₆H₅CH₂OH",pKa:15.40,family:"醇",color:"#88c0ff"},
+    {name:"甲醇",formula:"CH₃OH",pKa:15.50,family:"醇",color:"#78b8ff"},
+    {name:"水",formula:"H₂O",pKa:15.70,family:"醇",color:"#4bc7ff"},
+    {name:"乙醇",formula:"C₂H₅OH",pKa:15.90,family:"醇",color:"#68adff"},
+    {name:"正丙醇",formula:"C₃H₇OH",pKa:16.10,family:"醇",color:"#5898f0"},
+    {name:"异丙醇",formula:"(CH₃)₂CHOH",pKa:16.50,family:"醇",color:"#4888e0"},
+    // 胺盐 (15)
+    {name:"铵离子",formula:"NH₄⁺",pKa:9.25,family:"胺盐",color:"#7c4dff"},
+    {name:"甲铵离子",formula:"CH₃NH₃⁺",pKa:10.64,family:"胺盐",color:"#7c4dff"},
+    {name:"二甲铵离子",formula:"(CH₃)₂NH₂⁺",pKa:10.73,family:"胺盐",color:"#7c4dff"},
+    {name:"三甲铵离子",formula:"(CH₃)₃NH⁺",pKa:9.80,family:"胺盐",color:"#7c4dff"},
+    {name:"乙铵离子",formula:"C₂H₅NH₃⁺",pKa:10.63,family:"胺盐",color:"#7c4dff"},
+    {name:"二乙铵离子",formula:"(C₂H₅)₂NH₂⁺",pKa:11.09,family:"胺盐",color:"#7c4dff"},
+    {name:"三乙铵离子",formula:"(C₂H₅)₃NH⁺",pKa:10.9,family:"胺盐",color:"#7c4dff"},
+    {name:"苯胺铵离子",formula:"C₆H₅NH₃⁺",pKa:4.60,family:"胺盐",color:"#7c4dff"},
+    {name:"对硝基苯胺铵离子",formula:"4-NO₂C₆H₄NH₃⁺",pKa:1.0,family:"胺盐",color:"#7c4dff"},
+    {name:"对甲氧基苯胺铵离子",formula:"4-CH₃OC₆H₄NH₃⁺",pKa:5.34,family:"胺盐",color:"#7c4dff"},
+    {name:"吡啶鎓离子",formula:"C₅H₅NH⁺",pKa:5.25,family:"胺盐",color:"#7c4dff"},
+    {name:"哌啶鎓离子",formula:"C₅H₁₀NH₂⁺",pKa:11.12,family:"胺盐",color:"#7c4dff"},
+    {name:"咪唑鎓离子",formula:"C₃H₃N₂H₂⁺",pKa:6.99,family:"胺盐",color:"#7c4dff"},
+    {name:"羟铵离子",formula:"HONH₃⁺",pKa:5.94,family:"胺盐",color:"#7c4dff"},
+    {name:"肼鎓离子",formula:"H₂NNH₃⁺",pKa:8.10,family:"胺盐",color:"#7c4dff"},
+    // 碳氢键 (15)
+    {name:"乙炔",formula:"HC≡CH",pKa:25,family:"炔烃",color:"#ff6b9d"},
+    {name:"丙炔",formula:"HC≡CCH₃",pKa:25,family:"炔烃",color:"#ff7ba8"},
+    {name:"1-丁炔",formula:"HC≡CC₂H₅",pKa:25,family:"炔烃",color:"#ff8bb3"},
+    {name:"1-戊炔",formula:"HC≡CC₃H₇",pKa:25,family:"炔烃",color:"#ff9bbe"},
+    {name:"丙酮",formula:"(CH₃)₂CO",pKa:19.2,family:"羰基化合物",color:"#ffa5c9"},
+    {name:"乙酰乙酸乙酯",formula:"CH₃COCH₂COOC₂H₅",pKa:10.7,family:"β-二羰基",color:"#ffb5d4"},
+    {name:"丙二酸二乙酯",formula:"CH₂(COOC₂H₅)₂",pKa:13.3,family:"β-二羰基",color:"#ffc5df"},
+    {name:"2,4-戊二酮",formula:"CH₃COCH₂COCH₃",pKa:9.0,family:"β-二羰基",color:"#ffd5ea"},
+    {name:"环戊二烯",formula:"C₅H₆",pKa:15,family:"芳香C-H",color:"#ffe5f5"},
+    {name:"茚",formula:"C₉H₈",pKa:20,family:"芳香C-H",color:"#fff0fa"},
+    {name:"芴",formula:"C₁₃H₁₀",pKa:22.6,family:"芳香C-H",color:"#fff5fc"},
+    {name:"硝基甲烷",formula:"CH₃NO₂",pKa:10.2,family:"硝基化合物",color:"#e8d5ff"},
+    {name:"硝基乙烷",formula:"C₂H₅NO₂",pKa:8.6,family:"硝基化合物",color:"#d5c5ff"},
+    {name:"苯乙酮",formula:"C₆H₅COCH₃",pKa:18.5,family:"羰基化合物",color:"#c5b5ff"},
+    {name:"环己酮",formula:"C₆H₁₀O",pKa:16.7,family:"羰基化合物",color:"#b5a5ff"},
+    // 硫系 (13)
+    {name:"三氟甲磺酸",formula:"CF₃SO₃H",pKa:-14,family:"磺酸",color:"#e74c3c"},
+    {name:"甲磺酸",formula:"CH₃SO₃H",pKa:-1.9,family:"磺酸",color:"#e74c3c"},
+    {name:"乙磺酸",formula:"C₂H₅SO₃H",pKa:-1.8,family:"磺酸",color:"#e74c3c"},
+    {name:"苯磺酸",formula:"C₆H₅SO₃H",pKa:-1.0,family:"磺酸",color:"#c0392b"},
+    {name:"对甲苯磺酸",formula:"4-CH₃C₆H₄SO₃H",pKa:-1.3,family:"磺酸",color:"#c0392b"},
+    {name:"苯亚磺酸",formula:"C₆H₅SO₂H",pKa:1.8,family:"亚磺酸",color:"#e67e22"},
+    {name:"对甲苯亚磺酸",formula:"4-CH₃C₆H₄SO₂H",pKa:2.0,family:"亚磺酸",color:"#e67e22"},
+    {name:"硫代乙酸",formula:"CH₃COSH",pKa:3.3,family:"亚磺酸",color:"#f39c12"},
+    {name:"对硝基苯硫酚",formula:"4-NO₂C₆H₄SH",pKa:4.7,family:"硫醇",color:"#27ae60"},
+    {name:"对氯苯硫酚",formula:"4-ClC₆H₄SH",pKa:6.1,family:"硫醇",color:"#27ae60"},
+    {name:"苯硫酚",formula:"C₆H₅SH",pKa:6.5,family:"硫醇",color:"#2ecc71"},
+    {name:"甲硫醇",formula:"CH₃SH",pKa:10.3,family:"硫醇",color:"#1abc9c"},
+    {name:"乙硫醇",formula:"C₂H₅SH",pKa:10.6,family:"硫醇",color:"#1abc9c"}
+  ];
+
+  // ─────────────────────────────────────────────
+  // 关卡定义
+  // ─────────────────────────────────────────────
+  const LEVELS = [
+    {
+      id: 1, name: "入门·羧酸",
+      desc: "从最基本的脂肪族羧酸开始，感受碳链长度和支链对酸性的微妙影响",
+      poolTag: "羧酸 · 15种",
+      filter: m => m.family === "羧酸",
+      maxGap: 3.0,
+      startFilter: m => m.family === "羧酸" && m.pKa >= 3.5 && m.pKa <= 5.0,
+      defaultStart: "甲酸"
+    },
+    {
+      id: 2, name: "取代基效应",
+      desc: "从卤代羧酸出发，一路吃向更弱的普通羧酸！感受卤素吸电子效应对酸性的巨大影响",
+      poolTag: "羧酸 + 卤代羧酸 · 19种",
+      filter: m => ["羧酸","卤代羧酸"].includes(m.family),
+      maxGap: 2.5,
+      startFilter: m => m.pKa >= 2.5 && m.pKa <= 3.5,
+      defaultStart: "氯乙酸"
+    },
+    {
+      id: 3, name: "芳香世界",
+      desc: "芳环上的取代基效应 + 共轭稳定，苯甲酸和苯酚的较量",
+      poolTag: "芳香酸 + 酚 · 24种",
+      filter: m => ["芳香酸","酚"].includes(m.family),
+      maxGap: 2.5,
+      startFilter: m => m.family === "芳香酸" && m.pKa >= 3.9 && m.pKa <= 4.5,
+      defaultStart: "苯甲酸"
+    },
+    {
+      id: 4, name: "终极混战",
+      desc: "所有类型混合，羧酸 vs 酚 vs 醇 vs 多元酸，考验你的综合判断",
+      poolTag: "全部103种",
+      filter: () => true,
+      maxGap: 2.0,
+      startFilter: m => m.pKa >= 3.4 && m.pKa <= 5.1,
+      defaultStart: "乙酸"
+    },
+    {
+      id: 5, name: "氮的较量·胺盐",
+      desc: "铵离子的酸性：芳香胺 vs 脂肪胺 vs 杂环胺，感受氮上取代基对pKa的影响",
+      poolTag: "胺盐 · 15种",
+      filter: m => m.family === "胺盐",
+      maxGap: 2.5,
+      startFilter: m => m.family === "胺盐" && m.pKa >= 5.0 && m.pKa <= 10.0,
+      defaultStart: "铵离子"
+    },
+    {
+      id: 6, name: "碳氢键的秘密",
+      desc: "从炔烃到羰基化合物，探索C-H键的酸性世界",
+      poolTag: "炔烃 + 羰基 + 芳香C-H · 15种",
+      filter: m => ["炔烃","羰基化合物","β-二羰基","芳香C-H","硝基化合物"].includes(m.family),
+      maxGap: 3.0,
+      startFilter: m => m.pKa >= 10 && m.pKa <= 20,
+      defaultStart: "丙酮"
+    }
+    ,{
+      id: 7, name: "硫的世界",
+      desc: "Week 3：磺酸→亚磺酸→硫醇→醇，感受硫如何改变酸性",
+      poolTag: "磺酸 + 亚磺酸 + 硫醇 · 15种",
+      filter: m => ["磺酸","亚磺酸","硫醇"].includes(m.family),
+      maxGap: 3.0,
+      startFilter: m => m.family === "磺酸" && m.name === "对甲苯磺酸",
+      defaultStart: "对甲苯磺酸"
+    }
+  ];
+
+  // ─────────────────────────────────────────────
+  // 关卡解锁 (localStorage)
+  // ─────────────────────────────────────────────
+  function getBestScores() {
+    try { return JSON.parse(localStorage.getItem('pka_best_scores') || '[0,0,0,0,0,0,0]'); }
+    catch(e) { return [0,0,0,0,0,0,0]; }
+  }
+  function saveBestScore(lvlIdx, score) {
+    const s = getBestScores();
+    if (score > s[lvlIdx]) { s[lvlIdx] = score; localStorage.setItem('pka_best_scores', JSON.stringify(s)); }
+  }
+  function isUnlocked(lvlIdx) {
+    if (lvlIdx === 0) return true;
+    return getBestScores()[lvlIdx - 1] >= 50;
+  }
+  function unlockAll() {
+    localStorage.setItem('pka_best_scores', JSON.stringify([100,100,100,100,100,100,100]));
+  }
+
+  // ─────────────────────────────────────────────
+  // 教学提示
+  // ─────────────────────────────────────────────
+  function getTeachingTip(playerMol, hitMol) {
+    const pf = playerMol.family, hf = hitMol.family;
+    if (pf === hf) {
+      if (pf === "羧酸") return "同为羧酸：碳链越长/支链越多酸性微弱减小；α-位吸电子基（如羰基、醛基）则增强酸性。甲基是给电子基，使乙酸比甲酸弱。";
+      if (pf === "卤代羧酸") return "同为卤代羧酸：吸电子能力 F > Cl > Br > I；卤素越多酸性越强；卤素离羧基越近影响越大（α > β > γ）。";
+      if (pf === "芳香酸") return "同为芳香酸：苯环上吸电子基（NO₂、Cl、CN）增强酸性，给电子基（CH₃、NH₂、OCH₃）减弱酸性。邻位取代还有立体效应。";
+      if (pf === "酚") return "同为酚：吸电子基（NO₂、Cl）通过共振/诱导效应稳定苯氧根负离子，增强酸性；给电子基（CH₃）反之。对硝基苯酚比苯酚强约100倍！";
+      if (pf === "多元酸") return "同为多元酸：两羧基距离越近，电子效应越强，第一个 pKa 越小。顺式结构（如马来酸）比反式（富马酸）酸性更强。";
+      if (pf === "羟基酸") return "同为羟基酸：α-羟基的吸电子诱导效应略增强酸性。额外的羧基或酮基使酸性大幅增强。";
+      if (pf === "胺盐") return "同为胺盐：碳链给电子效应增强碱性（升高共轭酸pKa）。脂肪胺>氨>芳香胺（苯环共轭降低氮的碱性）。吸电子基（NO₂）大幅降低pKa。三级胺pKa反低于二级胺——水合位阻效应！";
+      if (pf === "炔烃") return "同为炔烃：sp杂化的C-H键s成分最高(50%)，电子更靠近碳原子，使氢更容易解离。但pKa≈25仍然很弱！";
+      if (pf === "羰基化合物") return "羰基α-H的酸性：羰基的吸电子效应+烯醇负离子的共轭稳定。β-二羰基化合物两个羰基协同稳定，pKa可低至9.0（乙酰丙酮）！";
+      if (pf === "β-二羰基") return "β-二羰基化合物：两个羰基夹着的α-H是有机化学中最重要的活泼氢之一。烯醇负离子通过两个C=O共轭稳定，pKa显著降低。";
+      if (pf === "芳香C-H") return "芳香性C-H：环戊二烯失去H后形成6π电子的环戊二烯负离子（芳香性），pKa仅15！茚和芴也类似，但共轭体系不同导致pKa差异大。";
+      if (pf === "硝基化合物") return "硝基的强吸电子效应：硝基甲烷的α-H pKa仅10.2，因为硝基负离子通过共振稳定（负电荷分散到两个氧上）。";
+    }
+    if (hf === "卤代羧酸" && (pf === "羧酸" || pf === "多元酸")) return "卤代羧酸比普通羧酸强得多！卤素的强吸电子诱导效应稳定羧酸根负离子，pKa 可低至 0.23（三氟乙酸）。不要被相似结构迷惑！";
+    if ((pf === "酚" || pf === "醇") && ["羧酸","芳香酸","卤代羧酸","多元酸","羟基酸"].includes(hf)) return "羧酸类酸性远强于酚和醇！pKa 比较：卤代羧酸(0-4) < 多元酸(1-5) < 普通羧酸/芳香酸(2-5) << 酚(7-10) << 醇(15-16)。";
+    if (pf === "醇" && hf === "酚") return "酚比醇酸性强约 10⁶ 倍！苯环的共轭效应使苯氧根负离子通过共振稳定，大幅降低 pKa（苯酚 ≈ 10，乙醇 ≈ 16）。";
+    if (hf === "多元酸") return `多元酸的第一个 pKa 往往很低（草酸 1.25，马来酸 1.94）！双羧基的相互诱导效应使其酸性远强于单羧酸。${hitMol.name}(pKa ${hitMol.pKa})是个陷阱！`;
+    if (hf === "羟基酸") return "羟基酸的 α-羟基通过诱导效应增强酸性。柠檬酸(3.13)、酒石酸(2.98)等比普通羧酸更强，别看名字像食品就以为它弱！";
+    if (hf === "胺盐" && ["羧酸","芳香酸","卤代羧酸"].includes(pf)) return "胺盐（铵离子）通常比羧酸弱酸性得多（pKa 5-11 vs 0-5）！但苯胺铵离子（4.6）可与弱羧酸相当，对硝基苯胺铵离子（1.0）甚至可比卤代羧酸！";
+    if (["炔烃","羰基化合物","β-二羰基","芳香C-H","硝基化合物"].includes(hf) && !["炔烃","羰基化合物","β-二羰基","芳香C-H","硝基化合物"].includes(pf)) return "C-H酸性跨越巨大范围：硝基乙烷(8.6) ≈ 弱酚，环戊二烯(15) ≈ 醇，炔烃(25) 远弱于水。活化基团（羰基、硝基、芳香性）是关键！";
+    return `记住核心规律：pKa 越小 = 酸性越强 = 越危险！${hitMol.name}(pKa=${hitMol.pKa}) < ${playerMol.name}(pKa=${playerMol.pKa})，所以不能吃。`;
+  }
+
+  // ─────────────────────────────────────────────
+  // 游戏状态
+  // ─────────────────────────────────────────────
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let width = 0, height = 0;
+  let animationId = null;
+  let gameState = 'levelSelect'; // 'levelSelect' | 'start' | 'running' | 'over' | 'paused'
+  let currentLevel = null;  // 1-4
+  let currentPool = [];
+  let player = null;
+  let objects = [];
+  let particles = [];
+  let stars = [];
+  let keys = {};
+  let touchDragging = false;
+  let lastTime = 0;
+  let score = 0;
+  let streak = 0;
+  let spawnTimer = 0;
+  let diffTimer = 0;
+  let spawnInterval = 2200;
+  let targetCount = 4;
+  let savedGameState = null;
+
+  // ─────────────────────────────────────────────
+  // 工具函数
+  // ─────────────────────────────────────────────
+  function choice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+  function computeGap() {
+    const lvl = LEVELS[currentLevel - 1];
+    return Math.max(0.3, lvl.maxGap - streak * 0.15);
+  }
+
+  function resize() {
+    width = window.innerWidth; height = window.innerHeight;
+    const r = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.floor(width * r));
+    canvas.height = Math.max(1, Math.floor(height * r));
+    canvas.style.width = width + 'px'; canvas.style.height = height + 'px';
+    ctx.setTransform(r, 0, 0, r, 0, 0);
+    initStars();
+  }
+
+  function initStars() {
+    const n = Math.max(48, Math.floor(width * height / 22000));
+    stars = Array.from({length: n}, () => ({
+      x: Math.random() * width, y: Math.random() * height,
+      r: 0.6 + Math.random() * 1.7, a: 0.18 + Math.random() * 0.6,
+      drift: 0.05 + Math.random() * 0.25
+    }));
+  }
+
+  function getBubbleR(mol, isPlayer) {
+    const base = mol.pKa < 3 ? 52 : mol.pKa < 6 ? 56 : mol.pKa < 12 ? 60 : 64;
+    return isPlayer ? base + 6 : base;
+  }
+
+  function safeSpawnPoint() {
+    const margin = 90;
+    for (let i = 0; i < 60; i++) {
+      let x, y;
+      const side = Math.floor(Math.random() * 4);
+      if (side === 0) { x = -margin; y = Math.random() * height; }
+      else if (side === 1) { x = width + margin; y = Math.random() * height; }
+      else if (side === 2) { x = Math.random() * width; y = -margin; }
+      else { x = Math.random() * width; y = height + margin; }
+      let ok = dist({x,y}, player) > 280;
+      if (ok) for (const o of objects) { if (Math.hypot(o.x-x,o.y-y) < 180) { ok=false; break; } }
+      if (ok) return {x, y};
+    }
+    return {x: width + margin, y: Math.random() * height};
+  }
+
+  function spawnObject(targetType) {
+    // targetType: 'weak' | 'strong' | 'any'
+    const {x, y} = safeSpawnPoint();
+    const gap = computeGap();
+    let pool = currentPool.filter(m => m.name !== player.molecule.name);
+
+    if (targetType === 'weak') {
+      let cands = pool.filter(m => m.pKa > player.molecule.pKa + 0.3 && m.pKa <= player.molecule.pKa + gap);
+      if (cands.length < 2) cands = pool.filter(m => m.pKa > player.molecule.pKa);
+      if (cands.length > 0) pool = cands;
+    } else if (targetType === 'strong') {
+      let cands = pool.filter(m => m.pKa < player.molecule.pKa - 0.3 && m.pKa >= player.molecule.pKa - gap);
+      if (cands.length < 2) cands = pool.filter(m => m.pKa < player.molecule.pKa);
+      if (cands.length > 0) pool = cands;
+    }
+
+    const mol = choice(pool);
+    const angle = Math.atan2(player.y - y, player.x - x) + (Math.random() - 0.5) * 1.8;
+    const speed = 0.42 + Math.random() * 0.45 + diffTimer * 0.000028;
+    console.log(`[L${currentLevel}] streak=${streak} gap=${gap.toFixed(2)} spawn=${mol.name}(${mol.pKa}) type=${targetType}`);
+    objects.push({
+      x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+      radius: getBubbleR(mol, false), molecule: mol,
+      wobble: Math.random()*Math.PI*2, pulse: Math.random()*Math.PI*2, glow: 0.8+Math.random()*0.6
+    });
+  }
+
+  function burst(x, y, color, n=18, spread=1) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random()*Math.PI*2, s = (1+Math.random()*4)*spread;
+      particles.push({x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s,
+        life: 36+Math.random()*24, color, size: 2+Math.random()*5});
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // HUD 更新
+  // ─────────────────────────────────────────────
+  function updateHUD() {
+    if (!player) return;
+    const lvl = LEVELS[currentLevel - 1];
+    document.getElementById('hudLevelTag').textContent = `关卡 ${currentLevel} · ${lvl.name}`;
+    document.getElementById('hudMolName').textContent = player.molecule.name;
+    document.getElementById('hudMolInfo').textContent = `${player.molecule.formula} · ${player.molecule.family}`;
+    document.getElementById('scoreValue').textContent = String(score);
+    document.getElementById('streakValue').textContent = String(streak);
+    const gap = computeGap();
+    const stars = gap > 2.0 ? '★☆☆☆☆' : gap > 1.5 ? '★★☆☆☆' : gap > 1.0 ? '★★★☆☆' : gap > 0.5 ? '★★★★☆' : '★★★★★';
+    document.getElementById('gapInfo').textContent = `难度 ${stars} ｜ 连胜越多越难判断`;
+    if (diffTimer < 12000) document.getElementById('statusInfo').textContent = '新手缓冲：目标更安全，移动更慢。';
+    else if (diffTimer < 28000) document.getElementById('statusInfo').textContent = '中段加速：开始混入更多接近边界的目标。';
+    else document.getElementById('statusInfo').textContent = '高压阶段：弱酸与强酸混杂，规划路径！';
+  }
+
+  // ─────────────────────────────────────────────
+  // 关卡选择 UI
+  // ─────────────────────────────────────────────
+  function renderLevelGrid() {
+    const grid = document.getElementById('levelGrid');
+    const scores = getBestScores();
+    grid.innerHTML = '';
+    LEVELS.forEach((lvl, i) => {
+      const unlocked = isUnlocked(i);
+      const best = scores[i];
+      const poolSize = ACID_POOL.filter(lvl.filter).length;
+      const card = document.createElement('div');
+      card.className = 'level-card ' + (unlocked ? 'unlocked' : 'locked');
+      card.innerHTML = `
+        <div class="level-num">${lvl.id}</div>
+        ${!unlocked ? '<div class="lock-icon">🔒</div>' : ''}
+        <div class="level-name">${lvl.name}</div>
+        <div class="level-desc">${lvl.desc}</div>
+        <span class="level-pool-tag">${poolSize}种分子</span>
+        ${best > 0 ? `<div class="level-best">最高分: ${best}</div>` : ''}
+        ${!unlocked ? `<div class="level-req">需要关卡 ${i} 达到50分解锁</div>` : ''}
+        ${unlocked ? `<button class="level-start-btn">进入关卡</button>` : ''}
+      `;
+      if (unlocked) {
+        card.querySelector('.level-start-btn').addEventListener('click', () => selectLevel(i + 1));
+      }
+      grid.appendChild(card);
+    });
+  }
+
+  function selectLevel(lvlNum) {
+    currentLevel = lvlNum;
+    const lvl = LEVELS[lvlNum - 1];
+    document.getElementById('startBadge').textContent = `关卡 ${lvlNum}`;
+    document.getElementById('startName').textContent = lvl.name;
+    document.getElementById('startDesc').textContent = lvl.desc;
+    document.getElementById('levelOverlay').style.display = 'none';
+    document.getElementById('startOverlay').style.display = 'flex';
+  }
+
+  // ─────────────────────────────────────────────
+  // 开始游戏
+  // ─────────────────────────────────────────────
+  function startGame(randomStart) {
+    resize();
+    const lvl = LEVELS[currentLevel - 1];
+    currentPool = ACID_POOL.filter(lvl.filter);
+    const starters = currentPool.filter(lvl.startFilter);
+    const defaultMol = currentPool.find(m => m.name === lvl.defaultStart);
+    const startMol = randomStart ? choice(starters.length > 0 ? starters : currentPool)
+      : (defaultMol || starters[0] || currentPool[0]);
+
+    player = {
+      x: width * 0.5, y: height * 0.58,
+      vx: 0, vy: 0, speed: 0.34, maxSpeed: 4.8, friction: 0.9,
+      molecule: startMol, pulse: 0,
+      radius: getBubbleR(startMol, true)
+    };
+
+    objects = []; particles = [];
+    score = 0; streak = 0;
+    spawnTimer = 0; diffTimer = 0;
+    spawnInterval = 2200; targetCount = 4;
+    touchDragging = false;
+    gameState = 'running';
+
+    document.getElementById('startOverlay').style.display = 'none';
+    document.getElementById('gameOverOverlay').style.display = 'none';
+    document.getElementById('pauseBtn').style.display = 'block';
+    deleteSave();
+    updateHUD();
+
+    for (let i = 0; i < targetCount; i++) spawnObject(i < 3 ? 'weak' : 'strong');
+    if (animationId) cancelAnimationFrame(animationId);
+    lastTime = performance.now();
+    animationId = requestAnimationFrame(gameLoop);
+  }
+
+  // ── 分数上报 ──
+  function reportScore(finalScore) {
+    fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ gameId: 'acid', score: finalScore })
+    }).catch(() => {});
+  }
+
+  function endGame(hitObj) {
+    gameState = 'over';
+    document.getElementById('pauseBtn').style.display = 'none';
+    deleteSave();
+    saveBestScore(currentLevel - 1, score);
+    reportScore(score);
+
+    const pm = player.molecule, hm = hitObj.molecule;
+    document.getElementById('failureBox').innerHTML =
+      `你当前是 <strong>${pm.name}</strong>（pKa = ${pm.pKa}）<br>` +
+      `你撞到了 <strong>${hm.name}</strong>（pKa = ${hm.pKa}）<br>` +
+      `${hm.name} 的 pKa 更小 → 酸性更强 → 你<strong>不能吃它</strong>！`;
+
+    const tip = getTeachingTip(pm, hm);
+    document.getElementById('tipBox').innerHTML =
+      `<div class="tip-label">💡 知识点</div>${tip}`;
+
+    document.getElementById('statsBox').innerHTML =
+      `本局得分：<strong>${score}</strong> ｜ 最高连吃：<strong>${streak}</strong> ｜ 关卡：<strong>${LEVELS[currentLevel-1].name}</strong>`;
+
+    document.getElementById('gameOverOverlay').style.display = 'flex';
+    burst(player.x, player.y, '#ff5c7a', 34, 1.3);
+  }
+
+  function handleEat(i) {
+    const obj = objects[i];
+    score += 10 + Math.round(obj.molecule.pKa * 1.2);
+    streak += 1;
+    burst(obj.x, obj.y, obj.molecule.color, 22, 1.05);
+    player.molecule = obj.molecule;
+    player.radius = getBubbleR(player.molecule, true);
+    objects.splice(i, 1);
+    updateHUD();
+    if (objects.length < targetCount) {
+      const weakP = diffTimer < 10000 ? 0.80 : 0.68 + Math.min(0.10, streak * 0.006);
+      const r = Math.random();
+      if (r < weakP) spawnObject('weak');
+      else if (r < 0.92) spawnObject('strong');
+      else spawnObject('any');
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // 游戏主循环
+  // ─────────────────────────────────────────────
+  function update(dt) {
+    if (gameState !== 'running' || !player || gameState === 'paused') return;
+    diffTimer += dt; spawnTimer += dt; player.pulse += dt * 0.003;
+
+    // Auto-save every 5 seconds
+    if (Math.floor(diffTimer / 5000) > Math.floor((diffTimer - dt) / 5000)) {
+      saveGame();
+    }
+
+    const ax = (keys['ArrowRight']||keys['d'] ? 1:0) - (keys['ArrowLeft']||keys['a'] ? 1:0);
+    const ay = (keys['ArrowDown']||keys['s'] ? 1:0) - (keys['ArrowUp']||keys['w'] ? 1:0);
+    if (!touchDragging) { player.vx += ax * player.speed; player.vy += ay * player.speed; }
+    player.vx *= player.friction; player.vy *= player.friction;
+    player.vx = clamp(player.vx, -player.maxSpeed, player.maxSpeed);
+    player.vy = clamp(player.vy, -player.maxSpeed, player.maxSpeed);
+    player.x = clamp(player.x + player.vx, player.radius, width - player.radius);
+    player.y = clamp(player.y + player.vy, player.radius, height - player.radius);
+
+    const desired = Math.min(10, targetCount + Math.floor(diffTimer / 16000));
+    if (spawnTimer > spawnInterval && objects.length < desired) {
+      spawnTimer = 0;
+      const weakP = diffTimer < 10000 ? 0.80 : 0.68 + Math.min(0.10, streak * 0.006);
+      const r = Math.random();
+      if (r < weakP) spawnObject('weak');
+      else if (r < 0.92) spawnObject('strong');
+      else spawnObject('any');
+    }
+    spawnInterval = Math.max(1080, 2200 - diffTimer * 0.012);
+
+    for (let i = objects.length - 1; i >= 0; i--) {
+      const obj = objects[i];
+      obj.wobble += dt * 0.0026; obj.pulse += dt * 0.0032;
+      const closeness = Math.abs(obj.molecule.pKa - player.molecule.pKa);
+      const chase = diffTimer < 12000
+        ? 0.000035 + Math.max(0, (4.5 - closeness) * 0.000004)
+        : 0.000060 + Math.max(0, (6 - closeness) * 0.000006);
+      obj.vx += (player.x - obj.x) * chase; obj.vy += (player.y - obj.y) * chase;
+      const s = Math.hypot(obj.vx, obj.vy);
+      const maxS = diffTimer < 12000 ? 0.95 + diffTimer * 0.000018 : 1.12 + diffTimer * 0.000022;
+      if (s > maxS) { obj.vx = (obj.vx/s)*maxS; obj.vy = (obj.vy/s)*maxS; }
+      obj.x += obj.vx; obj.y += obj.vy;
+      if (obj.x < -120 || obj.x > width+120 || obj.y < -120 || obj.y > height+120) {
+        objects.splice(i, 1); spawnObject(Math.random() < 0.55 ? 'weak' : 'strong'); continue;
+      }
+      if (dist(player, obj) < player.radius + obj.radius - 12) {
+        if (obj.molecule.pKa > player.molecule.pKa) { handleEat(i); }
+        else { endGame(obj); return; }
+      }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.vx *= 0.975; p.vy *= 0.975; p.life -= 1;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    updateHUD();
+  }
+
+  // ─────────────────────────────────────────────
+  // 渲染
+  // ─────────────────────────────────────────────
+  function drawTechFrame(x, y, r, alpha) {
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.strokeStyle = 'rgba(255,255,255,0.20)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(x, y, r+10, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, r+18, -0.8, 0.35); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, r+18, 2.1, 3.2); ctx.stroke();
+    ctx.restore();
+  }
+
+  function fitText(text, maxW, fontSize) {
+    ctx.save();
+    let sz = fontSize;
+    while (sz > 11) {
+      ctx.font = `800 ${sz}px Inter,sans-serif`;
+      if (ctx.measureText(text).width <= maxW) break;
+      sz -= 1;
+    }
+    ctx.restore();
+    return sz;
+  }
+
+  function drawBubble(x, y, r, color, mol, isPlayer, pulse) {
+    const pb = isPlayer ? Math.sin(pulse)*2.2 : Math.sin(pulse)*1.2;
+    const or = r + pb;
+
+    const halo = ctx.createRadialGradient(x, y, or*0.35, x, y, or*1.55);
+    halo.addColorStop(0, color+'55'); halo.addColorStop(0.45, color+'18'); halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.fillStyle = halo; ctx.arc(x, y, or*1.55, 0, Math.PI*2); ctx.fill();
+
+    drawTechFrame(x, y, or, isPlayer ? 0.9 : 0.45);
+
+    const grad = ctx.createRadialGradient(x-or*0.28, y-or*0.34, or*0.18, x, y, or);
+    grad.addColorStop(0, 'rgba(255,255,255,0.98)');
+    grad.addColorStop(0.14, color+'f0');
+    grad.addColorStop(0.75, color+'c8');
+    grad.addColorStop(1, 'rgba(6,16,34,0.95)');
+    ctx.beginPath(); ctx.fillStyle = grad; ctx.arc(x, y, or, 0, Math.PI*2); ctx.fill();
+
+    ctx.beginPath(); ctx.lineWidth = isPlayer ? 4 : 2.6;
+    ctx.strokeStyle = isPlayer ? 'rgba(255,255,255,0.96)' : 'rgba(255,255,255,0.65)';
+    ctx.arc(x, y, or-2, 0, Math.PI*2); ctx.stroke();
+
+    ctx.beginPath(); ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(86,224,255,0.45)';
+    ctx.arc(x, y, or-10, 0.4, 2.7); ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.84)';
+    ctx.beginPath(); ctx.ellipse(x-or*0.22, y-or*0.26, or*0.18, or*0.10, -0.5, 0, Math.PI*2); ctx.fill();
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+    // Line 1: 中文名（大）
+    const nameSz = fitText(mol.name, or*1.48, Math.max(16, or*0.30));
+    ctx.fillStyle = '#ffffff'; ctx.shadowColor = color; ctx.shadowBlur = 18;
+    ctx.font = `800 ${nameSz}px Inter,"PingFang SC","Microsoft YaHei",sans-serif`;
+    ctx.fillText(mol.name, x, y - or*0.22);
+
+    // Line 2: 结构简式（中）
+    ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(230,248,255,0.92)';
+    const fmlSz = fitText(mol.formula, or*1.48, Math.max(10, or*0.16));
+    ctx.font = `600 ${fmlSz}px Inter,monospace,sans-serif`;
+    ctx.fillText(mol.formula, x, y + or*0.10);
+
+    // Line 3: 类别（小）
+    ctx.fillStyle = 'rgba(180,230,255,0.78)';
+    const famSz = Math.max(9, or*0.12);
+    ctx.font = `500 ${famSz}px Inter,sans-serif`;
+    ctx.fillText(mol.family, x, y + or*0.35);
+  }
+
+  function drawBackground() {
+    ctx.clearRect(0, 0, width, height);
+    const g = ctx.createLinearGradient(0, 0, 0, height);
+    g.addColorStop(0, '#07111f'); g.addColorStop(0.52, '#0a1835'); g.addColorStop(1, '#08111d');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, width, height);
+
+    for (const s of stars) {
+      const sy = (s.y + diffTimer * s.drift * 0.02) % Math.max(height, 1);
+      ctx.globalAlpha = s.a; ctx.beginPath(); ctx.fillStyle = '#dcf6ff';
+      ctx.arc(s.x, sy, s.r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = 'rgba(80,150,255,0.06)'; ctx.lineWidth = 1;
+    for (let x = 0; x < width; x += 72) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,height); ctx.stroke(); }
+    for (let y = 0; y < height; y += 72) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke(); }
+
+    const sx = (diffTimer * 0.08) % (width+240) - 120;
+    const sw = ctx.createLinearGradient(sx-120, 0, sx+120, 0);
+    sw.addColorStop(0, 'rgba(0,0,0,0)'); sw.addColorStop(0.5, 'rgba(86,224,255,0.08)'); sw.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sw; ctx.fillRect(0, 0, width, height);
+  }
+
+  function draw() {
+    drawBackground();
+    for (const obj of objects) {
+      drawBubble(obj.x, obj.y + Math.sin(obj.wobble)*4, obj.radius, obj.molecule.color, obj.molecule, false, obj.pulse);
+    }
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life/56);
+      ctx.beginPath(); ctx.fillStyle = p.color; ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if (player) drawBubble(player.x, player.y, player.radius, player.molecule.color, player.molecule, true, player.pulse);
+  }
+
+  function gameLoop(now) {
+    if (gameState !== 'paused') {
+      const dt = now - lastTime; lastTime = now;
+      update(dt);
+    } else {
+      lastTime = now;
+    }
+    draw();
+    animationId = requestAnimationFrame(gameLoop);
+  }
+
+  function pauseGame() {
+    if (gameState === 'running') {
+      gameState = 'paused';
+      document.getElementById('pauseOverlay').style.display = 'flex';
+    }
+  }
+
+  function resumeGame() {
+    if (gameState === 'paused') {
+      gameState = 'running';
+      document.getElementById('pauseOverlay').style.display = 'none';
+      lastTime = performance.now();
+    }
+  }
+
+  function saveGame() {
+    if (!player) return;
+    savedGameState = {
+      currentLevel,
+      score,
+      streak,
+      spawnTimer,
+      diffTimer,
+      spawnInterval,
+      targetCount,
+      player: JSON.parse(JSON.stringify(player)),
+      objects: JSON.parse(JSON.stringify(objects)),
+      currentPool: currentPool
+    };
+    localStorage.setItem('hgame_save_acid_arena', JSON.stringify(savedGameState));
+  }
+
+  function loadGame() {
+    const saved = localStorage.getItem('hgame_save_acid_arena');
+    if (!saved) return false;
+    try {
+      savedGameState = JSON.parse(saved);
+      currentLevel = savedGameState.currentLevel;
+      score = savedGameState.score;
+      streak = savedGameState.streak;
+      spawnTimer = savedGameState.spawnTimer;
+      diffTimer = savedGameState.diffTimer;
+      spawnInterval = savedGameState.spawnInterval;
+      targetCount = savedGameState.targetCount;
+      player = savedGameState.player;
+      objects = savedGameState.objects;
+      currentPool = savedGameState.currentPool;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function hasSavedGame() {
+    return localStorage.getItem('hgame_save_acid_arena') !== null;
+  }
+
+  function deleteSave() {
+    localStorage.removeItem('hgame_save_acid_arena');
+    savedGameState = null;
+  }
+
+  // ─────────────────────────────────────────────
+  // 事件监听
+  // ─────────────────────────────────────────────
+  window.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+    if (e.key === 'Escape' && gameState === 'running') {
+      pauseGame();
+    } else if (e.key === 'Escape' && gameState === 'paused') {
+      resumeGame();
+    }
+  });
+  window.addEventListener('keyup', e => { keys[e.key] = false; });
+  window.addEventListener('resize', () => { resize(); draw(); });
+
+  canvas.addEventListener('pointerdown', e => {
+    if (gameState !== 'running' || !player) return;
+    touchDragging = true;
+    player.x = clamp(e.clientX, player.radius, width - player.radius);
+    player.y = clamp(e.clientY, player.radius, height - player.radius);
+    player.vx = 0; player.vy = 0;
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (gameState !== 'running' || !touchDragging || !player) return;
+    player.x = clamp(e.clientX, player.radius, width - player.radius);
+    player.y = clamp(e.clientY, player.radius, height - player.radius);
+  });
+  canvas.addEventListener('pointerup', () => { touchDragging = false; });
+  canvas.addEventListener('pointercancel', () => { touchDragging = false; });
+
+  document.getElementById('unlockAllBtn').addEventListener('click', () => { unlockAll(); renderLevelGrid(); });
+  document.getElementById('startBtn').addEventListener('click', () => startGame(false));
+  document.getElementById('startRandBtn').addEventListener('click', () => startGame(true));
+  document.getElementById('backLevelBtn').addEventListener('click', () => {
+    document.getElementById('startOverlay').style.display = 'none';
+    document.getElementById('levelOverlay').style.display = 'flex';
+    renderLevelGrid();
+  });
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    document.getElementById('gameOverOverlay').style.display = 'none';
+    startGame(false);
+  });
+  document.getElementById('backLevel2Btn').addEventListener('click', () => {
+    document.getElementById('gameOverOverlay').style.display = 'none';
+    document.getElementById('levelOverlay').style.display = 'flex';
+    renderLevelGrid();
+  });
+
+  document.getElementById('pauseBtn').addEventListener('click', pauseGame);
+  document.getElementById('resumeBtn').addEventListener('click', resumeGame);
+  document.getElementById('pauseRestartBtn').addEventListener('click', () => {
+    resumeGame();
+    startGame(false);
+  });
+  document.getElementById('pauseBackBtn').addEventListener('click', () => {
+    document.getElementById('pauseOverlay').style.display = 'none';
+    document.getElementById('levelOverlay').style.display = 'flex';
+    gameState = 'levelSelect';
+    document.getElementById('pauseBtn').style.display = 'none';
+    renderLevelGrid();
+  });
+
+  // ─────────────────────────────────────────────
+  // 初始化
+  // ─────────────────────────────────────────────
+  resize();
+  renderLevelGrid();
+  // 绘制背景（无玩家状态）
+  draw();
+  </script>
+  <script src="/help-config.js"></script>
+  <script src="/help-overlay.js"></script><button id="hgame-help-btn" title="怎么玩">❓</button><div id="hgame-help-overlay" class=""><div id="hgame-help-card">
+  <h2>🧪 pKa酸性吞噬</h2>
+  <p class="goal">🎯 控制你的分子，吞掉所有比你酸性弱的分子（pKa更大的），躲避比你酸性强的</p>
+  <div class="section-title">🕹️ 操作</div>
+<table><tbody><tr><td>鼠标拖动 / 手指滑动</td><td>控制分子移动</td></tr></tbody></table>
+  <div class="section-title">💡 提示</div>
+<ul class="tips"><li>pKa越大 = 酸性越弱 = 你能吃掉它</li><li>pKa越小 = 酸性越强 = 赶紧跑！</li><li>吞掉分子后你会变大，pKa阈值也会变化</li><li>7个关卡从羧酸到碳氢键，难度递增</li></ul>
+  <div id="hgame-help-footer">
+    <label><input type="checkbox" id="hgame-no-show">下次不再显示</label>
+    <button id="hgame-start-btn">开始！</button>
+  </div>
+</div></div>
+  <script src="/leaderboard-widget.js"></script><button id="hgame-lb-btn">🏆 排行榜</button><div id="hgame-lb-overlay">
+    <div id="hgame-lb-card">
+      <h2>🏆 排行榜</h2>
+      <p class="lb-subtitle">酸性吞噬</p>
+      <div id="hgame-lb-body"><div class="lb-loading">加载中...</div></div>
+      <button id="hgame-lb-close">关闭</button>
+    </div>
+  </div>
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;667223696c724ce7bff4685ee91058d9&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;null}}" crossorigin="anonymous"></script>
+
+
+</body></html>

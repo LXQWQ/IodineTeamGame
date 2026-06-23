@@ -1,0 +1,152 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>环己烷大作战 | H-Game</title>
+    <style>
+      /* Prevent pull-to-refresh on mobile */
+      html, body { overscroll-behavior: none; }
+      /* Hide scrollbar in card area */
+      ::-webkit-scrollbar { display: none; }
+    </style>
+    <script type="module" crossorigin="" src="./assets/index-D0ngABUz.js"></script>
+    <link rel="stylesheet" crossorigin="" href="./assets/index-Dr16mle2.css">
+  <style>#hgame-help-btn{position:fixed;top:12px;right:12px;z-index:99999;width:40px;height:40px;border-radius:50%;background:#fff;color:#1a1a2e;border:none;font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+#hgame-help-btn:hover{transform:scale(1.1);box-shadow:0 4px 16px rgba(0,0,0,.45)}
+#hgame-help-overlay{position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;z-index:100000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .25s;pointer-events:none;box-sizing:border-box}
+#hgame-help-overlay.show{opacity:1;pointer-events:auto}
+#hgame-help-card{background:#0f172a;color:#e2e8f0;border-radius:16px;max-width:420px;width:92vw;max-height:80vh;max-height:80dvh;overflow-y:auto;padding:28px 24px 20px;box-shadow:0 8px 32px rgba(0,0,0,.5);transform:translateY(20px);transition:transform .25s;box-sizing:border-box;margin:auto}
+#hgame-help-overlay.show #hgame-help-card{transform:translateY(0)}
+#hgame-help-card h2{margin:0 0 6px;font-size:1.5em;text-align:center}
+#hgame-help-card .goal{text-align:center;color:#94a3b8;margin:0 0 18px;font-size:.95em;line-height:1.5}
+#hgame-help-card .section-title{font-size:.85em;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+#hgame-help-card table{width:100%;border-collapse:collapse;margin-bottom:4px}
+#hgame-help-card table td{padding:8px 10px;font-size:.9em;line-height:1.4}
+#hgame-help-card table tr:nth-child(odd){background:rgba(255,255,255,.04)}
+#hgame-help-card table tr:nth-child(even){background:rgba(255,255,255,.08)}
+#hgame-help-card table td:first-child{font-weight:600;color:#60a5fa;white-space:nowrap;width:40%}
+#hgame-help-card .tips{list-style:none;padding:0;margin:0 0 8px}
+#hgame-help-card .tips li{position:relative;padding:5px 0 5px 18px;font-size:.9em;line-height:1.5;color:#cbd5e1}
+#hgame-help-card .tips li::before{content:"";position:absolute;left:0;top:12px;width:8px;height:8px;border-radius:50%;background:#22c55e}
+#hgame-help-footer{display:flex;align-items:center;justify-content:space-between;margin-top:18px;gap:10px;flex-wrap:wrap}
+#hgame-help-footer label{font-size:.8em;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none}
+#hgame-help-footer label input{accent-color:#22c55e;width:15px;height:15px}
+#hgame-start-btn{background:#22c55e;color:#fff;border:none;border-radius:10px;padding:10px 32px;font-size:1.05em;font-weight:700;cursor:pointer;transition:background .2s;flex-shrink:0}
+#hgame-start-btn:hover{background:#16a34a}
+#hgame-help-card::-webkit-scrollbar{width:5px}
+#hgame-help-card::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+@media(max-width:480px){#hgame-help-card{padding:20px 16px 16px}#hgame-help-card h2{font-size:1.3em}#hgame-help-footer{flex-direction:column;align-items:stretch;text-align:center}#hgame-start-btn{width:100%}}</style><style>
+    #hgame-lb-btn {
+      position: fixed; bottom: 80px; right: 16px; z-index: 99998;
+      background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+      color: #1a1a2e; border: none; border-radius: 14px;
+      padding: 10px 16px; font-size: 14px; font-weight: 800;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(255,215,0,0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #hgame-lb-btn:hover { transform: scale(1.06); box-shadow: 0 6px 24px rgba(255,215,0,0.5); }
+    #hgame-lb-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      width: 100vw; height: 100vh; z-index: 100001;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.25s; pointer-events: none;
+      box-sizing: border-box;
+    }
+    #hgame-lb-overlay.show { opacity: 1; pointer-events: auto; }
+    #hgame-lb-card {
+      background: linear-gradient(160deg, #0c1829 0%, #0f1f3a 55%, #0a1425 100%);
+      color: #e2e8f0; border-radius: 22px;
+      max-width: 440px; width: 92vw; max-height: 82vh; max-height: 82dvh;
+      overflow-y: auto; padding: 24px 20px 18px;
+      box-shadow: 0 0 40px rgba(86,224,255,0.12), 0 20px 60px rgba(0,0,0,0.5);
+      border: 1px solid rgba(86,224,255,0.2);
+      transform: translateY(20px) scale(0.96);
+      transition: transform 0.25s; box-sizing: border-box; margin: auto;
+    }
+    #hgame-lb-overlay.show #hgame-lb-card { transform: translateY(0) scale(1); }
+    #hgame-lb-card h2 {
+      margin: 0 0 4px; font-size: 1.4em; text-align: center;
+      background: linear-gradient(90deg, #ffd700, #ff8c00);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    #hgame-lb-card .lb-subtitle {
+      text-align: center; color: #7fb6d5; font-size: 0.85em; margin: 0 0 16px;
+    }
+    #hgame-lb-card .lb-empty {
+      text-align: center; color: #64748b; padding: 32px 0; font-size: 0.95em;
+    }
+    #hgame-lb-card .lb-loading {
+      text-align: center; color: #7fb6d5; padding: 32px 0; font-size: 0.95em;
+    }
+    .lb-table { width: 100%; border-collapse: collapse; }
+    .lb-table th {
+      font-size: 0.72em; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #5a8faa; padding: 8px 6px; text-align: left;
+      border-bottom: 1px solid rgba(86,224,255,0.15);
+    }
+    .lb-table td {
+      padding: 10px 6px; font-size: 0.9em; border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: middle;
+    }
+    .lb-table tr:hover td { background: rgba(86,224,255,0.04); }
+    .lb-rank { font-weight: 800; width: 42px; text-align: center; font-size: 1.1em; }
+    .lb-rank-1 { color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.4); }
+    .lb-rank-2 { color: #c0c0c0; text-shadow: 0 0 8px rgba(192,192,192,0.3); }
+    .lb-rank-3 { color: #cd7f32; text-shadow: 0 0 8px rgba(205,127,50,0.3); }
+    .lb-rank-other { color: #5a8faa; }
+    .lb-name { font-weight: 600; color: #e2e8f0; }
+    .lb-name.lb-me { color: #56e0ff; }
+    .lb-score { font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+    .lb-time { color: #5a8faa; font-size: 0.82em; }
+    .lb-my-rank {
+      margin-top: 12px; padding: 10px 14px;
+      background: rgba(86,224,255,0.06); border: 1px solid rgba(86,224,255,0.15);
+      border-radius: 12px; font-size: 0.88em; color: #7fb6d5; text-align: center;
+    }
+    .lb-my-rank strong { color: #56e0ff; }
+    #hgame-lb-close {
+      display: block; margin: 16px auto 0; padding: 10px 32px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px; color: #d4f0ff; font-size: 0.95em; font-weight: 700;
+      cursor: pointer; transition: background 0.2s;
+      font-family: inherit;
+    }
+    #hgame-lb-close:hover { background: rgba(255,255,255,0.14); }
+    #hgame-lb-card::-webkit-scrollbar { width: 5px; }
+    #hgame-lb-card::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    @media (max-width: 480px) {
+      #hgame-lb-btn { bottom: 76px; right: 12px; padding: 8px 12px; font-size: 13px; }
+      #hgame-lb-card { padding: 18px 14px 14px; }
+      #hgame-lb-card h2 { font-size: 1.2em; }
+      .lb-table td { padding: 8px 4px; font-size: 0.82em; }
+      .lb-time { display: none; }
+    }
+  </style></head>
+  <body>
+    <div id="root"><div class="min-h-screen bg-slate-900 flex items-center justify-center p-4 md:p-6 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black"><a href="/" title="返回主菜单" style="position: fixed; top: 12px; left: 12px; z-index: 9999; width: 40px; height: 40px; border-radius: 50%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; color: rgb(255, 255, 255); text-decoration: none; font-size: 20px; box-shadow: rgba(0, 0, 0, 0.3) 0px 2px 8px;">←</a><div class="max-w-4xl w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-12 shadow-2xl text-center" style="opacity: 1; transform: none;"><div class="mb-6 md:mb-8 inline-block" style="transform: none;"><div class="w-16 h-16 md:w-24 md:h-24 bg-indigo-600 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-lg shadow-indigo-500/50 rotate-12"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles w-8 h-8 md:w-12 md:h-12 text-white" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle></svg></div></div><h1 class="text-3xl md:text-6xl font-black text-white mb-2 md:mb-4 tracking-tighter">环己烷 <span class="text-indigo-500">大作战</span></h1><p class="text-slate-400 text-sm md:text-xl mb-8 md:mb-12 max-w-2xl mx-auto">在六元环上展开的立体化学博弈。占据碳原子，控制构象，赢得最终胜利。</p><div class="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6 max-w-3xl mx-auto"><button class="group relative bg-gradient-to-br from-violet-600 to-indigo-700 hover:from-violet-500 hover:to-indigo-600 p-6 md:p-8 rounded-2xl md:rounded-3xl transition-all duration-300 text-left overflow-hidden ring-2 ring-violet-400/50"><div class="relative z-10"><div class="flex items-center gap-2 md:gap-3 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot w-5 h-5 md:w-6 md:h-6 text-violet-200" aria-hidden="true"><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg><h3 class="text-lg md:text-2xl font-bold text-white">🤖 人机对战</h3></div><p class="text-violet-100/70 text-xs md:text-sm">与AI对手较量，三种难度可选</p></div><div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot w-24 h-24 md:w-32 md:h-32 text-white" aria-hidden="true"><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg></div></button><button class="group relative bg-indigo-600 hover:bg-indigo-500 p-6 md:p-8 rounded-2xl md:rounded-3xl transition-all duration-300 text-left overflow-hidden"><div class="relative z-10"><div class="flex items-center gap-2 md:gap-3 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users w-5 h-5 md:w-6 md:h-6 text-indigo-200" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg><h3 class="text-lg md:text-2xl font-bold text-white">👥 Magic</h3></div><p class="text-indigo-100/70 text-xs md:text-sm">双人对战 - Magic模式</p></div><div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles w-24 h-24 md:w-32 md:h-32 text-white" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle></svg></div></button><button class="group relative bg-emerald-600 hover:bg-emerald-500 p-6 md:p-8 rounded-2xl md:rounded-3xl transition-all duration-300 text-left overflow-hidden border border-white/5"><div class="relative z-10"><div class="flex items-center gap-2 md:gap-3 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers w-5 h-5 md:w-6 md:h-6 text-emerald-200" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg><h3 class="text-lg md:text-2xl font-bold text-white">👥 Chemical</h3></div><p class="text-emerald-100/70 text-xs md:text-sm">双人对战 - Chemical模式</p></div><div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers w-24 h-24 md:w-32 md:h-32 text-white" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg></div></button></div></div></div></div>
+  <script src="../help-config.js"></script>
+<script src="../help-overlay.js"></script><button id="hgame-help-btn" title="怎么玩">❓</button><div id="hgame-help-overlay" class=""><div id="hgame-help-card">
+  <h2>♟️ 环己烷大作战</h2>
+  <p class="goal">🎯 占领环己烷全部6个碳原子即获胜。支持AI人机对战和双人PvP。</p>
+  <div class="section-title">🕹️ 操作</div>
+<table><tbody><tr><td>选卡牌</td><td>点击底部手牌选中一张试剂卡</td></tr><tr><td>点碳原子</td><td>点击棋盘上高亮的碳原子使用卡牌</td></tr><tr><td>翻转按钮</td><td>选中Ring Flip卡后点击执行构象翻转</td></tr><tr><td>双指缩放/旋转</td><td>手指操作3D棋盘视角</td></tr></tbody></table>
+  <div class="section-title">💡 提示</div>
+<ul class="tips"><li>先用Br₂占领相邻碳，形成连片领地</li><li>轴向键(ax)和赤道键(eq)在翻转后互换——这是关键策略！</li><li>NaOH做SN2会翻转构型，PBr₃也会</li><li>AI有三个难度：简单(随机)、中等(贪心)、困难(深度搜索)</li></ul>
+  <div id="hgame-help-footer">
+    <label><input type="checkbox" id="hgame-no-show">下次不再显示</label>
+    <button id="hgame-start-btn">开始！</button>
+  </div>
+</div></div>
+<script src="/leaderboard-widget.js"></script><button id="hgame-lb-btn">🏆 排行榜</button><div id="hgame-lb-overlay">
+    <div id="hgame-lb-card">
+      <h2>🏆 排行榜</h2>
+      <p class="lb-subtitle">环己烷大作战</p>
+      <div id="hgame-lb-body"><div class="lb-loading">加载中...</div></div>
+      <button id="hgame-lb-close">关闭</button>
+    </div>
+  </div>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f9e41972db0e031',t:'MTc3ODQ3MTgxMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><iframe height="1" width="1" style="position: absolute; top: 0px; left: 0px; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; visibility: hidden;"></iframe><script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;667223696c724ce7bff4685ee91058d9&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
+</body></html>

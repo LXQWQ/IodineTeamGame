@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>碘化留言板 · 全服反馈</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>💬 碘化留言板 · 全服反馈</h1>
+        <div class="header-controls">
+            <!-- 音乐播放器 -->
+            <div class="music-player">
+                <button class="music-toggle-btn" id="musicToggleBtn" title="音乐播放控制">
+                    <span class="music-icon">🎵</span>
+                    <span class="music-status" id="musicStatus">暂停</span>
+                </button>
+                <div class="music-dropdown" id="musicDropdown">
+                    <div class="music-header">
+                        <span>🎵 背景音乐</span>
+                        <button class="music-close-btn" id="musicCloseBtn">✕</button>
+                    </div>
+                    <div class="music-controls">
+                        <button class="music-control-btn" id="musicPlayPauseBtn">▶️ 播放</button>
+                        <button class="music-control-btn" id="musicStopBtn">⏹️ 停止</button>
+                        <button class="music-control-btn" id="musicNextBtn">⏭️ 下一首</button>
+                    </div>
+                    <div class="music-volume-control">
+                        <span>🔊 音量</span>
+                        <input type="range" id="musicVolume" min="0" max="100" value="50" class="volume-slider">
+                        <span id="volumeValue">50%</span>
+                    </div>
+                    <div class="music-playlist" id="musicPlaylist">
+                        <!-- 音乐列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+            <a href="../../index.html" class="back-btn">← 返回工坊</a>
+        </div>
+    </header>
+    <div id="userInfoArea" class="user-info">加载中...</div>
+    <div class="msg-list" id="msgList">加载留言中...</div>
+    <div class="input-area" id="inputArea"></div>
+    <footer>所有留言基于真实账号，可回复他人留言～</footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

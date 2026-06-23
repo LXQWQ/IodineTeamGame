@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>丹道化学 · 九鼎神丹（云存档）</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div><h1>🔮 丹道化学 · 九鼎神丹</h1><div class="sub">⚗️ 采掘粗矿 · 鼎炼万物 · 云存档</div></div>
+        <div class="header-controls">
+            <!-- 音乐播放器 -->
+            <div class="music-player">
+                <button class="music-toggle-btn" id="musicToggleBtn" title="音乐播放控制">
+                    <span class="music-icon">🎵</span>
+                    <span class="music-status" id="musicStatus">暂停</span>
+                </button>
+                <div class="music-dropdown" id="musicDropdown">
+                    <div class="music-header">
+                        <span>🎵 背景音乐</span>
+                        <button class="music-close-btn" id="musicCloseBtn">✕</button>
+                    </div>
+                    <div class="music-controls">
+                        <button class="music-control-btn" id="musicPlayPauseBtn">▶️ 播放</button>
+                        <button class="music-control-btn" id="musicStopBtn">⏹️ 停止</button>
+                        <button class="music-control-btn" id="musicNextBtn">⏭️ 下一首</button>
+                    </div>
+                    <div class="music-volume-control">
+                        <span>🔊 音量</span>
+                        <input type="range" id="musicVolume" min="0" max="100" value="50" class="volume-slider">
+                        <span id="volumeValue">50%</span>
+                    </div>
+                    <div class="music-playlist" id="musicPlaylist">
+                        <!-- 音乐列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+            <div class="user-info" id="userInfoArea"><span>🧪 加载中...</span><div class="health-bar"><div class="health-fill" id="healthFill"></div></div><span id="hpText">100</span><span id="maxHpText">/100</span></div><button class="theme-btn" id="darkModeToggle">🌙 丹房幽暗</button></div>
+        </div>
+    </header>
+    <div class="buff-bar" id="buffBar"></div>
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="mine">⛏️ 寻龙点穴</button>
+        <button class="tab-btn" data-tab="bag">🎒 乾坤袋</button>
+        <button class="tab-btn" data-tab="pharmacy">🏥 药王谷</button>
+        <button class="tab-btn" data-tab="lab">🔬 现代实验室</button>
+        <button class="tab-btn" data-tab="ding">🔥 九鼎神丹</button>
+        <button class="tab-btn" data-tab="arch">🏛️ 考古发掘</button>
+    </div>
+    <!-- 挖矿标签页 -->
+    <div id="tab-mine" class="tab-content active">
+        <div class="panel"><h3>⛏️ 寻龙点穴 · 采掘粗矿</h3><div class="panel-content"><div class="mining-layout"><div class="mining-left"><div class="terrain-grid" id="terrainGrid"></div><div id="miningProgressContainer" class="mining-progress-container"><div class="mining-progress-text" id="miningProgressText">采掘中: 0%</div><div class="mining-progress-bar"><div class="mining-progress-fill" id="miningProgressFill"></div></div><div class="mining-progress-hint" id="miningProgressHint">正在挖掘...</div></div><button class="mine-btn" id="mineBtn" disabled>⛏️ 选择地形开始挖矿</button><div class="feedback" id="mineFeedback"></div></div><div class="mining-right"><div style="font-weight:bold; margin-bottom:0.5rem;">🎯 目标原矿</div><select id="targetMineralSelect" class="target-select"><option value="">-- 不指定目标 --</option></select><button id="autoMineBtn" class="mine-btn" disabled>⚙️ 开始自动挖矿</button><button id="stopAutoMineBtn" class="mine-btn stop-mine-btn" style="display:none;">⏹️ 停止自动挖矿</button><div class="feedback" id="autoFeedback"></div><div style="font-size:0.7rem;">💡 自动挖矿直到生命<20或挖到目标</div></div></div></div></div>
+    </div>
+    <!-- 乾坤袋 -->
+    <div id="tab-bag" class="tab-content">
+        <div class="panel"><h3>🎒 乾坤袋 · 万物有灵</h3><div class="panel-content"><div class="feedback" id="bagFeedback" style="font-size:1rem; font-weight:bold; margin-bottom:1rem;"></div><div class="inventory-grid" id="inventoryList"></div></div></div>
+    </div>
+    <!-- 药王谷 -->
+    <div id="tab-pharmacy" class="tab-content">
+        <div class="panel"><h3>🏥 药王谷 · 炼制丹药</h3><div class="panel-content"><div class="pharmacy-row"><div class="herb-list"><div style="font-weight:bold;">🌿 已拥有的药草</div><div id="herbInventory"></div></div><div class="drug-list"><div style="font-weight:bold;">💊 药物配方</div><div id="drugRecipes"></div></div></div>        <div class="wise-old-man"><h4>🧙‍♂️ 智慧老人 · 元素谜题</h4><p>"五道化学谜题（难度递增），答对一题赠一件宝物。每十分钟可挑战一次。"</p><button class="challenge-btn" id="challengeBtn">🧪 开始挑战</button><div class="cooldown-text" id="cooldownText"></div><div class="quiz-area" id="quizArea"><div class="quiz-question" id="quizQuestion"></div><div class="quiz-options" id="quizOptions"></div><div class="quiz-progress" id="quizProgress"></div></div></div><div class="fragment-trade" id="fragmentTrade"><h4>📜 丹方碎片兑换</h4><p style="font-size:.8rem;margin-bottom:.6rem;">收集９片相同的丹方碎片可兑换完整丹方，也可用金银购买碎片。</p><div id="fragmentTradeList"></div></div><div class="feedback" id="pharmacyFeedback"></div></div></div>
+    </div>
+    <!-- 现代化学实验室 -->
+    <div id="tab-lab" class="tab-content">
+        <div class="panel"><h3>🔬 现代化学实验室 · 矿物提纯</h3><div class="panel-content">
+            <div class="lab-layout">
+                <!-- 左侧：粗制矿物选择区 -->
+                <div class="lab-materials">
+                    <h4>🪨 粗制矿物库存</h4>
+                    <div class="crude-ores-grid" id="crudeOresGrid">
+                        <!-- 粗制矿物列表动态生成 -->
+                    </div>
+                    <div class="lab-feedback" id="labFeedback">选择粗制矿物进行现代化学提纯</div>
+                </div>
+
+                <!-- 中间：提纯方法操作区 -->
+                <div class="lab-workspace">
+                    <h4>⚗️ 提纯操作台</h4>
+                    <div class="purification-methods" id="purificationMethods">
+                        <!-- 提纯方法选择 -->
+                    </div>
+                    <div class="lab-equipment" id="labEquipment">
+                        <!-- 实验设备显示 -->
+                    </div>
+                    <div class="lab-steps" id="labSteps" style="display:none;">
+                        <!-- 提纯步骤动态生成 -->
+                    </div>
+                    <div class="lab-controls" id="labControls">
+                        <!-- 操作控制按钮 -->
+                    </div>
+                </div>
+
+                <!-- 右侧：提纯产物展示区 -->
+                <div class="lab-products">
+                    <h4>✨ 提纯产物收藏</h4>
+                    <div class="purified-products-grid" id="purifiedProductsGrid">
+                        <!-- 提纯产物列表 -->
+                    </div>
+                    <div class="lab-stats" id="labStats">
+                        <div>提纯成功率: <span id="purificationSuccessRate">0%</span></div>
+                        <div>总提纯次数: <span id="totalPurifications">0</span></div>
+                        <div>精品产出: <span id="qualityProducts">0</span></div>
+                    </div>
+                </div>
+            </div>
+        </div></div>
+    </div>
+    <!-- 九鼎神丹（新三栏布局，鼎居中放大） -->
+    <div id="tab-ding" class="tab-content">
+        <div class="panel"><h3>🔥 九鼎神丹 · 丹炉炼宝</h3><div class="panel-content"><div class="ding-layout">
+            <!-- 左侧丹方秘录（缩小） -->
+            <div class="recipe-book"><div style="font-weight:bold; margin-bottom:0.6rem;">📜 丹方秘录</div><div class="recipe-list" id="recipeList"></div></div>
+            <!-- 中间配方详情面板（缩小） -->
+            <div class="recipe-detail-panel" id="recipeDetailPanel">
+                <div class="detail-title">📖 配方详情</div>
+                <div id="recipeDetailContent">点击左侧丹方查看详情</div>
+            </div>
+            <!-- 右侧炼丹炉（放大鼎） -->
+            <div class="ding-cauldron">
+                <div class="ding-circle"><span class="ding-character">鼎</span></div>
+                <div class="ding-durability-bar" id="dingDurabilityBar" style="width:100%;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;margin-bottom:0.3rem;">
+                        <span>⚒️ 丹鼎耐久</span>
+                        <span id="dingDurText">0/10</span>
+                    </div>
+                    <div style="width:100%;height:8px;background:var(--progress-bg);border-radius:4px;overflow:hidden;">
+                        <div id="dingDurFill" style="width:100%;height:100%;background:var(--accent);border-radius:4px;transition:width .3s;"></div>
+                    </div>
+                    <div id="dingDurBroken" style="display:none;color:var(--danger);font-size:0.75rem;font-weight:bold;margin-top:0.2rem;">💔 已损坏，请修复</div>
+                    <div id="dingDurRepair" style="margin-top:0.5rem;"></div>
+                </div>
+                <div class="recipe-preview" id="recipePreview" style="display:none;width:100%;"></div>
+                <div class="material-slot"><h4>📦 当前投入材料</h4><div class="slot-items" id="slotItems"></div><button id="clearSlotBtn" class="refine-btn" style="background:var(--danger); padding:0.2rem 0.6rem;">清空材料槽</button></div>
+                <div class="add-material-panel"><div style="font-weight:bold;">➕ 从乾坤袋添加材料</div><div class="inventory-items" id="inventoryForAdding"></div></div>
+                <div class="refine-controls"><button id="refineBtn" class="refine-btn" disabled>🔥 点火开炉</button><button id="stopRefineBtn" class="refine-btn" style="display:none;">⏹️ 停火开鼎</button><button id="cancelRefineBtn" class="refine-btn" style="display:none;">❌ 中断倾倒</button></div>
+                <div class="timer-container" id="refineTimer"><div class="timer-text" id="timerText">炼制中: 0秒</div><div class="timer-progress"><div class="timer-fill" id="timerProgress"></div></div><div class="timer-hint" id="timerHint">等待最佳时机...</div></div>
+                <div class="feedback" id="refineFeedback"></div>
+                <div class="score-display" id="scoreDisplay">🏆 九鼎积分: 0</div>
+            </div>
+        </div></div></div>
+    </div>
+    <!-- 考古发掘 -->
+    <div id="tab-arch" class="tab-content">
+        <div class="panel"><h3>🏛️ 考古发掘 · 丹方碎片</h3><div class="panel-content">
+            <p style="margin-bottom:1rem;font-size:0.9rem;color:var(--text-light);">选择遗址进行考古发掘，有几率获得丹方碎片。集齐九片同一丹方碎片，可到智慧老人处兑换完整丹方。</p>
+            <div class="arch-sites" id="archSites"></div>
+            <div id="archProgressContainer" class="arch-progress-container" style="display:none;">
+                <div class="arch-progress-text" id="archProgressText">发掘中: 0%</div>
+                <div class="arch-progress-bar"><div class="arch-progress-fill" id="archProgressFill"></div></div>
+                <div class="arch-progress-hint" id="archProgressHint">正在发掘...</div>
+            </div>
+            <button class="arch-btn" id="archBtn" disabled>🏛️ 选择遗址开始发掘</button>
+            <div class="feedback" id="archFeedback"></div>
+            <div class="arch-fragments" style="margin-top:1rem;">
+                <h4>📦 已收集的丹方碎片</h4>
+                <div class="fragment-grid" id="fragmentInventory"></div>
+            </div>
+        </div></div>
+    </div>
+    <footer>⚠️ 粗矿剧毒，请用鼎提纯；神丹可永久提升气血上限；药物可快速恢复。云存档自动同步。手动从背包添加材料至材料槽，配比正确后可点火。</footer>
+</div>
+<button id="rankToggleBtn" class="rank-float-btn" type="button">🏆 九鼎排行</button>
+<div id="rankFloatPanel" class="rank-float-panel">
+    <div class="rank-float-header">🏆 九鼎天榜 · 全服积分排行</div>
+    <div class="rank-float-body">
+        <ul class="rank-list" id="rankList"></ul>
+    </div>
+</div>
+<div id="deathModal" class="death-modal">
+    <div class="death-content">
+        <div class="death-icon">💀</div>
+        <h2>轮回重生</h2>
+        <p class="death-desc">你因毒发而亡，丹道修为尽散……</p>
+        <div class="death-detail">
+            <p>以下内容将<b>全部归零</b>：</p>
+            <ul>
+                <li>🎒 背包物品</li>
+                <li>🏆 九鼎积分</li>
+                <li>📖 丹方解锁</li>
+                <li>❤️ 气血上限</li>
+                <li>⚒️ 丹鼎耐久</li>
+                <li>✨ Buff增益</li>
+            </ul>
+            <p style="margin-top:0.8rem;">💡 提示：服用<span style="color:var(--accent);">龙涎护心丹</span>可在死亡时自动复活一次。</p>
+        </div>
+        <button id="deathRebirthBtn" class="death-rebirth-btn">⚰️ 进入轮回</button>
+    </div>
+</div>
+<div id="rewardModal" class="reward-modal"><div class="reward-content"><h3>🎁 智慧老人的馈赠</h3><p>答对 <span id="correctCount">0</span> 题，可选 <span id="rewardCount">0</span> 件宝物</p><div class="reward-items" id="rewardItemsList"></div><div class="reward-remain" id="rewardRemain">还可选择 0 件</div><button id="closeRewardBtn" style="margin-top:1rem; background:var(--accent); color:white; border:none; padding:0.5rem 1rem; border-radius:2rem;">关闭</button></div></div>
+<button id="achToggleBtn" class="ach-float-btn" type="button">🏆 成就</button>
+<div id="achFloatPanel" class="ach-float-panel">
+    <div class="ach-float-header">🏆 丹道成就 <span style="font-size:.8rem;font-weight:normal;" id="achProgress">0/0</span></div>
+    <div class="ach-float-body" id="achList"><div style="padding:.5rem;text-align:center;color:var(--text-light);">加载中...</div></div>
+</div>
+<div class="feedback" id="achFeedback" style="position:fixed;bottom:9rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--card);padding:.5rem 1rem;border-radius:1rem;border:2px solid var(--accent);display:none;"></div>
+<button id="catalogToggleBtn" class="catalog-float-btn" type="button">📖 丹道图鉴</button>
+<div id="catalogFloatPanel" class="catalog-float-panel">
+    <div class="catalog-float-header">📖 丹道图鉴 <span style="font-size:.75rem;font-weight:normal;color:var(--text-light);" id="catalogCount">全 0 件</span></div>
+    <div class="catalog-float-body" id="catalogBody"><div style="padding:.5rem;text-align:center;color:var(--text-light);">加载中...</div></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>化学海龟汤 · 月见八千代</title>
+    <style>
+      /* === 月读空间 · 月见八千代 主题 === */
+      :root {
+        --color-emerald-400: #e04090;
+        --color-emerald-500: #ff6bb5;
+        --color-emerald-900: #1e2235;
+        --color-red-400: #ff6b6b;
+        --color-red-500: #ff4444;
+        --color-zinc-100: #e8e4ef;
+        --color-zinc-300: #b8b4cc;
+        --color-zinc-400: #9a96b5;
+        --color-zinc-500: #7a7695;
+        --color-zinc-600: #5a5675;
+        --color-zinc-700: #3b3850;
+        --color-zinc-800: #262b3d;
+        --color-zinc-900: #1e2235;
+        --color-zinc-950: #151322;
+      }
+      html, body {
+        height: 100%; overflow: hidden;
+        background: #1e2235 !important;
+        font-family: system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;
+      }
+      /* 覆盖硬编码暗色背景 */
+      .bg-\[\#0a0a0c\] { background-color: #1e2235 !important; }
+      /* 主页背景渐变 */
+      body::before {
+        content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background:
+          radial-gradient(ellipse 80% 60% at 30% 20%, rgba(224, 64, 144, 0.06) 0%, transparent 60%),
+          radial-gradient(ellipse 60% 50% at 70% 70%, rgba(0, 184, 212, 0.04) 0%, transparent 50%),
+          linear-gradient(180deg, #0d0a1a 0%, #1e2235 40%, #1a1d2e 100%);
+      }
+      #root { height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; position: relative; z-index: 1; }
+      /* 滚动条 */
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #1e2235; }
+      ::-webkit-scrollbar-thumb { background: #3b3850; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #e04090; }
+      /* 链接/按钮悬停 */
+      a:hover, button:hover { transition: all 0.3s ease; }
+      /* 选中文字 */
+      ::selection { background: rgba(224, 64, 144, 0.3); color: #e8e4ef; }
+    </style>
+    <script type="module" crossorigin src="./assets/index-B79EhL8X.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DeP_rnF9.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

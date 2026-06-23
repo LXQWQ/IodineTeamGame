@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电子钟</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <div class="title">&#x23F0; 电子钟</div>
+  <div class="clock-grid">
+
+    <!-- 北京时间 -->
+    <div class="card">
+      <div class="card-label">&#x1F30F; 北京时间</div>
+      <div class="card-time" id="beijingTime">--</div>
+      <div class="card-sub" id="beijingDate"></div>
+    </div>
+
+    <!-- 正计时 -->
+    <div class="card">
+      <div class="card-label">&#x25B6; 正计时</div>
+      <div class="card-time" id="countUp">00:00:00</div>
+      <div class="settings">
+        <label>开始时间 <input type="datetime-local" id="startTime"></label>
+        <button class="btn" id="btnStartUp">开始</button>
+        <button class="btn" id="btnResetUp">重置</button>
+      </div>
+      <div class="status" id="countUpStatus">点击"开始"从当前时间正计时</div>
+    </div>
+
+    <!-- 倒计时 -->
+    <div class="card">
+      <div class="card-label">&#x23F3; 倒计时</div>
+      <div class="card-time" id="countDown">00:00:00</div>
+      <div class="tabs">
+        <button class="tab active" data-mode="target" id="tabTarget">目标时间</button>
+        <button class="tab" data-mode="duration" id="tabDuration">持续时间</button>
+      </div>
+      <div class="settings">
+        <label id="targetLabel">目标时间 <input type="datetime-local" id="targetTime"></label>
+        <div class="duration-inputs hidden" id="durationInputs">
+          <input type="number" id="durHours" min="0" max="999" value="0">
+          <span>时</span>
+          <input type="number" id="durMinutes" min="0" max="59" value="0">
+          <span>分</span>
+          <input type="number" id="durSeconds" min="0" max="59" value="0">
+          <span>秒</span>
+        </div>
+        <button class="btn" id="btnStartDown">开始</button>
+        <button class="btn" id="btnStopDown">暂停</button>
+        <button class="btn danger" id="btnResetDown">重置</button>
+      </div>
+      <div class="status" id="countDownStatus">设置目标时间或持续时间后点击"开始"</div>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

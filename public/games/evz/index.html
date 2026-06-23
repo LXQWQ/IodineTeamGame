@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>元素大战僵尸Pro · 物质炼金纪元</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="topbar"><h1>⚛️ 元素大战僵尸Pro · 物质炼金</h1><div class="stats"><div class="stat"><span class="ic">⚡</span>电子<span class="vl" id="vEsp">200</span></div><div class="stat"><span class="ic">🏆</span>积分<span class="vl" id="vSc">0</span></div><div class="stat"><span class="ic">🌊</span>波次<span class="vl" id="vWv">0</span></div><div class="stat" id="cdStat"><span class="ic">⏳</span>入侵倒计时<span class="vl" id="vCd">30</span>s</div><div class="stat"><span class="ic">🧪</span>物质<span class="vl" id="vSub">0</span></div><div class="stat" id="bsStat" style="display:none"><span class="ic">👑</span>Boss<span class="vl" id="vBs">0</span></div></div></div>
+<div class="main">
+<div class="sidebar"><div class="side-head">⚛️ 周期表元素库</div><div class="side-body" id="sideC"></div></div>
+<div class="game-area"><div class="canvas-wrap"><canvas id="gc"></canvas></div><div class="msg-bar" id="msg">⚛️ 选择元素→放置战场 ｜ 僵尸死亡产物取决于击杀方式 ｜ 实验室提取新元素！</div><div class="ctrl-row"><div class="btns"><button class="btn btn-ac" id="btnRe">🔄 重开</button><button class="btn btn-gn" id="btnRk">📊 排行</button><button class="btn btn-ac" id="btnGd">📖 图鉴</button></div><div class="btns"><button class="btn btn-dg" id="btnB1" style="display:none">🏭 哈伯-博斯</button><button class="btn btn-dg" id="btnB2" style="display:none">⚡ 自由基</button><button class="btn btn-dg" id="btnB3" style="display:none">☠️ 重金属</button></div></div><div class="ft">🧪 死亡产物即真实化学反应结果 | Na杀水僵尸→NaOH | 酸碱中和→盐+水</div></div>
+<div class="rpanel"><div class="rp-head">🧪 物质库存</div><div class="rp-body"><div id="invList" style="font-size:0.65rem;color:var(--dim);text-align:center;padding:12px">击杀僵尸收集物质...</div></div><div style="padding:8px"><button class="lab-btn" id="btnLab">🔬 炼金实验室</button></div></div>
+</div>
+<div class="modal" id="labMod"><div class="modal-box" style="max-width:650px"><h3>🔬 炼金实验室</h3><div id="labC"></div><button class="modal-close" id="closeLab">关闭实验室</button></div></div>
+<div class="modal" id="rankMod"><div class="modal-box"><h3>🏆 全服排行榜</h3><div id="rankC"></div><button class="modal-close" id="closeRk">关闭</button></div></div>
+<div class="modal" id="guideMod"><div class="modal-box" style="max-width:650px"><h3>📖 图鉴</h3><div id="guideC"></div><button class="modal-close" id="closeGd">关闭</button></div></div>
+
+<script src="app.js"></script>
+</body>
+</html>

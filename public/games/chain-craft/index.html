@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>碳链工坊 · 3D分子工坊 | 有机合成策略</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🧪</text></svg>">
+        <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🧪 碳链工坊 · 3D分子工坊 | 有机合成策略</h1>
+        <div class="header-controls">
+            <!-- 音乐播放器 -->
+            <div class="music-player">
+                <button class="music-toggle-btn" id="musicToggleBtn" title="音乐播放控制">
+                    <span class="music-icon">🎵</span>
+                    <span class="music-status" id="musicStatus">暂停</span>
+                </button>
+                <div class="music-dropdown" id="musicDropdown">
+                    <div class="music-header">
+                        <span>🎵 背景音乐</span>
+                        <button class="music-close-btn" id="musicCloseBtn">✕</button>
+                    </div>
+                    <div class="music-controls">
+                        <button class="music-control-btn" id="musicPlayPauseBtn">▶️ 播放</button>
+                        <button class="music-control-btn" id="musicStopBtn">⏹️ 停止</button>
+                        <button class="music-control-btn" id="musicNextBtn">⏭️ 下一首</button>
+                    </div>
+                    <div class="music-volume-control">
+                        <span>🔊 音量</span>
+                        <input type="range" id="musicVolume" min="0" max="100" value="50" class="volume-slider">
+                        <span id="volumeValue">50%</span>
+                    </div>
+                    <div class="music-playlist" id="musicPlaylist">
+                        <!-- 音乐列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+            <button class="theme-btn" id="darkModeToggle">🌙 深色模式</button>
+        </div>
+    </header>
+    <div class="game-layout">
+        <div class="molecule-card">
+            <h3>🧬 当前分子 (3D)</h3>
+            <div id="modelContainer" class="model-container"></div>
+            <div class="carbon-count">📊 碳数: <span id="carbonCount">2</span> C</div>
+            <div id="moleculeDetail">--</div>
+        </div>
+        <div class="reactant-panel">
+            <h3>⚗️ 可用反应</h3>
+            <div class="level-bar" id="levelSelect"></div>
+            <div class="reaction-grid" id="reactionGrid"></div>
+            <div id="feedbackMsg" class="feedback">选择反应合成目标分子</div>
+        </div>
+        <div class="resources-panel">
+            <h3>🎯 合成任务</h3>
+            <div id="levelInfo" style="font-weight:bold;margin-bottom:0.4rem;">第1关</div>
+            <div id="targetInfo" style="margin-bottom:0.6rem;">目标: --</div>
+            <div id="scoreDisplay" style="font-size:1.1rem;font-weight:bold;color:var(--accent);margin-bottom:0.4rem;">--</div>
+            <hr style="border:0;border-top:1px solid var(--border);margin:0.5rem 0;">
+            <h4 style="margin-bottom:0.4rem;">📜 合成路径</h4>
+            <div id="historyList" class="history-list" style="max-height:180px;overflow-y:auto;font-size:0.75rem;margin-bottom:0.6rem;"></div>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <button id="hintBtn" class="game-btn hint-btn">💡 提示(3)</button>
+                <button id="undoBtn" class="game-btn undo-btn">↩ 撤销</button>
+                <button id="resetBtn" class="game-btn reset-btn">🔄 重试</button>
+                <button id="randomBtn" class="game-btn random-btn">🎲 随机</button>
+                <button id="nextLevelBtn" class="game-btn next-btn" style="display:none;">▶ 下一关</button>
+            </div>
+        </div>
+    </div>
+    <footer>⚛️ 反应路径规划 · 有机合成解谜 | BFS最短路径验证 | 3D球棍模型实时更新</footer>
+</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

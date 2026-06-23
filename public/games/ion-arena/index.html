@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>离子竞技场 · Ion Arena</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#060a14;overflow:hidden;font-family:system-ui,sans-serif;user-select:none}
+canvas{display:block;cursor:none}
+#ui{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10;padding:10px}
+#topBar{display:flex;justify-content:space-between;align-items:flex-start}
+#stats{background:rgba(0,0,0,0.7);border-radius:10px;padding:8px 14px;color:#e2e8f0;font-size:12px;line-height:1.6}
+#stats .val{color:#facc15;font-weight:bold}
+#zone{background:rgba(0,0,0,0.7);border-radius:10px;padding:6px 12px;color:#94a3b8;font-size:11px}
+#inventory{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10;pointer-events:auto}
+.inv-slot{width:50px;height:50px;background:rgba(0,0,0,0.7);border:2px solid #334155;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#64748b;transition:all .2s;overflow:hidden;text-overflow:ellipsis;pointer-events:auto}
+.inv-slot.equipped{border-color:#facc15;color:#facc15}
+.inv-slot:hover{border-color:#94a3b8}
+#tooltip{position:fixed;pointer-events:none;background:rgba(0,0,0,0.9);color:#e2e8f0;border-radius:8px;padding:8px 12px;font-size:11px;display:none;z-index:20;max-width:180px}
+#deathScreen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;justify-content:center;align-items:center;flex-direction:column}
+#deathScreen .title{font-size:2rem;color:#ef4444;margin-bottom:1rem}
+#deathScreen .info{color:#94a3b8;margin-bottom:1.5rem}
+#deathScreen button{padding:.6rem 1.5rem;border-radius:20px;border:none;background:#facc15;color:#0a0e17;font-weight:bold;cursor:pointer;font-size:0.9rem}
+/* 小地图 */
+#minimap{position:fixed;bottom:70px;right:10px;width:140px;height:110px;background:rgba(0,0,0,0.8);border:2px solid #334155;border-radius:8px;z-index:10;overflow:hidden}
+#minimap canvas{width:100%;height:100%}
+/* 技能面板 */
+#skillPanel{display:none;pointer-events:auto;pointer-events:auto;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);border:2px solid #facc15;border-radius:12px;padding:16px;z-index:50;color:#e2e8f0;min-width:340px}
+#skillPanel h3{color:#facc15;margin-bottom:8px;font-size:14px}
+#skillPanel .skill-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e293b;font-size:12px}
+#skillPanel .skill-row button{padding:3px 10px;border-radius:10px;border:1px solid #facc15;background:transparent;color:#facc15;cursor:pointer;font-size:11px}
+#skillPanel .skill-row button:disabled{opacity:0.3;cursor:not-allowed}
+#skillPanel .skill-row button:hover:not(:disabled){background:#facc15;color:#0a0e17}
+#skillPanel .close-btn{display:block;margin-top:10px;width:100%;padding:6px;border-radius:8px;border:1px solid #64748b;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px}
+/* 合成面板 */
+#craftPanel{display:none;pointer-events:auto;pointer-events:auto;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);border:2px solid #a855f7;border-radius:12px;padding:16px;z-index:50;color:#e2e8f0;min-width:300px}
+#craftPanel h3{color:#a855f7;margin-bottom:8px;font-size:14px}
+#craftSlots{display:flex;gap:8px;justify-content:center;margin:10px 0}
+.craft-slot{width:50px;height:50px;background:rgba(255,255,255,0.05);border:2px dashed #334155;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer}
+.craft-slot.filled{border-color:#a855f7}
+.craft-arrow{display:flex;align-items:center;color:#94a3b8;font-size:18px}
+#craftResult{width:50px;height:50px;background:rgba(168,85,247,0.1);border:2px solid #a855f7;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+#craftBtn{display:block;margin:8px auto 0;padding:6px 16px;border-radius:12px;border:none;background:#a855f7;color:#fff;cursor:pointer;font-weight:bold}
+#craftBtn:disabled{opacity:0.3;cursor:not-allowed}
+.craft-close{display:block;margin-top:6px;width:100%;padding:4px;border-radius:8px;border:1px solid #64748b;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px}
+/* 背包面板 */
+#backpackPanel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);border:2px solid #3b82f6;border-radius:12px;padding:16px;z-index:50;color:#e2e8f0;min-width:360px;pointer-events:auto}
+#backpackPanel h3{color:#3b82f6;margin-bottom:8px;font-size:14px}
+#bpSlots{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;max-height:200px;overflow-y:auto}
+.bp-slot{width:48px;height:48px;background:rgba(255,255,255,0.05);border:2px solid #334155;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:grab;transition:all .15s;position:relative}
+.bp-slot:hover{border-color:#3b82f6}
+.bp-slot{cursor:pointer}
+.bp-slot .del-btn{position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:#ef4444;border:none;border-radius:50%;color:#fff;font-size:10px;cursor:pointer;display:none;align-items:center;justify-content:center}
+.bp-slot:hover .del-btn{display:flex}
+.bp-close{display:block;margin-top:8px;width:100%;padding:4px;border-radius:8px;border:1px solid #64748b;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px}
+/* 提示文字 */
+.hint-text{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-size:10px;z-index:5;pointer-events:none}
+/* 教程按钮 */
+#tutorialBtn{position:fixed;top:10px;right:10px;width:32px;height:32px;background:rgba(0,0,0,0.7);border:2px solid #facc15;border-radius:50%;color:#facc15;font-size:16px;font-weight:bold;cursor:pointer;z-index:30;display:flex;align-items:center;justify-content:center;transition:all .2s}
+#tutorialBtn:hover{background:#facc15;color:#0a0e17}
+/* 教程面板 */
+#tutorialOverlay{display:none;pointer-events:auto;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:60;justify-content:center;align-items:center}
+#tutorialOverlay.show{display:flex}
+.tutorial-box{background:#111827;border:2px solid #facc15;border-radius:16px;padding:20px;max-width:500px;width:92%;max-height:85vh;overflow-y:auto;color:#e2e8f0;font-size:12px;line-height:1.7}
+.tutorial-box h2{color:#facc15;font-size:18px;margin-bottom:12px;text-align:center}
+.tutorial-box h3{color:#facc15;font-size:13px;margin:12px 0 4px;border-bottom:1px solid #1e293b;padding-bottom:2px}
+.tutorial-box kbd{background:#1e293b;color:#facc15;padding:1px 5px;border-radius:3px;font-size:11px;border:1px solid #334155}
+.tutorial-box .tip{color:#94a3b8;font-size:11px}
+	/* 区域选择 */
+	#zoneSelect{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:200;display:flex;justify-content:center;align-items:center;flex-direction:column}
+	#zoneSelect h1{color:#facc15;font-size:1.5rem;margin-bottom:1.5rem}
+	.zone-grid{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:500px}
+	.zone-btn{width:130px;padding:18px 12px;border-radius:14px;border:2px solid #334155;background:rgba(255,255,255,0.05);color:#e2e8f0;cursor:pointer;text-align:center;transition:all .2s;font-size:13px}
+	.zone-btn:hover{border-color:#facc15;background:rgba(250,204,21,0.1);transform:translateY(-2px)}
+	.zone-btn .zicon{font-size:2rem;display:block;margin-bottom:6px}
+	.zone-btn .zname{font-weight:bold}
+	.zone-btn .zdiff{font-size:10px;color:#94a3b8;margin-top:4px}
+.tutorial-close{display:block;margin:14px auto 0;padding:6px 20px;border-radius:12px;border:none;background:#facc15;color:#0a0e17;font-weight:bold;cursor:pointer;font-size:13px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+	<div id="zoneSelect">
+	    <h1>🧪 选择区域 · 波次挑战</h1>
+	    <div class="zone-grid">
+	        <div class="zone-btn" onclick="startZone(0)" style="border-color:#5599cc">
+	            <span class="zicon">💧</span><span class="zname">水溶液</span>
+	            <span class="zdiff">入门 · H2O NaCl CaCO3</span>
+	        </div>
+	        <div class="zone-btn" onclick="startZone(1)" style="border-color:#cc6666">
+	            <span class="zicon">🧪</span><span class="zname">酸性区</span>
+	            <span class="zdiff">普通 · HCl H2SO4 HNO3</span>
+	        </div>
+	        <div class="zone-btn" onclick="startZone(3)" style="border-color:#8888cc">
+	            <span class="zicon">⚗️</span><span class="zname">碱性区</span>
+	            <span class="zdiff">普通 · NaOH KOH NH3</span>
+	        </div>
+	        <div class="zone-btn" onclick="startZone(2)" style="border-color:#66aa66">
+	            <span class="zicon">🌿</span><span class="zname">有机区</span>
+	            <span class="zdiff">困难 · CH4 C6H6 C2H5OH</span>
+	        </div>
+	        <div class="zone-btn" onclick="startZone(4)" style="border-color:#ff8844">
+	            <span class="zicon">⚡</span><span class="zname">等离子区</span>
+	            <span class="zdiff">极难 · O2+ N2+ Ar+</span>
+	        </div>
+	    </div>
+	</div>
+<div id="ui">
+    <div id="topBar">
+        <div id="stats">
+            🌊波次 <span class="val" id="waveNum">1</span> |
+            Lv.<span class="val" id="lv">1</span> |
+            ⚡<span class="val" id="xp">0</span>/<span id="xpMax">50</span> |
+            ❤️<span class="val" id="hp">100</span> |
+            物质:<span class="val" id="slots">3</span>
+        </div>
+        <div id="zone">水溶液</div>
+        <div id="waveInfo" style="background:rgba(0,0,0,0.7);border-radius:10px;padding:4px 10px;color:#facc15;font-size:10px;text-align:center">⚔ 剩余:<span id="mobRemain">0</span></div>
+<button onclick="backToSelect()" style="background:rgba(255,255,255,0.1);border:1px solid #64748b;color:#94a3b8;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:10px;margin-left:6px">← 换区</button>
+    </div>
+</div>
+<div id="inventory" onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()"></div>
+<div id="tooltip"></div>
+<div id="deathScreen"><div class="title">💀 电离解体</div><div class="info" id="deathInfo"></div><button id="respawnBtn">⚛️ 在水溶液中重新凝聚</button></div>
+
+<div id="minimap"><canvas id="mmCanvas" width="140" height="110"></canvas></div>
+
+<div id="skillPanel">
+    <h3>⚛️ 量子能级 · 技能点: <span id="skillPts">0</span></h3>
+    <div id="skillList"></div>
+    <button class="close-btn" onclick="toggleSkillPanel()">关闭 [T]</button>
+</div>
+
+<div id="craftPanel">
+    <h3>🔮 电子跃迁合成 (3→1)</h3>
+    <div id="craftSlots">
+        <div class="craft-slot" id="craftS0" onclick="addToCraft(0)">?</div>
+        <div class="craft-slot" id="craftS1" onclick="addToCraft(1)">?</div>
+        <div class="craft-slot" id="craftS2" onclick="addToCraft(2)">?</div>
+        <span class="craft-arrow">→</span>
+        <div id="craftResult">?</div>
+    </div>
+    <button id="craftBtn" disabled onclick="doCraft()">合成</button>
+    <button class="craft-close" onclick="toggleCraftPanel()">关闭 [C]</button>
+</div>
+
+<div id="backpackPanel">
+    <h3>🎒 电子背包 · <small id="bpCount">0个电子</small></h3>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+        <button onclick="autoEquipBest()" style="flex:1;padding:4px;border-radius:8px;border:1px solid #facc15;background:transparent;color:#facc15;cursor:pointer;font-size:11px;font-weight:bold">⚡ 自动装备最佳</button>
+        <button onclick="sortBackpack()" style="padding:4px 8px;border-radius:8px;border:1px solid #64748b;background:transparent;color:#94a3b8;cursor:pointer;font-size:11px">↕排序</button>
+    </div>
+    <div id="bpSlots"></div>
+    <button class="bp-close" onclick="toggleBackpack()">关闭 [B]</button>
+</div>
+
+<div class="hint-text">T-技能 C-合成 B-背包 左键-激发 右键-基态</div>
+
+<button id="tutorialBtn" onclick="toggleTutorial()">?</button>
+
+<div id="tutorialOverlay">
+<div class="tutorial-box">
+<h2>⚛️ 离子竞技场 · 新手教程</h2>
+
+<h3>🎮 操作方式</h3>
+<p><kbd>W A S D</kbd> / <kbd>↑↓←→</kbd> 移动你的不明生物<br>
+<kbd>鼠标</kbd> 控制移动方向<br>
+<kbd>左键按住</kbd> 激发态 — 化学物质轨道扩大，攻击范围变大<br>
+<kbd>右键按住</kbd> 基态 — 电子轨道缩小，防御更紧密</p>
+
+<h3>⚡ 电子轨道</h3>
+<p>电子绕原子核旋转，碰到怪物造成伤害。每个物质以不同速度旋转，时而均匀散开、时而聚拢。<br>
+化学物质有4大类型：<span style="color:#ff4444">攻击型</span> HCl/H2SO4/NaOH/H2O2/KMnO4/Na<br><span style="color:#4488ff">防御型</span> 活性炭/SiO2/CaCO3<br><span style="color:#9944cc">控制型</span> HCN/HF/P4/Hg<br><span style="color:#44cc66">回复型</span> H2O/葡萄糖/维生素C/氨基酸<br>
+9级稀有度：<span style="color:#94a3b8">C</span>→<span style="color:#22c55e">U</span>→<span style="color:#3b82f6">R</span>→<span style="color:#a855f7">E</span>→<span style="color:#f59e0b">L</span>→<span style="color:#06b6d4">M</span>→<span style="color:#ec4899">Ul</span>→<span style="color:#ff4444">S</span>→<span style="color:#ffd700">Uq</span></p>
+
+<h3>🗺️ 五大化学区域</h3>
+<p><span style="color:#60b8e8">水溶液</span> → <span style="color:#ef4444">酸性区</span> → <span style="color:#8888cc">碱性区</span> → <span style="color:#22c55e">有机区</span> → <span style="color:#f0c040">等离子区</span><br>
+越往后怪物越强，掉落越好。在小地图(右下角)可以看位置。</p>
+
+<h3>🎒 背包与合成</h3>
+<p>点击底部物质槽 <b>卸下/装备</b> 电子。槽满时拾取的电子自动进背包。<br>
+按 <kbd>C</kbd> 打开合成面板：3个同类型→高1级稀有度(成功率递减)。</p>
+
+<h3>🌟 升级与技能</h3>
+<p>击杀怪物得XP升级，每级获得<b>1技能点</b>。按 <kbd>T</kbd> 打开技能树：<br>
+电离能(HP) | 迁移率(移速) | 激发能(冷却) | 核电荷(体伤) | 物质亲和(回复) | 能级轨道(槽位)</p>
+
+<h3>💀 死亡</h3>
+<p>HP归零后在水溶液区域<b>复活</b>，保留所有等级/技能/电子/背包。</p>
+
+<h3>💡 小提示</h3>
+<p class="tip">· 高级怪物(彩色边框)体积更大、掉落更好，但也更危险<br>
+· 有机区的C6H6(苯)有概率掉δ电子<br>
+· 等离子区的电子束移速极快，但HP很低<br>
+· f电子击中怪物有概率减速(中毒效果)</p>
+
+<button class="tutorial-close" onclick="toggleTutorial()">知道了，开始探索！</button>
+</div>
+</div>
+
+<script>
+const TAU = Math.PI * 2;
+var mobs=[],drops=[],projs=[],mines=[];
+// ==================== CANVAS SETUP ====================
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ==================== WORLD ====================
+const ZONES = [
+    { id:'aqueous', name:'水溶液', color:'#1a3a5c', mobs:['H2O','NaCl','CaCO3','MgSO4','KCl'], bg:'#0a1a30', diff:'入门' },
+    { id:'acidic', name:'酸性区', color:'#3a1a1a', mobs:['HCl','H2SO4','HNO3','H3PO4','CH3COOH'], bg:'#1a0a0a', diff:'普通' },
+    { id:'organic', name:'有机区', color:'#1a3a1a', mobs:['CH4','C2H4','C6H6','C2H5OH','CH3CHO'], bg:'#0a1a0a', diff:'困难' },
+    { id:'basic', name:'碱性区', color:'#1a1a3a', mobs:['NaOH','KOH','CaOH2','NH3','Na2CO3'], bg:'#0a0a1a', diff:'普通' },
+    { id:'plasma', name:'等离子区', color:'#3a2a1a', mobs:['O2p','N2p','Arp','eBeam','Nep','Xep','Plasma'], bg:'#1a0a0a', diff:'极难' },
+];
+const ARENA_RADIUS = 1500; // 圆形竞技场半径
+let currentZoneId = 0;
+
+function startZone(zoneId) {
+    currentZoneId = zoneId;
+    document.getElementById('zoneSelect').style.display = 'none';
+    document.getElementById('ui').style.display = 'block';
+    document.getElementById('zone').textContent = ZONES[zoneId].name;
+    // Reset player position to arena center
+    player.x = ARENA_RADIUS;
+    player.y = ARENA_RADIUS;
+    // Reset wave
+    mobs.length = 0;
+    drops.length = 0;
+    WAVE.current = 1;
+    initWave();
+}
+
+function backToSelect() {
+    document.getElementById('zoneSelect').style.display = 'flex';
+    document.getElementById('ui').style.display = 'none';
+}
+function currentZone() { return currentZoneId; }
+function getZoneAt(x, y) { return currentZoneId; }
+
+// ==================== PLAYER ====================
+const player = {
+    x: ARENA_RADIUS, y: ARENA_RADIUS,
+    hp: 100, maxHp: 100,
+    level: 1, xp: 0, xpToNext: 50,
+    maxSlots: 5,
+    electrons: [], // equipped electrons [{type,damage,cooldown,maxCooldown,angle,radius,hp,maxHp,rarity}]
+    bodyDamage: 5,
+    speed: 3.5,
+    attackMode: false, defenseMode: false,
+    invincibleTimer: 0,
+};
+
+// 化学花瓣体系: 攻击/防御/控制/回复 4大类型
+// ===== 化学花瓣完整数据 (63种, 8大类) =====
+const CHEMICAL_PETALS = {
+// === 伤害型(16) ===
+HCl:{cat:'damage',d:18,cd:0.8,hp:40,r:50,clr:'#ff6b6b',n:'氯化氢',desc:'酸性腐蚀',fx:'acid'},
+HF:{cat:'damage',d:22,cd:1.0,hp:35,r:48,clr:'#7f50ff',n:'氟化氢',desc:'穿透腐蚀减速',fx:'slow'},
+NaOH:{cat:'damage',d:20,cd:0.9,hp:45,r:48,clr:'#ff8844',n:'烧碱',desc:'碱性灼烧',fx:'burn'},
+KOH:{cat:'damage',d:24,cd:1.0,hp:50,r:50,clr:'#ff6633',n:'苛性钾',desc:'强碱高伤'},
+H2SO4:{cat:'damage',d:28,cd:1.5,hp:55,r:55,clr:'#ff4444',n:'硫酸',desc:'强酸持续灼烧',fx:'acid_burn'},
+HNO3:{cat:'damage',d:26,cd:1.3,hp:48,r:52,clr:'#ff8822',n:'硝酸',desc:'氧化性酸'},
+H3PO4:{cat:'damage',d:16,cd:0.7,hp:52,r:45,clr:'#e69944',n:'磷酸',desc:'三元酸快攻'},
+HClO4:{cat:'damage',d:35,cd:2.0,hp:30,r:58,clr:'#ff1111',n:'高氯酸',desc:'最强酸极高伤'},
+Na:{cat:'damage',d:40,cd:2.5,hp:25,r:45,clr:'#dddd44',n:'钠',desc:'遇水爆炸AOE',fx:'blast',aoe:60},
+K:{cat:'damage',d:45,cd:2.8,hp:20,r:48,clr:'#ffcc33',n:'钾',desc:'剧烈爆炸',fx:'blast',aoe:80},
+Mg:{cat:'damage',d:30,cd:1.8,hp:35,r:50,clr:'#eee',n:'镁',desc:'燃烧白光',fx:'flash'},
+Al:{cat:'damage',d:15,cd:0.6,hp:60,r:42,clr:'#bbc',n:'铝',desc:'轻量极速'},
+Fe:{cat:'damage',d:32,cd:2.0,hp:70,r:55,clr:'#887766',n:'铁',desc:'重装坦克'},
+Zn:{cat:'damage',d:18,cd:1.0,hp:45,r:48,clr:'#bcc',n:'锌',desc:'均衡金属'},
+Cu:{cat:'damage',d:20,cd:1.2,hp:50,r:50,clr:'#cc6644',n:'铜',desc:'导电连锁',fx:'chain'},
+HI:{cat:'damage',d:25,cd:1.2,hp:30,r:52,clr:'#9933cc',n:'碘化氢',desc:'高伤低速'},
+// === 弹射型(6) ===
+CO2:{cat:'projectile',d:15,cd:1.5,hp:20,r:45,clr:'#ccc',n:'二氧化碳',desc:'直线弹',spd:500,life:3},
+SO2:{cat:'projectile',d:10,cd:1.8,hp:25,r:46,clr:'#e8e833',n:'二氧化硫',desc:'分裂4弹',spd:350,sc:4},
+NO2:{cat:'projectile',d:12,cd:2.0,hp:22,r:48,clr:'#cc6633',n:'二氧化氮',desc:'分裂弹+毒雾',spd:350,sc:4,poison:0.02},
+Cl2:{cat:'projectile',d:14,cd:2.2,hp:18,r:44,clr:'#66ff66',n:'氯气',desc:'追踪毒气弹',spd:300,life:4,sub:'homing'},
+NH3g:{cat:'projectile',d:18,cd:1.6,hp:28,r:42,clr:'#aac',n:'氨气',desc:'可反弹弹',spd:450,bnc:3},
+H2O2g:{cat:'projectile',d:20,cd:2.5,hp:15,r:50,clr:'#9ff',n:'过氧化氢气弹',desc:'爆炸弹AOE',spd:350,aoe:50},
+// === 毒素型(5) ===
+HCN:{cat:'poison',d:10,cd:1.0,hp:35,r:50,clr:'#9966cc',n:'氰化氢',desc:'剧毒5s',poison:0.03,pt:5},
+As2O3:{cat:'poison',d:8,cd:1.2,hp:32,r:48,clr:'#dde',n:'砒霜',desc:'叠毒+50%',poison:0.015,ps:1.5},
+P4:{cat:'poison',d:20,cd:1.5,hp:30,r:52,clr:'#ff9944',n:'白磷',desc:'灼烧+缓速',burn:2,slow:0.3},
+Hg:{cat:'poison',d:8,cd:0.8,hp:45,r:55,clr:'#bbccdd',n:'汞',desc:'伤害加深+15%',da:0.15},
+Cd:{cat:'poison',d:6,cd:0.9,hp:40,r:52,clr:'#99aabb',n:'镉',desc:'慢性毒10s',poison:0.01,pt:10},
+// === 回复型(7) ===
+H2O:{cat:'heal',d:5,cd:10.0,hp:50,r:60,clr:'#44ccff',n:'水',desc:'每10s回25HP',heal:25,hi:10},
+Glc:{cat:'heal',d:8,cd:8.0,hp:40,r:55,clr:'#66ee88',n:'葡萄糖',desc:'低血双倍回',heal:15,hi:8,ld:true},
+VitC:{cat:'heal',d:3,cd:5.0,hp:45,r:65,clr:'#ff88aa',n:'维生素C',desc:'清中毒+回',heal:10,hi:5,cp:true},
+Amino:{cat:'heal',d:6,cd:8.0,hp:55,r:58,clr:'#88dd88',n:'氨基酸',desc:'稳定小量回',heal:8,hi:4},
+NaHCO3:{cat:'heal',d:4,cd:6.0,hp:48,r:50,clr:'#fff',n:'小苏打',desc:'防御位回3倍',heal:10,hi:6,db:true},
+O2g:{cat:'heal',d:7,cd:12.0,hp:40,r:58,clr:'#cdf',n:'氧气',desc:'击杀回30HP',heal:30,ok:true},
+Heme:{cat:'heal',d:12,cd:2.0,hp:35,r:48,clr:'#cc3333',n:'血红素',desc:'吸血50%',ls:0.5},
+// === 防御型(5) ===
+C_act:{cat:'defense',d:5,cd:5.0,hp:60,r:40,clr:'#333',n:'活性炭',desc:'吸收一次伤',sh:20,ao:true},
+SiO2:{cat:'defense',d:8,cd:6.0,hp:70,r:38,clr:'#aabbcc',n:'石英',desc:'护盾2s减伤',sh:35,bt:2},
+CaCO3:{cat:'defense',d:6,cd:4.0,hp:55,r:42,clr:'#ccdddd',n:'碳酸钙',desc:'缓伤分摊',st:5},
+Al2O3:{cat:'defense',d:10,cd:3.0,hp:65,r:40,clr:'#eee',n:'氧化铝',desc:'护甲防御位',ar:20,db:true},
+TiO2:{cat:'defense',d:12,cd:4.0,hp:55,r:42,clr:'#fff',n:'钛白',desc:'反射50%伤害',rf:0.5},
+// === 召唤型(4) ===
+Pt_cat:{cat:'summon',d:5,cd:10.0,hp:40,r:45,clr:'#ccd',n:'催化剂',desc:'召唤触媒体',sm:'catalyst',cnt:2,sl:8},
+Enzyme:{cat:'summon',d:8,cd:12.0,hp:35,r:44,clr:'#80ffcc',n:'酶',desc:'召唤酶解体',sm:'enzyme',cnt:1,sl:10},
+Yeast:{cat:'summon',d:3,cd:8.0,hp:45,r:46,clr:'#ffe8b0',n:'酵母菌',desc:'召唤菌落',sm:'yeast',cnt:3,sl:6},
+Radical:{cat:'summon',d:15,cd:14.0,hp:25,r:43,clr:'#ff3311',n:'自由基',desc:'召唤自爆体',sm:'radical',cnt:2,sl:4,ex:true},
+// === 增益型(12) ===
+He:{cat:'utility',d:3,cd:3.0,hp:30,r:55,clr:'#ffe8cc',n:'氦气',desc:'弹射加速',sb:1.8},
+Ne:{cat:'utility',d:4,cd:2.0,hp:35,r:52,clr:'#ff6633',n:'氖气',desc:'旋转+30%',os:1.3},
+Xe:{cat:'utility',d:18,cd:3.0,hp:50,r:50,clr:'#8888ff',n:'氙气',desc:'旋转减半伤x3',os:0.5,dm:3},
+Ar:{cat:'utility',d:3,cd:2.0,hp:40,r:58,clr:'#cc99ff',n:'氩气',desc:'视野+50%',fv:1.5},
+ACF:{cat:'utility',d:2,cd:1.5,hp:35,r:50,clr:'#222',n:'活性炭纤维',desc:'拾取x2',pr:2},
+CaSO4:{cat:'utility',d:10,cd:2.5,hp:80,r:48,clr:'#e8d8c8',n:'石膏',desc:'HP+30%移速-15%',hb:1.3,sp:0.85},
+AirGel:{cat:'utility',d:2,cd:1.5,hp:25,r:45,clr:'#ccf',n:'气凝胶',desc:'体积-30%',sr:0.7},
+Graphene:{cat:'utility',d:6,cd:2.0,hp:45,r:55,clr:'#335',n:'石墨烯',desc:'轨道外扩',oe:1.2},
+Fe3O4:{cat:'utility',d:8,cd:2.5,hp:50,r:48,clr:'#333',n:'磁铁矿',desc:'磁吸x3',pr:3},
+NH4Cl:{cat:'utility',d:3,cd:3.0,hp:32,r:50,clr:'#eee',n:'氯化铵',desc:'减仇恨50%',ar:0.5},
+P4S3:{cat:'utility',d:15,cd:5.0,hp:30,r:46,clr:'#ffe833',n:'三硫化四磷',desc:'加仇恨100%',ab:2},
+NaN3:{cat:'utility',d:5,cd:8.0,hp:28,r:48,clr:'#ff9933',n:'叠氮化钠',desc:'瞬间加速',sb:2.5,ch:true},
+// === 特殊型(8) ===
+D2O:{cat:'special',d:8,cd:2.0,hp:45,r:52,clr:'#6699ff',n:'重水',desc:'花瓣反转',sub:'reverse'},
+TNT:{cat:'special',d:35,cd:6.0,hp:15,r:42,clr:'#cc3311',n:'TNT',desc:'放置地雷',sub:'mine',aoe:70},
+C2N2:{cat:'special',d:8,cd:4.0,hp:30,r:50,clr:'#4ccff',n:'氰',desc:'织网减速60%',sub:'web',slow:0.6,wt:4},
+EtOH:{cat:'special',d:5,cd:5.0,hp:35,r:48,clr:'#ccbb88',n:'乙醇',desc:'吸引怪物',sub:'lure',lr:200},
+AgNO3:{cat:'special',d:12,cd:3.0,hp:30,r:50,clr:'#ccd',n:'硝酸银',desc:'镜像复制',sub:'mimic'},
+U235:{cat:'special',d:5,cd:4.0,hp:60,r:60,clr:'#33ff33',n:'铀-235',desc:'辐射AOE',sub:'rad',rr:120,rd:5},
+C60:{cat:'special',d:6,cd:1.5,hp:50,r:52,clr:'#222',n:'富勒烯',desc:'冷却-20%',cr:0.8},
+Diam:{cat:'special',d:25,cd:4.0,hp:200,r:45,clr:'#bfe',n:'金刚石',desc:'甲+30',ar:30},
+};
+
+const CAT_COLORS = {damage:'#ff4444',projectile:'#ff8844',poison:'#9944cc',heal:'#44cc66',defense:'#4488ff',summon:'#ffcc44',utility:'#44cccc',special:'#ff44ff'};
+
+// florr.io 9级稀有度
+const RARITIES=['common','unusual','rare','epic','legendary','mythic','ultra','super','unique'];
+const RARITY_MULT={common:1,unusual:3,rare:9,epic:27,legendary:81,mythic:243,ultra:729,super:2187,unique:6561};
+const RARITY_COLORS={common:'#94a3b8',unusual:'#22c55e',rare:'#3b82f6',epic:'#a855f7',legendary:'#f59e0b',mythic:'#06b6d4',ultra:'#ec4899',super:'#ff4444',unique:'#ffd700'};
+const MOB_HP_MULT={common:1,unusual:3.75,rare:13.5,epic:54,legendary:405,mythic:2430,ultra:29160,super:1312200,unique:19683000};
+const RARITY_WEIGHT=[1000,300,90,27,8,2.4,0.7,0.2,0.05];
+
+function createPetal(chemId, rarity, angle) {
+    const base = CHEMICAL_PETALS[chemId];
+    if (!base) return null;
+    const rMult = RARITY_MULT[rarity] || 1;
+    return {
+        chemId, rarity, cat: base.cat||'damage',
+        d: base.d ? Math.floor(base.d * rMult) : 0,
+        cooldown: 0,
+        maxCooldown: Math.floor((base.cd||1.0) / rMult * (player.cooldownMult||1)),
+        angle: angle||0, r: base.r||50,
+        hp: Math.floor((base.hp||30) * rMult),
+        maxHp: Math.floor((base.hp||30) * rMult),
+        sh: (base.sh||0) ? Math.floor(base.sh * rMult) : 0,
+        heal: base.heal ? Math.floor(base.heal * rMult) : 0,
+        hi: base.hi||10, ls: base.ls||0, ao: base.ao||false,
+        fx: base.fx||'', aoe: base.aoe||0, sub: base.sub||'',
+        spd: base.spd||0, sc: base.sc||0, life: base.life||0, bnc: base.bnc||0,
+        poison: base.poison||0, pt: base.pt||0, burn: base.burn||0,
+        slow: base.slow||0, da: base.da||0, ps: base.ps||0,
+        sm: base.sm||'', cnt: base.cnt||0, sl: base.sl||0, ex: base.ex||false,
+        sb: base.sb||0, os: base.os||0, dm: base.dm||0, fv: base.fv||0,
+        pr: base.pr||0, hb: base.hb||0, sp: base.sp||0, sr: base.sr||0,
+        oe: base.oe||0, ar: base.ar||0, ab: base.ab||0, ch: base.ch||false,
+        cr: base.cr||0, db: base.db||false, ld: base.ld||false,
+        cp: base.cp||false, ok: base.ok||false, bt: base.bt||0,
+        st: base.st||0, rf: base.rf||0, rr: base.rr||0, rd: base.rd||0,
+        lr: base.lr||0, wt: base.wt||0,
+        healTimer:0, shieldActive:false, shieldTimer:0,
+    };
+}
+
+// Starting 5 petals: 攻+攻+回+毒+防
+player.petals=[];
+player.petals.push(createPetal('HCl','common',0));
+player.petals.push(createPetal('NaOH','common',TAU/3));
+player.petals.push(createPetal('H2O','common',TAU*2/3));
+player.petals.push(createPetal('HCN','common',TAU*3/4));
+player.petals.push(createPetal('C_act','common',TAU*4/5));
+player.maxSlots=5;
+player.shieldHP=0;
+player.debuffs={};
+
+function currentZone() { return getZoneAt(player.x, player.y); }
+function getOrbitRadius() {
+    if (player.attackMode) return 1.5;
+    if (player.defenseMode) return 0.65;
+    return 1.0;
+}
+
+// ==================== MOBS ====================
+// ===== 38种化学怪物 + 特殊行为 + 护甲 =====
+const MOB_DEFS={H2O:{n:'水分子',hp:30,dmg:5,spd:0.5,sz:12,clr:'#5599cc',xp:15,bv:'static',ar:0,burst:true,sw:1,drops:[{chemId:'H2O',rarity:'common',chance:0.35}]},NaCl:{n:'食盐晶体',hp:40,dmg:8,spd:0.8,sz:10,clr:'#cccccc',xp:12,bv:'chase',ar:2,sw:1,drops:[{chemId:'Na',rarity:'common',chance:0.25}]},CaCO3:{n:'碳酸钙',hp:60,dmg:6,spd:0.3,sz:14,clr:'#dddddd',xp:18,bv:'static',ar:5,sw:2,drops:[{chemId:'CaCO3',rarity:'common',chance:0.2}]},MgSO4:{n:'硫酸镁',hp:35,dmg:12,spd:1.5,sz:11,clr:'#aaccaa',xp:14,bv:'sine',ar:1,sw:1,drops:[{chemId:'Mg',rarity:'common',chance:0.25}]},KCl:{n:'氯化钾',hp:45,dmg:10,spd:1.2,sz:10,clr:'#ccbbdd',xp:16,bv:'chase',ar:1,sw:2,rage:true,drops:[{chemId:'K',rarity:'common',chance:0.2}]},CaCl2:{n:'氯化钙',hp:80,dmg:15,spd:0,sz:18,clr:'#ddddff',xp:25,bv:'static',ar:3,sw:3,spawnKids:['NaCl'],spawnCD:5000,drops:[{chemId:'CaSO4',rarity:'unusual',chance:0.15}]},NaHCO3:{n:'小苏打水',hp:25,dmg:3,spd:0,sz:10,clr:'#ffffff',xp:8,bv:'static',ar:0,burst:true,sw:1,drops:[{chemId:'CO2',rarity:'common',chance:0.3}]},MgCl2:{n:'氯化镁',hp:55,dmg:12,spd:1.0,sz:12,clr:'#bbddcc',xp:20,bv:'orbit',ar:2,sw:2,orbitR:120,drops:[{chemId:'Zn',rarity:'common',chance:0.22}]},HCl:{n:'盐酸雾',hp:70,dmg:18,spd:1.0,sz:13,clr:'#cc6666',xp:25,bv:'shoot',ar:1,sw:1,proj:{t:'straight',c:1,spd:300,dmg:15,cd:2000},drops:[{chemId:'HCl',rarity:'common',chance:0.25}]},H2SO4:{n:'硫酸池',hp:100,dmg:25,spd:0.6,sz:16,clr:'#cc8844',xp:35,bv:'chase',ar:3,sw:2,onHit:'burn',drops:[{chemId:'H2SO4',rarity:'common',chance:0.2}]},HNO3:{n:'硝酸雾',hp:85,dmg:22,spd:1.0,sz:14,clr:'#cc9944',xp:30,bv:'shoot',ar:1,sw:2,proj:{t:'homing',c:1,spd:200,dmg:18,cd:2500},drops:[{chemId:'NO2',rarity:'unusual',chance:0.18}]},H3PO4:{n:'磷酸液',hp:90,dmg:16,spd:0.8,sz:15,clr:'#dd9944',xp:28,bv:'chase',ar:2,sw:3,rage:true,drops:[{chemId:'H3PO4',rarity:'common',chance:0.22}]},CH3COOH:{n:'醋酸',hp:50,dmg:8,spd:1.4,sz:12,clr:'#ddcc88',xp:20,bv:'sine',ar:0,sw:1,drops:[{chemId:'VitC',rarity:'common',chance:0.3}]},HF:{n:'氟化氢气',hp:65,dmg:20,spd:1.3,sz:11,clr:'#aa77dd',xp:28,bv:'chase',ar:0,sw:2,ignoreShield:true,drops:[{chemId:'HF',rarity:'common',chance:0.2}]},H2CO3:{n:'碳酸',hp:40,dmg:6,spd:0.8,sz:12,clr:'#ccdddd',xp:15,bv:'wander',ar:0,sw:1,spawnKids:['CO2','CO2'],drops:[{chemId:'NaHCO3',rarity:'common',chance:0.25}]},HBr:{n:'溴化氢',hp:75,dmg:22,spd:0.7,sz:14,clr:'#dd8844',xp:30,bv:'static',ar:1,sw:2,poisonAura:60,drops:[{chemId:'HCN',rarity:'unusual',chance:0.15}]},CH4:{n:'甲烷',hp:40,dmg:5,spd:0.6,sz:11,clr:'#88aa88',xp:18,bv:'wander',ar:1,sw:1,burst:true,blastDmg:30,drops:[{chemId:'EtOH',rarity:'common',chance:0.25}]},C2H4:{n:'乙烯',hp:55,dmg:10,spd:1.8,sz:12,clr:'#66aa66',xp:24,bv:'flee',ar:1,sw:2,drops:[{chemId:'AirGel',rarity:'unusual',chance:0.2}]},C6H6:{n:'苯',hp:120,dmg:15,spd:0.6,sz:18,clr:'#99cc99',xp:40,bv:'orbit',ar:4,sw:3,orbitR:100,drops:[{chemId:'Graphene',rarity:'rare',chance:0.1}]},C2H5OH:{n:'乙醇',hp:60,dmg:8,spd:1.0,sz:13,clr:'#aaddaa',xp:22,bv:'lure',ar:1,sw:1,lureR:200,drops:[{chemId:'EtOH',rarity:'common',chance:0.3}]},CH3CHO:{n:'乙醛',hp:70,dmg:14,spd:1.0,sz:13,clr:'#ccbb88',xp:26,bv:'shoot',ar:2,sw:2,proj:{t:'split',c:4,spd:300,dmg:10,cd:3000},drops:[{chemId:'NH3g',rarity:'unusual',chance:0.18}]},C6H12O6:{n:'葡萄糖',hp:50,dmg:4,spd:0.5,sz:11,clr:'#eeffee',xp:15,bv:'flee',ar:0,sw:1,drops:[{chemId:'Glc',rarity:'common',chance:0.35}]},HCHO:{n:'甲醛',hp:65,dmg:18,spd:0.9,sz:13,clr:'#ddccaa',xp:26,bv:'shoot',ar:1,sw:2,proj:{t:'straight',c:1,spd:250,dmg:12,cd:1800},onHit:'web',webSlow:0.6,webTime:4000,drops:[{chemId:'C2N2',rarity:'unusual',chance:0.15}]},CCl4:{n:'四氯化碳',hp:90,dmg:12,spd:0,sz:16,clr:'#eeddcc',xp:30,bv:'static',ar:3,sw:3,deathCloud:80,cloudDmg:10,drops:[{chemId:'Cl2',rarity:'rare',chance:0.12}]},NaOH:{n:'烧碱液',hp:80,dmg:20,spd:1.0,sz:14,clr:'#8888cc',xp:28,bv:'chase',ar:2,sw:1,onHit:'burn',drops:[{chemId:'NaOH',rarity:'common',chance:0.25}]},KOH:{n:'苛性钾液',hp:95,dmg:24,spd:0.7,sz:15,clr:'#9988dd',xp:33,bv:'chase',ar:2,sw:2,drops:[{chemId:'KOH',rarity:'common',chance:0.2}]},CaOH2:{n:'石灰水',hp:110,dmg:18,spd:0,sz:17,clr:'#aaaacc',xp:30,bv:'static',ar:3,sw:3,drops:[{chemId:'CaSO4',rarity:'unusual',chance:0.18}]},NH3:{n:'氨气',hp:55,dmg:12,spd:1.6,sz:11,clr:'#aaaadd',xp:22,bv:'sine',ar:1,sw:1,flee:true,drops:[{chemId:'NH4Cl',rarity:'common',chance:0.3}]},Na2CO3:{n:'纯碱',hp:65,dmg:10,spd:0.9,sz:13,clr:'#bbbbdd',xp:20,bv:'wander',ar:2,sw:2,spawnKids:['NaHCO3','NaHCO3'],drops:[{chemId:'NaHCO3',rarity:'common',chance:0.25}]},NH4OH:{n:'氨水',hp:60,dmg:14,spd:1.0,sz:12,clr:'#ccccff',xp:24,bv:'shoot',ar:1,sw:2,proj:{t:'spread',c:4,spd:350,dmg:10,cd:2200},drops:[{chemId:'D2O',rarity:'rare',chance:0.1}]},MgOH2:{n:'镁乳',hp:70,dmg:8,spd:0.8,sz:13,clr:'#ccddcc',xp:22,bv:'regen',ar:2,sw:2,regenPct:0.5,drops:[{chemId:'Heme',rarity:'unusual',chance:0.2}]},O2p:{n:'氧离子',hp:150,dmg:35,spd:1.2,sz:20,clr:'#ff6644',xp:55,bv:'chase',ar:3,sw:3,chain:true,chainR:80,drops:[{chemId:'Cu',rarity:'rare',chance:0.12}]},N2p:{n:'氮离子',hp:140,dmg:30,spd:1.0,sz:18,clr:'#6688ff',xp:50,bv:'laser',ar:2,sw:3,laserR:200,laserCD:3000,drops:[{chemId:'Ar',rarity:'rare',chance:0.15}]},Arp:{n:'氩离子',hp:180,dmg:40,spd:0.8,sz:22,clr:'#cc88cc',xp:60,bv:'teleport',ar:4,sw:4,tpCD:4000,drops:[{chemId:'AgNO3',rarity:'epic',chance:0.08}]},eBeam:{n:'电子束',hp:60,dmg:45,spd:3.5,sz:8,clr:'#ffff44',xp:45,bv:'rush',ar:0,sw:2,drops:[{chemId:'Xe',rarity:'epic',chance:0.1}]},Nep:{n:'氖离子',hp:200,dmg:38,spd:0.9,sz:25,clr:'#ff8844',xp:70,bv:'shoot',ar:4,sw:4,proj:{t:'spread',c:5,spd:280,dmg:12,cd:2000},drops:[{chemId:'Fe3O4',rarity:'epic',chance:0.1}]},Xep:{n:'氙离子',hp:250,dmg:50,spd:0.3,sz:28,clr:'#cc8844',xp:80,bv:'chase',ar:5,sw:5,drops:[{chemId:'Diam',rarity:'legendary',chance:0.05}]},Plasma:{n:'等离子球',hp:300,dmg:60,spd:0.5,sz:32,clr:'#ff44ff',xp:100,bv:'boss',ar:3,sw:6,drops:[{chemId:'U235',rarity:'mythic',chance:0.03}]}};
+
+
+
+// 每个区域每波怪物生成计划
+function planWave(zoneId) {
+    const wave = WAVE.current;
+    const z = ZONES[zoneId];
+    // 15% 特殊波（非第一波）
+    const isSpecial = wave > 1 && Math.random() < 0.15;
+    WAVE.isSpecial = isSpecial;
+    WAVE.spawnedThisWave = 0;
+
+    // 计算本波怪物总数: 基础8 + 每5波+3 + 2倍特殊波
+    let count = WAVE.mobsPerWaveBase + Math.floor(wave / 5) * 3;
+    if (isSpecial) count = Math.floor(count * 1.8);
+
+    WAVE.mobsToSpawn = count;
+    WAVE.spawnTimer = 0;
+    WAVE.spawnInterval = Math.max(400, 1500 - wave * 30); // 越后面越快
+    WAVE.clearTimer = 30000 + wave * 5000; // 越后面清场时间越长
+
+    // 确定稀有度下限（高波次淘汰低稀有度）
+    let minRarityIdx = 0;
+    if (wave >= 61) minRarityIdx = 5; // mythic+
+    else if (wave >= 51) minRarityIdx = 4; // epic+
+    else if (wave >= 41) minRarityIdx = 3; // rare+
+    else if (wave >= 31) minRarityIdx = 2; // unusual+
+    else if (wave >= 21) minRarityIdx = 1; // common stop
+
+    return { count, isSpecial, minRarityIdx };
+}
+
+// 根据波次获取可生成的怪物列表
+function getWaveMobs(zoneId, isSpecial) {
+    const wave = WAVE.current;
+    const z = ZONES[zoneId];
+    const allMobs = z.mobs;
+
+    if (isSpecial) {
+        // 特殊波：只有1-2种怪物成群出现
+        const eligible = allMobs.filter(name => {
+            const sw = MOB_DEFS[name].startWave || 1;
+            return sw <= wave;
+        });
+        const pick = eligible[Math.floor(Math.random() * eligible.length)];
+        return [pick];
+    }
+
+    // 普通波：筛选已解锁的怪物
+    return allMobs.filter(name => {
+        const sw = MOB_DEFS[name].startWave || 1;
+        return sw <= wave;
+    });
+}
+
+// ==================== MOB WAVE DATA ====================
+// 为每个怪物添加起始波次
+Object.assign(MOB_DEFS['H2O'],    { startWave: 1 });
+Object.assign(MOB_DEFS['NaCl'],   { startWave: 1 });
+Object.assign(MOB_DEFS['CaCO3'],  { startWave: 2 });
+Object.assign(MOB_DEFS['MgSO4'],  { startWave: 1 });
+Object.assign(MOB_DEFS['KCl'],    { startWave: 2 });
+Object.assign(MOB_DEFS['HCl'],    { startWave: 1 });
+Object.assign(MOB_DEFS['H2SO4'],  { startWave: 2 });
+Object.assign(MOB_DEFS['HNO3'],   { startWave: 2 });
+Object.assign(MOB_DEFS['H3PO4'],  { startWave: 3 });
+Object.assign(MOB_DEFS['CH3COOH'],{ startWave: 1 });
+Object.assign(MOB_DEFS['NaOH'],   { startWave: 1 });
+Object.assign(MOB_DEFS['KOH'],    { startWave: 2 });
+Object.assign(MOB_DEFS['CaOH2'],  { startWave: 3 });
+Object.assign(MOB_DEFS['NH3'],    { startWave: 1 });
+Object.assign(MOB_DEFS['Na2CO3'], { startWave: 2 });
+Object.assign(MOB_DEFS['CH4'],    { startWave: 1 });
+Object.assign(MOB_DEFS['C2H4'],   { startWave: 2 });
+Object.assign(MOB_DEFS['C6H6'],   { startWave: 3 });
+Object.assign(MOB_DEFS['C2H5OH'], { startWave: 1 });
+Object.assign(MOB_DEFS['CH3CHO'], { startWave: 2 });
+Object.assign(MOB_DEFS['O2+'],    { startWave: 3 });
+Object.assign(MOB_DEFS['N2+'],    { startWave: 3 });
+Object.assign(MOB_DEFS['Ar+'],    { startWave: 4 });
+Object.assign(MOB_DEFS['e-束'],   { startWave: 2 });
+Object.assign(MOB_DEFS['Ne+'],    { startWave: 4 });
+
+// 特殊波配置（仿 florr.io 各区域特殊波）
+const SPECIAL_WAVES = {
+    0: [ // 水溶液
+        { name:'H2O', count: 15 },
+        { name:'NaCl', count: 12 },
+        { name:'MgSO4+KCl', count: 10 },
+    ],
+    1: [ // 酸性区
+        { name:'HCl', count: 12 },
+        { name:'H2SO4', count: 10 },
+        { name:'HNO3', count: 8 },
+    ],
+    2: [ // 有机区
+        { name:'CH4', count: 14 },
+        { name:'C6H6', count: 8 },
+        { name:'C2H4', count: 10 },
+    ],
+    3: [ // 碱性区
+        { name:'NaOH', count: 12 },
+        { name:'KOH', count: 10 },
+        { name:'NH3', count: 14 },
+    ],
+    4: [ // 等离子区
+        { name:'O2+', count: 8 },
+        { name:'e-束', count: 15 },
+        { name:'Ar+', count: 6 },
+    ],
+};
+
+
+function pickRarity() {
+    const total = RARITY_WEIGHT.reduce((a,b)=>a+b,0);
+    let r = Math.random() * total, acc = 0;
+    for (let i = 0; i < RARITIES.length; i++) { acc += RARITY_WEIGHT[i]; if (r <= acc) return RARITIES[i]; }
+    return 'common';
+}
+
+function spawnMob(zoneId, forceRarity) {
+    const z = ZONES[zoneId];
+    const name = z.mobs[Math.floor(Math.random() * z.mobs.length)];
+    const def = MOB_DEFS[name];
+    if (!def) return;
+    const rarity = forceRarity || pickRarity();
+    const rMult = RARITY_MULT[rarity];
+    const hpMult = MOB_HP_MULT[rarity];
+    const sizeScale = 1 + RARITIES.indexOf(rarity) * 0.35;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * (ARENA_RADIUS - 50);
+    const wx = ARENA_RADIUS + Math.cos(angle) * dist;
+    const wy = ARENA_RADIUS + Math.sin(angle) * dist;
+    mobs.push({
+        x: wx, y: wy, name, rarity,
+        n: def.n||name, color: def.clr||'#fff', speed: (def.spd||0.8), xp: def.xp||15,
+        hp: Math.floor(def.hp * hpMult), maxHp: Math.floor(def.hp * hpMult),
+        dmg: Math.floor(def.dmg * rMult), size: Math.floor((def.sz||12) * sizeScale),
+        ai: Math.random()<0.4?'chase':'wander',
+        wanderAngle: Math.random()*Math.PI*2, wanderTimer:0, hitTimer:0,
+        _burnTimer:0, _slowTimer:0, _slowAmt:0, _poisonTimer:0, _dmgAmp:0,
+        drops: def.drops.map(d=>({...d,rarity:upgradeRarityDrop(rarity,d.chance)})),
+    });
+}
+
+function spawnMobByName(name, zoneId, rarity) {
+    const def = MOB_DEFS[name];
+    if (!def) return;
+    const rMult = RARITY_MULT[rarity];
+    const hpMult = MOB_HP_MULT[rarity];
+    const sizeScale = 1 + RARITIES.indexOf(rarity) * 0.35;
+    // 圆形竞技场内随机位置
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * (ARENA_RADIUS - 50);
+    const wx = ARENA_RADIUS + Math.cos(angle) * dist;
+    const wy = ARENA_RADIUS + Math.sin(angle) * dist;
+    mobs.push({
+        x: wx, y: wy, name, rarity,
+        n: def.n||name, color: def.clr||'#fff', speed: (def.spd||0.8), xp: def.xp||15,
+        hp: Math.floor(def.hp * hpMult), maxHp: Math.floor(def.hp * hpMult),
+        dmg: Math.floor(def.dmg * rMult), size: Math.floor((def.sz||12) * sizeScale),
+        ai: Math.random()<0.4?'chase':'wander',
+        wanderAngle: Math.random()*Math.PI*2, wanderTimer:0, hitTimer:0,
+        _burnTimer:0, _slowTimer:0, _slowAmt:0, _poisonTimer:0, _dmgAmp:0,
+        drops: def.drops.map(d => ({ ...d, rarity: upgradeRarityDrop(rarity, d.chance) })),
+    });
+}
+
+// 波次推进
+function advanceWave(zoneId) {
+    WAVE.current++;
+    WAVE.spawnedThisWave = 0;
+    WAVE.spawnTimer = 0;
+    const plan = planWave(zoneId);
+    document.getElementById('waveNum').textContent = WAVE.current + (plan.isSpecial ? '⚡' : '');
+    // 波次推进提示
+    const info = document.getElementById('waveInfo');
+    info.style.clr = plan.isSpecial ? '#ff4444' : '#facc15';
+    info.style.transform = 'scale(1.3)';
+    setTimeout(() => { info.style.transform = 'scale(1)'; }, 200);
+}
+
+// 初始化第一波
+function initWave() {
+    const plan = planWave(currentZoneId);
+    WAVE.current = 1;
+    WAVE.spawnedThisWave = 0;
+    document.getElementById('waveNum').textContent = '1';
+}
+
+// 掉落稀有度：怪物稀有度越高，掉落更好稀有度的概率越大
+function upgradeRarityDrop(mobRarity, baseChance) {
+    const mobIdx = RARITIES.indexOf(mobRarity);
+    // 掉落稀有度最高不超过怪物稀有度+1
+    const dropIdx = Math.min(RARITIES.length - 1, mobIdx + (Math.random() < 0.1 ? 1 : 0));
+    return { rarity: RARITIES[Math.max(0, Math.min(RARITIES.length-1, dropIdx))], chance: baseChance * (1 - mobIdx * 0.08) };
+}
+
+// ==================== DROPS ====================
+
+function spawnDrop(x, y, electronType, dropData) {
+    drops.push({ x, y, type: electronType, rarity: dropData.rarity, life: 15000, magnetTimer: 0 });
+}
+
+// ==================== PARTICLES ====================
+const particles = [];
+function spawnParticles(x, y, count, color) {
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+            life: 30 + Math.random() * 20,
+            maxLife: 50, color, size: 2 + Math.random() * 3,
+        });
+    }
+}
+
+// ==================== INPUT ====================
+const keys = {};
+let mouseX = W / 2, mouseY = H / 2;
+let mouseDown = false, rightDown = false;
+
+window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; e.preventDefault(); });
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+canvas.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+canvas.addEventListener('mousedown', e => { if (e.button === 0) mouseDown = true; if (e.button === 2) rightDown = true; });
+canvas.addEventListener('mouseup', e => { if (e.button === 0) mouseDown = false; if (e.button === 2) rightDown = false; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+window.addEventListener('keydown', function(e) {
+    if (e.key.toLowerCase() === 't') { toggleSkillPanel(); e.preventDefault(); }
+    if (e.key.toLowerCase() === 'c') { toggleCraftPanel(); e.preventDefault(); }
+    if (e.key.toLowerCase() === 'b') { toggleBackpack(); e.preventDefault(); }
+});
+
+// ==================== GAME LOOP ====================
+let spawnTimer = 0;
+let lastTime = 0;
+let zoneChangeTimer = 0;
+
+function update(dt) {
+    if (player.hp <= 0) {
+        document.getElementById('deathScreen').style.display = 'flex';
+        document.getElementById('deathInfo').textContent =
+            '在' + ZONES[currentZone()].name + '区域解体 | Lv.' + player.level +
+            ' | 物质:' + player.petals.length + '/' + player.maxSlots +
+            ' | 背包:' + backpack.length;
+        return;
+    }
+
+    const dtSec = Math.min(dt / 1000, 0.1); // cap delta
+    player.invincibleTimer = Math.max(0, player.invincibleTimer - dt);
+
+    // Movement
+    let dx = 0, dy = 0;
+    if (keys['w'] || keys['arrowup']) dy -= 1;
+    if (keys['s'] || keys['arrowdown']) dy += 1;
+    if (keys['a'] || keys['arrowleft']) dx -= 1;
+    if (keys['d'] || keys['arrowright']) dx += 1;
+    // Mouse steering
+    const cx = W / 2, cy = H / 2;
+    const mdx = mouseX - cx, mdy = mouseY - cy;
+    const mDist = Math.hypot(mdx, mdy);
+    if (mDist > 30) {
+        dx += mdx / mDist * 0.5;
+        dy += mdy / mDist * 0.5;
+    }
+    if (dx !== 0 || dy !== 0) {
+        const len = Math.hypot(dx, dy);
+        player.x += (dx / len) * player.speed * dtSec * 60;
+        player.y += (dy / len) * player.speed * dtSec * 60;
+    }
+
+    // Clamp to world
+    // 圆形竞技场约束
+    const pdx = player.x - ARENA_RADIUS, pdy = player.y - ARENA_RADIUS;
+    const pdist = Math.hypot(pdx, pdy);
+    if (pdist > ARENA_RADIUS - 25) { player.x = ARENA_RADIUS + pdx/pdist * (ARENA_RADIUS - 25); player.y = ARENA_RADIUS + pdy/pdist * (ARENA_RADIUS - 25); }
+
+    // Attack/defense modes
+    player.attackMode = mouseDown;
+    player.defenseMode = rightDown;
+
+    // Zone change
+    const z = currentZone();
+    if (z !== zoneChangeTimer) {
+        zoneChangeTimer = z;
+        document.getElementById('zone').textContent = ZONES[z].name;
+    }
+
+    // ==== 花瓣更新 ====
+    const orbitMult = getOrbitRadius();
+    player.petals = player.petals.filter(p => p != null);
+    player.petals.forEach((p, i) => {
+        if (!p || !p.chemId) return;
+        const baseAngle = (Date.now() / 1000) * (3 - i * 0.3);
+        p.angle = baseAngle + i * Math.PI * 2 / player.petals.length;
+        const baseCfg = CHEMICAL_PETALS[p.chemId];
+        if (baseCfg) p.r = baseCfg.r * orbitMult;
+        p.cooldown = Math.max(0, p.cooldown - dt);
+
+        // 回复型花瓣: 每10秒回血
+        if (baseCfg && baseCfg.type === 'heal') {
+            p.healTimer += dt;
+            if (p.healTimer > 10000) {
+                p.healTimer = 0;
+                let healAmt = p.heal;
+                if (baseCfg.effect === 'glucose' && player.hp < player.maxHp * 0.5) healAmt *= 2;
+                if (baseCfg.effect === 'repair' && player.hp < player.maxHp * 0.5) healAmt *= 2;
+                if (baseCfg.effect === 'antioxidant' && player.debuffs.poison) {
+                    player.debuffs.poison = 0;
+                }
+                player.hp = Math.min(player.maxHp, player.hp + healAmt);
+                spawnParticles(player.x, player.y, 6, '#44ff66');
+            }
+        }
+        // 防御型花瓣: 冷却完自动激活护盾
+        if (baseCfg && baseCfg.type === 'defense') {
+            if (p.cooldown <= 0 && !p.shieldActive) {
+                p.shieldActive = true;
+                p.shieldTimer = baseCfg.effect === 'barrier' ? 2000 : 0;
+                player.shieldHP += p.shield;
+            }
+            if (p.shieldActive && p.shieldTimer > 0) {
+                p.shieldTimer -= dt;
+                if (p.shieldTimer <= 0) p.shieldActive = false;
+            }
+        }
+    });
+
+    // Debuff 计时器更新
+    if (player.debuffs.poison > 0) {
+        player.debuffs.poison -= dt;
+        player.hp -= player.maxHp * 0.03 * (dt / 1000); // 每秒3%HP
+    }
+    if (player.debuffs.slow > 0) player.debuffs.slow -= dt;
+    if (player.debuffs.dmgAmp > 0) player.debuffs.dmgAmp -= dt;
+
+    // ==== WAVE SPAWNING ====
+    const activeZone = currentZone();
+    const activeMobs = mobs.filter(m => getZoneAt(m.x, m.y) === activeZone);
+    WAVE.spawnTimer += dt;
+
+    // 波次推进: 当前区域怪物≤4且已生成完毕 → 下一波
+    if (activeMobs.length <= 4 && WAVE.spawnedThisWave >= WAVE.mobsToSpawn) {
+        WAVE.clearTimer -= dt;
+        if (WAVE.clearTimer <= 0 || activeMobs.length === 0) {
+            advanceWave(activeZone);
+        }
+    } else {
+        WAVE.clearTimer = 30000 + WAVE.current * 5000; // 重置清场计时
+    }
+
+    // 波次怪物生成
+    if (WAVE.spawnedThisWave < WAVE.mobsToSpawn && WAVE.spawnTimer > WAVE.spawnInterval) {
+        WAVE.spawnTimer = 0;
+        const eligibleMobs = getWaveMobs(activeZone, WAVE.isSpecial);
+        if (eligibleMobs.length > 0) {
+            const name = eligibleMobs[Math.floor(Math.random() * eligibleMobs.length)];
+            // 确定稀有度（高波次天然高稀有度）
+            let rarity = pickRarity();
+            const minRarityIdx = (WAVE.current >= 61) ? 5 : (WAVE.current >= 51) ? 4 : (WAVE.current >= 41) ? 3 : (WAVE.current >= 31) ? 2 : (WAVE.current >= 21) ? 1 : 0;
+            const rarityIdx = Math.max(RARITIES.indexOf(rarity), minRarityIdx);
+            rarity = RARITIES[Math.min(rarityIdx, RARITIES.length - 1)];
+            // 特殊波：必定高一级稀有度
+            if (WAVE.isSpecial) {
+                rarity = RARITIES[Math.min(RARITIES.indexOf(rarity) + 1, RARITIES.length - 1)];
+            }
+            spawnMobByName(name, activeZone, rarity);
+            WAVE.spawnedThisWave++;
+        }
+    }
+
+    document.getElementById('waveNum').textContent = WAVE.current + (WAVE.isSpecial ? '⚡' : '');
+    document.getElementById('mobRemain').textContent = activeMobs.length;
+
+    // Update mobs
+    mobs.forEach(m => {
+        m.hitTimer = Math.max(0, m.hitTimer - dt);
+        const dist = Math.hypot(m.x - player.x, m.y - player.y);
+        if (m.ai === 'chase' && dist < 400) {
+            const a = Math.atan2(player.y - m.y, player.x - m.x);
+            m.x += Math.cos(a) * m.speed * dtSec * 60;
+            m.y += Math.sin(a) * m.speed * dtSec * 60;
+        } else {
+            m.wanderTimer -= dt;
+            if (m.wanderTimer <= 0) {
+                m.wanderAngle = Math.random() * Math.PI * 2;
+                m.wanderTimer = 1000 + Math.random() * 2000;
+            }
+            m.x += Math.cos(m.wanderAngle) * m.speed * dtSec * 30;
+            m.y += Math.sin(m.wanderAngle) * m.speed * dtSec * 30;
+        }
+        // 圆形竞技场约束
+        const mdx = m.x - ARENA_RADIUS, mdy = m.y - ARENA_RADIUS;
+        const mdist = Math.hypot(mdx, mdy);
+        if (mdist > ARENA_RADIUS - m.size - 5) { m.x = ARENA_RADIUS + mdx/mdist * (ARENA_RADIUS - m.size - 5); m.y = ARENA_RADIUS + mdy/mdist * (ARENA_RADIUS - m.size - 5); }
+    });
+
+    // ==== COLLISION: 怪物互斥（防止堆叠） ====
+    for (let i = 0; i < mobs.length; i++) {
+        for (let j = i + 1; j < mobs.length; j++) {
+            const a = mobs[i], b = mobs[j];
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const dist = Math.hypot(dx, dy);
+            const minDist = a.size + b.size + 4;
+            if (dist < minDist && dist > 0) {
+                const push = (minDist - dist) / dist * 0.5;
+                a.x -= dx * push;
+                a.y -= dy * push;
+                b.x += dx * push;
+                b.y += dy * push;
+            }
+        }
+    }
+
+    // ==== COLLISION: 玩家与怪物推斥 ====
+    if (player.invincibleTimer <= 0) {
+        mobs.forEach(m => {
+            const dx = player.x - m.x, dy = player.y - m.y;
+            const dist = Math.hypot(dx, dy);
+            const minDist = 20 + m.size;
+            if (dist < minDist && dist > 0) {
+                // 玩家推斥怪物
+                const push = (minDist - dist) / dist * 2;
+                m.x -= dx * push;
+                m.y -= dy * push;
+                // 碰撞伤害（护盾先行吸收）
+                if (!m._lastHit || Date.now() - m._lastHit > 500) {
+                    let dmg = m.dmg;
+                    // 防御花瓣减伤
+                    if (player.shieldHP > 0) {
+                        const absorbed = Math.min(dmg, player.shieldHP);
+                        player.shieldHP -= absorbed;
+                        dmg -= absorbed;
+                    }
+                    player.hp -= dmg;
+                    m._lastHit = Date.now();
+                    spawnParticles(m.x, m.y, 5, dmg > 0 ? '#ef4444' : '#4488ff');
+                    player.invincibleTimer = 300;
+                }
+            }
+        });
+    }
+
+    // ==== 花瓣-怪物碰撞 (8类) ====
+    player.petals.forEach(p => {
+        if (p.cooldown > 0) return;
+        const px = player.x + Math.cos(p.angle) * p.r;
+        const py = player.y + Math.sin(p.angle) * p.r;
+        const base = CHEMICAL_PETALS[p.chemId];
+        if (!base) return;
+
+        mobs.forEach(m => {
+            const dist = Math.hypot(m.x - px, m.y - py);
+            if (dist < 14 + m.size) {
+                const cat = base.cat;
+                // 伤害型
+                if (cat === 'damage') {
+                    m.hp -= p.d;
+                    if (base.fx === 'blast' || base.aoe) { // AOE
+                        mobs.forEach(m2 => {
+                            if (m2 !== m && Math.hypot(m2.x-m.x,m2.y-m.y) < (base.aoe||60))
+                                m2.hp -= Math.floor(p.d*0.4);
+                        });
+                    }
+                    if (base.fx === 'acid_burn') m._burnTimer = 1000;
+                    if (base.fx === 'chain') { // 铜导电连锁
+                        var cc=0; mobs.forEach(m2 => {
+                            if (m2 !== m && cc < 2 && Math.hypot(m2.x-m.x,m2.y-m.y) < 100)
+                                { m2.hp -= Math.floor(p.d*0.5); cc++; }
+                        });
+                    }
+                    if (base.fx === 'slow') m._slowTimer = 3000;
+                    if (base.fx === 'flash') m._slowTimer = 1000;
+                }
+                // 弹射型
+                if (cat === 'projectile') {
+                    spawnProjectile(px, py, p);
+                    p.cooldown = base.cd * 1000;
+                }
+                // 毒素型
+                if (cat === 'poison') {
+                    m.hp -= p.d;
+                    if (base.poison) m._poisonTimer = (base.pt||5)*1000;
+                    if (base.burn) m._burnTimer = base.burn*1000;
+                    if (base.slow) { m._slowTimer = 3000; m._slowAmt = base.slow; }
+                    if (base.da) m._dmgAmp = (m._dmgAmp||0) + base.da;
+                }
+                // 回复型
+                if (cat === 'heal') {
+                    player.hp = Math.min(player.maxHp, player.hp + Math.floor(p.heal * 0.5));
+                    if (base.ls) player.hp = Math.min(player.maxHp, player.hp + Math.floor(p.d * base.ls));
+                }
+                // 防御型
+                if (cat === 'defense') {
+                    p.shieldActive = true;
+                    player.shieldHP += p.sh || 20;
+                }
+                // 召唤型
+                if (cat === 'summon') {
+                    spawnSummon(px, py, p);
+                    p.cooldown = (base.cd||10)*1000;
+                }
+                // 特殊型
+                if (cat === 'special') {
+                    if (base.sub === 'mine') spawnMine(px, py, p);
+                    else if (base.sub === 'web') { m._slowTimer = (base.wt||4)*1000; m._slowAmt = base.slow||0.6; }
+                    else m.hp -= p.d;
+                }
+                // 增益型 — 碰怪无特殊效果，被动生效
+
+                m.hitTimer = 100;
+                if (cat !== 'projectile' && cat !== 'summon') p.cooldown = p.maxCooldown;
+                spawnParticles(px, py, 4, base.clr);
+                if (m.hp <= 0) killMob(m);
+            }
+        });
+    });
+
+    // ==== 怪物debuff更新 ====
+    mobs.forEach(m => {
+        if (m._burnTimer > 0) { m._burnTimer -= dt; m.hp -= 2 * (dt/1000); }
+        if (m._slowTimer > 0) { m._slowTimer -= dt; }
+        if (m._poisonTimer > 0) { m._poisonTimer -= dt; m.hp -= m.maxHp * 0.03 * (dt/1000); }
+        if (m.hp <= 0) killMob(m);
+    });
+
+    // Remove dead mobs
+    for (let i = mobs.length - 1; i >= 0; i--) {
+        if (mobs[i].hp <= 0) mobs.splice(i, 1);
+    }
+
+    // ===== 弹射/召唤/地雷 =====
+    function spawnProjectile(x, y, p) {
+        var proj = {x:x,y:y,life:(p.life||3)*1000,dmg:p.d,spd:p.spd||400,
+            dir:Math.atan2(mouseY-H/2-y+player.y, mouseX-W/2-x+player.x),
+            aoe:p.aoe||0,sc:p.sc||0,bnc:p.bnc||0};
+        projs.push(proj);
+    }
+    var projs = [];
+    function spawnSummon(x, y, p) {
+        for (var i=0;i<(p.cnt||1);i++) {
+            var ang = Math.random()*Math.PI*2, dist = Math.random()*40;
+            mobs.push({
+                x:x+Math.cos(ang)*dist, y:y+Math.sin(ang)*dist,
+                name:p.sm||'summon', rarity:'common',
+                hp:30*RARITY_MULT[p.rarity]||30, maxHp:30, dmg:5, speed:100, size:8,
+                color:'#ffcc44', xp:0, ai:'chase', wanderAngle:0, wanderTimer:0, hitTimer:0,
+                drops:[], _lifeTimer:(p.sl||8)*1000,
+            });
+        }
+    }
+    function spawnMine(x, y, p) {
+        var mine = {x:x,y:y,dmg:p.d,life:15000,size:16,aoe:p.aoe||70};
+        mines.push(mine);
+    }
+    var mines = [];
+
+    function killMob(m) {
+        player.xp += m.xp;
+        spawnParticles(m.x, m.y, 12, '#facc15');
+        m.drops.forEach(d => {
+            if (Math.random() < d.chance) {
+                spawnDrop(m.x, m.y, d.chemId || d.type, { rarity: d.rarity || 'common' });
+            }
+        });
+        if (player.xp >= player.xpToNext) {
+            player.level++;
+            player.xp -= player.xpToNext;
+            player.xpToNext = Math.floor(player.xpToNext * 1.5);
+            addSkillPoint();
+            applySkills();
+            player.hp = player.maxHp;
+        }
+    }
+
+    // Update drops
+    drops.forEach(d => {
+        d.life -= dt;
+        d.magnetTimer += dt;
+        // Magnetic attraction after 1s
+        if (d.magnetTimer > 1000) {
+            const dx = player.x - d.x, dy = player.y - d.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 250) {
+                const speed = 4 + (250 - dist) / 50;
+                d.x += (dx / dist) * speed * dtSec * 60;
+                d.y += (dy / dist) * speed * dtSec * 60;
+            }
+        }
+    });
+    // Remove expired or collected drops
+    for (let i = drops.length - 1; i >= 0; i--) {
+        const d = drops[i];
+        const dist = Math.hypot(player.x - d.x, player.y - d.y);
+        if (dist < 20 || d.life <= 0) {
+            if (dist < 20) {
+                // Pick up
+                const newEl = createPetal(d.type || d.chemId, d.rarity, Math.random() * Math.PI * 2);
+                if (player.petals.length < player.maxSlots) {
+                    player.petals.push(newEl);
+                } else {
+                    // 槽满→放入背包（可在背包面板手动装备）
+                    backpack.push(newEl);
+                }
+                spawnParticles(d.x, d.y, 8, RARITY_COLORS[d.rarity]);
+            }
+            drops.splice(i, 1);
+        }
+    }
+
+    // Update projectiles
+    for (var i = projs.length-1; i >= 0; i--) {
+        var pj = projs[i];
+        pj.x += Math.cos(pj.dir) * pj.spd * dtSec * 60;
+        pj.y += Math.sin(pj.dir) * pj.spd * dtSec * 60;
+        pj.life -= dt;
+        if (pj.life <= 0) { projs.splice(i,1); continue; }
+        mobs.forEach(function(m) {
+            if (Math.hypot(m.x-pj.x, m.y-pj.y) < 14 + m.size) {
+                m.hp -= pj.dmg;
+                if (pj.aoe > 0) mobs.forEach(function(m2) {
+                    if (m2 !== m && Math.hypot(m2.x-m.x, m2.y-m.y) < pj.aoe)
+                        m2.hp -= Math.floor(pj.dmg*0.4);
+                });
+                projs.splice(i,1);
+            }
+        });
+    }
+    // Update mines
+    for (var i = mines.length-1; i >= 0; i--) {
+        var mn = mines[i]; mn.life -= dt;
+        if (mn.life <= 0) { mines.splice(i,1); continue; }
+        mobs.forEach(function(m) {
+            if (Math.hypot(m.x-mn.x, m.y-mn.y) < mn.size + m.size) {
+                m.hp -= mn.dmg;
+                if (mn.aoe > 0) mobs.forEach(function(m2) {
+                    if (m2 !== m && Math.hypot(m2.x-mn.x, m2.y-mn.y) < mn.aoe)
+                        m2.hp -= Math.floor(mn.dmg*0.4);
+                });
+                mines.splice(i,1);
+            }
+        });
+    }
+
+    // Update particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life--;
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    // Update UI
+    document.getElementById('lv').textContent = player.level;
+    document.getElementById('xp').textContent = player.xp;
+    document.getElementById('xpMax').textContent = player.xpToNext;
+    document.getElementById('hp').textContent = Math.max(0, player.hp);
+    document.getElementById('slots').textContent = player.petals.length + '/' + player.maxSlots;
+
+    renderInventory();
+}
+
+// ==================== SKILL SYSTEM ====================
+player.skillPts = 0;
+const SKILLS = [
+    { id:'hp', name:'电离能', desc:'最大HP+20', max:8, cost:1, icon:'❤️' },
+    { id:'speed', name:'迁移率', desc:'移速+8%', max:6, cost:1, icon:'💨' },
+    { id:'cooldown', name:'激发能', desc:'物质冷却-10%', max:5, cost:2, icon:'⚡' },
+    { id:'bodyDmg', name:'核电荷', desc:'体伤+3', max:6, cost:1, icon:'💥' },
+    { id:'heal', name:'物质亲和', desc:'物质HP回复+15%', max:4, cost:2, icon:'💚' },
+    { id:'slot', name:'能级轨道', desc:'解锁1个物质槽', max:5, cost:3, icon:'🔵' },
+];
+player.skillLevels = {};
+SKILLS.forEach(s => { player.skillLevels[s.id] = 0; });
+
+function applySkills() {
+    player.maxHp = 100 + (player.skillLevels.hp || 0) * 20 + Math.floor((player.level - 1) / 3) * 15;
+    player.speed = 3.5 * (1 + (player.skillLevels.speed || 0) * 0.08);
+    player.bodyDamage = 5 + (player.skillLevels.bodyDmg || 0) * 3;
+    player.maxSlots = 5 + Math.floor(player.level / 3) + (player.skillLevels.slot || 0);
+    // Cooldown reduction: base * 0.9^level
+    player.cooldownMult = Math.pow(0.9, player.skillLevels.cooldown || 0);
+}
+applySkills();
+
+function addSkillPoint() {
+    player.skillPts++;
+    document.getElementById('skillPts').textContent = player.skillPts;
+}
+
+function spendSkill(skillId) {
+    const s = SKILLS.find(sk => sk.id === skillId);
+    if (!s || player.skillPts < s.cost || player.skillLevels[skillId] >= s.max) return;
+    player.skillPts -= s.cost;
+    player.skillLevels[skillId]++;
+    applySkills();
+    if (skillId === 'slot') {
+        // Remove excess electrons if needed (player keeps them in backpack)
+    }
+    document.getElementById('skillPts').textContent = player.skillPts;
+    renderSkillPanel();
+    renderInventory();
+}
+
+function renderSkillPanel() {
+    const list = document.getElementById('skillList');
+    list.innerHTML = SKILLS.map(s => {
+        const lv = player.skillLevels[s.id];
+        const maxed = lv >= s.max;
+        const canBuy = player.skillPts >= s.cost && !maxed;
+        return '<div class="skill-row"><span>' + s.icon + ' ' + s.n + ' Lv.' + lv + '/' + s.max +
+            ' <small style="color:#94a3b8">' + s.desc + '</small></span>' +
+            '<button ' + (canBuy ? '' : 'disabled') + ' onclick="spendSkill(\'' + s.id + '\')">' +
+            (maxed ? 'MAX' : s.cost + '点') + '</button></div>';
+    }).join('');
+}
+
+function toggleSkillPanel() {
+    const panel = document.getElementById('skillPanel');
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    if (panel.style.display === 'block') renderSkillPanel();
+}
+window.toggleSkillPanel = toggleSkillPanel;
+
+function toggleTutorial() {
+    const overlay = document.getElementById('tutorialOverlay');
+    overlay.classList.toggle('show');
+}
+window.toggleTutorial = toggleTutorial;
+
+// First visit: auto-show tutorial
+if (!localStorage.getItem('ion_tutorial_seen')) {
+    setTimeout(function() {
+        document.getElementById('tutorialOverlay').classList.add('show');
+        localStorage.setItem('ion_tutorial_seen', '1');
+    }, 500);
+}
+window.spendSkill = spendSkill;
+
+// ==================== BACKPACK CLICK SYSTEM ====================
+let backpack = [];
+
+function renderInventory() {
+    const inv = document.getElementById('inventory');
+    let html = '';
+    for (let i = 0; i < player.maxSlots; i++) {
+        const el = player.petals[i];
+        if (el) {
+            const eType = CHEMICAL_PETALS[el.chemId];
+            const abbr = el.chemId.length <= 8 ? el.chemId : el.chemId.substring(0,6);
+            html += '<div class="inv-slot equipped" style="border-color:' + RARITY_COLORS[el.rarity] + ';font-size:9px;font-weight:bold;cursor:pointer' +
+                '" onclick="unequipSlot(' + i + ')"' +
+                ' onmouseenter="showTooltip(event,' + i + ')" onmouseleave="hideTooltip()">' +
+                '<span style="color:' + (eType ? eType.clr : '#fff') + '">' + abbr + '</span></div>';
+        } else {
+            html += '<div class="inv-slot" style="color:#334155;font-size:10px">空</div>';
+        }
+    }
+    inv.innerHTML = html;
+}
+
+function renderBackpackPanel() {
+    const panel = document.getElementById('bpSlots');
+    document.getElementById('bpCount').textContent = backpack.length + '个化学物质';
+    let html = '';
+    backpack.forEach(function(el, i) {
+        const et = CHEMICAL_PETALS[el.chemId];
+        const abbr = el.chemId && el.chemId.length <= 8 ? el.chemId : '?';
+        html += '<div class="bp-slot" style="border-color:' + RARITY_COLORS[el.rarity] + ';font-size:9px;font-weight:bold;width:56px;height:56px;cursor:pointer' +
+            '" onclick="equipFromBackpack(' + i + ')">' +
+            '<span style="color:' + (et ? et.clr : '#fff') + '">' + abbr + '</span>' +
+            '<button class="del-btn" onclick="event.stopPropagation();deleteFromBackpack(' + i + ')">×</button></div>';
+    });
+    if (backpack.length === 0) html = '<div style="color:#64748b;text-align:center;padding:20px">背包为空<br><small>物质槽满时拾取的物质会进背包</small></div>';
+    panel.innerHTML = html;
+}
+
+// Click equipped slot → unequip to backpack
+function unequipSlot(idx) {
+    const el = player.petals[idx];
+    if (!el || backpack.length >= 50) return;
+    backpack.push(el);
+    player.petals[idx] = null;
+    renderInventory();
+    renderBackpackPanel();
+    saveGame();
+}
+
+// Click backpack item → equip to first empty slot (left to right)
+function equipFromBackpack(idx) {
+    if (idx < 0 || idx >= backpack.length) return;
+    // 找第一个空槽（包括 undefined 和 null）
+    let emptyIdx = -1;
+    for (let i = 0; i < player.maxSlots; i++) {
+        if (!player.petals[i]) { emptyIdx = i; break; }
+    }
+    if (emptyIdx < 0) {
+        // All slots full — swap with first slot
+        const el = backpack.splice(idx, 1)[0];
+        backpack.push(player.petals[0]);
+        player.petals[0] = el;
+    } else {
+        player.petals[emptyIdx] = backpack.splice(idx, 1)[0];
+    }
+    renderInventory();
+    renderBackpackPanel();
+    saveGame();
+}
+window.unequipSlot = unequipSlot;
+window.equipFromBackpack = equipFromBackpack;
+
+function deleteFromBackpack(idx) {
+    const el = backpack[idx];
+    const cfg = el ? CHEMICAL_PETALS[el.chemId] : null;
+    const name = cfg ? cfg.n : '?';
+    if (el && confirm('丢弃 ' + name + ' (' + el.rarity + ')？')) {
+        backpack.splice(idx, 1);
+        refreshAll();
+    }
+}
+window.deleteFromBackpack = deleteFromBackpack;
+
+function refreshAll() {
+    renderInventory();
+    renderBackpackPanel();
+    saveGame();
+}
+
+function electronScore(el) { return (el.d || 0) * (el.maxHp || el.hp || 0) * (RARITIES.indexOf(el.rarity) + 1); }
+
+function autoEquipBest() {
+    // Collect all electrons: equipped (non-null) + backpack
+    const all = [];
+    player.petals.forEach(function(el) { if(!el) return; if (el) all.push(el); });
+    backpack.forEach(function(el) { all.push(el); });
+    // Sort by score descending
+    all.sort(function(a, b) { return electronScore(b) - electronScore(a); });
+    // Fill slots with best N
+    const n = player.maxSlots;
+    player.petals = [];
+    for (let i = 0; i < n; i++) {
+        if (i < all.length) {
+            all[i].angle = Math.random() * Math.PI * 2;
+            player.petals.push(all[i]);
+        } else {
+            player.petals.push(null);
+        }
+    }
+    // Rest go to backpack
+    backpack = all.slice(n);
+    refreshAll();
+}
+window.autoEquipBest = autoEquipBest;
+
+function sortBackpack() {
+    backpack.sort(function(a, b) { return electronScore(b) - electronScore(a); });
+    refreshAll();
+}
+window.sortBackpack = sortBackpack;
+
+function toggleBackpack() {
+    const panel = document.getElementById('backpackPanel');
+    const show = panel.style.display !== 'block';
+    panel.style.display = show ? 'block' : 'none';
+    if (show) renderBackpackPanel();
+}
+window.toggleBackpack = toggleBackpack;
+
+function showTooltip(e, idx) {
+    const el = player.petals[idx];
+    if (!el) return;
+    const et = CHEMICAL_PETALS[el.chemId];
+    document.getElementById('tooltip').style.display = 'block';
+    document.getElementById('tooltip').style.left = (e.clientX + 15) + 'px';
+    document.getElementById('tooltip').style.top = (e.clientY - 70) + 'px';
+    document.getElementById('tooltip').innerHTML =
+        '<b style="color:' + et.clr + '">' + et.n + '</b> ' + el.rarity.toUpperCase() + '<br>' +
+        '伤害:' + el.d + ' | HP:' + el.hp + ' | 冷却:' + el.maxCooldown + 'ms<br>' +
+        '<small>拖拽替换 | 拖到背包卸下</small>';
+}
+function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+window.showTooltip = showTooltip;
+
+// ==================== ELECTRON CRAFTING ====================
+let craftSlots = [null, null, null];
+function toggleCraftPanel() {
+    const panel = document.getElementById('craftPanel');
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    if (panel.style.display === 'block') renderCraftUI();
+}
+window.toggleCraftPanel = toggleCraftPanel;
+
+function addToCraft(slotIdx) {
+    // Cycle through available electrons from backpack + equipped
+    const allElectrons = [...player.petals, ...backpack];
+    if (allElectrons.length === 0) return;
+    const current = craftSlots[slotIdx];
+    const currentKey = current ? current.type + '|' + current.rarity : '';
+    // Find next different electron
+    let found = !current;
+    for (const el of allElectrons) {
+        const key = el.chemId + '|' + el.rarity;
+        if (found && key !== currentKey) { craftSlots[slotIdx] = el; break; }
+        if (key === currentKey) found = true;
+    }
+    if (!craftSlots[slotIdx] && allElectrons.length > 0) craftSlots[slotIdx] = allElectrons[0];
+    renderCraftUI();
+}
+window.addToCraft = addToCraft;
+
+function renderCraftUI() {
+    for (let i = 0; i < 3; i++) {
+        const slot = document.getElementById('craftS' + i);
+        const el = craftSlots[i];
+        if (el) {
+            const et = CHEMICAL_PETALS[el.chemId];
+            slot.className = 'craft-slot filled';
+            slot.innerHTML = '<span style="color:' + et.clr + '">●</span>';
+            slot.title = et.n + ' ' + el.rarity;
+        } else {
+            slot.className = 'craft-slot';
+            slot.innerHTML = '?';
+            slot.title = '点击选择电子';
+        }
+    }
+    // Preview result
+    const res = document.getElementById('craftResult');
+    const btn = document.getElementById('craftBtn');
+    if (craftSlots[0] && craftSlots[1] && craftSlots[2]) {
+        const allSameType = craftSlots[0].type === craftSlots[1].type && craftSlots[1].type === craftSlots[2].type;
+        if (allSameType) {
+            const rarities = ['common','unusual','rare','epic','legendary','mythic','ultra'];
+            const avgIdx = Math.floor((rarities.indexOf(craftSlots[0].rarity) + rarities.indexOf(craftSlots[1].rarity) + rarities.indexOf(craftSlots[2].rarity)) / 3);
+            const nextRarity = rarities[Math.min(rarities.length - 1, avgIdx + 1)];
+            const et = CHEMICAL_PETALS[craftSlots[0].type];
+            res.innerHTML = '<span style="color:' + et.clr + '">●</span><small style="color:' + RARITY_COLORS[nextRarity] + '">' + nextRarity + '</small>';
+            btn.disabled = false;
+        } else {
+            res.innerHTML = '❌';
+            btn.disabled = true;
+        }
+    } else {
+        res.innerHTML = '?';
+        btn.disabled = true;
+    }
+}
+
+function doCraft() {
+    if (!craftSlots[0] || !craftSlots[1] || !craftSlots[2]) return;
+    if (craftSlots[0].type !== craftSlots[1].type || craftSlots[1].type !== craftSlots[2].type) return;
+    const rarities = ['common','unusual','rare','epic','legendary','mythic','ultra'];
+    const avgIdx = Math.floor((rarities.indexOf(craftSlots[0].rarity) + rarities.indexOf(craftSlots[1].rarity) + rarities.indexOf(craftSlots[2].rarity)) / 3);
+    const nextRarity = rarities[Math.min(rarities.length - 1, avgIdx + 1)];
+
+    // Remove the 3 electrons from wherever they are
+    craftSlots.forEach(cs => {
+        const idx = player.petals.findIndex(e => e === cs);
+        if (idx >= 0) { player.petals.splice(idx, 1); }
+        else {
+            const bi = backpack.findIndex(e => e === cs);
+            if (bi >= 0) backpack.splice(bi, 1);
+        }
+    });
+
+    // Add the crafted electron to backpack
+    backpack.push(createPetal(craftSlots[0].type, nextRarity, Math.random() * Math.PI * 2));
+    craftSlots = [null, null, null];
+    renderInventory();
+    renderCraftUI();
+}
+window.doCraft = doCraft;
+
+// ==================== MINIMAP ====================
+function drawMinimap() {
+    const mm = document.getElementById('mmCanvas');
+    const mctx = mm.getContext('2d');
+    const mw = mm.width, mh = mm.height;
+    mctx.clearRect(0, 0, mw, mh);
+    mctx.fillStyle = 'rgba(0,0,0,0.6)';
+    mctx.fillRect(0, 0, mw, mh);
+
+    const mscale = Math.min(mw, mh) / (ARENA_RADIUS * 2);
+
+    // Draw circular arena minimap
+    mctx.strokeStyle = ZONES[currentZoneId].color;
+    mctx.lineWidth = 2;
+    mctx.beginPath(); mctx.arc(mw/2, mh/2, mw/2.2, 0, Math.PI * 2); mctx.stroke();
+
+    // Draw mobs as tiny dots
+    mctx.fillStyle = 'rgba(255,255,255,0.4)';
+    mobs.forEach(m => {
+        mctx.fillRect(mw/2 + (m.x - ARENA_RADIUS) * mscale - 1, mh/2 + (m.y - ARENA_RADIUS) * mscale - 1, 2, 2);
+    });
+
+    // Draw player as bright dot
+    mctx.fillStyle = '#facc15';
+    mctx.beginPath();
+    mctx.arc(mw/2 + (player.x - ARENA_RADIUS) * mscale, mh/2 + (player.y - ARENA_RADIUS) * mscale, 3, 0, Math.PI * 2);
+    mctx.fill();
+    mctx.strokeStyle = '#fff';
+    mctx.lineWidth = 1;
+    mctx.stroke();
+}
+window.hideTooltip = hideTooltip;
+
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Camera follows player
+    const ox = player.x - W / 2;
+    const oy = player.y - H / 2;
+
+    // Draw background
+    const z = ZONES[currentZoneId];
+    ctx.fillStyle = '#0a0e17';
+    ctx.fillRect(0, 0, W, H);
+    const cx = ARENA_RADIUS - ox, cy = ARENA_RADIUS - oy;
+    // Arena background gradient
+    const arenaGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, ARENA_RADIUS);
+    arenaGrad.addColorStop(0, z.color);
+    arenaGrad.addColorStop(1, z.bg);
+    ctx.fillStyle = arenaGrad;
+    ctx.beginPath(); ctx.arc(cx, cy, ARENA_RADIUS, 0, Math.PI * 2); ctx.fill();
+    // Arena border
+    ctx.strokeStyle = z.color;
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(cx, cy, ARENA_RADIUS, 0, Math.PI * 2); ctx.stroke();
+    // Zone name
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.font = 'bold 36px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(z.name, cx, cy + 14);
+    ctx.textAlign = 'start';
+
+    // Draw grid inside arena
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    for (let gx = Math.floor((ARENA_RADIUS - ox - ARENA_RADIUS) / 80) * 80 + ARENA_RADIUS; gx < cx + ARENA_RADIUS + 80; gx += 80) {
+        ctx.beginPath(); ctx.moveTo(gx - ox, 0); ctx.lineTo(gx - ox, H); ctx.stroke();
+    }
+    for (let gy = Math.floor(oy / 100) * 100; gy < oy + H + 100; gy += 100) {
+        ctx.beginPath(); ctx.moveTo(0, gy - oy); ctx.lineTo(W, gy - oy); ctx.stroke();
+    }
+
+    // Draw drops
+    drops.forEach(d => {
+        const sx = d.x - ox, sy = d.y - oy;
+        if (sx < -20 || sy < -20 || sx > W + 20 || sy > H + 20) return;
+        const alpha = d.life < 3000 ? d.life / 3000 : 1;
+        ctx.fillStyle = RARITY_COLORS[d.rarity];
+        ctx.globalAlpha = alpha;
+        ctx.beginPath(); ctx.arc(sx, sy, 6 + Math.sin(Date.now()/200) * 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 9px system-ui';
+        ctx.textAlign = 'center';
+        const dropChem = CHEMICAL_PETALS[d.type] || CHEMICAL_PETALS[d.chemId];
+        if (dropChem) ctx.fillText(dropChem.n[0], sx, sy + 3);
+        ctx.globalAlpha = 1;
+        ctx.textAlign = 'start';
+    });
+
+    // Draw mobs
+    mobs.forEach(m => {
+        const sx = m.x - ox, sy = m.y - oy;
+        if (sx < -30 || sy < -30 || sx > W + 30 || sy > H + 30) return;
+        // Body
+        ctx.fillStyle = m.color;
+        ctx.beginPath(); ctx.arc(sx, sy, m.size, 0, Math.PI * 2); ctx.fill();
+        // Rarity border
+        if (m.rarity && m.rarity !== 'common') {
+            ctx.strokeStyle = RARITY_COLORS[m.rarity];
+            ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.arc(sx, sy, m.size + 2, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // HP bar
+        if (m.hp < m.maxHp) {
+            const bw = m.size * 2;
+            ctx.fillStyle = '#333';
+            ctx.fillRect(sx - bw/2, sy - m.size - 8, bw, 3);
+            ctx.fillStyle = m.hp / m.maxHp > 0.5 ? '#4cba6e' : m.hp / m.maxHp > 0.25 ? '#f0c040' : '#f04848';
+            ctx.fillRect(sx - bw/2, sy - m.size - 8, bw * m.hp / m.maxHp, 3);
+        }
+        // Hit flash
+        if (m.hitTimer > 0) {
+            ctx.fillStyle = 'rgba(255,255,255,' + (m.hitTimer / 100 * 0.5) + ')';
+            ctx.beginPath(); ctx.arc(sx, sy, m.size + 3, 0, Math.PI * 2); ctx.fill();
+        }
+        // Name + rarity indicator
+        const rarityLabel = m.rarity && m.rarity !== 'common' ? ' [' + m.rarity[0].toUpperCase() + ']' : '';
+        ctx.fillStyle = m.rarity ? RARITY_COLORS[m.rarity] : '#fff';
+        ctx.font = 'bold 10px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(m.n + rarityLabel, sx, sy - m.size - 12);
+        ctx.textAlign = 'start';
+    });
+
+    // Draw player
+    const px = player.x - ox, py = player.y - oy;
+
+    // Draw projectiles
+    projs.forEach(pj => {
+        var sx = pj.x - ox, sy = pj.y - oy;
+        ctx.fillStyle = '#ff0'; ctx.beginPath(); ctx.arc(sx, sy, 4, 0, Math.PI*2); ctx.fill();
+    });
+    // Draw mines
+    mines.forEach(mn => {
+        var sx = mn.x - ox, sy = mn.y - oy;
+        var mcol = mn.life < 3000 ? '#f44' : '#f80';
+        ctx.fillStyle = mcol; ctx.beginPath(); ctx.arc(sx, sy, mn.size, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+    });
+
+    // Petals (orbiting chemicals)
+    player.petals.forEach((p, i) => {
+        const ex = px + Math.cos(p.angle) * p.r;
+        const ey = py + Math.sin(p.angle) * p.r;
+        const cfg = CHEMICAL_PETALS[p.chemId];
+        if (!cfg) return;
+        const col = cfg.clr;
+        // Orbit ring
+        ctx.strokeStyle = col + '22';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 8]);
+        ctx.beginPath(); ctx.arc(px, py, p.r, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        // Petal glow
+        const glow = ctx.createRadialGradient(ex, ey, 0, ex, ey, 8);
+        glow.addColorStop(0, col); glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(ex, ey, 8, 0, Math.PI * 2); ctx.fill();
+        // Petal core
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.fill();
+        // Type indicator ring
+        ctx.strokeStyle = CAT_COLORS[cfg.cat] || '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(ex, ey, 7, 0, Math.PI * 2); ctx.stroke();
+        // Shield active indicator
+        if (p.shieldActive) {
+            ctx.strokeStyle = '#4488ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(ex, ey, 10, 0, Math.PI * 2); ctx.stroke();
+        }
+        // Rarity border
+        ctx.strokeStyle = RARITY_COLORS[p.rarity];
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(ex, ey, 7, 0, Math.PI * 2); ctx.stroke();
+        // Cooldown indicator
+        if (p.cooldown > 0) {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = '8px system-ui';
+            ctx.textAlign = 'center';
+            ctx.fillText(Math.ceil(p.cooldown / 1000), ex, ey + 3);
+            ctx.textAlign = 'start';
+        }
+    });
+
+    // HP bar above creature
+    const barW = 40, barH = 4, barY = py - 28;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(px - barW/2, barY, barW, barH);
+    // Shield bar
+    if (player.shieldHP > 0) {
+        ctx.fillStyle = '#4488ff';
+        ctx.fillRect(px - barW/2, barY - 4, barW, 3);
+    }
+    const hpRatio = player.hp / player.maxHp;
+    const hpColor = hpRatio > 0.5 ? '#4cba6e' : hpRatio > 0.25 ? '#f0c040' : '#f04848';
+    ctx.fillStyle = hpColor;
+    ctx.fillRect(px - barW/2, barY, barW * hpRatio, barH);
+    ctx.fillStyle = '#fff';
+    ctx.font = '9px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.ceil(player.hp) + '/' + player.maxHp, px, barY - 8);
+    ctx.textAlign = 'start';
+
+    // Player: circular creature (不明生物)
+    const bodyR = 16;
+    const bodyGrad = ctx.createRadialGradient(px-3, py-5, 0, px, py, bodyR);
+    bodyGrad.addColorStop(0, '#ffffff'); bodyGrad.addColorStop(0.3, '#e8e8f0'); bodyGrad.addColorStop(1, '#8899aa');
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath(); ctx.arc(px, py, bodyR, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#556677';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Eyes
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.ellipse(px - 6, py - 3, 4, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(px + 6, py - 3, 4, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(px - 5, py - 2, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px + 7, py - 2, 2, 0, Math.PI * 2); ctx.fill();
+    // Mouth
+    ctx.strokeStyle = '#334455';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(px, py + 4, 5, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+    // Shield glow if active
+    if (player.shieldHP > 0) {
+        ctx.strokeStyle = '#4488ff88';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(px, py, bodyR + 5, 0, Math.PI * 2); ctx.stroke();
+    }
+    // Invincible flash
+    if (player.invincibleTimer > 0 && Math.floor(player.invincibleTimer / 50) % 2 === 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.beginPath(); ctx.arc(px, py, 20, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Attack/defense indicator
+    if (player.attackMode) {
+        ctx.fillStyle = 'rgba(239,68,68,0.15)';
+        ctx.beginPath(); ctx.arc(px, py, 70, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(239,68,68,0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(px, py, 70, 0, Math.PI * 2); ctx.stroke();
+    }
+    if (player.defenseMode) {
+        ctx.fillStyle = 'rgba(59,130,246,0.15)';
+        ctx.beginPath(); ctx.arc(px, py, 35, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(59,130,246,0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(px, py, 35, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // Particles
+    particles.forEach(p => {
+        const sx = p.x - ox, sy = p.y - oy;
+        const alpha = p.life / p.maxLife;
+        ctx.fillStyle = p.clr;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath(); ctx.arc(sx, sy, p.size * alpha, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // Map border
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 3;
+    // circular arena, no world rect
+
+    // Mini cursor
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(mouseX, mouseY, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(mouseX, mouseY, 8, 0, Math.PI * 2); ctx.stroke();
+
+    drawMinimap();
+}
+
+// ==================== SAVE/LOAD ====================
+const SAVE_KEY = 'ion_arena_save';
+let saveInterval;
+
+function saveGame() {
+    const data = {
+        x: player.x, y: player.y,
+        hp: player.hp, maxHp: player.maxHp,
+        level: player.level, xp: player.xp, xpToNext: player.xpToNext,
+        petals: player.petals.filter(p => p != null).map(function(p) { return { chemId: p.chemId, rarity: p.rarity, angle: p.angle }; }),
+        backpack: backpack.filter(p => p != null).map(p => ({ chemId: p.chemId, rarity: p.rarity })),
+        skillPts: player.skillPts,
+        skillLevels: { ...player.skillLevels },
+        bodyDamage: player.bodyDamage,
+        zone: currentZone(),
+    };
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function loadGame() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        player.x = data.x; player.y = data.y;
+        player.hp = data.hp; player.maxHp = data.maxHp;
+        player.level = data.level; player.xp = data.xp; player.xpToNext = data.xpToNext;
+        player.petals = (data.petals || data.electrons || []).map(function(p) { return p ? createPetal(p.chemId || p.cat, p.rarity, p.angle) : null; });
+        backpack = (data.backpack || []).map(p => createPetal(p.chemId || p.cat, p.rarity));
+        player.skillPts = data.skillPts || 0;
+        player.skillLevels = data.skillLevels || {};
+        SKILLS.forEach(s => { if (!(s.id in player.skillLevels)) player.skillLevels[s.id] = 0; });
+        player.bodyDamage = data.bodyDamage || 5;
+        applySkills();
+        return true;
+    } catch(e) { return false; }
+}
+
+function resetSave() {
+    try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+}
+
+// Initialize
+if (!loadGame()) {
+    // New game: spawn initial mobs
+    for (let z = 0; z < ZONES.length; z++) {
+        for (let i = 0; i < 5; i++) spawnMob(z);
+    }
+}
+
+// Auto-save every 15s
+saveInterval = setInterval(saveGame, 15000);
+window.addEventListener('beforeunload', saveGame);
+
+function gameLoop(time) {
+    const dt = lastTime ? time - lastTime : 16;
+    lastTime = time;
+    update(dt);
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// Death respawn: keep progress, respawn in starting zone, reset wave
+document.getElementById('respawnBtn').onclick = function() {
+    player.hp = player.maxHp;
+    player.x = ARENA_RADIUS;
+    player.y = ARENA_RADIUS;
+    player.petals.forEach(function(el) { if(!el) return; el.cooldown = 0; });
+    player.invincibleTimer = 2000;
+    document.getElementById('deathScreen').style.display = 'none';
+    mobs.length = 0;
+    drops.length = 0;
+    WAVE.current = 1;
+    initWave();
+    saveGame();
+};
+
+initWave();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

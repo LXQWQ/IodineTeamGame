@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>碘队 · 化学游戏工坊 | 登录留言玩化学</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="container">
+    <div class="navbar">
+        <div class="logo">🧪 碘队 · 化学游戏工坊 <span>| Iodine Studio</span></div>
+        <div class="nav-right">
+            <!-- 月读主题镜球 - 放在nav-right第一个位置 -->
+            <div class="tsukuyomi-mirrorball" aria-hidden="true">
+                <div class="orbital-ring ring-1"></div>
+                <div class="orbital-ring ring-2"></div>
+                <div class="orbital-ring ring-3"></div>
+            </div>
+            
+            <!-- 音乐播放器 -->
+            <div class="music-player">
+                <button class="music-toggle-btn" id="musicToggleBtn" title="音乐播放控制">
+                    <span class="music-icon">🎵</span>
+                    <span class="music-status" id="musicStatus">暂停</span>
+                </button>
+                <div class="music-dropdown" id="musicDropdown">
+                    <div class="music-header">
+                        <span>🎵 背景音乐</span>
+                        <button class="music-close-btn" id="musicCloseBtn">✕</button>
+                    </div>
+                    <div class="music-controls">
+                        <button class="music-control-btn" id="musicPlayPauseBtn">▶️ 播放</button>
+                        <button class="music-control-btn" id="musicStopBtn">⏹️ 停止</button>
+                        <button class="music-control-btn" id="musicNextBtn">⏭️ 下一首</button>
+                    </div>
+                    <div class="music-volume-control">
+                        <span>🔊 音量</span>
+                        <input type="range" id="musicVolume" min="0" max="100" value="50" class="volume-slider">
+                        <span id="volumeValue">50%</span>
+                    </div>
+                    <div class="music-playlist" id="musicPlaylist">
+                        <!-- 音乐列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="theme-selector">
+                <button class="theme-toggle-btn" id="themeSwitcher">
+                    <span class="reagent-icon">🧪</span>
+                    <span class="theme-name">碘蒸气</span>
+                </button>
+                <div class="theme-dropdown" id="themeDropdown">
+                    <div class="theme-option" data-theme="iodine-vapor" style="--theme-color: #9b59b6;">
+                        <div class="theme-color-preview"></div>
+                        <span>碘蒸气</span>
+                    </div>
+                    <div class="theme-option" data-theme="mercury" style="--theme-color: #c0c0c0;">
+                        <div class="theme-color-preview"></div>
+                        <span>汞齐银</span>
+                    </div>
+                    <div class="theme-option" data-theme="sulfur" style="--theme-color: #ffa500;">
+                        <div class="theme-color-preview"></div>
+                        <span>硫磺焰</span>
+                    </div>
+                    <div class="theme-option" data-theme="cinnabar" style="--theme-color: #dc143c;">
+                        <div class="theme-color-preview"></div>
+                        <span>辰砂红</span>
+                    </div>
+                    <div class="theme-option" data-theme="copper-sulfate" style="--theme-color: #4682b4;">
+                        <div class="theme-color-preview"></div>
+                        <span>胆矾蓝</span>
+                    </div>
+                    <div class="theme-option" data-theme="carbon" style="--theme-color: #666666;">
+                        <div class="theme-color-preview"></div>
+                        <span>活性炭</span>
+                    </div>
+                    <div class="theme-option" data-theme="classic-light" style="--theme-color: #5c2d91;">
+                        <div class="theme-color-preview"></div>
+                        <span>经典浅色</span>
+                    </div>
+                    <div class="theme-option" data-theme="classic-dark" style="--theme-color: #7b4fb8;">
+                        <div class="theme-color-preview"></div>
+                        <span>经典暗色</span>
+                    </div>
+                    <div class="theme-option" data-theme="tsukuyomi" style="--theme-color: #e04090;">
+                        <div class="theme-color-preview"></div>
+                        <span>🌕 月读</span>
+                    </div>
+                </div>
+            </div>
+            <div id="authArea"></div>
+        </div>
+    </div>
+
+    <div class="hero">
+        <canvas id="moleculeCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1"></canvas>
+        <div class="tsukuyomi-pillar" aria-hidden="true"></div>
+        <div class="iodine-formula">[Kr] 4d¹⁰ 5s² 5p⁵</div>
+        
+        <!-- 月读主题专属装饰元素 -->
+        <div class="tsukuyomi-decoration neon-fish" aria-hidden="true"></div>
+        <div class="tsukuyomi-decoration neon-octopus" aria-hidden="true"></div>
+        <div class="tsukuyomi-decoration neon-cloud-top" aria-hidden="true"></div>
+        <div class="tsukuyomi-decoration neon-cloud-bottom" aria-hidden="true"></div>
+        
+        <!-- 月读主题光效 -->
+        <div class="tsukuyomi-light" aria-hidden="true"></div>
+        <div class="tsukuyomi-spotlight" aria-hidden="true"></div>
+            <div class="data-stream stream-1" aria-hidden="true"></div>
+            <div class="data-stream stream-2" aria-hidden="true"></div>
+            <div class="data-stream stream-3" aria-hidden="true"></div>
+            <div class="backlight-burst" aria-hidden="true"></div>
+        <h1><span>⚗️</span> 碘队 AI 化学游戏季</h1>
+        <p>🎮 致第一位「碘化玩家」</p>
+        <p>欢迎来到碘队化学游戏工坊！这里的每一个游戏，都是由站长_Tsukuyomi仅用 Deepseek网页版 辅助创作的化学主题小游戏。它们充满创意、略显稚嫩，遇到 bug 还请多多包涵～</p>
+        <p>📱 丹道化学Pro · 元素大战僵尸Pro · 相转移大作战等游戏已上线~<br>🔥 元素大战僵尸Pro 重构：初始仅H/C！击杀稀盐酸/稀硫酸/吡啶/咪唑等化学物质僵尸→实验室电解·还原·裂解→提取单质解锁元素！</p>
+        <div><span class="badge">🧪 炼丹模拟</span><span class="badge">🔬 个人开发</span><span class="badge">⚡ AI 辅助创作</span></div>
+        <a href="games/message-board/" class="feedback-btn" id="messageBoardBtn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">💬 玩家留言板 →</a>
+	        <button class="tutorial-trigger-btn" id="tutorialTriggerBtn">📖 新手引导</button>
+    </div>
+
+    <!-- 游戏标签页导航 -->
+    <div class="game-tabs">
+        <button class="tab-btn active" data-tab="iodine-games">🧪 碘队游戏</button>
+        <button class="tab-btn" data-tab="hydrogen-games">⚗️ 氢队镜像游戏</button>
+        <button class="tab-btn" data-tab="tools">🔧 实用工具</button>
+    </div>
+
+    <!-- 游戏内容区域 -->
+    <div class="tab-content">
+        <div class="tab-pane active" id="iodine-games">
+            <h2 class="section-title">🧪 碘队游戏</h2>
+            <div class="game-grid" id="iodineGameGrid"></div>
+            <h2 class="section-title" style="margin-top:2rem;">🚧 开发中</h2>
+            <div class="game-grid dev-grid" id="iodineDevGrid"></div>
+        </div>
+        
+        <div class="tab-pane" id="hydrogen-games">
+            <h2 class="section-title">⚗️ 氢队镜像游戏</h2>
+            <div class="game-grid" id="hydrogenGameGrid"></div>
+        </div>
+        
+        <div class="tab-pane" id="tools">
+            <h2 class="section-title">🔧 实用工具</h2>
+            <div class="game-grid" id="toolsGameGrid"></div>
+        </div>
+    </div>
+
+    <div class="footnote">⚛️ 碘队化学游戏工坊 · 所有游戏灵感来自化学世界 | 留言已支持云端同步，全服可见</div>
+    <!-- 月读主题彩蛋文案 -->
+    <div class="tsukuyomi-easter-egg" data-theme="tsukuyomi">
+        八千年の待ち時間、このラボであなたに会うためだった。──月見八千代
+    </div>
+</div>
+
+<!-- 登录/注册模态框 -->
+<div id="authModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">登录</h3>
+        <input type="email" id="loginEmail" placeholder="电子邮箱" autocomplete="email">
+        <input type="password" id="loginPassword" placeholder="密码">
+        <div id="authError" class="error-msg"></div>
+        <div class="modal-buttons">
+            <button id="switchAuthBtn" class="btn-secondary">去注册</button>
+            <button id="submitAuthBtn" class="btn-primary">登录</button>
+            <button id="closeModalBtn" class="btn-secondary">取消</button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
