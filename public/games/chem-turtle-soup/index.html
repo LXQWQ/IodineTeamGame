@@ -274,7 +274,7 @@
         50% { transform: translateX(-30px); }
       }
       /* === 小八千代精灵动画（8×9, 每帧 192×208） === */
-      /* 行: 0眨眼 1右跑 2左跑 3招手 4小跳 5哭 6乐眨眼 7单双眼 8说话 */
+      /* 行: 0眨眼(6) 1右跑(8) 2左跑(8) 3招手(4) 4小跳(5) 5哭(8) 6乐眨眼(6) 7单双眼(6) 8说话(6) */
       .yachiyo-sprite {
         position: fixed; pointer-events: none; z-index: 4;
         bottom: 100px; right: 20px;
@@ -283,22 +283,7 @@
         background-size: 768px 936px;
         background-repeat: no-repeat;
         opacity: 0.85;
-        /* 横向8帧 + 纵向行循环 + 浮动 */
-        animation: ya-h 1.6s steps(8) infinite,
-                   ya-v 14s steps(1) infinite,
-                   yachiyo-float 6s ease-in-out infinite;
-      }
-      @keyframes ya-h {
-        0% { background-position-x: 0; }
-        100% { background-position-x: -768px; }
-      }
-      /* 0眨眼 → 4小跳 → 6乐眨眼 → 7单双眼 → 0 */
-      @keyframes ya-v {
-        0%,8%    { background-position-y: 0; }
-        22%,30%  { background-position-y: -416px; }
-        44%,52%  { background-position-y: -624px; }
-        66%,74%  { background-position-y: -728px; }
-        88%,100% { background-position-y: 0; }
+        animation: yachiyo-float 6s ease-in-out infinite;
       }
       @keyframes yachiyo-float {
         0%,100% { transform: translateY(0); }
@@ -311,13 +296,6 @@
         .neon-cloud-bottom { width: 65px; height: 35px; bottom: 12%; right: 2%; }
         .sparkle { width: 20px; height: 20px; }
         .yachiyo-sprite { width: 64px; height: 72px; background-size: 512px 624px; bottom: 70px; right: 8px; }
-        @keyframes ya-v {
-          0%,8%    { background-position-y: 0; }
-          22%,30%  { background-position-y: -288px; }
-          44%,52%  { background-position-y: -432px; }
-          66%,74%  { background-position-y: -504px; }
-          88%,100% { background-position-y: 0; }
-        }
       }
     </style>
     <script type="module" crossorigin src="./assets/index-B79EhL8X.js"></script>
@@ -339,6 +317,39 @@
     <div class="yachiyo-sprite" aria-hidden="true"></div>
     <div class="tsuki-light tsuki-light-main" aria-hidden="true"></div>
     <div class="tsuki-light tsuki-light-sub" aria-hidden="true"></div>
+    <script>
+      /* 小八千代精灵动画：可变帧数 */
+      (function(){
+        var el = document.querySelector('.yachiyo-sprite');
+        if(!el) return;
+        /* 每行帧数: 0:6 1:8 2:8 3:4 4:5 5:8 6:6 7:6 8:6 */
+        var rows = [6,8,8,4,5,8,6,6,6];
+        /* 动画序列: 眨眼→小跳→乐眨眼→单双眼→眨眼 */
+        var seq = [0,4,6,7];
+        var seqIdx = 0;
+        var frame = 0;
+        var row = 0;
+        var fps = 8; /* frames per second */
+        var w = el.offsetWidth;   /* frame width in px (scaled) */
+        var h = el.offsetHeight;  /* frame height in px (scaled) */
+        var totalW = w * 8;       /* total row width */
+        var totalH = h * 9;       /* total sheet height */
+        function anim(){
+          var maxFrame = rows[row];
+          frame++;
+          if(frame >= maxFrame){ frame = 0; seqIdx = (seqIdx+1) % seq.length; row = seq[seqIdx]; }
+          el.style.backgroundPositionX = -(frame * w) + 'px';
+          el.style.backgroundPositionY = -(row * h) + 'px';
+          el.style.backgroundSize = totalW + 'px ' + totalH + 'px';
+        }
+        setInterval(anim, 1000/fps);
+        /* handle resize */
+        window.addEventListener('resize',function(){
+          w = el.offsetWidth; h = el.offsetHeight;
+          totalW = w * 8; totalH = h * 9;
+        });
+      })();
+    </script>
     <script>
       /* 交互光束：检测新消息，加强对应方向光束 */
       (function(){
