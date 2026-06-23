@@ -29282,7 +29282,7 @@ function TD() {
             children: [z.jsx("div", {
                 className: "absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-900/20 blur-[120px] rounded-full"
             }), z.jsx("div", {
-                className: "absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-900/20 blur-[120px] rounded-full"
+                className: "absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/20 blur-[120px] rounded-full"
             })]
         }), z.jsxs("div", {
             className: "relative z-10 flex flex-col h-[100dvh] md:hidden",
@@ -29489,7 +29489,7 @@ function TD() {
                     })]
                 }), z.jsx("div", {
                     className: "px-3 pb-1",
-                    children: [z.jsx("div", { className: "flex gap-1 mb-2", children: [z.jsx("button", { type: "button", onClick: function(){setModel("deepseek")}, className: ca("px-2 py-1 text-xs rounded-lg transition-colors", model === "deepseek" ? "bg-purple-900/20 text-purple-400 border border-purple-900/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "DS Flash"), z.jsx("button", { type: "button", onClick: function(){setModel("gemini")}, className: ca("px-2 py-1 text-xs rounded-lg transition-colors", model === "gemini" ? "bg-purple-900/20 text-purple-400 border border-purple-900/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "Gemini")] }), z.jsxs("form", {
+                    children: [z.jsx("div", { className: "flex gap-1 mb-2", children: [z.jsx("button", { type: "button", onClick: function(){setModel("deepseek")}, className: ca("px-3 py-1.5 text-xs rounded-lg transition-colors font-medium", model === "deepseek" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "DS Flash"), z.jsx("button", { type: "button", onClick: function(){setModel("gemini")}, className: ca("px-3 py-1.5 text-xs rounded-lg transition-colors font-medium", model === "gemini" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "Gemini")] }), z.jsxs("form", {
                         onSubmit: ut,
                         className: "flex items-center gap-2",
                         children: [z.jsx("input", {
@@ -29709,7 +29709,7 @@ function TD() {
                     })]
                 }), z.jsxs("div", {
                     className: "p-6 bg-zinc-900/80 border-t border-zinc-800 backdrop-blur-md",
-                    children: [z.jsx("div", { className: "flex gap-1 mb-3", children: [z.jsx("button", { type: "button", onClick: function(){setModel("deepseek")}, className: ca("px-2 py-1 text-xs rounded-lg transition-colors", model === "deepseek" ? "bg-purple-900/20 text-purple-400 border border-purple-900/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "DS Flash"), z.jsx("button", { type: "button", onClick: function(){setModel("gemini")}, className: ca("px-2 py-1 text-xs rounded-lg transition-colors", model === "gemini" ? "bg-purple-900/20 text-purple-400 border border-purple-900/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "Gemini")] }), z.jsxs("form", {
+                    children: [z.jsx("div", { className: "flex gap-1 mb-3", children: [z.jsx("button", { type: "button", onClick: function(){setModel("deepseek")}, className: ca("px-3 py-1.5 text-xs rounded-lg transition-colors font-medium", model === "deepseek" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "DS Flash"), z.jsx("button", { type: "button", onClick: function(){setModel("gemini")}, className: ca("px-3 py-1.5 text-xs rounded-lg transition-colors font-medium", model === "gemini" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "Gemini")] }), z.jsxs("form", {
                         onSubmit: ut,
                         className: "relative flex items-center gap-3",
                         children: [z.jsx("input", {
