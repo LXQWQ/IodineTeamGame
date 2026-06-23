@@ -29709,7 +29709,7 @@ function TD() {
                     })]
                 }), z.jsxs("div", {
                     className: "p-6 bg-zinc-900/80 border-t border-zinc-800 backdrop-blur-md",
-                    children: [z.jsxs("form", {
+                    children: [z.jsx("div", { className: "flex gap-1 mb-3", children: [z.jsx("button", { type: "button", onClick: function(){setModel("deepseek")}, className: ca("px-2 py-1 text-xs rounded-lg transition-colors", model === "deepseek" ? "bg-purple-900/20 text-purple-400 border border-purple-900/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "DS Flash"), z.jsx("button", { type: "button", onClick: function(){setModel("gemini")}, className: ca("px-2 py-1 text-xs rounded-lg transition-colors", model === "gemini" ? "bg-purple-900/20 text-purple-400 border border-purple-900/30" : "bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700") }, "Gemini")] }), z.jsxs("form", {
                         onSubmit: ut,
                         className: "relative flex items-center gap-3",
                         children: [z.jsx("input", {
