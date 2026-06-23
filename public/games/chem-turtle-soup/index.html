@@ -262,24 +262,22 @@
         0%,100% { transform: translateX(0); }
         50% { transform: translateX(-30px); }
       }
-      /* === 小八千代精灵动画 === */
+      /* === 小八千代精灵动画（8×9 spritesheet, 每帧 192×208） === */
       .yachiyo-sprite {
         position: fixed; pointer-events: none; z-index: 4;
         bottom: 100px; right: 20px;
-        width: 128px; height: 156px;
+        width: 96px; height: 104px;
         background-image: url('../../effects/spritesheet.webp');
-        background-size: 512px 624px;
+        background-size: 768px 936px;
+        background-position: 0 0;
         background-repeat: no-repeat;
         opacity: 0.85;
-        animation: yachiyo-idle 1.6s steps(4) infinite,
+        animation: yachiyo-idle 1.6s steps(8) infinite,
                    yachiyo-float 6s ease-in-out infinite;
       }
       @keyframes yachiyo-idle {
         0% { background-position: 0 0; }
-        25% { background-position: -128px 0; }
-        50% { background-position: -256px 0; }
-        75% { background-position: -384px 0; }
-        100% { background-position: 0 -156px; }
+        100% { background-position: -768px 0; }
       }
       @keyframes yachiyo-float {
         0%,100% { transform: translateY(0); }
@@ -291,7 +289,7 @@
         .neon-cloud-top { width: 80px; height: 40px; left: 3%; }
         .neon-cloud-bottom { width: 65px; height: 35px; bottom: 12%; right: 2%; }
         .sparkle { width: 20px; height: 20px; }
-        .yachiyo-sprite { width: 96px; height: 117px; background-size: 384px 468px; bottom: 80px; right: 10px; }
+        .yachiyo-sprite { width: 64px; height: 72px; background-size: 512px 624px; bottom: 70px; right: 8px; }
       }
     </style>
     <script type="module" crossorigin src="./assets/index-B79EhL8X.js"></script>
