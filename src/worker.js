@@ -70,15 +70,17 @@ async function callAI(env, puzzle, userMessage, history, model) {
 
   // Gemini 模式：直接走 hteamgame
   if (model === 'gemini') {
+    console.log('[AI] using Gemini (user selected)');
     try {
       const reply = await callGemini(systemPrompt, userMessage);
       return { reply, source: 'gemini' };
     } catch (e) {
-      console.warn(`Gemini error: ${e.message}, falling back to DeepSeek`);
+      console.warn(`[AI] Gemini error: ${e.message}, falling back to DeepSeek`);
     }
   }
 
   // DeepSeek 模式（默认）：主路径
+  console.log('[AI] using DeepSeek Flash');
   const messages = [
     { role: 'system', content: systemPrompt },
     ...history,
@@ -89,16 +91,17 @@ async function callAI(env, puzzle, userMessage, history, model) {
     const reply = await callDeepSeek(env, messages);
     return { reply, source: 'deepseek' };
   } catch (e) {
-    console.warn(`DeepSeek error: ${e.message}`);
+    console.warn(`[AI] DeepSeek error: ${e.message}`);
   }
 
   // DeepSeek 失败 → 降级到 Gemini
   if (model !== 'gemini') {
+    console.log('[AI] falling back to Gemini');
     try {
       const reply = await callGemini(systemPrompt, userMessage);
       return { reply, source: 'gemini-fallback' };
     } catch (e2) {
-      console.warn(`Gemini fallback also failed: ${e2.message}`);
+      console.warn(`[AI] Gemini fallback also failed: ${e2.message}`);
     }
   }
 
@@ -128,10 +131,14 @@ export default {
 
         const result = await callAI(env, puzzle, userMessage, history || [], model || 'deepseek');
 
+        console.log(`[chat] model=${model || 'deepseek'} source=${result.source} msg_len=${result.reply.length}`);
+
         return new Response(JSON.stringify({ reply: result.reply }), {
           headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
+            'X-AI-Model': model || 'deepseek',
+            'X-AI-Source': result.source,
           },
         });
       } catch (e) {
