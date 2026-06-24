@@ -258,50 +258,6 @@
         .yachiyo-sprite { width: 64px; height: 72px; background-size: 512px 624px; bottom: 70px; right: 8px; }
       }
     </style>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTsLoad" async defer></script>
-    <div id="ts-widget" style="display:none"></div>
-    <script>
-      /* Turnstile：invisible 自动执行，用 getResponse 拿 token */
-      var _tsToken = '';
-      var _tsWidgetId = null;
-      function onTsLoad(){
-        _tsWidgetId = turnstile.render('#ts-widget', {
-          sitekey: '0x4AAAAAADqUdZ6DijZSsAks',
-          size: 'invisible',
-          callback: function(t){ _tsToken = t; }
-        });
-        setInterval(function(){
-          _tsToken = '';
-          turnstile.reset(_tsWidgetId);
-        }, 280000); // 300s 有效期，280s 刷新
-      }
-
-      /* fetch 拦截：token 为空时等一等，最多 3 秒 */
-      (function(){
-        var raw = window.fetch;
-        window.fetch = function(url, opts){
-          if (typeof url === 'string' && url === '/api/chat' && opts && opts.body) {
-            return new Promise(function(resolve){
-              function send(){
-                try { var b = JSON.parse(opts.body); b.turnstileToken = _tsToken||''; opts.body = JSON.stringify(b); } catch(e){}
-                resolve(raw(url, opts));
-              }
-              if (_tsToken) return send();
-              // 没 token，触发一次并等待
-              if (_tsWidgetId && typeof turnstile !== 'undefined') {
-                try { turnstile.execute(_tsWidgetId, { action: 'chat' }); } catch(e){}
-              }
-              var waited = 0;
-              var check = setInterval(function(){
-                waited += 100;
-                if (_tsToken || waited >= 3000) { clearInterval(check); send(); }
-              }, 100);
-            });
-          }
-          return raw(url, opts);
-        };
-      })();
-    </script>
     <script type="module" crossorigin src="./assets/index-B79EhL8X.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-DeP_rnF9.css">
   </head>

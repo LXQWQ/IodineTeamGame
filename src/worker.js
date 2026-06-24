@@ -71,20 +71,6 @@ function releaseConcurrency(ip) {
 
 // 惰性清理：checkRate 内部顺便扫过期条目
 
-// === Turnstile 验证 ===
-async function verifyTurnstile(token, ip, env) {
-  const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      secret: env.TURNSTILE_SECRET_KEY,
-      response: token,
-      remoteip: ip,
-    }),
-  });
-  return resp.json();
-}
-
 // 提示词缓存（首次请求时从 public/prompts/ 加载）
 let cachedDSPrompt = null;
 let cachedDefaultPrompt = null;
@@ -283,20 +269,6 @@ export default {
           }
         }
 
-        // Turnstile 人机验证
-        const token = body.turnstileToken;
-        let turnstileOk = false;
-        if (token) {
-          try {
-            const verifyResult = await verifyTurnstile(token, ip, env);
-            turnstileOk = verifyResult.success;
-          } catch (e) { /* 验证接口挂了也降级 */ }
-        }
-        if (!turnstileOk) {
-          effectiveModel = 'gemini';
-          reasons.push('turnstile');
-        }
-
         // 如果是 DeepSeek 模式，计入限流
         if (effectiveModel !== 'gemini') {
           checkRate(ip, false); // 真正计数
@@ -308,7 +280,7 @@ export default {
 
         try {
           const result = await callAI(env, puzzle, userMessage, history || [], effectiveModel);
-          console.log(`[chat] ip=${ip} model=${effectiveModel} source=${result.source} ts=${turnstileOk} msg_len=${result.reply.length}`);
+          console.log(`[chat] ip=${ip} model=${effectiveModel} source=${result.source} msg_len=${result.reply.length}`);
           return new Response(JSON.stringify({ reply: result.reply }), {
             headers: {
               'Content-Type': 'application/json',
