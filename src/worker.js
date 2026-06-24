@@ -25,25 +25,19 @@ const DAILY_CAP = 500;        // 每天总共最多 500 次
 let dailyTotal = 0;
 let dailyReset = Date.now() + 86_400_000;
 
-function checkRate(ip) {
+function checkRate(ip, peekOnly) {
   const now = Date.now();
-  // 重置全局日计数器
   if (now > dailyReset) { dailyTotal = 0; dailyReset = now + 86_400_000; }
-  if (dailyTotal >= DAILY_CAP) return false;
-  // 惰性清理过期 IP 记录
   if (rateMap.size > 100) {
     for (const [k, e] of rateMap) { if (now > e.resetTime) rateMap.delete(k); }
   }
-  // IP 级检查
   const entry = rateMap.get(ip);
   if (!entry || now > entry.resetTime) {
-    rateMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
-    dailyTotal++;
+    if (!peekOnly) { rateMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW }); dailyTotal++; }
     return true;
   }
   if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  dailyTotal++;
+  if (!peekOnly) { entry.count++; dailyTotal++; }
   return true;
 }
 // 第三层：并发限制
@@ -240,16 +234,47 @@ export default {
           });
         }
 
-        // 并发检查
-        if (!acquireConcurrency(ip)) {
-          return new Response(JSON.stringify({ error: '服务器繁忙', reply: '啊啦~月读空间现在太拥挤了✨稍等一下再试试吧🌙' }), {
-            status: 503,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Retry-After': '3' },
+        // === 智能降级决策：根据负载自动切 Gemini ===
+        let effectiveModel = model || 'deepseek';
+        const reasons = [];
+
+        // 获取并发数（acquire 之前先看，不阻塞）
+        const ipActive = ipActiveMap.get(ip) || 0;
+
+        // 1. 全局并发 > 60 → 全员降级 Gemini
+        if (globalActive > 60) {
+          effectiveModel = 'gemini';
+          reasons.push('global-concurrency');
+        }
+        // 2. 单 IP 并发 > 2 → 该 IP 降级
+        else if (ipActive >= IP_CONCURRENCY) {
+          effectiveModel = 'gemini';
+          reasons.push('ip-concurrency');
+        }
+        // 3. 单 IP 速率 > 20/min → 该 IP 降级
+        else if (!checkRate(ip, /* countOnly */ true)) {
+          effectiveModel = 'gemini';
+          reasons.push('ip-ratelimit');
+        }
+        // 4. 全局日限额 → 硬拒绝
+        else if (dailyTotal >= DAILY_CAP) {
+          return new Response(JSON.stringify({ error: '日限额', reply: '今天八千代已经回答了足够多的问题啦✨明天再来吧🌙' }), {
+            status: 429, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
           });
         }
 
+        // 获取并发槽位
+        const gotSlot = acquireConcurrency(ip);
+        if (!gotSlot) {
+          effectiveModel = 'gemini';
+          reasons.push('concurrency-full');
+          // 再试一次 acquire（可能有刚释放的）
+          if (!acquireConcurrency(ip)) {
+            // 彻底满了也降级走 Gemini，不计入限流
+          }
+        }
+
         // Turnstile 人机验证
-        let effectiveModel = model || 'deepseek';
         const token = body.turnstileToken;
         let turnstileOk = false;
         if (token) {
@@ -259,21 +284,17 @@ export default {
           } catch (e) { /* 验证接口挂了也降级 */ }
         }
         if (!turnstileOk) {
-          // Turnstile 失败 → 降级到免费 Gemini，不消耗 DeepSeek 余额
           effectiveModel = 'gemini';
-          console.log(`[chat] turnstile failed for ${ip}, falling back to gemini`);
+          reasons.push('turnstile');
         }
 
-        // 双层限流检查（仅 DeepSeek 走限流，Gemini 不限）
-        if (effectiveModel !== 'gemini' && !checkRate(ip)) {
-          releaseConcurrency(ip);
-          const msg = dailyTotal >= DAILY_CAP
-            ? '今天八千代已经回答了足够多的问题啦✨稍微休息一下，明天再来吧🌙'
-            : '啊啦~神明大人问得太快了✨八千代有点跟不上呢……稍等一下再继续吧🌙';
-          return new Response(JSON.stringify({ error: '请求太频繁', reply: msg }), {
-            status: 429,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'X-RateLimit-IP': ip },
-          });
+        // 如果是 DeepSeek 模式，计入限流
+        if (effectiveModel !== 'gemini') {
+          checkRate(ip, false); // 真正计数
+        }
+
+        if (reasons.length > 0) {
+          console.log(`[chat] degraded to gemini for ${ip}: ${reasons.join(', ')}`);
         }
 
         try {
