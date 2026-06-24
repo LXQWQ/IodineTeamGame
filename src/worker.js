@@ -14,23 +14,35 @@ const DEEPSEEK_MODEL = 'deepseek-chat';
 // hteamgame Gemini 端点
 const GEMINI_URL = 'https://hteamgame.com/api/gemini/generate';
 
-// === 简易 IP 限流（内存，Worker 冷启动时清零） ===
+// === 双层限流（内存，Worker 冷启动时清零） ===
+// 第一层：IP 限流
 const RATE_LIMIT = 20;        // 每 IP 每分钟最多 20 次
 const RATE_WINDOW = 60_000;   // 窗口 60 秒
 const rateMap = new Map();
 
+// 第二层：全局日限额（兜底，不管换多少 IP 都不能超过）
+const DAILY_CAP = 500;        // 每天总共最多 500 次
+let dailyTotal = 0;
+let dailyReset = Date.now() + 86_400_000;
+
 function checkRate(ip) {
   const now = Date.now();
+  // 重置全局日计数器
+  if (now > dailyReset) { dailyTotal = 0; dailyReset = now + 86_400_000; }
+  if (dailyTotal >= DAILY_CAP) return false; // 全局封顶
+  // IP 级检查
   const entry = rateMap.get(ip);
   if (!entry || now > entry.resetTime) {
     rateMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
+    dailyTotal++;
     return true;
   }
   if (entry.count >= RATE_LIMIT) return false;
   entry.count++;
+  dailyTotal++;
   return true;
 }
-// 定期清理过期记录
+// 定期清理
 setInterval(() => {
   const now = Date.now();
   for (const [ip, e] of rateMap) { if (now > e.resetTime) rateMap.delete(ip); }
@@ -193,10 +205,13 @@ export default {
           });
         }
 
-        // IP 限流（Worker 跑在 CF 边缘，CF-Connecting-IP 由 CF 注入，不可伪造）
+        // 双层限流检查
         const ip = request.headers.get('CF-Connecting-IP') || 'cf-missing';
         if (!checkRate(ip)) {
-          return new Response(JSON.stringify({ error: '请求太频繁', reply: '啊啦~神明大人问得太快了✨八千代有点跟不上呢……稍等一下再继续吧🌙' }), {
+          const msg = dailyTotal >= DAILY_CAP
+            ? '今天八千代已经回答了足够多的问题啦✨稍微休息一下，明天再来吧🌙'
+            : '啊啦~神明大人问得太快了✨八千代有点跟不上呢……稍等一下再继续吧🌙';
+          return new Response(JSON.stringify({ error: '请求太频繁', reply: msg }), {
             status: 429,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'X-RateLimit-IP': ip },
           });
