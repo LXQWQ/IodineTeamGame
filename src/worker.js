@@ -65,6 +65,7 @@ async function callDeepSeek(env, messages) {
       messages,
       temperature: 0.8,
       max_tokens: 1024,
+      thinking: { type: 'enabled' },
     }),
   });
   if (!resp.ok) throw new Error(`DeepSeek returned ${resp.status}`);
