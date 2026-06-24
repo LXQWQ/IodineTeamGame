@@ -48,6 +48,20 @@ setInterval(() => {
   for (const [ip, e] of rateMap) { if (now > e.resetTime) rateMap.delete(ip); }
 }, 60_000);
 
+// === Turnstile 验证 ===
+async function verifyTurnstile(token, ip, env) {
+  const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      secret: env.TURNSTILE_SECRET_KEY,
+      response: token,
+      remoteip: ip,
+    }),
+  });
+  return resp.json();
+}
+
 // 提示词缓存（首次请求时从 public/prompts/ 加载）
 let cachedDSPrompt = null;
 let cachedDefaultPrompt = null;
@@ -205,8 +219,23 @@ export default {
           });
         }
 
+        // Turnstile 人机验证
+        const token = body.turnstileToken;
+        if (!token) {
+          return new Response(JSON.stringify({ error: '缺少验证', reply: '请刷新页面后重试🌙' }), {
+            status: 403,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+        const verifyResult = await verifyTurnstile(token, ip, env);
+        if (!verifyResult.success) {
+          return new Response(JSON.stringify({ error: '验证失败', reply: '八千代觉得你有点像机器人呢……刷新页面再试试？🌙' }), {
+            status: 403,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+
         // 双层限流检查
-        const ip = request.headers.get('CF-Connecting-IP') || 'cf-missing';
         if (!checkRate(ip)) {
           const msg = dailyTotal >= DAILY_CAP
             ? '今天八千代已经回答了足够多的问题啦✨稍微休息一下，明天再来吧🌙'
