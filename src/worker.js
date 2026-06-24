@@ -46,6 +46,27 @@ function checkRate(ip) {
   dailyTotal++;
   return true;
 }
+// 第三层：并发限制
+const GLOBAL_CONCURRENCY = 80;  // 全局同时最多 80 个请求
+const IP_CONCURRENCY = 2;       // 单 IP 同时最多 2 个请求
+let globalActive = 0;
+const ipActiveMap = new Map();
+
+function acquireConcurrency(ip) {
+  if (globalActive >= GLOBAL_CONCURRENCY) return false;
+  const n = ipActiveMap.get(ip) || 0;
+  if (n >= IP_CONCURRENCY) return false;
+  globalActive++;
+  ipActiveMap.set(ip, n + 1);
+  return true;
+}
+function releaseConcurrency(ip) {
+  globalActive = Math.max(0, globalActive - 1);
+  const n = ipActiveMap.get(ip) || 0;
+  if (n <= 1) ipActiveMap.delete(ip);
+  else ipActiveMap.set(ip, n - 1);
+}
+
 // 惰性清理：checkRate 内部顺便扫过期条目
 
 // === Turnstile 验证 ===
@@ -219,24 +240,33 @@ export default {
           });
         }
 
-        // Turnstile 人机验证
-        const token = body.turnstileToken;
-        if (!token) {
-          return new Response(JSON.stringify({ error: '缺少验证', reply: '请刷新页面后重试🌙' }), {
-            status: 403,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-          });
-        }
-        const verifyResult = await verifyTurnstile(token, ip, env);
-        if (!verifyResult.success) {
-          return new Response(JSON.stringify({ error: '验证失败', reply: '八千代觉得你有点像机器人呢……刷新页面再试试？🌙' }), {
-            status: 403,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        // 并发检查
+        if (!acquireConcurrency(ip)) {
+          return new Response(JSON.stringify({ error: '服务器繁忙', reply: '啊啦~月读空间现在太拥挤了✨稍等一下再试试吧🌙' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Retry-After': '3' },
           });
         }
 
-        // 双层限流检查
-        if (!checkRate(ip)) {
+        // Turnstile 人机验证
+        let effectiveModel = model || 'deepseek';
+        const token = body.turnstileToken;
+        let turnstileOk = false;
+        if (token) {
+          try {
+            const verifyResult = await verifyTurnstile(token, ip, env);
+            turnstileOk = verifyResult.success;
+          } catch (e) { /* 验证接口挂了也降级 */ }
+        }
+        if (!turnstileOk) {
+          // Turnstile 失败 → 降级到免费 Gemini，不消耗 DeepSeek 余额
+          effectiveModel = 'gemini';
+          console.log(`[chat] turnstile failed for ${ip}, falling back to gemini`);
+        }
+
+        // 双层限流检查（仅 DeepSeek 走限流，Gemini 不限）
+        if (effectiveModel !== 'gemini' && !checkRate(ip)) {
+          releaseConcurrency(ip);
           const msg = dailyTotal >= DAILY_CAP
             ? '今天八千代已经回答了足够多的问题啦✨稍微休息一下，明天再来吧🌙'
             : '啊啦~神明大人问得太快了✨八千代有点跟不上呢……稍等一下再继续吧🌙';
@@ -246,18 +276,20 @@ export default {
           });
         }
 
-        const result = await callAI(env, puzzle, userMessage, history || [], model || 'deepseek');
-
-        console.log(`[chat] ip=${ip} model=${model || 'deepseek'} source=${result.source} msg_len=${result.reply.length}`);
-
-        return new Response(JSON.stringify({ reply: result.reply }), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'X-AI-Model': model || 'deepseek',
-            'X-AI-Source': result.source,
-          },
-        });
+        try {
+          const result = await callAI(env, puzzle, userMessage, history || [], effectiveModel);
+          console.log(`[chat] ip=${ip} model=${effectiveModel} source=${result.source} ts=${turnstileOk} msg_len=${result.reply.length}`);
+          return new Response(JSON.stringify({ reply: result.reply }), {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'X-AI-Model': effectiveModel,
+              'X-AI-Source': result.source,
+            },
+          });
+        } finally {
+          releaseConcurrency(ip);
+        }
       } catch (e) {
         return new Response(JSON.stringify({ error: e.message }), {
           status: 500,
