@@ -258,61 +258,31 @@
         .yachiyo-sprite { width: 64px; height: 72px; background-size: 512px 624px; bottom: 70px; right: 8px; }
       }
     </style>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTsLoad" async defer></script>
     <div id="ts-widget" style="display:none"></div>
     <script>
-      /* Turnstile fetch 拦截（防抖版） */
+      /* Turnstile：invisible 自动执行，用 getResponse 拿 token */
+      var _tsToken = '';
+      var _tsRefresh = null;
+      function onTsLoad(){
+        var id = turnstile.render('#ts-widget', {
+          sitekey: '0x4AAAAAADqUdZ6DijZSsAks',
+          size: 'invisible',
+          callback: function(t){ _tsToken = t; }
+        });
+        // 每 120 秒自动刷新 token（Turnstile token 有效期 300s）
+        _tsRefresh = setInterval(function(){
+          _tsToken = '';
+          turnstile.reset(id);
+        }, 120000);
+      }
+
+      /* fetch 拦截 */
       (function(){
-        var SITE_KEY = '0x4AAAAAADqUdZ6DijZSsAks';
-        var widgetId = null;
-        var pendingPromise = null;
-        var tokenCache = null;
         var raw = window.fetch;
-
-        function initWidget(){
-          if (typeof turnstile === 'undefined') { setTimeout(initWidget, 200); return; }
-          try { turnstile.render('#ts-widget', { sitekey: SITE_KEY, size: 'invisible' }); } catch(e){}
-          widgetId = true;
-        }
-        if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', initWidget);
-        else initWidget();
-
-        function getToken(){
-          if (tokenCache && tokenCache.expires > Date.now()) return Promise.resolve(tokenCache.value);
-          if (pendingPromise) return pendingPromise;
-          if (typeof turnstile === 'undefined') return Promise.resolve('');
-          pendingPromise = new Promise(function(resolve){
-            try {
-              var promise = turnstile.execute('#ts-widget', { action: 'chat' });
-              if (promise && typeof promise.then === 'function') {
-                promise.then(function(t){
-                  if (t) tokenCache = { value: t, expires: Date.now() + 280000 };
-                  pendingPromise = null;
-                  resolve(t || '');
-                }).catch(function(e){
-                  console.warn('Turnstile execute failed:', e);
-                  pendingPromise = null;
-                  resolve('');
-                });
-              } else {
-                pendingPromise = null;
-                resolve('');
-              }
-            } catch(e){
-              console.warn('Turnstile error:', e.message);
-              pendingPromise = null;
-              resolve('');
-            }
-          });
-          return pendingPromise;
-        }
-
         window.fetch = function(url, opts){
           if (typeof url === 'string' && url === '/api/chat' && opts && opts.body) {
-            return getToken().then(function(token){
-              try { var b = JSON.parse(opts.body); b.turnstileToken = token||''; opts.body = JSON.stringify(b); } catch(e){}
-              return raw(url, opts);
-            });
+            try { var b = JSON.parse(opts.body); b.turnstileToken = _tsToken||''; opts.body = JSON.stringify(b); } catch(e){}
           }
           return raw(url, opts);
         };
