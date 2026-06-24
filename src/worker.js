@@ -20,14 +20,22 @@ const RATE_LIMIT = 20;        // 每 IP 每分钟最多 20 次
 const RATE_WINDOW = 60_000;   // 窗口 60 秒
 const rateMap = new Map();
 
-// 第二层：全局日限额（兜底，不管换多少 IP 都不能超过）
-const DAILY_CAP = 500;        // 每天总共最多 500 次
+// 第二层：全局日限额（超限自动降级 Gemini，北京时间 0 点重置）
+const DAILY_CAP = 500;
 let dailyTotal = 0;
-let dailyReset = Date.now() + 86_400_000;
+let dailyReset = getNextMidnight();
+
+function getNextMidnight() {
+  const now = new Date();
+  // UTC+8 北京时间次日 0:00
+  const bjMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 16)); // UTC+8 midnight = UTC 16:00
+  if (bjMidnight <= now) bjMidnight.setUTCDate(bjMidnight.getUTCDate() + 1);
+  return bjMidnight.getTime();
+}
 
 function checkRate(ip, peekOnly) {
   const now = Date.now();
-  if (now > dailyReset) { dailyTotal = 0; dailyReset = now + 86_400_000; }
+  if (now > dailyReset) { dailyTotal = 0; dailyReset = getNextMidnight(); }
   if (rateMap.size > 100) {
     for (const [k, e] of rateMap) { if (now > e.resetTime) rateMap.delete(k); }
   }
@@ -256,11 +264,11 @@ export default {
           effectiveModel = 'gemini';
           reasons.push('ip-ratelimit');
         }
-        // 4. 全局日限额 → 硬拒绝
-        else if (dailyTotal >= DAILY_CAP) {
-          return new Response(JSON.stringify({ error: '日限额', reply: '今天八千代已经回答了足够多的问题啦✨明天再来吧🌙' }), {
-            status: 429, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-          });
+        // 4. 全局日限额 → 降级 Gemini（0 点自动恢复）
+        if (Date.now() > dailyReset) { dailyTotal = 0; dailyReset = getNextMidnight(); }
+        if (dailyTotal >= DAILY_CAP) {
+          effectiveModel = 'gemini';
+          reasons.push('daily-cap');
         }
 
         // 获取并发槽位
