@@ -258,12 +258,26 @@
         .yachiyo-sprite { width: 64px; height: 72px; background-size: 512px 624px; bottom: 70px; right: 8px; }
       }
     </style>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+    <div id="ts-widget" style="display:none"></div>
     <script>
       /* Turnstile fetch 拦截：每次 /api/chat 自动带 token */
       (function(){
         var SITE_KEY = '0x4AAAAAADqUdZ6DijZSsAks';
+        var widgetId = null;
         var raw = window.fetch;
+
+        // 等 Turnstile 加载后渲染隐形 widget
+        function initWidget(){
+          if (typeof turnstile === 'undefined') { setTimeout(initWidget, 200); return; }
+          widgetId = turnstile.render('#ts-widget', { sitekey: SITE_KEY, size: 'invisible' });
+        }
+        if (document.readyState === 'loading') {
+          window.addEventListener('DOMContentLoaded', initWidget);
+        } else {
+          initWidget();
+        }
+
         window.fetch = function(url, opts){
           if (typeof url === 'string' && url === '/api/chat' && opts && opts.body) {
             return new Promise(function(resolve, reject){
@@ -271,8 +285,8 @@
                 try { var b = JSON.parse(opts.body); b.turnstileToken = token||''; opts.body = JSON.stringify(b); } catch(e){}
                 raw(url, opts).then(resolve).catch(reject);
               }
-              if (typeof turnstile !== 'undefined') {
-                turnstile.execute({ sitekey: SITE_KEY, action: 'chat' }).then(function(t){ send(t); }).catch(function(){ send(''); });
+              if (widgetId && typeof turnstile !== 'undefined') {
+                turnstile.execute(widgetId, { action: 'chat' }).then(send).catch(function(){ send(''); });
               } else {
                 send('');
               }
