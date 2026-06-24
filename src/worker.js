@@ -193,8 +193,8 @@ export default {
           });
         }
 
-        // IP 限流
-        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        // IP 限流（Worker 跑在 CF 边缘，CF-Connecting-IP 由 CF 注入，不可伪造）
+        const ip = request.headers.get('CF-Connecting-IP') || 'cf-missing';
         if (!checkRate(ip)) {
           return new Response(JSON.stringify({ error: '请求太频繁', reply: '啊啦~神明大人问得太快了✨八千代有点跟不上呢……稍等一下再继续吧🌙' }), {
             status: 429,
