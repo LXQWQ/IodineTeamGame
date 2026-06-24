@@ -29,7 +29,11 @@ function checkRate(ip) {
   const now = Date.now();
   // 重置全局日计数器
   if (now > dailyReset) { dailyTotal = 0; dailyReset = now + 86_400_000; }
-  if (dailyTotal >= DAILY_CAP) return false; // 全局封顶
+  if (dailyTotal >= DAILY_CAP) return false;
+  // 惰性清理过期 IP 记录
+  if (rateMap.size > 100) {
+    for (const [k, e] of rateMap) { if (now > e.resetTime) rateMap.delete(k); }
+  }
   // IP 级检查
   const entry = rateMap.get(ip);
   if (!entry || now > entry.resetTime) {
@@ -42,11 +46,7 @@ function checkRate(ip) {
   dailyTotal++;
   return true;
 }
-// 定期清理
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, e] of rateMap) { if (now > e.resetTime) rateMap.delete(ip); }
-}, 60_000);
+// 惰性清理：checkRate 内部顺便扫过期条目
 
 // === Turnstile 验证 ===
 async function verifyTurnstile(token, ip, env) {
