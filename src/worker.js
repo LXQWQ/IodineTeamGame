@@ -14,6 +14,28 @@ const DEEPSEEK_MODEL = 'deepseek-chat';
 // hteamgame Gemini 端点
 const GEMINI_URL = 'https://hteamgame.com/api/gemini/generate';
 
+// === 简易 IP 限流（内存，Worker 冷启动时清零） ===
+const RATE_LIMIT = 20;        // 每 IP 每分钟最多 20 次
+const RATE_WINDOW = 60_000;   // 窗口 60 秒
+const rateMap = new Map();
+
+function checkRate(ip) {
+  const now = Date.now();
+  const entry = rateMap.get(ip);
+  if (!entry || now > entry.resetTime) {
+    rateMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+// 定期清理过期记录
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, e] of rateMap) { if (now > e.resetTime) rateMap.delete(ip); }
+}, 60_000);
+
 // 提示词缓存（首次请求时从 public/prompts/ 加载）
 let cachedDSPrompt = null;
 let cachedDefaultPrompt = null;
@@ -157,9 +179,32 @@ export default {
           });
         }
 
+        // 输入大小限制
+        if (userMessage.length > 300) {
+          return new Response(JSON.stringify({ error: '提问过长，最多300字', reply: '神明大人的问题太长了啦~🌙能简短一点吗？' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+        if ((history || []).length > 20) {
+          return new Response(JSON.stringify({ error: '对话轮次过多，请刷新重来', reply: '唔…聊了太久了呢✨先换一汤再继续吧~🌙' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+
+        // IP 限流
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        if (!checkRate(ip)) {
+          return new Response(JSON.stringify({ error: '请求太频繁', reply: '啊啦~神明大人问得太快了✨八千代有点跟不上呢……稍等一下再继续吧🌙' }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'X-RateLimit-IP': ip },
+          });
+        }
+
         const result = await callAI(env, puzzle, userMessage, history || [], model || 'deepseek');
 
-        console.log(`[chat] model=${model || 'deepseek'} source=${result.source} msg_len=${result.reply.length}`);
+        console.log(`[chat] ip=${ip} model=${model || 'deepseek'} source=${result.source} msg_len=${result.reply.length}`);
 
         return new Response(JSON.stringify({ reply: result.reply }), {
           headers: {
