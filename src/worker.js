@@ -243,6 +243,7 @@ export default {
         }
 
         // === 智能降级决策：根据负载自动切 Gemini ===
+        const ip = request.headers.get('CF-Connecting-IP') || 'cf-missing';
         let effectiveModel = model || 'deepseek';
         const reasons = [];
 

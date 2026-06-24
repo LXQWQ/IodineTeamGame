@@ -285,6 +285,7 @@
           pendingPromise = new Promise(function(resolve){
             if (typeof turnstile === 'undefined') { pendingPromise = null; resolve(''); return; }
             try {
+              turnstile.reset('#ts-widget');
               var promise = turnstile.execute('#ts-widget', { action: 'chat' });
               if (promise && typeof promise.then === 'function') {
                 promise.then(function(t){
