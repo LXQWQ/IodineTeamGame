@@ -263,25 +263,27 @@
     <script>
       /* Turnstile：invisible 自动执行，用 getResponse 拿 token */
       var _tsToken = '';
-      var _tsRefresh = null;
+      var _tsWidgetId = null;
       function onTsLoad(){
-        var id = turnstile.render('#ts-widget', {
+        _tsWidgetId = turnstile.render('#ts-widget', {
           sitekey: '0x4AAAAAADqUdZ6DijZSsAks',
           size: 'invisible',
           callback: function(t){ _tsToken = t; }
         });
-        // 每 120 秒自动刷新 token（Turnstile token 有效期 300s）
-        _tsRefresh = setInterval(function(){
+        setInterval(function(){
           _tsToken = '';
-          turnstile.reset(id);
-        }, 120000);
+          turnstile.reset(_tsWidgetId);
+        }, 280000); // 300s 有效期，280s 刷新
       }
 
-      /* fetch 拦截 */
+      /* fetch 拦截：token 为空时尝试触发一次 */
       (function(){
         var raw = window.fetch;
         window.fetch = function(url, opts){
           if (typeof url === 'string' && url === '/api/chat' && opts && opts.body) {
+            if (!_tsToken && _tsWidgetId && typeof turnstile !== 'undefined') {
+              try { turnstile.execute(_tsWidgetId, { action: 'chat' }); } catch(e){ /* 可能已在执行，忽略，callback 会更新 token */ }
+            }
             try { var b = JSON.parse(opts.body); b.turnstileToken = _tsToken||''; opts.body = JSON.stringify(b); } catch(e){}
           }
           return raw(url, opts);
