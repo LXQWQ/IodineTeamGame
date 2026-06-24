@@ -278,21 +278,19 @@
         else initWidget();
 
         function getToken(){
-          // 如果有缓存的 token 且未过期（5min），直接复用
           if (tokenCache && tokenCache.expires > Date.now()) return Promise.resolve(tokenCache.value);
-          // 如果正在获取中，复用同一个 promise
           if (pendingPromise) return pendingPromise;
+          if (typeof turnstile === 'undefined') return Promise.resolve('');
           pendingPromise = new Promise(function(resolve){
-            if (typeof turnstile === 'undefined') { pendingPromise = null; resolve(''); return; }
             try {
-              turnstile.reset('#ts-widget');
               var promise = turnstile.execute('#ts-widget', { action: 'chat' });
               if (promise && typeof promise.then === 'function') {
                 promise.then(function(t){
-                  tokenCache = { value: t, expires: Date.now() + 280000 };
+                  if (t) tokenCache = { value: t, expires: Date.now() + 280000 };
                   pendingPromise = null;
-                  resolve(t);
-                }).catch(function(){
+                  resolve(t || '');
+                }).catch(function(e){
+                  console.warn('Turnstile execute failed:', e);
                   pendingPromise = null;
                   resolve('');
                 });
@@ -300,7 +298,11 @@
                 pendingPromise = null;
                 resolve('');
               }
-            } catch(e){ pendingPromise = null; resolve(''); }
+            } catch(e){
+              console.warn('Turnstile error:', e.message);
+              pendingPromise = null;
+              resolve('');
+            }
           });
           return pendingPromise;
         }
