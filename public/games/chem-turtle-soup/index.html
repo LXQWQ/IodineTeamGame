@@ -35,103 +35,72 @@
       }
       html, body {
         height: 100%; overflow: hidden;
-        background: transparent !important;
+        background: #0d0a1a;
         font-family: system-ui,-apple-system,'Segoe UI','Poppins','Roboto',sans-serif;
       }
-      /* 覆盖所有硬编码背景为透明，让 pseudo-elements 透出来 */
-      .bg-\[\#0a0a0c\], [class*="bg-zinc-950"], [class*="bg-zinc-900"] {
-        background-color: transparent !important;
-      }
-      /* 确保容器有半透明背景 */
-      .bg-zinc-900\\/50, .bg-zinc-900\\/80, .bg-zinc-900\\/95 {
-        background-color: rgba(30,34,53,0.7) !important;
-      }
-      /* 底部输入栏保留实色 */
-      .bg-zinc-900\\/80.border-t {
-        background-color: rgba(21,19,34,0.92) !important;
-      }
+      .bg-\[\#0a0a0c\] { background-color: #151225 !important; }
 
-      /* === 背景氛围（参考辉夜姬官网三层叠加灯光） === */
-      body::before {
-        content: '' !important; display: block !important; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      /* === 背景氛围（#root 伪元素，参考月读推理设计） === */
+      #root::before {
+        content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
-          /* 月亮光晕 */
-          radial-gradient(ellipse 60vw 50vh at 50% 30%, rgba(224,64,144,0.07) 0%, transparent 60%),
-          /* 青色辅助光 */
-          radial-gradient(ellipse 40vw 35vh at 80% 55%, rgba(0,184,212,0.05) 0%, transparent 50%),
-          /* 金色暖光 */
-          radial-gradient(ellipse 50vw 40vh at 20% 75%, rgba(255,183,77,0.04) 0%, transparent 50%),
-          linear-gradient(180deg, #0d0a1a 0%, #1e2235 40%, #1a1d2e 100%);
-        animation: tsuki-bg-breathe 15s ease-in-out infinite;
+          radial-gradient(ellipse 70vw 60vh at 30% 10%, rgba(196,74,213,0.07) 0%, transparent 60%),
+          radial-gradient(ellipse 50vw 40vh at 80% 80%, rgba(0,212,192,0.05) 0%, transparent 50%),
+          radial-gradient(ellipse 40vw 30vh at 50% 50%, rgba(240,192,80,0.03) 0%, transparent 50%),
+          linear-gradient(180deg, #0d0a1a 0%, #151225 40%, #1a1530 100%);
+        animation: bg-breathe 12s ease-in-out infinite;
       }
-      @keyframes tsuki-bg-breathe {
-        0%,100% { opacity: 1; }
-        50% { opacity: 0.82; }
-      }
+      @keyframes bg-breathe { 0%,100%{opacity:1} 50%{opacity:0.78} }
 
-      /* 星光粒子层 */
-      body::after {
-        content: '' !important; display: block !important;
-        position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      #root::after {
+        content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
-          radial-gradient(2px 2px at 8% 18%, rgba(255,183,77,0.8), transparent),
-          radial-gradient(1.5px 1.5px at 22% 10%, rgba(224,64,144,0.7), transparent),
-          radial-gradient(1.5px 1.5px at 35% 62%, rgba(0,184,212,0.6), transparent),
-          radial-gradient(2px 2px at 48% 20%, rgba(255,183,77,0.7), transparent),
-          radial-gradient(1.5px 1.5px at 55% 70%, rgba(224,64,144,0.6), transparent),
-          radial-gradient(1.5px 1.5px at 68% 25%, rgba(0,184,212,0.6), transparent),
-          radial-gradient(2px 2px at 78% 65%, rgba(224,64,144,0.55), transparent),
-          radial-gradient(1.5px 1.5px at 85% 12%, rgba(255,183,77,0.7), transparent),
-          radial-gradient(2.5px 2.5px at 12% 78%, rgba(224,64,144,0.5), transparent),
-          radial-gradient(2px 2px at 92% 42%, rgba(0,184,212,0.45), transparent);
-        animation: tsuki-stars-drift 25s linear infinite;
+          radial-gradient(1.5px 1.5px at 12% 22%, rgba(240,192,80,0.7), transparent),
+          radial-gradient(1.5px 1.5px at 28% 8%, rgba(196,74,213,0.6), transparent),
+          radial-gradient(1.5px 1.5px at 42% 65%, rgba(0,212,192,0.5), transparent),
+          radial-gradient(2px 2px at 55% 15%, rgba(240,192,80,0.6), transparent),
+          radial-gradient(1.5px 1.5px at 68% 72%, rgba(196,74,213,0.5), transparent),
+          radial-gradient(1.5px 1.5px at 78% 30%, rgba(0,212,192,0.5), transparent),
+          radial-gradient(2px 2px at 88% 70%, rgba(196,74,213,0.45), transparent),
+          radial-gradient(1.5px 1.5px at 92% 10%, rgba(240,192,80,0.6), transparent),
+          radial-gradient(2.5px 2.5px at 5% 80%, rgba(196,74,213,0.4), transparent),
+          radial-gradient(2px 2px at 48% 88%, rgba(0,212,192,0.35), transparent);
+        animation: stars-drift 30s linear infinite;
       }
-      @keyframes tsuki-stars-drift {
-        0% { transform: translateY(0) scale(1); }
-        50% { transform: translateY(-15px) scale(1.05); }
-        100% { transform: translateY(-30px) scale(1); }
-      }
+      @keyframes stars-drift { 0%{transform:translateY(0)scale(1)} 50%{transform:translateY(-10px)scale(1.03)} 100%{transform:translateY(-20px)scale(1)} }
 
       #root { height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; position: relative; z-index: 1; }
 
-      /* 滚动条 */
-      ::-webkit-scrollbar { width: 5px; }
-      ::-webkit-scrollbar-track { background: var(--tsuki-card); }
-      ::-webkit-scrollbar-thumb { background: var(--tsuki-accent); border-radius: 3px; border: 1px solid var(--tsuki-border); }
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: var(--tsuki-accent); border-radius: 4px; }
       ::-webkit-scrollbar-thumb:hover { background: var(--tsuki-accent-cyan); }
 
-      /* 选中文字 */
-      ::selection { background: rgba(224,64,144,0.3); color: #e8e4ef; }
+      ::selection { background: rgba(196,74,213,0.3); color: #ebe5f5; }
 
-      /* 卡片容器：辉夜姬风格柔光边框 */
+      /* 卡片柔光 */
       [class*="bg-zinc-900/50"], [class*="bg-zinc-900/80"], [class*="bg-zinc-900/95"] {
-        box-shadow: 0 0 40px rgba(224,64,144,0.15), inset 0 1px 0 rgba(224,64,144,0.18) !important;
+        box-shadow: 0 0 40px rgba(196,74,213,0.12), inset 0 1px 0 rgba(196,74,213,0.15) !important;
         border-color: var(--tsuki-border) !important;
         backdrop-filter: blur(8px);
       }
-      [class*="rounded-2xl"] {
-        border-color: rgba(224,64,144,0.2) !important;
-      }
+      [class*="rounded-2xl"] { border-color: rgba(196,74,213,0.2) !important; }
 
-      /* 标题发光 */
       .text-emerald-400, .text-emerald-500 {
-        text-shadow: 0 0 20px var(--tsuki-glow), 0 0 40px rgba(0,184,212,0.2);
+        text-shadow: 0 0 20px rgba(196,74,213,0.25), 0 0 40px rgba(0,212,192,0.15);
       }
 
-      /* 输入框：辉夜姬风格聚焦 */
-      input, textarea {
-        transition: all 0.4s ease !important;
-      }
+      /* 输入框聚焦环（参考设计：box-shadow ring） */
       input:focus, textarea:focus {
+        outline: none !important;
         border-color: var(--tsuki-accent) !important;
-        box-shadow: 0 0 18px var(--tsuki-glow), inset 0 0 8px rgba(224,64,144,0.06) !important;
+        box-shadow: 0 0 0 3px var(--tsuki-glow) !important;
       }
 
-      /* 按钮渐变：辉夜姬三色（粉→青→金） */
       .bg-emerald-500, button.bg-emerald-500 {
         background: linear-gradient(135deg, var(--tsuki-accent), var(--tsuki-accent-cyan)) !important;
         border: none !important;
-        transition: all 0.4s ease !important;
+        transition: transform 0.2s, box-shadow 0.2s !important;
       }
       button.bg-emerald-500:hover, .bg-emerald-500:hover {
         background: linear-gradient(135deg, var(--tsuki-accent-cyan), var(--tsuki-accent-gold)) !important;
@@ -139,29 +108,20 @@
         transform: translateY(-1px);
       }
 
-      /* 所有按钮悬停：粉色边框 + 发光 */
       button:hover:not(:disabled) {
         border-color: var(--tsuki-accent) !important;
-        box-shadow: 0 0 14px rgba(224,64,144,0.2) !important;
-        transition: all 0.3s ease !important;
+        box-shadow: 0 0 14px rgba(196,74,213,0.2) !important;
       }
       button[class*="bg-zinc-900"]:hover:not(:disabled) {
-        background-color: rgba(224,64,144,0.08) !important;
+        background-color: rgba(196,74,213,0.06) !important;
       }
-      /* Group hover 图标缩放 */
-      .group:hover .group-hover\:scale-110 {
-        transform: scale(1.1);
-      }
-      .group:hover .group-hover\:text-emerald-400 {
-        color: var(--tsuki-accent);
-      }
+      .group:hover .group-hover\:scale-110 { transform: scale(1.1); }
+      .group:hover .group-hover\:text-emerald-400 { color: var(--tsuki-accent); }
 
-      /* 难度指示器发光 */
       .shadow-\\[0_0_8px_rgba\\(16\\,185\\,129\\,0\\.5\\)\\] {
         box-shadow: 0 0 8px var(--tsuki-glow) !important;
       }
 
-      /* 链接高亮 */
       a:hover { color: var(--tsuki-accent-cyan) !important; }
 
       /* === 月读概念背景图 === */
