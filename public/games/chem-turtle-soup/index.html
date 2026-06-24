@@ -261,35 +261,54 @@
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
     <div id="ts-widget" style="display:none"></div>
     <script>
-      /* Turnstile fetch 拦截：每次 /api/chat 自动带 token */
+      /* Turnstile fetch 拦截（防抖版） */
       (function(){
         var SITE_KEY = '0x4AAAAAADqUdZ6DijZSsAks';
         var widgetId = null;
+        var pendingPromise = null;
+        var tokenCache = null;
         var raw = window.fetch;
 
-        // 等 Turnstile 加载后渲染隐形 widget
         function initWidget(){
           if (typeof turnstile === 'undefined') { setTimeout(initWidget, 200); return; }
-          widgetId = turnstile.render('#ts-widget', { sitekey: SITE_KEY, size: 'invisible' });
+          try { turnstile.render('#ts-widget', { sitekey: SITE_KEY, size: 'invisible' }); } catch(e){}
+          widgetId = true;
         }
-        if (document.readyState === 'loading') {
-          window.addEventListener('DOMContentLoaded', initWidget);
-        } else {
-          initWidget();
+        if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', initWidget);
+        else initWidget();
+
+        function getToken(){
+          // 如果有缓存的 token 且未过期（5min），直接复用
+          if (tokenCache && tokenCache.expires > Date.now()) return Promise.resolve(tokenCache.value);
+          // 如果正在获取中，复用同一个 promise
+          if (pendingPromise) return pendingPromise;
+          pendingPromise = new Promise(function(resolve){
+            if (typeof turnstile === 'undefined') { pendingPromise = null; resolve(''); return; }
+            try {
+              var promise = turnstile.execute('#ts-widget', { action: 'chat' });
+              if (promise && typeof promise.then === 'function') {
+                promise.then(function(t){
+                  tokenCache = { value: t, expires: Date.now() + 280000 };
+                  pendingPromise = null;
+                  resolve(t);
+                }).catch(function(){
+                  pendingPromise = null;
+                  resolve('');
+                });
+              } else {
+                pendingPromise = null;
+                resolve('');
+              }
+            } catch(e){ pendingPromise = null; resolve(''); }
+          });
+          return pendingPromise;
         }
 
         window.fetch = function(url, opts){
           if (typeof url === 'string' && url === '/api/chat' && opts && opts.body) {
-            return new Promise(function(resolve, reject){
-              function send(token){
-                try { var b = JSON.parse(opts.body); b.turnstileToken = token||''; opts.body = JSON.stringify(b); } catch(e){}
-                raw(url, opts).then(resolve).catch(reject);
-              }
-              if (widgetId && typeof turnstile !== 'undefined') {
-                turnstile.execute(widgetId, { action: 'chat' }).then(send).catch(function(){ send(''); });
-              } else {
-                send('');
-              }
+            return getToken().then(function(token){
+              try { var b = JSON.parse(opts.body); b.turnstileToken = token||''; opts.body = JSON.stringify(b); } catch(e){}
+              return raw(url, opts);
             });
           }
           return raw(url, opts);
