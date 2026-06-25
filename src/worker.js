@@ -300,9 +300,8 @@ export default {
       }
     }
 
-    // 考纲可视化 → 图片等资源文件从 hteamgame.com 反代（太大了不下）
-    if (url.pathname.startsWith('/氢队游戏/考纲可视化/') &&
-        (url.pathname.includes('/images') || url.pathname.includes('/images_v2') || url.pathname.includes('/stem_crops') || url.pathname.includes('/assets'))) {
+    // 考纲可视化 → index.html 用本地（免登录），其余全反代 hteamgame.com
+    if (url.pathname.startsWith('/氢队游戏/考纲可视化/') && !url.pathname.match(/\/考纲可视化\/(index\.html)?$/)) {
       return fetch(`https://hteamgame.com${url.pathname}${url.search}`);
     }
 
