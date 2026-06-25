@@ -314,6 +314,12 @@ export default {
     }
 
     // 静态文件
-    return env.ASSETS.fetch(request);
+    const assetResp = await env.ASSETS.fetch(request);
+    // 404 兜底：从 hteamgame.com 拉取（镜像的游戏资源如图片等）
+    if (assetResp.status === 404) {
+      const fallback = await fetch(`https://hteamgame.com${url.pathname}${url.search}`);
+      if (fallback.ok) return fallback;
+    }
+    return assetResp;
   },
 };
