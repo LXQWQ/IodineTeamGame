@@ -300,6 +300,12 @@ export default {
       }
     }
 
+    // 考纲可视化 → 图片等资源文件从 hteamgame.com 反代（太大了不下）
+    if (url.pathname.startsWith('/氢队游戏/考纲可视化/') &&
+        (url.pathname.includes('/images') || url.pathname.includes('/images_v2') || url.pathname.includes('/stem_crops') || url.pathname.includes('/assets'))) {
+      return fetch(`https://hteamgame.com${url.pathname}${url.search}`);
+    }
+
     // /api/* 其他请求 → hteamgame.com 反向代理
     if (url.pathname.startsWith('/api/')) {
       const target = `https://hteamgame.com${url.pathname}${url.search}`;
@@ -314,12 +320,6 @@ export default {
     }
 
     // 静态文件
-    const assetResp = await env.ASSETS.fetch(request);
-    // 404 兜底：从 hteamgame.com 拉取（镜像的游戏资源如图片等）
-    if (assetResp.status === 404) {
-      const fallback = await fetch(`https://hteamgame.com${url.pathname}${url.search}`);
-      if (fallback.ok) return fallback;
-    }
-    return assetResp;
+    return env.ASSETS.fetch(request);
   },
 };
