@@ -10947,8 +10947,8 @@ if(__exports != exports)module.exports = exports;return module.exports}));
   window.cgSessionId = sessionId;
 
   // ----------------------- supabase client -----------------------
-  if(!window.supabase || !window.supabase.createClient){
-    console.warn('[auth] supabase-js 未加载，登录与日志均跳过');
+  if(!window.supabase || !window.supabase.createClient || !SUPABASE_URL){
+    console.warn('[auth] 碘队镜像：免登录模式');
     window.cgTrack = function(){};
     return;
   }
