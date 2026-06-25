@@ -200,7 +200,7 @@
             { id:6, name:"pKa酸性吞噬 Acid Arena", emoji:"🧪", tag:"酸碱化学", desc:"酸碱大乱斗 agar.io！你控制一个分子在酸池里游泳——遇到 pKa 比你大的（酸性更弱的），一口吞掉它变大；遇到 pKa 比你小的，赶紧跑！从羧酸到磺酸，7 个关卡帮你把 pKa 大小牢牢记住。", link:"氢队游戏/酸性吞噬/", newWindow:true },
             { id:7, name:"元素大战僵尸 Elements vs. Zombies", emoji:"🧟", tag:"元素性质", desc:"PvZ 的化学版！用元素周期表上的元素守卫你的实验室——钠发火球、氟放毒气、氦做盾牌。每种元素都有独特的化学属性加成，需要消耗'电子'资源来部署。僵尸正在靠近，准备好你的元素防线了吗？", link:"氢队游戏/元素大战僵尸/", newWindow:true },
             { id:8, name:"CChO 考纲可视化", emoji:"📊", tag:"竞赛考纲", desc:"2024 CChO 国初考纲交互式知识图谱！分类浏览全部考点，关联历年真题，可视化掌握竞赛知识体系。备考化竞的必备工具。", link:"氢队游戏/考纲可视化/", newWindow:true },
-            { id:9, name:"酸碱大冒险 Acid and Base", emoji:"⚗️", tag:"酸碱化学", desc:"用试剂溶解难溶固体，引导水流到容器！60关闯关模式+无限模式，涵盖酸碱反应、王水、铵盐溶解等真实化学知识。双人对战+单人闯关！", link:"氢队游戏/acid-base-beta/", newWindow:true }
+            { id:9, name:"酸碱大冒险 Acid and Base", emoji:"⚗️", tag:"双人合作", desc:"双人合作平台跳跃！酸人（绿）和碱人（蓝）各守其道，收集化学物质获得特效，合作通过关卡出口。支持双人闯关和单人无尽模式，手机触屏直接操作！", link:"氢队游戏/acid-base-beta/", newWindow:true }
         ];
         function renderGames(gamesArray, gridId, isDev) {
             const grid = document.getElementById(gridId);
