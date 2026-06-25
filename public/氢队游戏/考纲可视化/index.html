@@ -10962,7 +10962,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
   });
   window.cgSupabase = sb;
 
-  let currentUser = null;   // { id, email, nickname }
+  let currentUser = { id: 'guest', email: 'guest@iteamgame.dpdns.org', nickname: '碘队访客' }; // 碘队镜像：免登录
   let currentProfile = null;
 
   // ----------------------- 行为埋点 -----------------------
@@ -11197,25 +11197,19 @@ if(__exports != exports)module.exports = exports;return module.exports}));
   }
 
   async function syncSession(session){
+    // 碘队镜像：始终免登录，不重置 currentUser
     if(session && session.user){
       currentUser = {
         id: session.user.id,
         email: session.user.email,
       };
       currentProfile = await loadProfile(session.user.id);
-    } else {
-      currentUser = null;
-      currentProfile = null;
     }
     renderAuthBox();
   }
 
-  sb.auth.getSession().then(({ data }) => {
-    syncSession(data && data.session);
-  });
-  sb.auth.onAuthStateChange((_event, session) => {
-    syncSession(session);
-  });
+  try { sb.auth.getSession().then(({ data }) => { syncSession(data && data.session); }).catch(()=>{}); } catch(e){}
+  try { sb.auth.onAuthStateChange((_event, session) => { syncSession(session); }); } catch(e){}
 
   // ----------------------- 暴露给外部代码用 -----------------------
   window.cgAuth = {
@@ -11442,7 +11436,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
 
   // ============ requireAuth 闸门 ============
   function isLoggedIn(){
-    return !!(window.cgAuth && window.cgAuth.user && window.cgAuth.user());
+    return true; // 碘队镜像：移除登录限制，所有功能直接可用
   }
   function requireAuth(featureName){
     if(isLoggedIn()) return true;
