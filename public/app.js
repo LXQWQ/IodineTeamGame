@@ -199,7 +199,8 @@
             { id:5, name:"环己烷大作战", emoji:"♟️", tag:"立体化学", desc:"立体化学变成了策略棋盘！支持AI人机对战（三种难度）和双人PvP。用 SN2、消除、加成等试剂卡在环己烷椅式构象上占领位点，翻转构象逆转战局！", link:"氢队游戏/环己烷大作战/", newWindow:true },
             { id:6, name:"pKa酸性吞噬 Acid Arena", emoji:"🧪", tag:"酸碱化学", desc:"酸碱大乱斗 agar.io！你控制一个分子在酸池里游泳——遇到 pKa 比你大的（酸性更弱的），一口吞掉它变大；遇到 pKa 比你小的，赶紧跑！从羧酸到磺酸，7 个关卡帮你把 pKa 大小牢牢记住。", link:"氢队游戏/酸性吞噬/", newWindow:true },
             { id:7, name:"元素大战僵尸 Elements vs. Zombies", emoji:"🧟", tag:"元素性质", desc:"PvZ 的化学版！用元素周期表上的元素守卫你的实验室——钠发火球、氟放毒气、氦做盾牌。每种元素都有独特的化学属性加成，需要消耗'电子'资源来部署。僵尸正在靠近，准备好你的元素防线了吗？", link:"氢队游戏/元素大战僵尸/", newWindow:true },
-            { id:8, name:"CChO 考纲可视化", emoji:"📊", tag:"竞赛考纲", desc:"2024 CChO 国初考纲交互式知识图谱！分类浏览全部考点，关联历年真题，可视化掌握竞赛知识体系。备考化竞的必备工具。", link:"氢队游戏/考纲可视化/", newWindow:true }
+            { id:8, name:"CChO 考纲可视化", emoji:"📊", tag:"竞赛考纲", desc:"2024 CChO 国初考纲交互式知识图谱！分类浏览全部考点，关联历年真题，可视化掌握竞赛知识体系。备考化竞的必备工具。", link:"氢队游戏/考纲可视化/", newWindow:true },
+            { id:9, name:"酸碱大冒险 Acid and Base", emoji:"⚗️", tag:"双人对抗", desc:"酸碱主题双人对战！P1 控制酸 P2 控制碱，在化学战场上展开对决。单人闯关 + 双人对抗，看看谁才是酸碱王者！", link:"氢队游戏/acid-base-beta/", newWindow:true }
         ];
         function renderGames(gamesArray, gridId, isDev) {
             const grid = document.getElementById(gridId);
