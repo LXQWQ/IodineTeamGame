@@ -263,7 +263,8 @@
                 }
             });
             document.querySelectorAll('.play-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     const link = btn.dataset.link;
                     const newWindow = btn.dataset.new === 'true';
                     if (link) {
