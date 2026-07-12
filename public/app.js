@@ -680,14 +680,16 @@
                     { file: 'IROHA.mp3', title: "IROHA's Dancing All Night", duration: '1:30' },
                     { file: 'ALL-ヤチヨ降臨.mp3', title: 'ヤチヨ降臨', duration: '4:02' },
                     { file: 'ALL-私の好きだったもの.mp3', title: '私の好きだったもの', duration: '1:48' },
-                    { file: 'All-月影.mp3', title: '月影', duration: '4:32' }
+                    { file: 'All-月影.mp3', title: '月影', duration: '4:32' },
+                    { file: 'His Theme.mp3', title: 'His Theme', duration: '3:30' }
                 ],
                 tsukuyomi: [
                     { file: 'OPENING ACT@TSUKUYOMI.mp3', title: 'OPENING ACT@TSUKUYOMI', duration: '3:38' },
                     { file: 'TSUKUYOMI.mp3', title: 'TSUKUYOMI', duration: '6:44' },
                     { file: 'IROHA.mp3', title: "IROHA's Dancing All Night", duration: '1:30' },
                     { file: 'うつし世の姫.mp3', title: 'うつし世の姫', duration: '6:43' },
-                    { file: 'かぐやと彩葉.mp3', title: 'かぐやと彩葉', duration: '3:08' }
+                    { file: 'かぐやと彩葉.mp3', title: 'かぐやと彩葉', duration: '3:08' },
+                    { file: 'His Theme.mp3', title: 'His Theme', duration: '3:30' }
                 ]
             };
             // 音乐播放器状态 - 从localStorage恢复
