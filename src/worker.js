@@ -12,7 +12,11 @@ const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
 const DEEPSEEK_MODEL = 'deepseek-chat';
 
 // hteamgame Gemini 端点
-const GEMINI_URL = 'https://hteamgame.com/api/gemini/generate';
+// 氢队封锁了 Cloudflare Worker 出口 IP，直连必 403；
+// 主路径改为 Supabase Edge Function 中转（AWS 出口，非 Cloudflare），直连仅作兜底。
+const GEMINI_VIA_SUPABASE = 'https://supabase.iteamgame.dpdns.org/functions/v1/htgemini';
+const GEMINI_DIRECT = 'https://hteamgame.com/api/gemini/generate';
+const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
 
 // === 双层限流（内存，Worker 冷启动时清零） ===
 // 第一层：IP 限流
@@ -88,21 +92,44 @@ async function loadPrompts(env) {
 }
 
 /**
- * 调用 Gemini（hteamgame）
+ * 调用 Gemini（氢队）：
+ * 1. 主：Supabase Edge Function 中转（绕过 IP 封锁）
+ * 2. 兜底：直连氢队（若其解封 Cloudflare IP 则恢复）
  */
 async function callGemini(systemPrompt, userMessage) {
-  const resp = await fetch(GEMINI_URL, {
+  const payload = {
+    contents: [{ parts: [{ text: `玩家提问：${userMessage}` }] }],
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    generationConfig: { temperature: 0.8 },
+  };
+  const baseHeaders = {
+    'Content-Type': 'application/json',
+    // 带浏览器 UA，避免氢队按 UA 特征拦截
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+  };
+
+  // 主路径：Supabase Edge Function 中转（出口非 Cloudflare）
+  try {
+    const resp = await fetch(GEMINI_VIA_SUPABASE, {
+      method: 'POST',
+      headers: { ...baseHeaders, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify(payload),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (reply) return reply;
+    }
+    console.warn(`[Gemini] via supabase returned ${resp.status}, trying direct`);
+  } catch (e) {
+    console.warn(`[Gemini] via supabase error: ${e.message}, trying direct`);
+  }
+
+  // 兜底：直连氢队
+  const resp = await fetch(GEMINI_DIRECT, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // 带浏览器 UA，避免氢队按 UA 特征拦截 Worker 出口请求
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-    },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: `玩家提问：${userMessage}` }] }],
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      generationConfig: { temperature: 0.8 },
-    }),
+    headers: baseHeaders,
+    body: JSON.stringify(payload),
   });
   if (!resp.ok) throw new Error(`Gemini returned ${resp.status}`);
   const data = await resp.json();
