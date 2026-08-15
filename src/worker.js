@@ -340,6 +340,9 @@ export default {
       });
       const upstream = await fetch(proxyReq);
 
+      // 诊断：暴露上游状态码，便于排查氢队反爬
+      const upstreamStatus = upstream.status;
+
       // GET /api/puzzles：氢队失败（403/超时等）时降级为本地缓存题目，保证游戏可用
       if (url.pathname === '/api/puzzles' && request.method === 'GET' && !upstream.ok) {
         console.warn(`[puzzles] upstream ${upstream.status}, serving local backup`);
@@ -352,6 +355,7 @@ export default {
             'Content-Type': 'application/json; charset=utf-8',
             'Access-Control-Allow-Origin': '*',
             'X-Puzzles-Source': 'local-backup',
+            'X-Upstream-Status': String(upstreamStatus),
           },
         });
       }
