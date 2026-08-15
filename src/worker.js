@@ -93,7 +93,11 @@ async function loadPrompts(env) {
 async function callGemini(systemPrompt, userMessage) {
   const resp = await fetch(GEMINI_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      // 带浏览器 UA，避免氢队按 UA 特征拦截 Worker 出口请求
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    },
     body: JSON.stringify({
       contents: [{ parts: [{ text: `玩家提问：${userMessage}` }] }],
       systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -308,14 +312,51 @@ export default {
     // /api/* 其他请求 → hteamgame.com 反向代理
     if (url.pathname.startsWith('/api/')) {
       const target = `https://hteamgame.com${url.pathname}${url.search}`;
+
+      // 只转发必要的头，剔除 Cloudflare 内部头与转发头。
+      // 氢队站点也在 Cloudflare 后面：若把 CF-Connecting-IP 等原样转发，
+      // 来源 IP（本 Worker 出口 IP）与头中声明的客户端 IP 不匹配，
+      // 会被氢队判定为伪造客户端 IP → 403 {"error":"Forbidden"}。
+      const headers = new Headers();
+      const src = request.headers;
+      for (const [k, v] of src.entries()) {
+        const lk = k.toLowerCase();
+        if (lk.startsWith('cf-')) continue;          // CF-Connecting-IP / CF-Ray / CF-IPCountry / CF-Worker ...
+        if (lk === 'cdn-loop') continue;             // Cloudflare 回环标记
+        if (lk.startsWith('x-forwarded-')) continue; // X-Forwarded-For / X-Forwarded-Proto ...
+        if (lk === 'x-real-ip' || lk === 'host' || lk === 'connection' ||
+            lk === 'content-length' || lk === 'accept-encoding') continue;
+        headers.set(k, v);
+      }
+      // 统一使用浏览器 UA，避免氢队按 UA 特征拦截
+      headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36');
+
       const proxyReq = new Request(target, {
         method: request.method,
-        headers: request.headers,
+        headers,
         body: request.method !== 'GET' && request.method !== 'HEAD'
           ? await request.text()
           : undefined,
       });
-      return fetch(proxyReq);
+      const upstream = await fetch(proxyReq);
+
+      // GET /api/puzzles：氢队失败（403/超时等）时降级为本地缓存题目，保证游戏可用
+      if (url.pathname === '/api/puzzles' && request.method === 'GET' && !upstream.ok) {
+        console.warn(`[puzzles] upstream ${upstream.status}, serving local backup`);
+        const local = await env.ASSETS.fetch(
+          new Request('https://dummy/games/chem-turtle-soup/puzzles-backup.json')
+        );
+        return new Response(local.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Access-Control-Allow-Origin': '*',
+            'X-Puzzles-Source': 'local-backup',
+          },
+        });
+      }
+
+      return upstream;
     }
 
     // 静态文件
