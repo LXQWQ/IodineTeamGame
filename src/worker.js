@@ -79,14 +79,24 @@ function releaseConcurrency(ip) {
 let cachedDSPrompt = null;
 let cachedDefaultPrompt = null;
 
+// 去掉行尾空白并压缩连续空行，减小请求体。
+// 氢队 Gemini 代理对 ~75KB 的大请求体间歇性返回 500「服务暂时不可用」，
+// 瘦身后 ~50KB 可稳定通过（不影响语义）。
+function slimPrompt(text) {
+  return text
+    .replace(/[ \t]+$/gm, '')
+    .replace(/\n{2,}/g, '\n')
+    .trim();
+}
+
 async function loadPrompts(env) {
   if (!cachedDSPrompt) {
     const dsResp = await env.ASSETS.fetch(new Request('https://dummy/prompts/dsv4flash.txt'));
-    cachedDSPrompt = await dsResp.text();
+    cachedDSPrompt = slimPrompt(await dsResp.text());
   }
   if (!cachedDefaultPrompt) {
     const dfResp = await env.ASSETS.fetch(new Request('https://dummy/prompts/default.txt'));
-    cachedDefaultPrompt = await dfResp.text();
+    cachedDefaultPrompt = slimPrompt(await dfResp.text());
   }
   return { ds: cachedDSPrompt, df: cachedDefaultPrompt };
 }
