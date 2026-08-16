@@ -412,11 +412,12 @@
             [data-theme="tsukuyomi"] .tsuki-moon { width: 80px; height: 80px; top: 5%; right: 6%; }
         }
         /* 鸟居剪影（舞台设定）· 亮粉色避免融入深紫背景 */
+        /* 位置：月亮（右上 right:9%）正下方、贴下边缘略偏左，避开底部按钮 */
         [data-theme="tsukuyomi"] .tsuki-torii {
             display: block;
             position: absolute;
             bottom: 4px;
-            left: 5%;
+            right: 18%;
             width: 116px;
             height: 92px;
             z-index: 20;
@@ -429,7 +430,7 @@
             50% { transform: translateY(-6px); }
         }
         @media (max-width: 768px) {
-            [data-theme="tsukuyomi"] .tsuki-torii { width: 80px; height: 64px; left: 3%; }
+            [data-theme="tsukuyomi"] .tsuki-torii { width: 80px; height: 64px; right: 12%; }
         }
         @property --reveal {
             syntax: '<percentage>';
