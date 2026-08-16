@@ -11,13 +11,11 @@
 const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
 const DEEPSEEK_MODEL = 'deepseek-chat';
 
-// hteamgame Gemini 端点
-// 氢队封锁了 Cloudflare Worker 出口 IP，直连必 403；
-// 主路径改为 Supabase Edge Function 中转（AWS 出口，非 Cloudflare），直连仅作兜底。
-// 注意：必须用 supabase.co 官方域名 —— Worker 访问自定义域名（同 zone 回环）会 522。
-const GEMINI_VIA_SUPABASE = 'https://ujinwsfueaifaoskapzs.supabase.co/functions/v1/htgemini';
+// Gemini 端点
+// 主路径：htgemini Worker（用户自己的 Gemini Key 直连 Google，Cloudflare 出口，模型 gemini-3.5-flash）
+// 兜底：直连氢队（若其解封 Cloudflare IP 则恢复）；再失败由上层降级 DeepSeek。
+const GEMINI_VIA_HTGEMINI = 'https://htgmn.iteamgame.dpdns.org/';
 const GEMINI_DIRECT = 'https://hteamgame.com/api/gemini/generate';
-const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
 
 // Gemini 调用诊断（最近一次调用结果，供 X-Gemini-Debug 响应头排查用）
 let geminiDebug = null;
@@ -107,7 +105,7 @@ async function loadPrompts(env) {
 
 /**
  * 调用 Gemini（氢队）：
- * 1. 主：Supabase Edge Function 中转（绕过 IP 封锁）
+ * 1. 主：htgemini Worker（用户 Gemini Key 直连 Google，Cloudflare 出口）
  * 2. 兜底：直连氢队（若其解封 Cloudflare IP 则恢复）
  */
 async function callGemini(systemPrompt, userMessage) {
@@ -122,23 +120,23 @@ async function callGemini(systemPrompt, userMessage) {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
   };
 
-  // 主路径：Supabase Edge Function 中转（出口非 Cloudflare）
+  // 主路径：htgemini Worker（用户自己的 Gemini Key 直连 Google）
   try {
-    const resp = await fetch(GEMINI_VIA_SUPABASE, {
+    const resp = await fetch(GEMINI_VIA_HTGEMINI, {
       method: 'POST',
-      headers: { ...baseHeaders, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+      headers: baseHeaders,
       body: JSON.stringify(payload),
     });
     if (resp.ok) {
       const data = await resp.json();
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (reply) { geminiDebug = 'ok:supabase'; return reply; }
+      if (reply) { geminiDebug = 'ok:htgemini'; return reply; }
     }
-    geminiDebug = `fail:supabase-${resp.status}`;
-    console.warn(`[Gemini] via supabase returned ${resp.status}, trying direct`);
+    geminiDebug = `fail:htgemini-${resp.status}`;
+    console.warn(`[Gemini] via htgemini returned ${resp.status}, trying direct`);
   } catch (e) {
-    geminiDebug = `fail:supabase-err:${e.message}`;
-    console.warn(`[Gemini] via supabase error: ${e.message}, trying direct`);
+    geminiDebug = `fail:htgemini-err:${e.message}`;
+    console.warn(`[Gemini] via htgemini error: ${e.message}, trying direct`);
   }
 
   // 兜底：直连氢队
