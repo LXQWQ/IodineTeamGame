@@ -1,0 +1,1626 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><script type="application/json" data-od-external-dependencies>["https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=Noto+Sans+SC:wght@400;500;700&family=Rajdhani:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap"]</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Iodine:ChemTerritory · 化境争霸</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=Noto+Sans+SC:wght@400;500;700&family=Rajdhani:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   化境争霸 · 战争化学对战
+   调性：红蓝对峙 · 战争HUD · 化学公式
+   ============================================================ */
+:root{
+  --bg0:#070a10; --bg1:#0b1019; --bg2:#101624;
+  --panel:rgba(13,19,30,.78); --panel-solid:#0e1524;
+  --line:rgba(150,168,204,.16); --line2:rgba(150,168,204,.34);
+  --text:#e8edf6; --text2:#a7b3c9; --muted:#6c7791;
+  --red:#ff4655; --red-deep:#6e1420; --red-glow:rgba(255,70,85,.42);
+  --blue:#3aa0ff; --blue-deep:#123a63; --blue-glow:rgba(58,160,255,.42);
+  --amber:#ffb454; --ok:#57e389; --danger:#ff4655;
+  --r-sm:6px; --r-md:10px; --r-lg:14px;
+  --font-d:'Noto Serif SC',serif;
+  --font-h:'Rajdhani',system-ui,sans-serif;
+  --font-b:'Noto Sans SC',system-ui,sans-serif;
+  --font-m:'IBM Plex Mono',ui-monospace,monospace;
+  --stripe-red:repeating-linear-gradient(45deg,rgba(255,70,85,.55) 0 8px,transparent 8px 16px);
+  --stripe-blue:repeating-linear-gradient(45deg,rgba(58,160,255,.55) 0 8px,transparent 8px 16px);
+  --stripe-amber:repeating-linear-gradient(45deg,rgba(255,180,84,.55) 0 8px,transparent 8px 16px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font-b);color:var(--text);background:var(--bg0);
+  overflow:hidden;-webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;color:inherit;cursor:pointer}
+::selection{background:rgba(255,70,85,.35)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:4px}
+
+/* ---------- 背景画布 + 网格 ---------- */
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;display:block}
+.grid-overlay{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(rgba(120,140,190,.05) 1px,transparent 1px) 0 0/100% 46px,
+    linear-gradient(90deg,rgba(120,140,190,.05) 1px,transparent 1px) 0 0/46px 100%,
+    radial-gradient(60% 50% at 50% 40%,transparent 0%,rgba(4,6,10,.4) 100%);
+  mask-image:radial-gradient(80% 80% at 50% 50%,#000,transparent 100%);
+  -webkit-mask-image:radial-gradient(80% 80% at 50% 50%,#000,transparent 100%);
+}
+.scanlines{
+  position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.05;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(200,215,255,.5) 3px 4px);
+}
+.vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+  box-shadow:inset 0 0 220px rgba(0,0,0,.85);}
+.app-shell{position:relative;z-index:3;height:100dvh;display:flex;flex-direction:column}
+
+/* ---------- 通用战争按钮 ---------- */
+.btn{
+  position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:1px solid var(--line2);background:rgba(150,168,204,.07);color:var(--text);
+  font-weight:700;font-size:14px;padding:10px 20px;min-height:44px;border-radius:var(--r-sm);
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+  transition:transform .16s,box-shadow .25s,background .25s,border-color .25s;
+  letter-spacing:.04em;
+}
+.btn::before{
+  content:"";position:absolute;top:0;left:-90%;width:45%;height:100%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.22),transparent);
+  transform:skewX(-20deg);transition:left .45s ease;pointer-events:none;
+}
+.btn:hover::before{left:135%}
+.btn:hover{border-color:var(--amber);box-shadow:0 0 22px rgba(255,180,84,.22)}
+.btn:active{transform:translateY(1px) scale(.985)}
+.btn:disabled{opacity:.38;cursor:not-allowed}
+.btn.primary-red{background:linear-gradient(135deg,#ff4655,#a82130);border:none;color:#fff;box-shadow:0 6px 26px rgba(255,70,85,.35)}
+.btn.primary-red:hover{box-shadow:0 6px 34px rgba(255,70,85,.55)}
+.btn.primary-blue{background:linear-gradient(135deg,#3aa0ff,#1c4f8a);border:none;color:#fff;box-shadow:0 6px 26px rgba(58,160,255,.35)}
+.btn.primary-blue:hover{box-shadow:0 6px 34px rgba(58,160,255,.55)}
+.btn.ghost{border-color:var(--line2);background:rgba(150,168,204,.05)}
+.btn.small{font-size:12px;padding:7px 13px;min-height:34px}
+.ripple{
+  position:absolute;border-radius:50%;transform:scale(0);pointer-events:none;
+  background:rgba(255,255,255,.35);animation:rip .6s ease-out forwards;
+}
+@keyframes rip{to{transform:scale(4);opacity:0}}
+
+/* ============================================================
+   第 1 屏：标题 / 阵营选择
+   ============================================================ */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;transition:opacity .4s,transform .4s}
+.screen.hidden{opacity:0;transform:scale(1.03);pointer-events:none}
+
+.title-screen{align-items:center;justify-content:center;gap:34px;padding:40px 24px;overflow-y:auto}
+.title-eyebrow{
+  font-family:var(--font-m);font-size:12px;letter-spacing:.5em;color:var(--muted);
+  text-transform:uppercase;display:flex;align-items:center;gap:14px;
+}
+.title-eyebrow::before,.title-eyebrow::after{content:"";width:70px;height:1px;background:linear-gradient(90deg,transparent,var(--red-glow));}
+.title-eyebrow::after{background:linear-gradient(270deg,transparent,var(--blue-glow))}
+.title-main{
+  font-family:var(--font-d);font-weight:900;font-size:clamp(56px,9vw,120px);line-height:1;text-align:center;
+  letter-spacing:.06em;
+  background:linear-gradient(180deg,#fff 0%,#b9c6e0 45%,#7a8ab0 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 8px 30px rgba(0,0,0,.6));
+}
+.title-main em{
+  font-style:normal;
+  background:linear-gradient(120deg,#ff4655 0%,#ff7a52 50%,#3aa0ff 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.title-sub{font-family:var(--font-h);font-size:16px;letter-spacing:.7em;color:var(--text2);text-align:center;text-transform:uppercase}
+.title-sub b{color:var(--amber);font-weight:700}
+
+.camp-row{display:flex;gap:26px;justify-content:center;flex-wrap:wrap;max-width:980px;width:100%}
+.camp-card{
+  position:relative;flex:1;min-width:300px;max-width:460px;padding:26px 24px 22px;border-radius:var(--r-lg);
+  background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  overflow:hidden;cursor:pointer;transition:transform .25s,border-color .25s,box-shadow .3s;
+}
+.camp-card::before{content:"";position:absolute;top:0;left:0;right:0;height:5px}
+.camp-card.red::before{background:linear-gradient(90deg,#ff4655,#ff7a52)}
+.camp-card.blue::before{background:linear-gradient(90deg,#3aa0ff,#57e389)}
+.camp-card:hover{transform:translateY(-6px)}
+.camp-card.selected.red{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 20px 60px rgba(255,70,85,.25)}
+.camp-card.selected.blue{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),0 20px 60px rgba(58,160,255,.25)}
+.camp-card.red:hover{border-color:var(--red)}
+.camp-card.blue:hover{border-color:var(--blue)}
+.camp-head{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.camp-emblems{width:56px;height:56px;flex-shrink:0;display:grid;place-items:center;border-radius:12px}
+.camp-card.red .camp-emblems{background:radial-gradient(60% 60% at 50% 40%,rgba(255,70,85,.35),rgba(110,20,32,.2));border:1px solid rgba(255,70,85,.4)}
+.camp-card.blue .camp-emblems{background:radial-gradient(60% 60% at 50% 40%,rgba(58,160,255,.35),rgba(18,58,99,.2));border:1px solid rgba(58,160,255,.4)}
+.camp-card h2{font-family:var(--font-d);font-weight:900;font-size:26px;line-height:1.2}
+.camp-card.red h2{color:#ff7d85;text-shadow:0 0 22px rgba(255,70,85,.4)}
+.camp-card.blue h2{color:#7dc1ff;text-shadow:0 0 22px rgba(58,160,255,.4)}
+.camp-en{font-family:var(--font-h);font-size:12px;letter-spacing:.32em;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.camp-card p{font-size:14px;line-height:1.8;color:var(--text2);margin-bottom:14px}
+.camp-formula{
+  font-family:var(--font-m);font-size:12px;color:var(--amber);letter-spacing:.1em;line-height:2;margin-bottom:16px;
+  padding:10px 12px;border:1px dashed var(--line2);border-radius:var(--r-sm);background:rgba(0,0,0,.25);
+}
+.camp-stats{display:flex;gap:8px;margin-bottom:18px}
+.stat-tag{flex:1;text-align:center;font-family:var(--font-m);font-size:12px;color:var(--text2);padding:8px 4px;border-radius:var(--r-sm);border:1px solid var(--line)}
+.stat-tag b{display:block;font-size:18px;font-family:var(--font-h)}
+.camp-card.red .stat-tag b{color:var(--red)}
+.camp-card.blue .stat-tag b{color:var(--blue)}
+.camp-btn{width:100%}
+
+.title-actions{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+.mode-row{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+.mode-btn{min-width:150px;font-size:14px;letter-spacing:.08em}
+.mode-btn.active{border-color:var(--amber);color:var(--amber);box-shadow:0 0 22px rgba(255,180,84,.28);background:rgba(255,180,84,.08)}
+.enter-btn{font-size:16px;padding:14px 44px;letter-spacing:.18em}
+.enter-btn:disabled{filter:saturate(.2)}
+.title-note{font-family:var(--font-m);font-size:12px;color:var(--muted);letter-spacing:.1em;text-align:center}
+.title-note b{color:var(--amber)}
+
+/* ============================================================
+   第 2 屏：战场
+   ============================================================ */
+.battle-screen{display:flex;flex-direction:column}
+.hud{
+  flex-shrink:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;
+  padding:10px 18px;border-bottom:1px solid var(--line);background:rgba(8,11,18,.82);backdrop-filter:blur(12px);
+}
+.hud-side{display:flex;align-items:center;gap:12px}
+.hud-side.right{justify-content:flex-end}
+.hud-emblem{width:40px;height:40px;flex-shrink:0;display:grid;place-items:center;border-radius:9px}
+.hud-side.red .hud-emblem{background:rgba(255,70,85,.14);border:1px solid rgba(255,70,85,.4)}
+.hud-side.blue .hud-emblem{background:rgba(58,160,255,.14);border:1px solid rgba(58,160,255,.4)}
+.hud-name{font-family:var(--font-d);font-weight:900;font-size:16px}
+.hud-side.red .hud-name{color:#ff7d85}
+.hud-side.blue .hud-name{color:#7dc1ff}
+.hud-camp{font-family:var(--font-m);font-size:10.5px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.hud-hp{display:flex;align-items:center;gap:8px;margin-top:3px}
+.hp-label{font-family:var(--font-h);font-size:16px;font-weight:700;min-width:34px;text-align:right}
+.hud-side.blue .hp-label{order:2;text-align:left}
+.bar{height:9px;flex:1;min-width:90px;border-radius:3px;background:#0c111c;border:1px solid var(--line);position:relative;overflow:hidden}
+.bar .fill{height:100%;transition:width .5s cubic-bezier(.2,.8,.2,1);position:relative}
+.hud-side.red .bar .fill{background:linear-gradient(90deg,#ff4655,#ff9a63)}
+.hud-side.blue .bar .fill{background:linear-gradient(270deg,#3aa0ff,#7fe0ff)}
+.bar .fill::after{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent 0 12px,rgba(0,0,0,.28) 12px 15px);
+}
+.hud-mid{text-align:center}
+.round-num{font-family:var(--font-h);font-size:30px;font-weight:700;line-height:1;color:#fff;letter-spacing:.06em}
+.round-num small{font-size:13px;color:var(--muted);display:block;letter-spacing:.4em;margin-top:2px}
+.phase-badge{
+  margin-top:5px;display:inline-block;font-family:var(--font-m);font-size:10.5px;letter-spacing:.22em;
+  padding:3px 10px;border-radius:20px;border:1px solid var(--line2);color:var(--text2);background:rgba(10,14,24,.6);
+}
+.phase-badge.player{color:var(--amber);border-color:rgba(255,180,84,.45)}
+.phase-badge.enemy{color:var(--danger);border-color:rgba(255,70,85,.45)}
+
+/* ---------- 主战场 ---------- */
+.battle-main{flex:1;display:flex;min-height:0;overflow:hidden}
+.arena-wrap{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;padding:14px 16px 10px}
+.arena-wrap::before,.arena-wrap::after{content:"";position:absolute;width:14px;height:14px;border-color:var(--line2);pointer-events:none}
+.arena-wrap::before{top:8px;left:8px;border-top:2px solid;border-left:2px solid}
+.arena-wrap::after{bottom:8px;right:8px;border-bottom:2px solid;border-right:2px solid}
+.arena-axis{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:0 6px}
+.axis-label{font-family:var(--font-m);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
+.axis-label.red{color:rgba(255,70,85,.8)}
+.axis-label.blue{color:rgba(58,160,255,.8)}
+
+.lanes{flex:1;display:flex;flex-direction:column;gap:10px;min-height:0;overflow:hidden}
+.lane{
+  flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);
+  align-items:center;gap:10px;position:relative;
+}
+.lane-row-label{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;
+  font-family:var(--font-h);font-size:12px;letter-spacing:.3em;color:rgba(140,155,190,.5);
+  pointer-events:none;
+}
+.lane .slot[data-side="enemy"]{grid-column:3}
+.slot{
+  position:relative;height:100%;border-radius:var(--r-md);border:1px dashed rgba(150,168,204,.22);
+  background:rgba(10,14,23,.35);display:flex;align-items:center;justify-content:center;
+  min-height:96px;transition:border-color .25s,background .25s,box-shadow .25s;
+}
+.slot.pickable{cursor:pointer;border-color:var(--amber);background:rgba(255,180,84,.06)}
+.slot.pickable:hover{border-color:var(--amber);box-shadow:0 0 22px rgba(255,180,84,.25);background:rgba(255,180,84,.1)}
+.slot .slot-empty{font-family:var(--font-m);font-size:11px;color:var(--muted);letter-spacing:.2em}
+
+/* ---------- 战场单位卡 ---------- */
+.unit-card{
+  width:100%;height:100%;min-height:96px;border-radius:var(--r-md);padding:9px 11px;
+  display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;
+  background:var(--panel-solid);border:1px solid var(--line);
+  transition:transform .2s,box-shadow .2s;
+}
+.unit-card.red{border-color:rgba(255,70,85,.45);box-shadow:0 0 18px rgba(255,70,85,.12),inset 0 1px 0 rgba(255,255,255,.05)}
+.unit-card.blue{border-color:rgba(58,160,255,.45);box-shadow:0 0 18px rgba(58,160,255,.12),inset 0 1px 0 rgba(255,255,255,.05)}
+.unit-card .uc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.uc-sym{font-family:var(--font-m);font-size:19px;font-weight:600;letter-spacing:.02em}
+.unit-card.red .uc-sym{color:#ff8f98}
+.unit-card.blue .uc-sym{color:#8cc8ff}
+.uc-atk{
+  font-family:var(--font-h);font-weight:700;font-size:17px;display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:5px;border:1px solid var(--line2);background:rgba(0,0,0,.3);
+}
+.unit-card.red .uc-atk{color:#ffb0b5}
+.unit-card.blue .uc-atk{color:#aad4ff}
+.uc-name{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px}
+.uc-name small{font-family:var(--font-m);font-weight:400;font-size:10.5px;color:var(--muted)}
+.uc-hpbar{height:7px;border-radius:3px;background:#0a0f1a;border:1px solid var(--line);overflow:hidden;position:relative}
+.uc-hpbar .fill{height:100%;transition:width .4s cubic-bezier(.2,.8,.2,1)}
+.unit-card.red .uc-hpbar .fill{background:linear-gradient(90deg,#ff4655,#ff9a63)}
+.unit-card.blue .uc-hpbar .fill{background:linear-gradient(270deg,#3aa0ff,#7fe0ff)}
+.unit-card .uc-hpnum{font-family:var(--font-m);font-size:10.5px;color:var(--muted);position:absolute;right:8px;bottom:5px}
+.uc-ab{
+  font-size:12px;line-height:1;display:flex;gap:6px;align-items:center;
+  letter-spacing:.02em;color:var(--amber);text-shadow:0 0 8px rgba(255,180,84,.35);
+}
+
+/* 战斗动画 */
+.unit-card.lunge-red{animation:lungeR .42s ease}
+.unit-card.lunge-blue{animation:lungeB .42s ease}
+@keyframes lungeR{0%{transform:translateX(0)}40%{transform:translateX(26px)}60%{transform:translateX(10px)}100%{transform:translateX(0)}}
+@keyframes lungeB{0%{transform:translateX(0)}40%{transform:translateX(-26px)}60%{transform:translateX(-10px)}100%{transform:translateX(0)}}
+.unit-card.hit{animation:hit .5s ease}
+@keyframes hit{0%,100%{filter:none}20%{filter:brightness(2.2) sepia(.4)}45%{filter:brightness(1.4)}70%{filter:brightness(1.9)}}
+.unit-card.dying{animation:die .5s ease forwards}
+@keyframes die{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.7) rotate(6deg)}}
+.dmg-float{
+  position:absolute;top:20%;left:50%;z-index:20;transform:translateX(-50%);
+  font-family:var(--font-h);font-weight:700;font-size:22px;color:#fff;text-shadow:0 0 14px var(--danger);
+  animation:floatUp .85s ease forwards;pointer-events:none;
+}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-46px) scale(1.15)}}
+.slot.spawn{animation:slotIn .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes slotIn{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* 基地（两侧） */
+.base-col{flex-shrink:0;width:150px;display:flex;flex-direction:column;padding:14px 12px}
+.base-col .base{position:relative;flex:1;border-radius:var(--r-lg);padding:16px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;overflow:hidden;border:1px solid var(--line)}
+.base.red::before{content:"";position:absolute;inset:0;background:var(--stripe-red);opacity:.06}
+.base.blue::before{content:"";position:absolute;inset:0;background:var(--stripe-blue);opacity:.06}
+.base .b-name{font-family:var(--font-d);font-weight:900;font-size:17px}
+.base.red .b-name{color:#ff7d85}
+.base.blue .b-name{color:#7dc1ff}
+.base .b-tag{font-family:var(--font-m);font-size:10px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase}
+.base .b-hp{font-family:var(--font-h);font-size:26px;font-weight:700}
+.base .bar{width:100%;flex:none}
+.base .b-shake{animation:shake .5s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+
+/* ============================================================
+   战斗日志
+   ============================================================ */
+.log-panel{
+  flex-shrink:0;width:308px;display:flex;flex-direction:column;border-left:1px solid var(--line);
+  background:rgba(8,11,18,.72);backdrop-filter:blur(8px);min-width:0;
+}
+.log-head{
+  display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);
+}
+.log-title{font-family:var(--font-m);font-size:11px;letter-spacing:.28em;color:var(--amber);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.log-clear{color:var(--muted);background:none;border:none;font-size:11px;padding:4px 8px;border-radius:4px}
+.log-clear:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.log-feed{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:7px;scrollbar-width:thin}
+.log-feed::-webkit-scrollbar{width:4px}
+.log-feed::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+.log-entry{
+  font-size:12px;line-height:1.55;padding:7px 9px;border-radius:6px;border:1px solid var(--line);
+  background:rgba(13,19,30,.7);border-left:3px solid var(--muted);animation:logIn .3s ease;
+}
+.log-entry.red{border-left-color:var(--red)}
+.log-entry.blue{border-left-color:var(--blue)}
+.log-entry.sys{border-left-color:var(--amber);color:var(--text2)}
+@keyframes logIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:none}}
+.log-entry .l-round{font-family:var(--font-m);font-size:10px;color:var(--muted);margin-right:6px}
+.log-entry .l-formula{font-family:var(--font-m);color:var(--amber)}
+.log-entry.red .l-formula{color:#ff8f98}
+.log-entry.blue .l-formula{color:#8cc8ff}
+
+/* ============================================================
+   指令区：能量 / 手牌 / 回合
+   ============================================================ */
+.command{flex-shrink:0;border-top:1px solid var(--line);background:rgba(8,11,18,.88);backdrop-filter:blur(12px);display:flex;flex-direction:column;padding:10px 16px 12px}
+.command-row{display:flex;align-items:center;gap:16px}
+.energy-box{flex-shrink:0;width:150px}
+.energy-label{display:flex;justify-content:space-between;font-family:var(--font-m);font-size:10.5px;letter-spacing:.14em;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.energy-label b{color:var(--amber);font-family:var(--font-h);font-size:14px}
+.energy-bar{height:12px;border-radius:3px;background:#0a0f1a;border:1px solid var(--line);overflow:hidden;position:relative}
+.energy-bar .fill{height:100%;background:linear-gradient(90deg,#ffb454,#ffe08a);transition:width .3s ease;position:relative}
+.energy-bar .fill::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 10px,rgba(0,0,0,.22) 10px 13px)}
+.deck-count{font-family:var(--font-m);font-size:11px;color:var(--muted);margin-top:5px;text-align:center;letter-spacing:.12em}
+
+.hand-wrap{flex:1;min-width:0}
+.hand-title{font-family:var(--font-m);font-size:10.5px;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:8px}
+.hand-title .sel-hint{color:var(--amber);font-size:10px;opacity:0;transition:opacity .2s}
+.hand-title .sel-hint.show{opacity:1}
+.hand{display:flex;gap:9px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;min-height:128px;align-items:stretch}
+.hand::-webkit-scrollbar{height:4px}
+.hand::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+
+.hand-card{
+  flex-shrink:0;width:138px;border-radius:var(--r-md);padding:8px 9px;position:relative;overflow:hidden;
+  background:var(--panel-solid);border:1px solid var(--line);display:flex;flex-direction:column;gap:5px;
+  transition:transform .2s,box-shadow .2s,border-color .2s,opacity .2s;cursor:pointer;
+}
+.hand-card:hover{transform:translateY(-7px)}
+.hand-card.camp-red{border-color:rgba(255,70,85,.4)}
+.hand-card.camp-red:hover{border-color:var(--red);box-shadow:0 10px 30px rgba(255,70,85,.25)}
+.hand-card.camp-blue{border-color:rgba(58,160,255,.4)}
+.hand-card.camp-blue:hover{border-color:var(--blue);box-shadow:0 10px 30px rgba(58,160,255,.25)}
+.hand-card.selected{outline:2px solid var(--amber);outline-offset:1px}
+.hand-card.disabled{opacity:.42;cursor:not-allowed;filter:saturate(.4)}
+.hand-card.disabled:hover{transform:none;box-shadow:none}
+.hc-lock{
+  position:absolute;left:0;right:0;bottom:0;padding:4px 6px;font-size:10px;line-height:1.4;text-align:center;
+  color:var(--amber);background:rgba(5,8,14,.85);border-top:1px dashed var(--line2);letter-spacing:.04em;
+}
+.hc-cost{
+  position:absolute;top:6px;right:6px;width:26px;height:26px;display:grid;place-items:center;
+  font-family:var(--font-h);font-weight:700;font-size:15px;border-radius:50%;
+  background:rgba(0,0,0,.6);border:1px solid var(--amber);color:var(--amber);
+}
+.hc-type{
+  font-family:var(--font-m);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px dashed var(--line);padding-bottom:4px;
+}
+.hand-card.camp-red .hc-type{color:rgba(255,140,150,.8)}
+.hand-card.camp-blue .hc-type{color:rgba(120,200,255,.8)}
+.hc-sym{font-family:var(--font-m);font-weight:600;font-size:17px}
+.hand-card.camp-red .hc-sym{color:#ff8f98}
+.hand-card.camp-blue .hc-sym{color:#8cc8ff}
+.hc-name{font-size:13px;font-weight:700}
+.hc-desc{font-size:10.5px;color:var(--text2);line-height:1.5;flex:1}
+.hc-stats{display:flex;gap:6px;font-family:var(--font-m);font-size:11px}
+.hc-stats span{padding:2px 7px;border-radius:4px;border:1px solid var(--line);color:var(--text2)}
+.hc-stats span b{font-family:var(--font-h);font-size:13px;color:var(--text)}
+.hc-reaction{font-family:var(--font-m);font-size:10.5px;color:var(--amber);border-top:1px dashed var(--line);padding-top:4px;line-height:1.5}
+.hc-ab{font-family:var(--font-m);font-size:10px;color:var(--amber);border-top:1px dashed var(--line);padding-top:4px;line-height:1.5}
+
+.end-turn-btn{flex-shrink:0;min-width:150px;font-size:15px;letter-spacing:.12em}
+
+/* ============================================================
+   回合横幅 / 模态
+   ============================================================ */
+.turn-banner{
+  position:fixed;inset:0;z-index:80;display:grid;place-items:center;pointer-events:none;
+  background:radial-gradient(60% 60% at 50% 50%,rgba(5,8,14,.72),rgba(5,8,14,.9));
+  opacity:0;animation:bannerIn .35s ease forwards;
+}
+@keyframes bannerIn{0%{opacity:0}100%{opacity:1}}
+.turn-banner .tb-text{
+  font-family:var(--font-d);font-weight:900;font-size:clamp(34px,6vw,64px);letter-spacing:.1em;text-align:center;
+}
+.turn-banner .tb-text .tb-en{display:block;font-family:var(--font-h);font-size:15px;letter-spacing:.6em;color:var(--muted);text-transform:uppercase;margin-top:10px}
+.turn-banner .tb-bar{width:180px;height:4px;margin:20px auto 0;border-radius:2px;position:relative;overflow:hidden}
+.turn-banner .tb-bar::after{content:"";position:absolute;inset:0;background:var(--stripe-amber);animation:tbSlide 1s linear infinite}
+@keyframes tbSlide{0%{transform:translateX(-100%)}100%{transform:translateX(0)}}
+.turn-banner.out{animation:bannerOut .4s ease forwards}
+@keyframes bannerOut{to{opacity:0}}
+
+.modal-backdrop{
+  position:fixed;inset:0;z-index:120;background:rgba(3,5,10,.8);backdrop-filter:blur(8px);
+  display:grid;place-items:center;padding:20px;animation:fade .25s ease;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  width:min(520px,94vw);background:var(--panel-solid);border:1px solid var(--line2);
+  border-radius:var(--r-lg);padding:28px;text-align:center;position:relative;overflow:hidden;
+}
+.modal::before{content:"";position:absolute;top:0;left:0;right:0;height:5px}
+.modal.win-red::before{background:linear-gradient(90deg,#ff4655,#ff9a63)}
+.modal.win-blue::before{background:linear-gradient(90deg,#3aa0ff,#7fe0ff)}
+.modal .m-title{font-family:var(--font-d);font-weight:900;font-size:30px;margin-bottom:6px}
+.modal.win-red .m-title{color:#ff7d85}
+.modal.win-blue .m-title{color:#7dc1ff}
+.modal .m-sub{font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:20px}
+.modal .m-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+/* ============================================================
+   图鉴抽屉
+   ============================================================ */
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;z-index:100;width:min(560px,94vw);background:var(--panel-solid);
+  border-left:1px solid var(--line2);transform:translateX(102%);transition:transform .35s cubic-bezier(.2,.8,.2,1);
+  display:flex;flex-direction:column;
+}
+.drawer.show{transform:none}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
+.drawer-head h3{font-family:var(--font-d);font-weight:900;font-size:18px}
+.drawer-body{flex:1;overflow-y:auto;padding:16px 18px}
+.deck-section{margin-bottom:20px}
+.deck-section h4{font-family:var(--font-m);font-size:11px;letter-spacing:.3em;color:var(--muted);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.deck-section h4.red{color:#ff8f98}
+.deck-section h4.blue{color:#8cc8ff}
+.deck-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.deck-item{border:1px solid var(--line);border-radius:var(--r-md);padding:9px 10px;font-size:11.5px;background:rgba(10,14,23,.4)}
+.deck-item .d-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.deck-item .d-sym{font-family:var(--font-m);font-weight:600;font-size:14px}
+.deck-item .d-name{font-size:12px;font-weight:700}
+.deck-item .d-rxn{font-family:var(--font-m);color:var(--amber);font-size:10.5px;line-height:1.5;margin-top:4px;border-top:1px dashed var(--line);padding-top:4px}
+.deck-item .d-ab{font-family:var(--font-m);color:#ffd37a;font-size:10.5px;line-height:1.5;margin-top:4px}
+.deck-item .d-stats{font-family:var(--font-m);font-size:10.5px;color:var(--text2)}
+.drawer-dim{position:fixed;inset:0;z-index:99;background:rgba(3,5,10,.6);opacity:0;pointer-events:none;transition:opacity .3s}
+.drawer-dim.show{opacity:1;pointer-events:auto}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width:1180px){
+  .log-panel{position:absolute;top:0;right:0;bottom:0;z-index:30;transform:translateX(102%);transition:transform .3s;box-shadow:-30px 0 70px rgba(0,0,0,.5)}
+  .log-panel.open{transform:none}
+  .battle-main{position:relative}
+}
+@media (max-width:820px){
+  .base-col{width:104px;padding:10px 8px}
+  .base-col .base{padding:12px 8px}
+  .base .b-hp{font-size:20px}
+  .hand-card{width:124px}
+  .command-row{flex-wrap:wrap}
+  .energy-box{width:110px}
+  .end-turn-btn{min-width:120px}
+  .hud-emblem{width:34px;height:34px}
+  .hud-name{font-size:14px}
+  .round-num{font-size:24px}
+  .lane{grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);gap:6px}
+}
+@media (max-width:560px){
+  .hud{padding:8px 10px;gap:8px}
+  .hud-camp{display:none}
+  .hud-hp .hp-label{font-size:13px;min-width:26px}
+  .base-col{width:74px;padding:8px 6px}
+  .base .b-tag{display:none}
+  .base .b-name{font-size:13px}
+  .base-col .base{gap:6px;padding:10px 6px}
+  .unit-card{padding:6px 7px}
+  .uc-sym{font-size:15px}
+  .uc-name{font-size:11px}
+  .uc-name small{display:none}
+  .uc-atk{font-size:14px}
+  .lane-row-label{display:none}
+  .arena-wrap{padding:10px 10px 8px}
+  .camp-card{min-width:260px}
+  .title-main{font-size:52px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  #bg{animation:none!important}
+}
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="grid-overlay" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="app-shell">
+
+  <!-- ============ 阵营选择 ============ -->
+  <section id="campScreen" class="screen title-screen" data-od-id="camp-select">
+    <div class="title-eyebrow" data-od-id="camp-select-eyebrow">Iodine : ChemTerritory</div>
+    <h1 class="title-main" data-od-id="camp-select-title">化境<em>争霸</em></h1>
+    <div class="title-sub" data-od-id="camp-select-subtitle">元素为兵 · 反应为刃 · <b>一方为红，一方为蓝</b></div>
+
+    <div class="mode-row" data-od-id="mode-select">
+      <button class="btn mode-btn active" id="modePve" data-mode="pve">🤖 人机对战</button>
+      <button class="btn mode-btn" id="modePvp" data-mode="pvp">👥 双人对战</button>
+    </div>
+
+    <div class="camp-row">
+      <article class="camp-card red" data-camp="red" data-od-id="camp-card-red" tabindex="0" role="button" aria-label="选择红方 氧化军团">
+        <div class="camp-head">
+          <div class="camp-emblems" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff7d85" stroke-width="1.8">
+              <path d="M12 2c1 3-2 4-2 7a3 3 0 0 0 6 0c0-.4-.1-.8-.2-1.2C18.3 9.5 20 12.3 20 15a8 8 0 1 1-16 0C4 9.4 9.2 7.8 12 2z" fill="#ff4655" stroke="#ff8f98"/>
+            </svg>
+          </div>
+          <div>
+            <h2>红方 · 氧化军团</h2>
+            <div class="camp-en">The Oxidizer Legion</div>
+          </div>
+        </div>
+        <p>强势出击的进攻者。以夺取电子为荣，专擅燃烧、腐蚀与置换，猛烈的攻势让对方疲于防守。</p>
+        <div class="camp-formula">O₂ + 4e⁻ → 2O²⁻　·　2KMnO₄ + 16HCl → 5Cl₂↑ + 2MnCl₂ + 8H₂O</div>
+        <div class="camp-stats">
+          <div class="stat-tag">倾向<b>强攻</b></div>
+          <div class="stat-tag">单位<b>25</b></div>
+          <div class="stat-tag">反应卡<b>14</b></div>
+        </div>
+        <button class="btn primary-red camp-btn" data-od-id="camp-btn-red">加入红方</button>
+      </article>
+
+      <article class="camp-card blue" data-camp="blue" data-od-id="camp-card-blue" tabindex="0" role="button" aria-label="选择蓝方 还原军团">
+        <div class="camp-head">
+          <div class="camp-emblems" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7dc1ff" stroke-width="1.8">
+              <path d="M12 2l7 4v6c0 4.5-2.9 8.2-7 10-4.1-1.8-7-5.5-7-10V6l7-4z" fill="#1c4f8a"/>
+              <path d="M9.5 12.5l2 2 3.5-4" stroke="#7fe0ff" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h2>蓝方 · 还原军团</h2>
+            <div class="camp-en">The Reducer Legion</div>
+          </div>
+        </div>
+        <p>稳扎稳打的防守者。以交付电子为志，精于还原与中和，用坚壁般的结构和层层递进的战线消耗对手。</p>
+        <div class="camp-formula">Al - 3e⁻ → Al³⁺　·　3H₂ + N₂ → 2NH₃　·　HCl + NaOH → NaCl + H₂O</div>
+        <div class="camp-stats">
+          <div class="stat-tag">倾向<b>防御</b></div>
+          <div class="stat-tag">单位<b>25</b></div>
+          <div class="stat-tag">反应卡<b>14</b></div>
+        </div>
+        <button class="btn primary-blue camp-btn" data-od-id="camp-btn-blue">加入蓝方</button>
+      </article>
+    </div>
+
+    <div class="title-actions">
+      <button class="btn enter-btn" id="btnStart" data-od-id="camp-select-start" disabled>— 进入战场 —</button>
+    </div>
+    <div class="title-note">先选择你的阵营，再踏入战场 · 摧毁对方基地即为胜利 <b>RULES: 基地耐久 30 · 每回合恢复 4 化合能（上限 8）</b></div>
+  </section>
+
+  <!-- ============ 战场 ============ -->
+  <section id="battleScreen" class="screen battle-screen hidden" data-od-id="battle-arena">
+    <header class="hud" data-od-id="battle-hud">
+      <div class="hud-side red" id="hudSidePlayer" data-od-id="hud-player">
+        <div class="hud-emblem" id="hudEmblemPlayer" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff4655" stroke="#ff8f98" stroke-width="1">
+            <path d="M12 2c1 3-2 4-2 7a3 3 0 0 0 6 0c0-.4-.1-.8-.2-1.2C18.3 9.5 20 12.3 20 15a8 8 0 1 1-16 0C4 9.4 9.2 7.8 12 2z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="hud-name" id="hudPlayerName">红方</div>
+          <div class="hud-camp" id="hudCampPlayer">氧化军团 · 我方</div>
+          <div class="hud-hp">
+            <div class="bar"><div class="fill" id="hudPlayerHp" style="width:100%"></div></div>
+            <span class="hp-label" id="hudPlayerHpNum">30</span>
+          </div>
+        </div>
+      </div>
+      <div class="hud-mid">
+        <div class="round-num"><span id="hudRound">1</span><small>ROUND</small></div>
+        <div class="phase-badge player" id="phaseBadge">你的回合</div>
+      </div>
+      <div class="hud-side blue right" id="hudSideEnemy" data-od-id="hud-enemy">
+        <div>
+          <div class="hud-name" id="hudEnemyName">蓝方</div>
+          <div class="hud-camp" id="hudCampEnemy">还原军团 · 敌方</div>
+          <div class="hud-hp">
+            <span class="hp-label" id="hudEnemyHpNum">30</span>
+            <div class="bar"><div class="fill" id="hudEnemyHp" style="width:100%"></div></div>
+          </div>
+        </div>
+        <div class="hud-emblem" id="hudEmblemEnemy" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#1c4f8a" stroke="#7dc1ff" stroke-width="1">
+            <path d="M12 2l7 4v6c0 4.5-2.9 8.2-7 10-4.1-1.8-7-5.5-7-10V6l7-4z"/>
+          </svg>
+        </div>
+      </div>
+    </header>
+
+    <div class="battle-main">
+      <div class="base-col" data-od-id="player-base">
+        <div class="base red" id="playerBase">
+          <div class="b-tag" id="baseTagPlayer">我方基地</div>
+          <div class="b-name" id="basePlayerName">熔炉之心</div>
+          <div class="b-hp" id="basePlayerHp">30</div>
+          <div class="bar"><div class="fill" id="playerBaseFill" style="width:100%"></div></div>
+        </div>
+      </div>
+
+      <div class="arena-wrap" data-od-id="battlefield">
+        <div class="arena-axis">
+          <span class="axis-label red" id="axisPlayer">RED SIDE</span>
+          <span class="axis-label blue" id="axisEnemy">BLUE SIDE</span>
+        </div>
+        <div class="lanes" id="lanes" data-od-id="lanes"></div>
+      </div>
+
+      <div class="base-col" data-od-id="enemy-base">
+        <div class="base blue" id="enemyBase">
+          <div class="b-tag" id="baseTagEnemy">敌方基地</div>
+          <div class="b-name" id="baseEnemyName">寒晶壁垒</div>
+          <div class="b-hp" id="baseEnemyHp">30</div>
+          <div class="bar"><div class="fill" id="enemyBaseFill" style="width:100%"></div></div>
+        </div>
+      </div>
+
+      <aside class="log-panel" id="logPanel" data-od-id="battle-log">
+        <div class="log-head">
+          <span class="log-title">◆ 战场纪要</span>
+          <button class="log-clear" id="btnClearLog">清空</button>
+        </div>
+        <div class="log-feed" id="logFeed"></div>
+      </aside>
+    </div>
+
+    <div class="command" data-od-id="command-bar">
+      <div class="command-row">
+        <div class="energy-box">
+          <div class="energy-label"><span>化合能</span><b id="energyNum">4 / 8</b></div>
+          <div class="energy-bar"><div class="fill" id="energyFill" style="width:50%"></div></div>
+          <div class="deck-count" id="deckCount">牌库 0</div>
+        </div>
+        <div class="hand-wrap">
+          <div class="hand-title">
+            <span>◆ 手牌</span>
+            <span class="sel-hint" id="selHint">↑ 选择要落位的阵线</span>
+          </div>
+          <div class="hand" id="hand"></div>
+        </div>
+        <button class="btn primary-red end-turn-btn" id="btnEndTurn" data-od-id="btn-end-turn">结束回合</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="bannerRoot"></div>
+<div id="modalRoot"></div>
+<button class="btn small" id="btnCodex" style="position:fixed;left:14px;bottom:14px;z-index:50" data-od-id="btn-codex">化学图鉴</button>
+<div class="drawer-dim" id="drawerDim"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============ 数据：阵营单位（50 名军团角色） ============ */
+/* ab: 单位技能，格式 [['技能名', 数值], ...] */
+const ABILITIES = {
+  shield:{icon:'🛡', name:'护盾',   desc:v=>`抵消受到的伤害（剩余 ${v} 点）`},
+  drain:{icon:'🩸', name:'吸血',   desc:v=>`每次攻击为基地恢复 ${v} 点耐久`},
+  thorns:{icon:'🌵', name:'反伤',   desc:v=>`受到攻击时反击 ${v} 点`},
+  splash:{icon:'💥', name:'溅射',   desc:v=>`攻击单位时对基地造成 ${v} 点伤害`},
+  double:{icon:'⚔️', name:'连击',   desc:()=>`每回合攻击两次`},
+  enrage:{icon:'🔥', name:'狂怒',   desc:v=>`受伤后攻击力 +${v}`},
+  healSelf:{icon:'💚', name:'自愈', desc:v=>`攻击后恢复 ${v} 点生命`},
+  bomb:{icon:'💣', name:'自爆',     desc:v=>`阵亡时对敌方基地造成 ${v} 点伤害`},
+  poison:{icon:'☠️', name:'剧毒',   desc:v=>`攻击使目标中毒（每阶段受 ${v} 点毒伤）`},
+  stun:{icon:'❄️', name:'麻痹',    desc:v=>`攻击有 ${v}% 概率使目标下回合无法行动`}
+};
+const abVal=(u,name)=>{ if(!u||!u.ab) return 0; for(const a of u.ab){ if(a[0]===name) return a[1]; } return 0; };
+
+const UNITS = {
+  /* 红方：氧化军团（夺取电子的氧化剂） */
+  red:[
+    {id:'o2',  name:'氧气',   formula:'O₂',      atk:3, hp:2, cost:1, rxn:'助燃 · O₂ 与金属反应成氧化物'},
+    {id:'cl2', name:'氯气',   formula:'Cl₂',     atk:4, hp:3, cost:2, rxn:'Cl₂ + H₂O ⇌ HCl + HClO'},
+    {id:'kmno4',name:'高锰酸钾',formula:'KMnO₄', atk:5, hp:3, cost:3, rxn:'2KMnO₄ → K₂MnO₄ + MnO₂ + O₂↑', ab:[['poison',2]]},
+    {id:'hno3',name:'浓硝酸', formula:'HNO₃',    atk:6, hp:4, cost:4, rxn:'Cu + 4HNO₃ → Cu(NO₃)₂ + 2NO₂↑ + 2H₂O', ab:[['splash',1]]},
+    {id:'f2',  name:'氟气',   formula:'F₂',      atk:7, hp:2, cost:5, rxn:'H₂ + F₂ → 2HF', ab:[['double',1]]},
+    {id:'h2o2',name:'过氧化氢',formula:'H₂O₂',   atk:3, hp:3, cost:2, rxn:'2H₂O₂ → 2H₂O + O₂↑', ab:[['poison',1]]},
+    {id:'k2cr2o7',name:'重铬酸钾',formula:'K₂Cr₂O₇', atk:6, hp:5, cost:5, rxn:'Cr₂O₇²⁻ + 14H⁺ + 6e⁻ → 2Cr³⁺ + 7H₂O', ab:[['poison',2]]},
+    {id:'mno2',name:'二氧化锰',formula:'MnO₂',   atk:4, hp:5, cost:3, rxn:'MnO₂ + 4HCl → MnCl₂ + Cl₂↑ + 2H₂O', ab:[['enrage',2]]},
+    {id:'na2o2',name:'过氧化钠',formula:'Na₂O₂', atk:4, hp:3, cost:2, rxn:'2Na₂O₂ + 2CO₂ → 2Na₂CO₃ + O₂', ab:[['bomb',3]]},
+    {id:'kclo3',name:'氯酸钾', formula:'KClO₃',  atk:5, hp:3, cost:3, rxn:'6HCl + KClO₃ → KCl + 3Cl₂↑ + 3H₂O', ab:[['bomb',2]]},
+    {id:'naclo',name:'次氯酸钠',formula:'NaClO', atk:3, hp:4, cost:2, rxn:'2NaClO + CO₂ + H₂O → Na₂CO₃ + 2HClO', ab:[['poison',1]]},
+    {id:'ca_clo2',name:'次氯酸钙',formula:'Ca(ClO)₂', atk:5, hp:4, cost:3, rxn:'Ca(ClO)₂ + CO₂ + H₂O → CaCO₃ + 2HClO', ab:[['poison',2]]},
+    {id:'kio3',name:'碘酸钾', formula:'KIO₃',    atk:4, hp:5, cost:3, rxn:'IO₃⁻ + 5I⁻ + 6H⁺ → 3I₂ + 3H₂O', ab:[['stun',40]]},
+    {id:'kbro3',name:'溴酸钾', formula:'KBrO₃',  atk:5, hp:4, cost:4, rxn:'BrO₃⁻ + 6H⁺ + 6e⁻ → Br⁻ + 3H₂O', ab:[['thorns',1]]},
+    {id:'h2so4',name:'浓硫酸', formula:'H₂SO₄',  atk:5, hp:5, cost:4, rxn:'S + 2H₂SO₄ → 3SO₂↑ + 2H₂O', ab:[['thorns',2]]},
+    {id:'o3',  name:'臭氧',   formula:'O₃',      atk:5, hp:2, cost:3, rxn:'3O₂ ⇌ 2O₃（放电）', ab:[['poison',1]]},
+    {id:'br2', name:'溴',     formula:'Br₂',     atk:5, hp:3, cost:4, rxn:'2Br⁻ + Cl₂ → Br₂ + 2Cl⁻', ab:[['splash',1]]},
+    {id:'clo2',name:'二氧化氯',formula:'ClO₂',   atk:6, hp:3, cost:4, rxn:'ClO₂ 是高效消毒氧化剂', ab:[['poison',2]]},
+    {id:'pbo2',name:'二氧化铅',formula:'PbO₂',   atk:6, hp:4, cost:5, rxn:'PbO₂ + 4HCl → PbCl₂ + Cl₂↑ + 2H₂O', ab:[['thorns',1]]},
+    {id:'fecl3',name:'氯化铁', formula:'FeCl₃',  atk:4, hp:4, cost:3, rxn:'2FeCl₃ + Cu → 2FeCl₂ + CuCl₂', ab:[['drain',1]]},
+    {id:'nabio3',name:'铋酸钠',formula:'NaBiO₃', atk:7, hp:3, cost:5, rxn:'2Mn²⁺ + 5NaBiO₃ + 14H⁺ → 2MnO₄⁻ + 5Bi³⁺ + 7H₂O', ab:[['stun',40]]},
+    {id:'s2o8',name:'过硫酸铵',formula:'(NH₄)₂S₂O₈', atk:6, hp:4, cost:5, rxn:'S₂O₈²⁻ + 2e⁻ → 2SO₄²⁻', ab:[['splash',1]]},
+    {id:'ce',  name:'硫酸铈', formula:'Ce(SO₄)₂',atk:6, hp:5, cost:6, rxn:'Ce⁴⁺ + e⁻ → Ce³⁺', ab:[['shield',1]]},
+    {id:'i2',  name:'碘',     formula:'I₂',      atk:3, hp:5, cost:2, rxn:'I₂ + SO₂ + 2H₂O → 2HI + H₂SO₄', ab:[['poison',1]]},
+    {id:'hclo4',name:'高氯酸', formula:'HClO₄',  atk:8, hp:2, cost:6, rxn:'HClO₄ 是最强无机含氧酸之一', ab:[['splash',2]]}
+  ],
+  /* 蓝方：还原军团（交付电子的还原剂） */
+  blue:[
+    {id:'h2',  name:'氢气',   formula:'H₂',      atk:2, hp:3, cost:1, rxn:'H₂ + Cl₂ → 2HCl'},
+    {id:'c',   name:'碳',     formula:'C',       atk:3, hp:4, cost:2, rxn:'C + O₂ → CO₂'},
+    {id:'na',  name:'钠',     formula:'Na',      atk:4, hp:3, cost:2, rxn:'2Na + 2H₂O → 2NaOH + H₂↑'},
+    {id:'zn',  name:'锌',     formula:'Zn',      atk:4, hp:5, cost:3, rxn:'Zn + CuSO₄ → ZnSO₄ + Cu'},
+    {id:'al',  name:'铝',     formula:'Al',      atk:5, hp:6, cost:4, rxn:'2Al + Fe₂O₃ → Al₂O₃ + 2Fe'},
+    {id:'mg',  name:'镁',     formula:'Mg',      atk:5, hp:4, cost:3, rxn:'2Mg + O₂ → 2MgO（耀眼白光）', ab:[['bomb',2]]},
+    {id:'fe',  name:'铁',     formula:'Fe',      atk:4, hp:6, cost:3, rxn:'Fe + CuSO₄ → FeSO₄ + Cu', ab:[['shield',2]]},
+    {id:'cu',  name:'铜',     formula:'Cu',      atk:3, hp:5, cost:2, rxn:'Cu + 2Ag⁺ → Cu²⁺ + 2Ag', ab:[['shield',1]]},
+    {id:'ki',  name:'碘化钾', formula:'KI',      atk:3, hp:4, cost:2, rxn:'2KI + Cl₂ → 2KCl + I₂', ab:[['drain',1]]},
+    {id:'na2so3',name:'亚硫酸钠',formula:'Na₂SO₃', atk:3, hp:5, cost:2, rxn:'SO₃²⁻ + Br₂ + H₂O → SO₄²⁻ + 2Br⁻ + 2H⁺', ab:[['shield',1]]},
+    {id:'sncl2',name:'氯化亚锡',formula:'SnCl₂', atk:4, hp:5, cost:3, rxn:'Sn²⁺ + 2Fe³⁺ → Sn⁴⁺ + 2Fe²⁺', ab:[['thorns',1]]},
+    {id:'feso4',name:'硫酸亚铁',formula:'FeSO₄', atk:3, hp:5, cost:2, rxn:'Fe²⁺ − e⁻ → Fe³⁺', ab:[['healSelf',1]]},
+    {id:'h2s', name:'硫化氢', formula:'H₂S',     atk:5, hp:3, cost:3, rxn:'2H₂S + O₂ → 2S + 2H₂O', ab:[['poison',2]]},
+    {id:'n2h4',name:'肼',     formula:'N₂H₄',    atk:6, hp:4, cost:4, rxn:'N₂H₄ + O₂ → N₂ + 2H₂O（火箭燃料）', ab:[['bomb',3]]},
+    {id:'co',  name:'一氧化碳',formula:'CO',     atk:5, hp:4, cost:4, rxn:'CO + CuO → Cu + CO₂', ab:[['poison',1]]},
+    {id:'nabh4',name:'硼氢化钠',formula:'NaBH₄', atk:6, hp:3, cost:4, rxn:'NaBH₄ + 4H₂O → NaB(OH)₄ + 4H₂↑', ab:[['double',1]]},
+    {id:'nh3', name:'氨',     formula:'NH₃',     atk:4, hp:4, cost:3, rxn:'8NH₃ + 3Cl₂ → 6NH₄Cl + N₂', ab:[['poison',1]]},
+    {id:'hcooh',name:'甲酸',  formula:'HCOOH',   atk:4, hp:5, cost:3, rxn:'HCOOH + 2Ag(NH₃)₂OH → 2Ag↓ + ...', ab:[['drain',1]]},
+    {id:'so2', name:'二氧化硫',formula:'SO₂',    atk:4, hp:4, cost:3, rxn:'SO₂ + Br₂ + 2H₂O → H₂SO₄ + 2HBr', ab:[['poison',1]]},
+    {id:'h2c2o4',name:'草酸', formula:'H₂C₂O₄',  atk:4, hp:5, cost:3, rxn:'2KMnO₄ + 5H₂C₂O₄ + 3H₂SO₄ → ...', ab:[['stun',30]]},
+    {id:'na2s2o3',name:'硫代硫酸钠',formula:'Na₂S₂O₃', atk:3, hp:6, cost:3, rxn:'I₂ + 2S₂O₃²⁻ → 2I⁻ + S₄O₆²⁻', ab:[['shield',2]]},
+    {id:'p4',  name:'白磷',   formula:'P₄',      atk:5, hp:4, cost:4, rxn:'P₄ + 5O₂ → P₄O₁₀（自燃）', ab:[['bomb',2]]},
+    {id:'li',  name:'锂',     formula:'Li',      atk:4, hp:3, cost:2, rxn:'2Li + 2H₂O → 2LiOH + H₂↑', ab:[['enrage',2]]},
+    {id:'lialh4',name:'氢化铝锂',formula:'LiAlH₄', atk:7, hp:3, cost:6, rxn:'LiAlH₄ 是极强的还原剂', ab:[['double',1]]},
+    {id:'s',   name:'硫',     formula:'S',       atk:4, hp:4, cost:3, rxn:'S + O₂ → SO₂（燃烧）', ab:[['bomb',1]]}
+  ]
+};
+const REACTIONS = [
+  {id:'combust',name:'燃烧反应',formula:'C + O₂ → CO₂',  cost:3, type:'dmg',  value:2, target:'all',   desc:'对敌方全体造成 2 点灼烧伤害'},
+  {id:'replace',name:'置换反应',formula:'Zn + CuSO₄ → ZnSO₄ + Cu', cost:2, type:'dmg', value:4, target:'front', desc:'对敌方首个单位造成 4 点伤害'},
+  {id:'neutral',name:'中和反应',formula:'HCl + NaOH → NaCl + H₂O', cost:2, type:'heal', value:5, target:'self',  desc:'己方基地恢复 5 点耐久'},
+  {id:'decomp', name:'分解反应',formula:'2H₂O₂ → 2H₂O + O₂↑', cost:3, type:'draw', value:2, target:'self', desc:'从牌库抽取 2 张牌'},
+  {id:'catalyze',name:'催化加速',formula:'2SO₂ + O₂ ⇌ 2SO₃（V₂O₅）', cost:1, type:'buffAtk', value:1, target:'self', desc:'己方全体单位攻击 +1'},
+  {id:'repair',  name:'还原镀层',formula:'2Ag⁺ + Cu → Cu²⁺ + 2Ag', cost:1, type:'healUnit', value:3, target:'self', desc:'治疗己方首个受伤单位 3 点生命'},
+  {id:'freeze',  name:'液氮急冻',formula:'N₂(l) → N₂(g)', cost:2, type:'stunFront', value:1, target:'front', desc:'冰冻敌方首个单位，下回合无法行动'},
+  {id:'shield',  name:'离子镀膜',formula:'Al³⁺ + 3e⁻ → Al', cost:2, type:'shieldAll', value:2, target:'self', desc:'己方全体单位获得 2 点护盾'},
+  {id:'steal',   name:'电子窃取',formula:'K⁺ + e⁻ → K', cost:2, type:'steal', value:2, target:'self', desc:'敌方化合能 -2，己方 +2'},
+  {id:'pierce',  name:'穿甲强酸',formula:'Cu + 4HNO₃ → Cu(NO₃)₂ + 2NO₂↑ + 2H₂O', cost:3, type:'pierce', value:4, target:'self', desc:'无视单位，直接对敌方基地造成 4 点伤害'},
+  {id:'purify',  name:'净化风暴',formula:'Fe³⁺ + 3OH⁻ → Fe(OH)₃↓', cost:2, type:'clear', value:0, target:'all', desc:'清除敌方全部单位的护盾与攻击增益'},
+  {id:'poisonfog',name:'毒雾弥漫',formula:'Cl₂ + 2NaOH → NaCl + NaClO + H₂O', cost:3, type:'poisonAll', value:2, target:'all', desc:'敌方全体单位中毒（每阶段受 2 点毒伤）'},
+  {id:'electrolyze',name:'强力电解',formula:'2NaCl + 2H₂O → 2NaOH + H₂↑ + Cl₂↑', cost:4, type:'draw', value:3, target:'self', desc:'从牌库抽取 3 张牌'},
+  {id:'thermite',name:'铝热冲击',formula:'2Al + Fe₂O₃ → Al₂O₃ + 2Fe', cost:4, type:'dmg', value:5, target:'front', desc:'对敌方首个单位造成 5 点伤害'}
+];
+const LANES = [['上路','OXID'],['中路','REDOX'],['下路','RED']];
+
+/* ============ 工具 ============ */
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait = ms => reduced ? sleep(10) : sleep(ms);
+
+/* ============ 状态 ============ */
+const S = {
+  camp:'red', mode:'pve', round:1, phase:'player', busy:false, over:false,
+  energy:4, maxEnergy:8,
+  player:{base:30, hand:[], field:[null,null,null], deck:[], discard:[], energy:4},
+  enemy:{base:30, hand:[], field:[null,null,null], deck:[], discard:[], energy:4},
+  selected:null
+};
+const me=()=>S.player, foe=()=>S.enemy;
+/* 当前行动方（PvP 双人轮流） */
+const curSide=()=>S.phase==='player'?'player':'enemy';
+const cur=()=>curSide()==='player'?me():foe();
+const curCamp=()=>curSide()==='player'?S.camp:opp(S.camp);
+const curOppCamp=()=>opp(curCamp());
+const sideCamp=side=>side==='player'?S.camp:opp(S.camp);
+const campName={red:'红方',blue:'蓝方'};
+const campFull={red:'红方 · 氧化军团',blue:'蓝方 · 还原军团'};
+const opp=c=>c==='red'?'blue':'red';
+let uid=1;
+
+/* ============ 交互背景画布 ============ */
+(function initBG(){
+  const c=$('#bg'), ctx=c.getContext('2d');
+  let W,H,pts=[],mouse={x:-999,y:-999};
+  const dpr=Math.min(devicePixelRatio||1,2);
+  const RED='255,70,85', BLUE='58,160,255', AMBER='255,180,84';
+  function resize(){
+    W=c.width=innerWidth*dpr; H=c.height=innerHeight*dpr;
+    c.style.width=innerWidth+'px'; c.style.height=innerHeight+'px';
+    const N = reduced ? 26 : (innerWidth<760?36:64);
+    pts=Array.from({length:N},(_,i)=>({
+      x:Math.random()*W, y:Math.random()*H,
+      vx:(Math.random()-.5)*.35*dpr, vy:(Math.random()-.5)*.35*dpr,
+      r:(Math.random()*1.8+.6)*dpr,
+      color:i%2? RED: (i%3===0? AMBER: BLUE),
+      left:i%2===0,
+      ph:Math.random()*Math.PI*2
+    }));
+  }
+  resize(); addEventListener('resize',resize);
+  addEventListener('pointermove',e=>{mouse.x=e.clientX*dpr;mouse.y=e.clientY*dpr});
+  function frame(t){
+    ctx.clearRect(0,0,W,H);
+    for(const p of pts){
+      p.x+=p.vx; p.y+=p.vy;
+      const dx=mouse.x-p.x, dy=mouse.y-p.y, d=Math.hypot(dx,dy);
+      if(d<130*dpr && d>0){ p.x+=dx/d*1.6; p.y+=dy/d*1.6; }
+      if(p.x<0||p.x>W)p.vx*=-1;
+      if(p.y<0||p.y>H)p.vy*=-1;
+      ctx.globalAlpha=.35+.45*Math.abs(Math.sin(t/1100+p.ph));
+      ctx.fillStyle=`rgba(${p.color},1)`;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
+    }
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const a=pts[i],b=pts[j];
+        const dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
+        if(d<110*dpr){
+          ctx.globalAlpha=(1-d/(110*dpr))*.14;
+          ctx.strokeStyle=a.color===BLUE||b.color===BLUE?`rgba(${BLUE},.7)`:`rgba(${RED},.7)`;
+          ctx.lineWidth=1*dpr;
+          ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha=1;
+    if(!reduced) requestAnimationFrame(frame);
+  }
+  if(!reduced) requestAnimationFrame(frame);
+})();
+
+/* ============ 涟漪按钮 ============ */
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.btn'); if(!btn) return;
+  const r=btn.getBoundingClientRect();
+  const span=document.createElement('span');
+  const size=Math.max(r.width,r.height);
+  span.className='ripple';
+  span.style.cssText=`width:${size}px;height:${size}px;left:${e.clientX-r.left-size/2}px;top:${e.clientY-r.top-size/2}px`;
+  btn.appendChild(span);
+  setTimeout(()=>span.remove(),620);
+});
+
+/* ============ 阵营选择 ============ */
+let chosen=null, mode='pve';
+const campCards=$$('.camp-card');
+function selectMode(m){
+  mode=m;
+  $$('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+  const btn=$('#btnStart');
+  if(chosen){
+    btn.textContent = m==='pvp' ? '以所选阵营入局 — 双人对战' : (chosen==='red'?'以红方入局 — 进入战场':'以蓝方入局 — 进入战场');
+  }
+}
+$('#modePve').addEventListener('click',()=>selectMode('pve'));
+$('#modePvp').addEventListener('click',()=>selectMode('pvp'));
+function selectCamp(c){
+  chosen=c;
+  campCards.forEach(card=>{
+    const is=card.dataset.camp===c;
+    card.classList.toggle('selected',is);
+    card.setAttribute('aria-pressed',is?'true':'false');
+  });
+  const btn=$('#btnStart');
+  btn.disabled=false;
+  btn.classList.remove('primary-red','primary-blue');
+  btn.classList.add(c==='red'?'primary-red':'primary-blue');
+  btn.textContent = mode==='pvp' ? (c==='red'?'玩家1 以红方入局 — 双人对战':'玩家1 以蓝方入局 — 双人对战') : (c==='red'?'以红方入局 — 进入战场':'以蓝方入局 — 进入战场');
+}
+campCards.forEach(card=>{
+  const pick=()=>selectCamp(card.dataset.camp);
+  card.addEventListener('click',pick);
+  card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});
+});
+$('#btnStart').addEventListener('click',()=>{ if(chosen) startGame(chosen, mode); });
+
+/* ============ 开局 ============ */
+function startGame(camp, m){
+  S.camp=camp; S.mode=m||'pve'; S.round=1; S.phase='player'; S.busy=false; S.over=false;
+  S.energy=4;
+  S.player={base:30,hand:[],field:[null,null,null],deck:shuffle(buildDeck(camp)),discard:[],energy:4};
+  S.enemy={base:30,hand:[],field:[null,null,null],deck:shuffle(buildDeck(opp(camp))),discard:[],energy:4};
+  for(let i=0;i<4;i++){ drawCard('player'); drawCard('enemy'); }
+  S.selected=null;
+  $('#logFeed').innerHTML='';
+
+  $('#hudPlayerName').textContent = S.mode==='pvp' ? '玩家1 · '+campFull[camp] : campFull[camp];
+  $('#hudEnemyName').textContent = S.mode==='pvp' ? '玩家2 · '+campFull[opp(camp)] : campFull[opp(camp)];
+  $('#basePlayerName').textContent = camp==='red'?'熔炉之心':'寒晶壁垒';
+  $('#baseEnemyName').textContent = camp==='red'?'寒晶壁垒':'熔炉之心';
+  $('#baseTagPlayer').textContent = S.mode==='pvp' ? '玩家1 基地' : '我方基地';
+  $('#baseTagEnemy').textContent = S.mode==='pvp' ? '玩家2 基地' : '敌方基地';
+  document.body.classList.remove('camp-red','camp-blue');
+  document.body.classList.add(camp==='red'?'camp-red':'camp-blue');
+  $('#btnEndTurn').classList.remove('primary-red','primary-blue');
+  $('#btnEndTurn').classList.add(camp==='red'?'primary-red':'primary-blue');
+  applySides();
+
+  $('#campScreen').classList.add('hidden');
+  $('#battleScreen').classList.remove('hidden');
+  renderAll();
+  log(`战斗开始 · 你选择了 ${campFull[camp]}`, 'sys');
+  log(`${campFull[opp(camp)]} 虎视眈眈，守卫你的基地！`, 'sys');
+  setTimeout(()=>banner(`你的回合`, camp==='red'?'#ff7d85':'#7dc1ff'), 450);
+}
+
+function buildDeck(camp){
+  return [...UNITS[camp].map(u=>({kind:'unit',...u})), ...REACTIONS.map(r=>({kind:'reaction',...r}))];
+}
+
+/* 让两侧视觉身份跟随阵营：选蓝方 → 左=蓝(我方) 右=红(敌方) */
+function applySides(){
+  const c=S.camp, e=opp(c);
+  const emblemRed=`<svg width="20" height="20" viewBox="0 0 24 24" fill="#ff4655" stroke="#ff8f98" stroke-width="1"><path d="M12 2c1 3-2 4-2 7a3 3 0 0 0 6 0c0-.4-.1-.8-.2-1.2C18.3 9.5 20 12.3 20 15a8 8 0 1 1-16 0C4 9.4 9.2 7.8 12 2z"/></svg>`;
+  const emblemBlue=`<svg width="20" height="20" viewBox="0 0 24 24" fill="#1c4f8a" stroke="#7dc1ff" stroke-width="1"><path d="M12 2l7 4v6c0 4.5-2.9 8.2-7 10-4.1-1.8-7-5.5-7-10V6l7-4z"/></svg>`;
+  const ps=$('#hudSidePlayer'), es=$('#hudSideEnemy');
+  ps.className=`hud-side ${c}`;
+  es.className=`hud-side ${e} right`;
+  $('#hudEmblemPlayer').innerHTML = c==='red'?emblemRed:emblemBlue;
+  $('#hudEmblemEnemy').innerHTML = e==='red'?emblemRed:emblemBlue;
+  const tagMine = S.mode==='pvp' ? '玩家1' : '我方';
+  const tagFoe = S.mode==='pvp' ? '玩家2' : '敌方';
+  $('#hudCampPlayer').textContent = (c==='red'?'氧化军团':'还原军团')+' · '+tagMine;
+  $('#hudCampEnemy').textContent = (e==='red'?'氧化军团':'还原军团')+' · '+tagFoe;
+  $('#playerBase').className = `base ${c}`;
+  $('#enemyBase').className = `base ${e}`;
+  $('#axisPlayer').className = `axis-label ${c}`;
+  $('#axisEnemy').className = `axis-label ${e}`;
+  $('#axisPlayer').textContent = (c==='red'?'RED SIDE':'BLUE SIDE')+' · '+tagMine;
+  $('#axisEnemy').textContent = (e==='red'?'RED SIDE':'BLUE SIDE');
+}
+
+/* 能量读写辅助：玩家能量以 S.energy 为准 */
+const enOf = side => side==='player' ? S.energy : foe().energy;
+function spendEnergy(side, cost){ if(side==='player'){ S.energy-=cost; } else { foe().energy-=cost; } }
+function gainEnergy(side, amt){ if(side==='player'){ S.energy=Math.min(S.maxEnergy,S.energy+amt); } else { foe().energy=Math.min(S.maxEnergy,foe().energy+amt); } }
+
+/* ============ 抽牌 ============ */
+function drawCard(side){
+  const s=side==='player'?me():foe();
+  if(s.hand.length>=7) return false;
+  if(!s.deck.length && s.discard.length){ s.deck=shuffle(s.discard); s.discard=[]; }
+  if(!s.deck.length) return false;
+  s.hand.push(s.deck.shift());
+  return true;
+}
+
+/* ============ 渲染 ============ */
+function renderAll(){
+  renderHud(); renderLanes(); renderHand(); renderEnergy();
+}
+function renderHud(){
+  const p=me(), f=foe();
+  $('#hudPlayerHp').style.width=(p.base/30*100)+'%';
+  $('#hudEnemyHp').style.width=(f.base/30*100)+'%';
+  $('#hudPlayerHpNum').textContent=p.base;
+  $('#hudEnemyHpNum').textContent=f.base;
+  $('#basePlayerHp').textContent=p.base;
+  $('#baseEnemyHp').textContent=f.base;
+  $('#playerBaseFill').style.width=(p.base/30*100)+'%';
+  $('#enemyBaseFill').style.width=(f.base/30*100)+'%';
+  $('#hudRound').textContent=S.round;
+  renderEnergy();
+  const badge=$('#phaseBadge');
+  badge.textContent = S.mode==='pvp'
+    ? (S.phase==='player'?'玩家1 · 你的回合':'玩家2 · 你的回合')
+    : (S.phase==='player'?'你的回合':'敌方回合');
+  badge.className='phase-badge '+S.phase;
+  $('#selHint').classList.toggle('show', !!S.selected);
+  $('#btnEndTurn').disabled = S.busy||S.over||(S.mode==='pve'&&S.phase!=='player');
+  $('#btnEndTurn').textContent = (S.mode==='pvp'||S.phase==='player') ? '结束回合' : '敌方行动中…';
+}
+function renderEnergy(){
+  const showSide = S.mode==='pvp' ? curSide() : 'player';
+  const sh = showSide==='player'?me():foe();
+  const showE = enOf(showSide);
+  $('#energyNum').textContent=`${showE} / ${S.maxEnergy}`;
+  $('#energyFill').style.width=(showE/S.maxEnergy*100)+'%';
+  $('#deckCount').textContent=`牌库 ${sh.deck.length} · 手牌 ${sh.hand.length}/7`;
+}
+function unitCardHTML(u,side,laneIdx){
+  const pc=side==='player'?S.camp:opp(S.camp);
+  const hpPct=Math.max(0,u.hp/u.maxHp*100);
+  const abLine = u.ab&&u.ab.length
+    ? `<div class="uc-ab" title="${u.ab.map(([n,v])=>ABILITIES[n].name+': '+ABILITIES[n].desc(v)).join('；')}">${u.ab.map(([n,v])=>{
+        const sl=u.shieldLeft!==undefined&&n==='shield'?u.shieldLeft:v;
+        return `${ABILITIES[n].icon}${sl>0?sl:''}`;
+      }).join(' ')}</div>`
+    : '';
+  return `<div class="unit-card ${pc}" data-uid="${u.uid}" data-od-id="unit-${side}-lane-${laneIdx}">
+    <div class="uc-top"><span class="uc-sym">${u.formula}</span>
+      <span class="uc-atk">⚔ ${u.atk}</span></div>
+    <div class="uc-name">${u.name}</div>
+    ${abLine}
+    <div class="uc-hpbar"><div class="fill" style="width:${hpPct}%"></div></div>
+    <span class="uc-hpnum">HP ${u.hp}/${u.maxHp}</span>
+  </div>`;
+}
+function renderLanes(){
+  const wrap=$('#lanes'); wrap.innerHTML='';
+  LANES.forEach((laneName,i)=>{
+    const p=me(), f=foe();
+    const row=document.createElement('div');
+    row.className='lane';
+    row.innerHTML=`
+      <div class="lane-row-label">${laneName[0]}</div>
+      <div class="slot" data-lane="${i}" data-side="player">${p.field[i]?unitCardHTML(p.field[i],'player',i):'<span class="slot-empty">· 空阵 ·</span>'}</div>
+      <div class="lane-row-label">${laneName[0]}</div>
+      <div class="slot" data-lane="${i}" data-side="enemy">${f.field[i]?unitCardHTML(f.field[i],'enemy',i):'<span class="slot-empty">· 空阵 ·</span>'}</div>`;
+    wrap.appendChild(row);
+  });
+}
+function handPlayable(card){
+  if(S.over||S.busy) return false;
+  if(S.mode==='pve' && S.phase!=='player') return false;
+  if(enOf(curSide())<card.cost) return false;
+  return true;
+}
+function handDisabledReason(card){
+  if(S.over) return '对战已结束';
+  if(S.busy) return S.mode==='pvp' ? '回合结算中 · 稍候片刻' : '敌方行动中 · 稍候片刻';
+  if(S.mode==='pve' && S.phase!=='player') return '敌方行动中 · 稍候片刻';
+  if(enOf(curSide())<card.cost) return `化合能不足 · 需要 ${card.cost} 点（当前 ${enOf(curSide())}）`;
+  return '';
+}
+function renderHand(){
+  const wrap=$('#hand'); wrap.innerHTML='';
+  const hSide = S.mode==='pvp' ? curSide() : 'player';
+  const hand = (hSide==='player'?me():foe()).hand;
+  const mycamp = sideCamp(hSide);
+  // 可玩卡排前，同类按费用升序，避免可用卡被挤到视野外
+  const order=hand.map((card,i)=>({card,i}))
+    .sort((a,b)=>{
+      const pa=handPlayable(a.card)?1:0, pb=handPlayable(b.card)?1:0;
+      if(pa!==pb) return pb-pa;
+      return a.card.cost-b.card.cost;
+    });
+  for(const {card,i} of order){
+    const playable=handPlayable(card);
+    const reason=playable?'':handDisabledReason(card);
+    const el=document.createElement('div');
+    el.className=`hand-card camp-${mycamp} ${playable?'':'disabled'} ${S.selected===i?'selected':''}`;
+    el.setAttribute('data-od-id',`hand-card-${card.id}`);
+    el.setAttribute('tabindex','0');
+    el.setAttribute('role','button');
+    if(reason) el.setAttribute('title',reason);
+    el.innerHTML=`
+      <span class="hc-cost">${card.cost}</span>
+      <span class="hc-type">${card.kind==='unit'?'元素单位':'反应技能'}</span>
+      <span class="hc-sym">${card.formula}</span>
+      <div class="hc-name">${card.name}</div>
+      <div class="hc-desc">${card.kind==='unit'?card.rxn:card.desc}</div>
+      <div class="hc-stats">${card.kind==='unit'?`<span>攻 <b>${card.atk}</b></span><span>防 <b>${card.hp}</b></span>`:''}</div>
+      ${card.kind==='unit'&&card.ab&&card.ab.length?`<div class="hc-ab">${card.ab.map(([n,v])=>ABILITIES[n].icon+' '+ABILITIES[n].name+(v?' '+v:'')).join(' · ')}</div>`:''}
+      ${card.kind==='reaction'?`<div class="hc-reaction">${card.formula}</div>`:''}`;
+    el.addEventListener('click',()=>{
+      if(!handPlayable(card)){ const why=handDisabledReason(card); if(why) log(why,'sys'); return; }
+      if(card.kind==='unit'){
+        if(S.selected===i){ S.selected=null; }
+        else S.selected=i;
+        renderHand(); renderLanes();
+        highlightPickable();
+      }else{
+        castReaction(i);
+      }
+    });
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();el.click();}});
+    if(reason) el.innerHTML += `<div class="hc-lock">${reason}</div>`;
+    wrap.appendChild(el);
+  }
+  if(!hand.length){
+    wrap.innerHTML='<div style="color:var(--muted);font-size:12px;align-self:center;padding:20px">手牌已空 · 回合结束时自动补充</div>';
+  }
+}
+function highlightPickable(){
+  if(S.selected===null) return;
+  const hSide = S.mode==='pvp' ? curSide() : 'player';
+  const hand = (hSide==='player'?me():foe()).hand;
+  const card=hand[S.selected];
+  if(!card||card.kind!=='unit') return;
+  $$(`.slot[data-side="${hSide}"]`).forEach(slot=>{
+    slot.classList.add('pickable'); // 空阵线=部署，已驻军=替换
+  });
+}
+
+/* ============ 部署单位（side: player/enemy） ============ */
+function deployTo(lane, side){
+  side = side || curSide();
+  const s = side==='player'?me():foe();
+  if(S.selected===null) return;
+  const idx=S.selected, card=s.hand[idx];
+  if(!card||card.kind!=='unit') return;
+  if(enOf(side)<card.cost) return;
+  spendEnergy(side, card.cost);
+  const unit={...card, uid:'u'+(uid++), maxHp:card.hp, hp:card.hp, shieldLeft:abVal(card,'shield'), baseAtk:card.atk};
+  const old=s.field[lane];
+  s.field[lane]=unit;
+  s.hand.splice(idx,1);
+  s.discard.push(card);
+  if(old){ s.discard.push(old); }
+  S.selected=null;
+  renderAll();
+  const cName = sideCamp(side);
+  if(old){
+    log(`${cName} 以 <b class="l-formula">${unit.formula} ${unit.name}</b> 替换阵线上的 ${old.formula} ${old.name}`, cName);
+  }
+  log(`${cName} 部署 <b class="l-formula">${unit.formula} ${unit.name}</b> 于 ${LANES[lane][0]}`, cName);
+  const slot=document.querySelector(`.slot[data-side="${side}"][data-lane="${lane}"]`);
+  if(slot){ slot.classList.add('spawn'); setTimeout(()=>slot.classList.remove('spawn'),450); }
+}
+
+/* ============ 反应卡（按当前行动方结算） ============ */
+function castReaction(idx){
+  const aSide = S.mode==='pvp' ? curSide() : 'player';
+  const a = aSide==='player'?me():foe();
+  const f = aSide==='player'?foe():me();
+  const aCamp = sideCamp(aSide);
+  const eCamp = opp(aCamp);
+  const card=a.hand[idx];
+  if(!card||card.kind!=='reaction') return;
+  if(enOf(aSide)<card.cost) return;
+  if(S.busy) return;
+  spendEnergy(aSide, card.cost);
+  a.hand.splice(idx,1);
+  a.discard.push(card);
+  S.selected=null;
+  renderHand(); renderEnergy();
+  log(`【${card.name}】 <span class="l-formula">${card.formula}</span>`, aCamp);
+  let text='';
+  if(card.type==='dmg'){
+    if(card.target==='all'){
+      const alive=f.field.filter(x=>x).length;
+      f.field.forEach((u,i)=>{ if(u){ u.hp-=card.value; if(u.hp<=0){ log(`敌方 ${u.formula} ${u.name} 被 <b>${card.name}</b> 摧毁`,eCamp); killUnit(aSide==='player'?'enemy':'player',i); } }});
+      if(!alive) f.base-=card.value;
+      text=`对敌方全体造成 ${card.value} 点灼烧伤害`;
+    }else{
+      const i=f.field.findIndex(x=>x);
+      if(i>-1){
+        f.field[i].hp-=card.value;
+        text=`对敌方首位单位 ${f.field[i].name} 造成 ${card.value} 点伤害`;
+        if(f.field[i].hp<=0){ log(`敌方 ${f.field[i].formula} 被摧毁`,eCamp); killUnit(aSide==='player'?'enemy':'player',i); }
+      }else{
+        f.base-=card.value; text=`敌阵空无一人 · 直接对基地造成 ${card.value} 点伤害`;
+      }
+    }
+  }else if(card.type==='heal'){
+    const h=Math.min(30,a.base+card.value);
+    const heal=h-a.base; a.base=h;
+    text=`己方基地恢复 ${heal} 点耐久`;
+  }else if(card.type==='draw'){
+    let n=0; for(let k=0;k<card.value;k++) if(drawCard(aSide)) n++;
+    text=`从牌库抽取 ${n} 张牌`;
+  }else if(card.type==='buffAtk'){
+    let n=0; a.field.forEach(u=>{ if(u){ u.atk+=card.value; n++; } });
+    text=`己方 ${n} 个单位攻击 +${card.value}`;
+  }else if(card.type==='healUnit'){
+    const i=a.field.findIndex(x=>x&&x.hp<x.maxHp);
+    if(i>-1){ const u=a.field[i]; u.hp=Math.min(u.maxHp,u.hp+card.value); text=`己方 ${u.name} 恢复 ${card.value} 点生命`; }
+    else text='己方单位均满血 · 效果浪费';
+  }else if(card.type==='stunFront'){
+    const i=f.field.findIndex(x=>x);
+    if(i>-1){ f.field[i].stunned=true; text=`冰冻敌方 ${f.field[i].name}，下回合无法行动`; }
+    else text='敌方阵线为空 · 冰冻落空';
+  }else if(card.type==='shieldAll'){
+    let n=0; a.field.forEach(u=>{ if(u){ u.shieldLeft=(u.shieldLeft||0)+card.value; n++; } });
+    text=`己方 ${n} 个单位获得 ${card.value} 点护盾`;
+  }else if(card.type==='steal'){
+    const take=Math.min(enOf(aSide==='player'?'enemy':'player'),card.value);
+    spendEnergy(aSide==='player'?'enemy':'player', take);
+    gainEnergy(aSide, take);
+    text=`窃取敌方 ${take} 点化合能`;
+  }else if(card.type==='pierce'){
+    f.base-=card.value; text=`无视单位直击敌方基地 ${card.value} 点`;
+  }else if(card.type==='clear'){
+    let n=0; f.field.forEach(u=>{ if(u){ if(u.shieldLeft>0){ u.shieldLeft=0; n++; } if(u.atk>(u.baseAtk||u.atk)){ u.atk=u.baseAtk||u.atk; n++; } } });
+    text=n?`清除敌方 ${n} 项护盾/攻击增益`:'敌方无护盾增益可清除';
+  }else if(card.type==='poisonAll'){
+    let n=0; f.field.forEach(u=>{ if(u){ u.poisonTicks=(u.poisonTicks||0)+card.value; u.poisonVal=card.value; n++; } });
+    text=`敌方 ${n} 个单位中毒（每阶段 ${card.value} 点毒伤）`;
+  }
+  log(text,'sys');
+  renderAll();
+}
+
+/* ============ 战斗结算（含全部技能效果） ============ */
+function killUnit(side, idx){
+  const s = side==='player'?me():foe();
+  const u = s.field[idx];
+  if(!u) return;
+  const bv = abVal(u,'bomb');
+  if(bv>0){
+    const target = side==='player'?foe():me();
+    target.base -= bv;
+    log(`💣 ${u.name} 自爆！对基地造成 ${bv} 点伤害`,'sys');
+  }
+  s.field[idx]=null;
+}
+function updateUnitEl(u){
+  const el=document.querySelector(`[data-uid="${u.uid}"]`);
+  if(!el) return;
+  const pct=Math.max(0,u.hp/u.maxHp*100);
+  const fill=el.querySelector('.uc-hpbar .fill');
+  const num=el.querySelector('.uc-hpnum');
+  if(fill) fill.style.width=pct+'%';
+  if(num) num.textContent=`HP ${Math.max(0,u.hp)}/${u.maxHp}`;
+  const atk=el.querySelector('.uc-atk');
+  if(atk) atk.textContent=`⚔ ${u.atk}`;
+  const ab=el.querySelector('.uc-ab');
+  if(ab && u.ab && u.ab.length){
+    ab.innerHTML=u.ab.map(([n,v])=>{
+      const sl=(u.shieldLeft!==undefined && n==='shield')?u.shieldLeft:v;
+      return `${ABILITIES[n].icon}${sl>0?sl:''}`;
+    }).join(' ');
+  }
+}
+async function resolveCombat(actor){
+  const a=actor==='player'?me():foe();
+  const b=actor==='player'?foe():me();
+  const aCamp=actor==='player'?S.camp:opp(S.camp);
+  const bCamp=actor==='player'?opp(S.camp):S.camp;
+  // 阶段开始：剧毒结算（双方）
+  for(const [side,list] of [['player',me().field],['enemy',foe().field]]){
+    for(let i=0;i<3;i++){
+      const u=list[i];
+      if(!u || !(u.poisonTicks>0)) continue;
+      const pv=u.poisonVal||1;
+      u.hp-=pv;
+      log(`☠️ ${u.name} 中毒，受到 ${pv} 点毒伤`, side==='player'?S.camp:opp(S.camp));
+      u.poisonTicks-=1;
+      if(u.hp<=0){ log(`${u.name} 中毒身亡`,'sys'); killUnit(side,i); renderLanes(); }
+    }
+  }
+  for(let i=0;i<3;i++){
+    const u=a.field[i], v=b.field[i];
+    if(!u) continue;
+    // 麻痹：跳过行动
+    if(u.stunned){
+      log(`${campName[aCamp]} ${u.formula} ${u.name} 被冰冻，无法行动`,'sys');
+      u.stunned=false;
+      renderLanes();
+      continue;
+    }
+    const aEl=document.querySelector(`[data-uid="${u.uid}"]`);
+    if(!aEl) continue;
+    if(v){
+      const bEl=document.querySelector(`[data-uid="${v.uid}"]`);
+      const hits = abVal(u,'double')>0 ? 2 : 1;
+      for(let h=0;h<hits;h++){
+        if(!b.field[i]) break;
+        aEl.classList.add(actor==='player'?'lunge-red':'lunge-blue');
+        await wait(230);
+        let dmg = u.atk;
+        if(v.shieldLeft>0){
+          const abs=Math.min(v.shieldLeft,dmg);
+          v.shieldLeft-=abs; dmg-=abs;
+          log(`🛡 ${v.name} 护盾抵消 ${abs} 点伤害`,'sys');
+        }
+        v.hp-=dmg;
+        if(bEl){
+          bEl.classList.add('hit');
+          if(dmg>0) floatDmg(bEl,-dmg);
+          updateUnitEl(v);
+        }
+        log(`${campName[aCamp]} ${u.formula} ${u.name} 进击 ${v.formula} ${v.name} · <span class="l-formula">${u.rxn}</span>`, aCamp);
+        if(dmg>0){
+          // 狂怒
+          const ev=abVal(v,'enrage');
+          if(ev>0){ v.atk+=ev; log(`🔥 ${v.name} 狂怒，攻击 +${ev}`,'sys'); }
+          // 反伤
+          const tv=abVal(v,'thorns');
+          if(tv>0){
+            u.hp-=tv;
+            log(`🌵 ${v.name} 反伤 ${tv} 点`,'sys');
+            if(u.hp<=0){
+              log(`${u.name} 被反伤击杀`,'sys');
+              aEl.classList.add('dying');
+              killUnit(actor==='player'?'player':'enemy',i);
+              renderLanes();
+              break;
+            }
+          }
+          // 吸血
+          const dv=abVal(u,'drain');
+          if(dv>0){
+            const before=a.base; a.base=Math.min(30,a.base+dv);
+            if(a.base-before>0) log(`🩸 ${u.name} 吸血，基地恢复 ${a.base-before} 点`,'sys');
+          }
+          // 溅射
+          const sv=abVal(u,'splash');
+          if(sv>0){ b.base-=sv; log(`💥 ${u.name} 溅射敌方基地 ${sv} 点`,'sys'); }
+          // 剧毒
+          const pv=abVal(u,'poison');
+          if(pv>0){ v.poisonTicks=(v.poisonTicks||0)+pv; v.poisonVal=pv; }
+          // 麻痹
+          const stv=abVal(u,'stun');
+          if(stv>0 && Math.random()*100<stv){ v.stunned=true; log(`❄️ ${v.name} 被麻痹，下回合无法行动`,'sys'); }
+          // 自愈
+          const hv=abVal(u,'healSelf');
+          if(hv>0){ u.hp=Math.min(u.maxHp,u.hp+hv); }
+        }
+        aEl.classList.remove('lunge-red','lunge-blue');
+        await wait(240);
+        if(v.hp<=0){
+          if(bEl) bEl.classList.add('dying');
+          log(`${v.formula} ${v.name} 阵亡`, bCamp);
+          await wait(460);
+          killUnit(actor==='player'?'enemy':'player',i);
+          renderLanes();
+          break;
+        }
+      }
+    }else{
+      // 攻击基地
+      const hits = abVal(u,'double')>0 ? 2 : 1;
+      for(let h=0;h<hits;h++){
+        aEl.classList.add(actor==='player'?'lunge-red':'lunge-blue');
+        await wait(230);
+        b.base-=u.atk;
+        aEl.classList.remove('lunge-red','lunge-blue');
+        const baseEl=actor==='player'?$('#enemyBase'):$('#playerBase');
+        floatDmg(baseEl,-u.atk);
+        if(baseEl){ baseEl.classList.add('b-shake'); setTimeout(()=>baseEl.classList.remove('b-shake'),500); }
+        log(`${campName[aCamp]} ${u.formula} ${u.name} 直击敌方基地 -${u.atk} · <span class="l-formula">${u.rxn}</span>`, aCamp);
+        // 吸血
+        const dv=abVal(u,'drain');
+        if(dv>0){ const before=a.base; a.base=Math.min(30,a.base+dv); if(a.base-before>0) log(`🩸 ${u.name} 吸血，基地恢复 ${a.base-before} 点`,'sys'); }
+        // 自愈
+        const hv=abVal(u,'healSelf');
+        if(hv>0){ u.hp=Math.min(u.maxHp,u.hp+hv); }
+        await wait(240);
+      }
+    }
+    updateUnitEl(u); // 原地刷新攻击/生命/护盾显示，保留动画
+  }
+  renderHud();
+  return b.base<=0;
+}
+function floatDmg(el,val){
+  if(!el) return;
+  const d=document.createElement('span');
+  d.className='dmg-float';
+  d.textContent=val;
+  el.appendChild(d);
+  setTimeout(()=>d.remove(),900);
+}
+
+/* ============ 回合流程 ============ */
+function newRound(){
+  S.round++;
+  S.energy=Math.min(S.maxEnergy,S.energy+4);
+  drawCard('player');
+  S.phase='player';
+  banner(S.mode==='pvp' ? `玩家1 的回合 · 第 ${S.round} 回合` : `你的回合 · 第 ${S.round} 回合`, S.camp==='red'?'#ff7d85':'#7dc1ff');
+  renderAll();
+}
+async function endTurn(){
+  if(S.busy||S.over) return;
+  if(S.mode==='pve' && S.phase!=='player') return;
+  S.busy=true; S.selected=null;
+  $('#btnEndTurn').textContent='进攻结算…';
+  renderHand();
+  try{
+    if(S.phase==='player'){
+      // 玩家1（或 PvE 玩家）结束回合
+      log(`回合结算 · ${S.mode==='pvp'?'玩家1':'你的军团'} 发起进攻`,'sys');
+      const win=await resolveCombat('player');
+      if(win){ return endGame(true); }
+      S.phase='enemy';
+      foe().energy=Math.min(S.maxEnergy, foe().energy+4);
+      renderHud();
+      if(S.mode==='pvp'){
+        banner('玩家2 的回合', '#7dc1ff');
+        await wait(700);
+        renderAll();
+        S.busy=false; S.selected=null;
+        renderHud();
+        return; // 轮到玩家2操作
+      }
+      banner('敌方回合', '#ff9a63');
+      await wait(700);
+      renderAll();
+      await enemyTurn();
+      const lose=await resolveCombat('enemy');
+      if(lose){ return endGame(false); }
+      newRound();
+    }else{
+      // PvP：玩家2 结束回合
+      log(`回合结算 · 玩家2 发起进攻`,'sys');
+      const lose=await resolveCombat('enemy');
+      if(lose){ return endGame(false); }
+      newRound();
+    }
+  }catch(err){
+    log(`战斗结算异常：${err && err.message ? err.message : err}`,'sys');
+  }finally{
+    setTimeout(()=>{ if(!S.over){ S.busy=false; if(S.mode==='pve'||S.phase==='player'){ S.phase='player'; } renderAll(); } },500);
+  }
+}
+
+async function enemyTurn(){
+  const f=foe();
+  // AI 出牌
+  const attempts=[...f.hand].sort((a,b)=>a.cost-b.cost);
+  for(const card of attempts){
+    if(f.energy<card.cost) continue;
+    if(f.hand.every(c=>c.cost>f.energy)) break;
+    const idx=f.hand.indexOf(card);
+    if(card.kind==='unit'){
+      const lane=f.field.findIndex(x=>!x);
+      if(lane>-1){
+        f.energy-=card.cost;
+        const unit={...card, uid:'u'+(uid++), maxHp:card.hp, hp:card.hp, shieldLeft:abVal(card,'shield'), baseAtk:card.atk};
+        f.field[lane]=unit;
+        f.hand.splice(idx,1);
+        f.discard.push(card);
+        renderLanes();
+        log(`${campName[opp(S.camp)]} 部署 <span class="l-formula">${unit.formula} ${unit.name}</span> 于 ${LANES[lane][0]}`,opp(S.camp));
+        await wait(320);
+      }
+    }else if(card.kind==='reaction' && Math.random()<0.7){
+      f.energy-=card.cost;
+      f.hand.splice(idx,1);
+      f.discard.push(card);
+      log(`【敌方 ${card.name}】 <span class="l-formula">${card.formula}</span>`,opp(S.camp));
+      if(card.type==='dmg'){
+        if(card.target==='all'){
+          const alive=me().field.filter(x=>x).length;
+          me().field.forEach((u,i)=>{ if(u){ u.hp-=card.value; if(u.hp<=0) killUnit('player',i); }});
+          if(!alive) me().base-=card.value;
+          log(`我方全体受到 ${card.value} 点伤害`,'sys');
+        }else{
+          const i=me().field.findIndex(x=>x);
+          if(i>-1){ me().field[i].hp-=card.value; if(me().field[i].hp<=0) killUnit('player',i); }
+          else me().base-=card.value;
+        }
+      }else if(card.type==='heal'){
+        f.base=Math.min(30,f.base+card.value);
+        log(`敌方基地恢复 ${card.value} 点`,'sys');
+      }else if(card.type==='draw'){
+        for(let k=0;k<card.value;k++) drawCard('enemy');
+      }else if(card.type==='buffAtk'){
+        f.field.forEach(u=>{ if(u) u.atk+=card.value; });
+        log(`敌方全体攻击 +${card.value}`,'sys');
+      }else if(card.type==='healUnit'){
+        const i=f.field.findIndex(x=>x&&x.hp<x.maxHp);
+        if(i>-1){ const u=f.field[i]; u.hp=Math.min(u.maxHp,u.hp+card.value); log(`敌方 ${u.name} 恢复 ${card.value} 点生命`,'sys'); }
+      }else if(card.type==='stunFront'){
+        const i=me().field.findIndex(x=>x);
+        if(i>-1){ me().field[i].stunned=true; log(`❄️ 我方 ${me().field[i].name} 被冰冻！`,'sys'); }
+      }else if(card.type==='shieldAll'){
+        f.field.forEach(u=>{ if(u) u.shieldLeft=(u.shieldLeft||0)+card.value; });
+        log(`敌方全体获得 ${card.value} 点护盾`,'sys');
+      }else if(card.type==='steal'){
+        const take=Math.min(S.energy,card.value);
+        S.energy-=take; f.energy=Math.min(S.maxEnergy,f.energy+take);
+        log(`敌方窃取 ${take} 点化合能`,'sys');
+      }else if(card.type==='pierce'){
+        me().base-=card.value;
+        log(`我方基地被穿甲直击 ${card.value} 点`,'sys');
+      }else if(card.type==='clear'){
+        me().field.forEach(u=>{ if(u){ if(u.shieldLeft>0) u.shieldLeft=0; if(u.atk>(u.baseAtk||u.atk)) u.atk=u.baseAtk||u.atk; } });
+        log('我方护盾与攻击增益被净化清除','sys');
+      }else if(card.type==='poisonAll'){
+        me().field.forEach(u=>{ if(u){ u.poisonTicks=(u.poisonTicks||0)+card.value; u.poisonVal=card.value; } });
+        log(`☠️ 我方全体中毒（每阶段 ${card.value} 点）`,'sys');
+      }
+      renderLanes(); renderHud();
+      await wait(320);
+    }
+  }
+  renderHud();
+}
+
+/* ============ 结束 ============ */
+async function endGame(playerWin){
+  S.over=true; S.busy=true;
+  renderHud();
+  const winCamp=playerWin?S.camp:opp(S.camp);
+  const winSide = winCamp===S.camp ? '玩家1' : '玩家2';
+  const loseSide = winCamp===S.camp ? '玩家2' : '玩家1';
+  const root=$('#modalRoot');
+  root.innerHTML=`<div class="modal-backdrop">
+    <div class="modal ${playerWin?'win-'+S.camp:'win-'+opp(S.camp)}" role="dialog" aria-modal="true">
+      <div class="m-title">${S.mode==='pvp' ? winSide+' 获胜' : (playerWin?'胜利':'战败')}</div>
+      <div class="m-sub">
+        ${S.mode==='pvp'
+          ? `<b>${winSide}（${campFull[winCamp]}）</b> 击溃了 ${loseSide}（${campFull[opp(winCamp)]}）的防线。<br>元素战场之上，${winSide} 的方程式无人能敌。`
+          : (playerWin
+            ? `你率 <b>${campFull[winCamp]}</b> 击溃敌军，对方的基地在剧烈的反应中崩塌。<br>元素战场之上，你的方程式无人能敌。`
+            : `你的基地被 <b>${campFull[winCamp]}</b> 攻陷。<br>电子流转不息，重新集结，再战一局。`)}
+        <br><br>共进行 <b>${S.round}</b> 个回合
+      </div>
+      <div class="m-actions">
+        <button class="btn ghost" id="btnCodexModal">查看化学图鉴</button>
+        <button class="btn ${winCamp==='red'?'primary-red':'primary-blue'}" id="btnAgain">再来一局</button>
+      </div>
+    </div></div>`;
+  $('#btnAgain').addEventListener('click',()=>{ root.innerHTML=''; goTitle(); });
+  $('#btnCodexModal').addEventListener('click',()=>{ openCodex(); });
+}
+function goTitle(){
+  $('#battleScreen').classList.add('hidden');
+  $('#campScreen').classList.remove('hidden');
+  $('#bannerRoot').innerHTML='';
+  S.over=false; S.busy=false; S.selected=null;
+}
+
+/* ============ 战斗日志 ============ */
+function log(html,cls){
+  const feed=$('#logFeed');
+  const el=document.createElement('div');
+  el.className='log-entry '+(cls==='sys'?'sys':cls==='red'||cls==='player'?'red':'blue');
+  el.innerHTML=`<span class="l-round">R${S.round}</span> ${html}`;
+  feed.appendChild(el);
+  feed.scrollTop=feed.scrollHeight;
+}
+$('#btnClearLog').addEventListener('click',()=>{ $('#logFeed').innerHTML=''; });
+
+/* 全局错误监听：任何运行错误都打进战场日志，便于排查 */
+if(typeof window!=='undefined' && window.addEventListener){
+  window.addEventListener('error',function(e){
+    try{
+      if(typeof log==='function' && $('#logFeed')) log(`运行错误：${e && e.message ? e.message : e}`,'sys');
+    }catch(_){}
+  });
+  window.addEventListener('unhandledrejection',function(e){
+    try{
+      const r=e&&e.reason; const msg=(r&&r.message)||String(r);
+      if(typeof log==='function' && $('#logFeed')) log(`异步异常：${msg}`,'sys');
+    }catch(_){}
+  });
+}
+
+/* ============ 横幅 ============ */
+function banner(text,color){
+  if(reduced){ return; }
+  const root=$('#bannerRoot');
+  const b=document.createElement('div');
+  b.className='turn-banner';
+  b.innerHTML=`<div><div class="tb-text" style="color:${color}">${text}<span class="tb-en">Iodine · ChemTerritory</span></div><div class="tb-bar"></div></div>`;
+  root.appendChild(b);
+  setTimeout(()=>{ b.classList.add('out'); setTimeout(()=>b.remove(),430); },1000);
+}
+
+/* ============ 事件绑定 ============ */
+$('#btnEndTurn').addEventListener('click',()=>endTurn());
+$('#lanes').addEventListener('click',e=>{
+  const slot=e.target.closest('.slot');
+  if(!slot) return;
+  const lane=+slot.dataset.lane;
+  const side=slot.dataset.side;
+  if(S.busy||S.over) return;
+  if(S.mode==='pvp'){
+    // 双人热座：当前行动方只能操作自己的阵线
+    const acting=curSide();
+    if(side!==acting){
+      if(S.selected!==null) log(side==='player'?'这是玩家1的阵线 · 当前由对方操作':'这是玩家2的阵线 · 当前由对方操作','sys');
+      return;
+    }
+    deployTo(lane, acting);
+  }else{
+    if(side!=='player'){
+      if(S.selected!==null && S.phase==='player'){
+        log(`这是敌方阵线 · 只能部署到左侧我方阵线`,'sys');
+      }
+      return;
+    }
+    if(S.phase==='player') deployTo(lane,'player');
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter' || $('#battleScreen').classList.contains('hidden') || S.busy || S.selected===null) return;
+  if(S.mode==='pve' && S.phase!=='player') return;
+  const acting=S.mode==='pvp'?curSide():'player';
+  const s=acting==='player'?me():foe();
+  const emptyLane=s.field.findIndex(x=>!x);
+  if(emptyLane>-1) deployTo(emptyLane, acting);
+});
+
+/* ============ 图鉴 ============ */
+const drawer=$('#drawerDim');
+function openCodex(){
+  const d=document.createElement('div');
+  d.className='drawer';
+  d.setAttribute('data-od-id','codex-drawer');
+  let html=`<div class="drawer-head"><h3>化学图鉴</h3><button class="btn small ghost" id="codexClose">关闭</button></div><div class="drawer-body">`;
+  for(const camp of ['red','blue']){
+    html+=`<div class="deck-section"><h4 class="${camp}">${camp==='red'?'红方 · 氧化军团':'蓝方 · 还原军团'} 单位</h4><div class="deck-grid">`;
+    UNITS[camp].forEach(u=>{
+      html+=`<div class="deck-item"><div class="d-top"><span class="d-sym" style="color:${camp==='red'?'#ff8f98':'#8cc8ff'}">${u.formula}</span><span class="d-name">${u.name}</span></div>
+        <div class="d-stats">攻 ${u.atk} · 防 ${u.hp} · 费 ${u.cost}</div>
+        ${u.ab&&u.ab.length?`<div class="d-ab">${u.ab.map(([n,v])=>ABILITIES[n].icon+' '+ABILITIES[n].name+(v?' '+v:'')).join(' · ')}</div>`:''}
+        <div class="d-rxn">${u.rxn}</div></div>`;
+    });
+    html+=`</div></div>`;
+  }
+  html+=`<div class="deck-section"><h4 class="amber" style="color:var(--amber)">通用反应技能</h4><div class="deck-grid">`;
+  REACTIONS.forEach(r=>{
+    html+=`<div class="deck-item"><div class="d-top"><span class="d-sym" style="color:var(--amber)">${r.formula}</span><span class="d-name">${r.name}</span></div>
+      <div class="d-stats">费 ${r.cost}</div><div class="d-rxn">${r.desc}</div></div>`;
+  });
+  html+=`</div></div></div>`;
+  d.innerHTML=html;
+  document.body.appendChild(d);
+  drawer.classList.add('show');
+  requestAnimationFrame(()=>d.classList.add('show'));
+  const close=()=>{ d.classList.remove('show'); drawer.classList.remove('show'); setTimeout(()=>d.remove(),360); };
+  d.querySelector('#codexClose').addEventListener('click',close);
+  drawer.addEventListener('click',close);
+}
+$('#btnCodex').addEventListener('click',openCodex);
+drawer.addEventListener('click',()=>{ const d=document.querySelector('.drawer'); if(d){ d.classList.remove('show'); drawer.classList.remove('show'); setTimeout(()=>d.remove(),360);} });
+
+/* 初始渲染 */
+})();
+</script>
+</body>
+</html>

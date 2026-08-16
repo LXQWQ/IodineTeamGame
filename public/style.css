@@ -1090,6 +1090,18 @@
             border-color: var(--accent);
             box-shadow: 0 8px 32px rgba(92,45,145,0.3);
         }
+        /* 新版化境争霸 · 战争卡牌 — 红蓝对峙 */
+        .game-card.chem-territory-v2 {
+            --game-color-1: #6e1420;
+            --game-color-2: #123a63;
+        }
+        .game-card.chem-territory-v2:hover {
+            border-color: #ff4655;
+            box-shadow: 0 8px 32px rgba(255,70,85,0.28);
+        }
+        .game-card.chem-territory-v2 .game-img {
+            background: linear-gradient(145deg, #6e1420, #123a63);
+        }
         /* 开发中卡片 — 灰色调 */
         .dev-grid .game-card {
             opacity: 0.5;
