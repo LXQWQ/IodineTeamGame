@@ -351,7 +351,7 @@
         }
         /* 月读固定背景（复用海龟汤的 Tsukuyomi 背景图，仅月读模式）：
            背景 fixed 不随页面滚动，前景长条页面在其上方滚动 */
-        [data-theme="tsukuyomi"] body::before {
+        body[data-theme="tsukuyomi"]::before {
             content: '';
             position: fixed;
             inset: 0;
@@ -361,8 +361,18 @@
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            opacity: 0.18;
+            opacity: 0.25;
             mix-blend-mode: screen;
+        }
+        /* 月读模式：主容器半透明，让固定背景透出 */
+        [data-theme="tsukuyomi"] body {
+            background: rgba(30, 34, 53, 0.78);
+        }
+        [data-theme="tsukuyomi"] .hero {
+            background: linear-gradient(135deg, rgba(13,10,26,0.55) 0%, rgba(26,10,46,0.5) 40%, rgba(45,16,68,0.5) 100%) !important;
+        }
+        [data-theme="tsukuyomi"] .game-card {
+            background: rgba(38, 43, 61, 0.72);
         }
         /* 大月亮（辉夜姬 = 月球公主） */
         [data-theme="tsukuyomi"] .tsuki-moon {
@@ -401,7 +411,7 @@
         @media (max-width: 768px) {
             [data-theme="tsukuyomi"] .tsuki-moon { width: 80px; height: 80px; top: 5%; right: 6%; }
         }
-        /* 鸟居剪影（舞台设定） */
+        /* 鸟居剪影（舞台设定）· 亮粉色避免融入深紫背景 */
         [data-theme="tsukuyomi"] .tsuki-torii {
             display: block;
             position: absolute;
@@ -409,9 +419,9 @@
             left: 5%;
             width: 116px;
             height: 92px;
-            z-index: 2;
-            opacity: 0.85;
-            filter: drop-shadow(0 0 12px rgba(224, 64, 144, 0.5));
+            z-index: 20;
+            opacity: 0.95;
+            filter: drop-shadow(0 0 14px rgba(255, 158, 203, 0.65));
             animation: tsuki-torii-float 5s ease-in-out infinite;
         }
         @keyframes tsuki-torii-float {
