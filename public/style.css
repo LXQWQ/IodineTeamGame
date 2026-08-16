@@ -715,7 +715,7 @@
             z-index: 1000;
         }
         .theme-dropdown.show {
-            max-height: 400px;
+            max-height: 560px;
             opacity: 1;
             transform: translateY(0);
         }
@@ -750,6 +750,19 @@
             font-size: 0.9rem;
             color: var(--text-primary);
             font-weight: 500;
+        }
+        /* 主题选项徽章（彩蛋模式 Tag） */
+        .theme-tag {
+            font-size: 0.62rem !important;
+            color: #fff !important;
+            background: linear-gradient(135deg, #e04090, #00b8d4);
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: auto;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: 0 0 8px rgba(224, 64, 144, 0.45);
+            letter-spacing: 0.02em;
         }
         /* 硫磺焰主题 - 炽热橙黄 */
         [data-theme="sulfur"] .hero::before {
