@@ -178,7 +178,8 @@
             { id:2, name:"元素大战僵尸Pro·物质炼金", emoji:"🧟🧠", tag:"化学塔防+RPG", desc:"完全重构！击杀特定化学物质僵尸收集HCl/H₂SO₄/吡啶等，在炼金实验室中电解、还原、裂解提取单质解锁新元素！三大化学Boss等你挑战。", link:"games/evz/", newWindow:false },
             { id:3, name:"相转移大作战", emoji:"💧❄⚡", tag:"双人对抗", desc:"原创游戏，回合制抽取卡牌，将反应物拉向自己的相！", link:"games/phase-shift/", newWindow:false },
             { id:7, name:"化境争霸", emoji:"⚔️⚗️", tag:"领地争夺", desc:"化学主题六边形棋盘领地争夺战！酸碱中和、电化学、元素争霸三模式，支持双人对战和人机AI，通过化学反应摧毁敌方单位！", link:"games/chem-territory/", newWindow:false },
-            { id:9, name:"化学海龟汤", emoji:"🐢", tag:"推理猜谜", desc:"化学版海龟汤！根据谜面推理化学物质/反应/现象，AI主持人月见八千代出题，沉浸式悬疑推理体验。手机电脑均可畅玩！", link:"games/chem-turtle-soup/", newWindow:false }
+            { id:9, name:"化学海龟汤", emoji:"🐢", tag:"推理猜谜", desc:"化学版海龟汤！根据谜面推理化学物质/反应/现象，AI主持人月见八千代出题，沉浸式悬疑推理体验。手机电脑均可畅玩！", link:"games/chem-turtle-soup/", newWindow:false },
+            { id:10, name:"元素大战僵尸·经典版", emoji:"🧟⚗️", tag:"经典塔防", desc:"经典PvZ式元素塔防！部署碳、镁、钠等元素守卫实验室，重温最初的元素战争。", link:"evz.html", newWindow:false }
         ];
                 const iodineDevGames = [
             { id:4, name:"碳链工坊", emoji:"🧬⛓", tag:"3D分子工坊", desc:"有机合成策略，构建分子结构，探索化学反应！—— 预计下个大版本重构", link:"games/chain-craft/", newWindow:false },
@@ -237,6 +238,8 @@
                         gameIcon = '<div class="micro-reaction"><div class="floating-molecule"></div><div class="floating-molecule"></div><div class="floating-molecule"></div><div class="floating-molecule"></div></div>';
                     } else if (game.id === 9) {
                         gameIcon = '<div style="font-size: 3rem;">🐢</div>';
+                    } else if (game.id === 10) {
+                        gameIcon = '<div style="font-size: 3rem;">🧟</div>';
                     } else {
                         gameIcon = '<div style="font-size: 3rem; opacity: 0.5;">🔮</div>';
                     }
