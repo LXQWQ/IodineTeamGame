@@ -1192,6 +1192,7 @@
                 // 月读粒子数据
                 window.tsukuyomiParticles = [];
                 const colors = ['#e04090', '#00b8d4', '#ffb74d'];
+                const notes = ['♪', '♫', '♩'];
                 for (let i = 0; i < 30; i++) {
                     window.tsukuyomiParticles.push({
                         x: Math.random() * canvas.width,
@@ -1201,7 +1202,9 @@
                         size: Math.random() * 3 + 1,
                         color: colors[Math.floor(Math.random() * colors.length)],
                         opacity: Math.random() * 0.5 + 0.3,
-                        breathPhase: Math.random() * Math.PI * 2
+                        breathPhase: Math.random() * Math.PI * 2,
+                        // 前 1/3 粒子为音符（彩叶的歌声《Remember》主题）
+                        note: i < 10 ? notes[Math.floor(Math.random() * notes.length)] : null
                     });
                 }
                 // 兔子彩蛋定时器
@@ -1223,12 +1226,24 @@
             // 分子数据（增加碘分子I₂）
                     ctx.save();
                     ctx.globalAlpha = breathOpacity;
-                    ctx.fillStyle = particle.color;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = particle.color;
-                    ctx.beginPath();
-                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-                    ctx.fill();
+                    if (particle.note) {
+                        // 音符粒子：飘动的歌声符号
+                        ctx.font = (particle.size * 3.4) + 'px "Segoe UI Symbol", "Noto Music", serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = particle.color;
+                        ctx.shadowBlur = 12;
+                        ctx.shadowColor = particle.color;
+                        ctx.fillText(particle.note, particle.x, particle.y);
+                    } else {
+                        // 普通光点粒子
+                        ctx.fillStyle = particle.color;
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = particle.color;
+                        ctx.beginPath();
+                        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
                     ctx.restore();
                 });
                 // 偶尔混入碘蒸气粒子
