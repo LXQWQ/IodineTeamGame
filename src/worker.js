@@ -14,7 +14,8 @@ const DEEPSEEK_MODEL = 'deepseek-chat';
 // hteamgame Gemini 端点
 // 氢队封锁了 Cloudflare Worker 出口 IP，直连必 403；
 // 主路径改为 Supabase Edge Function 中转（AWS 出口，非 Cloudflare），直连仅作兜底。
-const GEMINI_VIA_SUPABASE = 'https://supabase.iteamgame.dpdns.org/functions/v1/htgemini';
+// 注意：必须用 supabase.co 官方域名 —— Worker 访问自定义域名（同 zone 回环）会 522。
+const GEMINI_VIA_SUPABASE = 'https://ujinwsfueaifaoskapzs.supabase.co/functions/v1/htgemini';
 const GEMINI_DIRECT = 'https://hteamgame.com/api/gemini/generate';
 const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
 
