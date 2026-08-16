@@ -992,6 +992,8 @@
                 const rect = hero.getBoundingClientRect();
                 canvas.width = rect.width;
                 canvas.height = rect.height;
+                // 科技模式：窗口缩放后重建二进制雨列
+                if (window.cyberDrops) initCyberRain();
             }
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
@@ -1248,16 +1250,98 @@
             }
             // 初始化月读粒子系统
             initTsukuyomiParticles();
+            // ======================= 科技模式特效（二进制数据雨 + 电流电弧） =======================
+            function initCyberRain() {
+                const fontSize = 16;
+                const cols = Math.max(1, Math.ceil(canvas.width / fontSize));
+                window.cyberDrops = [];
+                for (let i = 0; i < cols; i++) {
+                    window.cyberDrops.push(Math.floor(Math.random() * -120));
+                }
+            }
+            function drawCyberRain(ctx) {
+                const fontSize = 16;
+                // 半透明拖尾（不 clearRect，模拟数据雨残影）
+                ctx.fillStyle = 'rgba(4, 6, 15, 0.10)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.font = 'bold ' + fontSize + 'px Consolas, "Courier New", monospace';
+                const chars = '010101';
+                for (let i = 0; i < window.cyberDrops.length; i++) {
+                    const char = chars[Math.floor(Math.random() * chars.length)];
+                    const x = i * fontSize;
+                    const y = window.cyberDrops[i] * fontSize;
+                    // 大部分青色，偶发品红亮点
+                    ctx.fillStyle = Math.random() < 0.92 ? 'rgba(0, 240, 255, 0.85)' : 'rgba(255, 0, 168, 0.9)';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.fillText(char, x, y);
+                    ctx.shadowBlur = 0;
+                    if (y > canvas.height + 40 && Math.random() > 0.975) {
+                        window.cyberDrops[i] = Math.floor(Math.random() * -60);
+                    }
+                    window.cyberDrops[i]++;
+                }
+            }
+            function genCyberArc() {
+                const x1 = Math.random() * canvas.width;
+                const y1 = -10;
+                const x2 = Math.random() * canvas.width;
+                const y2 = Math.random() * canvas.height * 0.6;
+                const segs = 5 + Math.floor(Math.random() * 4);
+                const pts = [{ x: x1, y: y1 }];
+                for (let i = 1; i < segs; i++) {
+                    pts.push({
+                        x: x1 + ((x2 - x1) * i) / segs + (Math.random() - 0.5) * 46,
+                        y: y1 + ((y2 - y1) * i) / segs + (Math.random() - 0.5) * 36
+                    });
+                }
+                pts.push({ x: x2, y: y2 });
+                return pts;
+            }
+            function drawCyberArcs(ctx) {
+                // 随机生成新电弧
+                if (Math.random() < 0.02) {
+                    window.cyberArcs = window.cyberArcs || [];
+                    window.cyberArcs.push({ points: genCyberArc(), life: 1 });
+                }
+                if (!window.cyberArcs) return;
+                window.cyberArcs = window.cyberArcs.filter(a => a.life > 0);
+                window.cyberArcs.forEach(arc => {
+                    arc.life -= 0.06;
+                    const alpha = Math.max(0, arc.life);
+                    ctx.beginPath();
+                    ctx.moveTo(arc.points[0].x, arc.points[0].y);
+                    for (let i = 1; i < arc.points.length; i++) ctx.lineTo(arc.points[i].x, arc.points[i].y);
+                    ctx.strokeStyle = 'rgba(0, 240, 255, ' + (alpha * 0.85) + ')';
+                    ctx.lineWidth = 1.6;
+                    ctx.shadowBlur = 14;
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.stroke();
+                    // 白色核心
+                    ctx.strokeStyle = 'rgba(255, 255, 255, ' + (alpha * 0.4) + ')';
+                    ctx.lineWidth = 0.6;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                });
+            }
+            initCyberRain();
             function animate() {
                 if (isPaused) return;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                const isTsukuyomi = document.body.getAttribute('data-theme') === 'tsukuyomi';
-                if (isTsukuyomi) {
-                    // 月读粒子系统
-                    drawTsukuyomiParticles();
+                const theme = document.body.getAttribute('data-theme');
+                const isTsukuyomi = theme === 'tsukuyomi';
+                const isCyber = theme === 'cyber';
+                if (isCyber) {
+                    // 科技模式：二进制数据雨 + 电流电弧（保留拖尾，不 clearRect）
+                    drawCyberRain(ctx);
+                    drawCyberArcs(ctx);
                 } else {
-                    // 原始分子系统
-                    const isDark = document.body.classList.contains('dark');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    if (isTsukuyomi) {
+                        // 月读粒子系统
+                        drawTsukuyomiParticles();
+                    } else {
+                        // 原始分子系统
+                        const isDark = document.body.classList.contains('dark');
                     const colors = getMoleculeColors(isDark);
                     molecules.forEach((mol, index) => {
                         // 更新位置
@@ -1291,6 +1375,7 @@
                             colors[index];
                         drawMolecule(mol, molColors);
                     });
+                    }
                 }
                 animationId = requestAnimationFrame(animate);
             }
