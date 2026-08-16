@@ -18,6 +18,9 @@ const GEMINI_VIA_SUPABASE = 'https://supabase.iteamgame.dpdns.org/functions/v1/h
 const GEMINI_DIRECT = 'https://hteamgame.com/api/gemini/generate';
 const SUPABASE_ANON_KEY = 'sb_publishable_wH0spS1pkkrKe6pu7AwUKA_2cSK95rG';
 
+// Gemini 调用诊断（最近一次调用结果，供 X-Gemini-Debug 响应头排查用）
+let geminiDebug = null;
+
 // === 双层限流（内存，Worker 冷启动时清零） ===
 // 第一层：IP 限流
 const RATE_LIMIT = 20;        // 每 IP 每分钟最多 20 次
@@ -128,24 +131,32 @@ async function callGemini(systemPrompt, userMessage) {
     if (resp.ok) {
       const data = await resp.json();
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (reply) return reply;
+      if (reply) { geminiDebug = 'ok:supabase'; return reply; }
     }
+    geminiDebug = `fail:supabase-${resp.status}`;
     console.warn(`[Gemini] via supabase returned ${resp.status}, trying direct`);
   } catch (e) {
+    geminiDebug = `fail:supabase-err:${e.message}`;
     console.warn(`[Gemini] via supabase error: ${e.message}, trying direct`);
   }
 
   // 兜底：直连氢队
-  const resp = await fetch(GEMINI_DIRECT, {
-    method: 'POST',
-    headers: baseHeaders,
-    body: JSON.stringify(payload),
-  });
-  if (!resp.ok) throw new Error(`Gemini returned ${resp.status}`);
-  const data = await resp.json();
-  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!reply) throw new Error('Empty Gemini response');
-  return reply;
+  try {
+    const resp = await fetch(GEMINI_DIRECT, {
+      method: 'POST',
+      headers: baseHeaders,
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) throw new Error(`Gemini returned ${resp.status}`);
+    const data = await resp.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!reply) throw new Error('Empty Gemini response');
+    geminiDebug = 'ok:direct';
+    return reply;
+  } catch (e) {
+    geminiDebug = `${geminiDebug} -> fail:direct:${e.message}`;
+    throw e;
+  }
 }
 
 /**
@@ -328,6 +339,7 @@ export default {
               'Access-Control-Allow-Origin': '*',
               'X-AI-Model': effectiveModel,
               'X-AI-Source': result.source,
+              'X-Gemini-Debug': geminiDebug || '',
             },
           });
         } finally {
