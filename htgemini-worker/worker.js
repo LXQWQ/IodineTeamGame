@@ -54,8 +54,9 @@ export default {
     try {
       const body = await request.json();
 
-      // 模型默认 gemini-2.5-flash（氢队原用），可被请求体 model 字段覆盖
-      const model = (body && body.model) || env.GEMINI_MODEL || 'gemini-2.5-flash';
+      // 模型默认 gemini-3.5-flash（gemini-2.5-flash 对新注册账号已不可用，
+      // Google 返回 404 "no longer available to new users"），可被请求体 model 字段覆盖
+      const model = (body && body.model) || env.GEMINI_MODEL || 'gemini-3.5-flash';
 
       // 组装 Google 原生请求（剔除 model 字段，其余透传）
       const googlePayload = {
