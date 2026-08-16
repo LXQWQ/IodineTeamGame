@@ -343,12 +343,26 @@
             from { left: -80%; }
             to { left: 120%; }
         }
-        /* ===== 月读模式 · 辉夜姬意象（月亮 / 鸟居 / 樱花） ===== */
+        /* ===== 月读模式 · 辉夜姬意象（月亮 / 鸟居）+ 固定背景 ===== */
         .tsuki-moon,
-        .tsuki-torii,
-        .tsuki-sakura {
+        .tsuki-torii {
             display: none;
             pointer-events: none;
+        }
+        /* 月读固定背景（复用海龟汤的 Tsukuyomi 背景图，仅月读模式）：
+           背景 fixed 不随页面滚动，前景长条页面在其上方滚动 */
+        [data-theme="tsukuyomi"] body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background-image: url('effects/tsukuyomi-bg.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            opacity: 0.18;
+            mix-blend-mode: screen;
         }
         /* 大月亮（辉夜姬 = 月球公主） */
         [data-theme="tsukuyomi"] .tsuki-moon {
@@ -406,39 +420,6 @@
         }
         @media (max-width: 768px) {
             [data-theme="tsukuyomi"] .tsuki-torii { width: 80px; height: 64px; left: 3%; }
-        }
-        /* 樱花飘落（银粉发色 · 月光与樱花交融） */
-        .tsuki-sakura {
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            z-index: 2;
-            opacity: 0;
-        }
-        [data-theme="tsukuyomi"] .tsuki-sakura {
-            display: block;
-            animation-name: tsuki-sakura-fall;
-            animation-timing-function: linear;
-            animation-iteration-count: infinite;
-        }
-        .tsuki-sakura::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 70% 30% 60% 40% / 60% 40% 60% 40%;
-            background: linear-gradient(135deg, #ffc2d9, #ff8fc0);
-            box-shadow: 0 0 8px rgba(255, 143, 192, 0.5);
-        }
-        .tsuki-sakura-1 { left: 10%; animation-duration: 9s; animation-delay: 0s; }
-        .tsuki-sakura-2 { left: 30%; animation-duration: 12s; animation-delay: 2.5s; }
-        .tsuki-sakura-3 { left: 52%; animation-duration: 10s; animation-delay: 5s; }
-        .tsuki-sakura-4 { left: 72%; animation-duration: 13s; animation-delay: 1.5s; }
-        .tsuki-sakura-5 { left: 88%; animation-duration: 11s; animation-delay: 3.5s; }
-        @keyframes tsuki-sakura-fall {
-            0% { top: -24px; opacity: 0; transform: translateX(0) rotate(0deg); }
-            8% { opacity: 0.95; }
-            50% { transform: translateX(36px) rotate(180deg); }
-            100% { top: 100%; opacity: 0.15; transform: translateX(52px) rotate(340deg); }
         }
         @property --reveal {
             syntax: '<percentage>';

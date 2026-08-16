@@ -1206,8 +1206,8 @@
                         color: colors[Math.floor(Math.random() * colors.length)],
                         opacity: Math.random() * 0.5 + 0.3,
                         breathPhase: Math.random() * Math.PI * 2,
-                        // 前 40% 粒子为音符（彩叶的歌声《Remember》主题）
-                        note: i < 16 ? notes[Math.floor(Math.random() * notes.length)] : null
+                        // 前 50% 粒子为音符（彩叶的歌声《Remember》主题）
+                        note: i < 20 ? notes[Math.floor(Math.random() * notes.length)] : null
                     });
                 }
                 // 兔子彩蛋定时器
