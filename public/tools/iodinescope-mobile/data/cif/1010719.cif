@@ -1,0 +1,41 @@
+#------------------------------------------------------------------------------
+#$Date: 2022-09-25 22:10:12 +0300 (Sun, 25 Sep 2022) $
+#$Revision: 278158 $
+#$URL: file:///home/coder/svn-repositories/_RELOADED_COD/cod-reloaded/cif/1/01/07/1010719.cif $
+#------------------------------------------------------------------------------
+#
+# This file is available in the Crystallography Open Database (COD),
+# http://www.crystallography.net/
+#
+# All data on this site have been placed in the public domain by the
+# contributors.
+#
+data_1010719
+loop_
+_publ_author_name
+'Schmidt, J'
+_publ_section_title
+;
+Die Nichtexistenz eines hoeheren Nickelcarbids
+;
+_journal_coden_ASTM              ZAACAB
+_journal_name_full
+;
+Zeitschrift fuer Anorganische und Allgemeine Chemie
+;
+_journal_page_first              85
+_journal_page_last               98
+_journal_paper_doi               10.1002/zaac.19332160113
+_journal_volume                  216
+_journal_year                    1933
+_chemical_formula_structural     'Ni C'
+_chemical_formula_sum            'C Ni'
+_chemical_name_systematic        'Nickel carbide (1/1)'
+_cod_original_formula_sum        'Ni C'
+_cod_database_code               1010719
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+? ? ? ?

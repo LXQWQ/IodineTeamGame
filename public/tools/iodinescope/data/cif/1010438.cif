@@ -1,0 +1,53 @@
+#------------------------------------------------------------------------------
+#$Date: 2017-10-13 02:32:00 +0300 (Fri, 13 Oct 2017) $
+#$Revision: 201954 $
+#$URL: file:///home/coder/svn-repositories/_RELOADED_COD/cod-reloaded/cif/1/01/04/1010438.cif $
+#------------------------------------------------------------------------------
+#
+# This file is available in the Crystallography Open Database (COD),
+# http://www.crystallography.net/
+#
+# All data on this site have been placed in the public domain by the
+# contributors.
+#
+data_1010438
+loop_
+_publ_author_name
+'McKeehan, L W'
+_publ_section_title
+;
+The Crystal Structure of Beryllium and of Beryllium Oxide
+;
+_journal_coden_ASTM              PNASA6
+_journal_name_full
+;
+Proceedings of the National Academy of Sciences, U.S.A.
+;
+_journal_page_first              270
+_journal_page_last               274
+_journal_paper_doi               10.1073/pnas.8.9.270
+_journal_volume                  8
+_journal_year                    1922
+_chemical_formula_structural     'Be O'
+_chemical_formula_sum            'Be O'
+_chemical_name_systematic        'Beryllium oxide'
+_cell_angle_alpha                90
+_cell_angle_beta                 90
+_cell_angle_gamma                120
+_cell_formula_units_Z            2
+_cell_length_a                   2.696
+_cell_length_b                   2.696
+_cell_length_c                   4.394
+_cell_volume                     27.7
+_cod_database_code               1010438
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+? ? ? ?
+loop_
+_cod_related_entry_id
+_cod_related_entry_code
+_cod_related_entry_database
+1 8394849 ChemSpider

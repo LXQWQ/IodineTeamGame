@@ -1,0 +1,47 @@
+#------------------------------------------------------------------------------
+#$Date: 2012-02-28 14:14:52 +0200 (Tue, 28 Feb 2012) $
+#$Revision: 35911 $
+#$URL: file:///home/coder/svn-repositories/_RELOADED_COD/cod-reloaded/cif/1/01/08/1010839.cif $
+#------------------------------------------------------------------------------
+#
+# This file is available in the Crystallography Open Database (COD),
+# http://www.crystallography.net/
+#
+# All data on this site have been placed in the public domain by the
+# contributors.
+#
+data_1010839
+_chemical_name_systematic          'Aluminium boride (1/2)'
+_chemical_formula_structural       'Al B2'
+_chemical_formula_sum              'Al B2'
+_publ_section_title                'Die Struktur von Aluminiumborid Al B~2~'
+loop_
+_publ_author_name
+  'Hofmann, W'
+  'Jaeniche, W'
+_journal_name_full
+;
+Zeitschrift fuer Physikalische Chemie, Abteilung B: Chemie der
+Elementarprozesse, Aufbau der Materie
+;
+_journal_coden_ASTM                ZPCBAL
+_journal_volume                    31
+_journal_year                      1936
+_journal_page_first                214
+_journal_page_last                 222
+_cell_length_a                     3.00(1)
+_cell_length_b                     3.00(1)
+_cell_length_c                     3.25(1)
+_cell_angle_alpha                  90
+_cell_angle_beta                   90
+_cell_angle_gamma                  120
+_cell_volume                       25.3
+_cell_formula_units_Z              1
+_exptl_crystal_density_meas        2.84
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+? ? ? ?
+_cod_database_code 1010839

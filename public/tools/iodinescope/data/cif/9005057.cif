@@ -1,0 +1,89 @@
+#------------------------------------------------------------------------------
+#$Date: 2024-04-25 17:59:02 +0300 (Thu, 25 Apr 2024) $
+#$Revision: 291351 $
+#$URL: file:///home/coder/svn-repositories/_RELOADED_COD/cod-reloaded/cif/9/00/50/9005057.cif $
+#------------------------------------------------------------------------------
+#
+# This file is available in the Crystallography Open Database (COD),
+# http://www.crystallography.net/. The original data for this entry
+# were provided the American Mineralogist Crystal Structure Database,
+# http://rruff.geo.arizona.edu/AMS/amcsd.php
+#
+# The file may be used within the scientific community so long as
+# proper attribution is given to the journal article from which the
+# data were obtained.
+#
+data_9005057
+loop_
+_publ_author_name
+'Krogh Andersen, E.'
+'Krogh Andersen, I. G.'
+'Ploug-Sorensen G'
+_publ_section_title
+;Disorder in natrolites: structure determinations of three disordered
+ natrolites and one lithium-exchanged disordered natrolite Example: Li II
+;
+_journal_name_full               'European Journal of Mineralogy'
+_journal_page_first              799
+_journal_page_last               807
+_journal_paper_doi               10.1127/ejm/2/6/0799
+_journal_volume                  2
+_journal_year                    1990
+_chemical_formula_sum            'Al2 H4 Na2 O12 Si3'
+_chemical_name_mineral           Natrolite
+_space_group_IT_number           43
+_symmetry_space_group_name_Hall  'F 2 -2d'
+_symmetry_space_group_name_H-M   'F d d 2'
+_cell_angle_alpha                90
+_cell_angle_beta                 90
+_cell_angle_gamma                90
+_cell_length_a                   17.704
+_cell_length_b                   18.540
+_cell_length_c                   6.495
+_cell_formula_units_Z            8
+_cell_volume                     2131.868
+_database_code_amcsd             0006402
+_exptl_crystal_density_diffrn    2.369
+_cod_original_formula_sum        'Na2 Al2 Si3 O12 H4'
+_cod_database_code               9005057
+loop_
+_space_group_symop_operation_xyz
+x,y,z
+x,1/2+y,1/2+z
+1/2+x,y,1/2+z
+1/2+x,1/2+y,z
+1/4+x,1/4-y,1/4+z
+1/4+x,3/4-y,3/4+z
+3/4+x,1/4-y,3/4+z
+3/4+x,3/4-y,1/4+z
+1/4-x,1/4+y,1/4+z
+1/4-x,3/4+y,3/4+z
+3/4-x,1/4+y,3/4+z
+3/4-x,3/4+y,1/4+z
+-x,1/2-y,1/2+z
+-x,-y,+z
+1/2-x,1/2-y,+z
+1/2-x,-y,1/2+z
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+Na 0.21741 0.04133 0.62911 0.02850
+Al 0.03634 0.09378 0.61732 0.00811
+Si1 0.00000 0.00000 0.00000 0.01013
+Si2 0.14928 0.21576 0.62275 0.00963
+O1 0.01118 0.07259 0.86229 0.02014
+O2 0.06507 0.18149 0.60570 0.01532
+O3 0.10470 0.03534 0.52832 0.01697
+O4 0.20910 0.15562 0.70626 0.01722
+O5 0.17395 0.24112 0.39022 0.01950
+O6 0.04165 0.20075 0.11604 0.02786
+H1 0.04090 0.15950 0.02110 0.02533
+H2 0.09090 0.19730 0.15790 0.02533
+loop_
+_cod_related_entry_id
+_cod_related_entry_database
+_cod_related_entry_code
+1 AMCSD 0006402

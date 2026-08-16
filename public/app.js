@@ -188,8 +188,8 @@
         ];
                 const toolsGames = [
             { id:1, name:"正多面体与阿基米德多面体 3D 展示", emoji:"🔷", tag:"3D几何", desc:"交互式3D展示正多面体（柏拉图立体）与阿基米德多面体，支持旋转缩放，探索化学晶体学中的几何结构！", link:"tools/polyhedrons/", newWindow:false },
-            { id:2, name:"敬请期待", emoji:"🚧", tag:"尚未上线", desc:"更多实用工具正在开发中，敬请期待！", link:null, newWindow:false },
-            { id:3, name:"敬请期待", emoji:"🚧", tag:"尚未上线", desc:"更多实用工具正在开发中，敬请期待！", link:null, newWindow:false }
+            { id:2, name:"IodineScope 晶体结构浏览器", emoji:"💎", tag:"晶体学", desc:"553个晶体结构3D浏览器！球棍/空间填充/配位多面体三模式渲染，按元素检索，对称性还原，实时配位数与键长——化竞必备！", link:"tools/iodinescope/", newWindow:false },
+            { id:3, name:"IodineScope 移动版", emoji:"📱", tag:"晶体学·触屏", desc:"IodineScope 手机版！触屏优化，手机上随时旋转查看晶体结构、检索元素组成、测量原子距离。", link:"tools/iodinescope-mobile/", newWindow:false }
         ];
                 const hydrogenGames = [
             { id:1, name:"化境探雷", emoji:"💣", tag:"有机化学", desc:"三维有机化学扫雷！在蜂窝（L1）、立方体（L2）等3D结构中排雷，答对化学题获得积分。内含酸碱棋对战与快问快答模式，积分商店解锁更多挑战。", link:"氢队游戏/化境探雷/", newWindow:true },

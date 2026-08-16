@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>IodineScope — 晶体结构检索与渲染</title>
+<meta name="description" content="IodineScope — 化学学习晶体结构搜索与 3D 渲染：内置 553 个 CIF 晶体结构库，按原子种类与数目检索，球棍/空间填充/配位多面体渲染。">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/libs/three.module.js",
+    "three/addons/": "./js/libs/addons/",
+    "three/examples/jsm/": "./js/libs/addons/"
+  }
+}
+</script>
+<script src="./js/libs/anime.min.js?v=3"></script>
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<!-- 背景粒子与光晕 -->
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="cursor-glow" aria-hidden="true"></div>
+
+<!-- 加载画面 -->
+<div id="loader">
+  <div class="loader-mark">I</div>
+  <h1 class="loader-title">IODINESCOPE</h1>
+  <p class="loader-sub">正在加载晶体数据库…</p>
+</div>
+
+<div class="app-shell">
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">I</div>
+      <div>
+        <h1>IodineScope</h1>
+        <div class="tag">Crystal · CIF · 3D Render</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="db-badge" id="dbBadge">● 本地 CIF 库</span>
+      <button class="magic-btn ghost" id="btnQuickSearch">⌕ 快速搜索</button>
+      <button class="magic-btn" id="btnBrowse">⛁ 浏览库</button>
+      <a class="magic-btn h-btn" href="https://hteamgame.com" target="_blank" rel="noopener" title="氢队主页">氢队主页</a>
+      <a class="magic-btn iodine-btn" href="https://iteamgame.dpdns.org" target="_blank" rel="noopener" title="前往碘队官网">🚀 前往碘队</a>
+      <a class="magic-btn ghost" href="data/index.json" target="_blank" title="查看晶体数据库索引">库</a>
+    </div>
+  </header>
+
+  <main class="main-grid">
+    <!-- 左：搜索面板 -->
+    <aside class="panel search-panel">
+      <h2 class="sec">⚛ 晶体检索</h2>
+      <input type="text" id="qInput" placeholder="输入组成，如 NaCl · Fe2O3 · C" autocomplete="off" spellcheck="false">
+      <div class="mode-pills" role="group" aria-label="检索模式">
+        <button class="pill active" data-mode="exact" aria-pressed="true">精确组成</button>
+        <button class="pill" data-mode="contains" aria-pressed="false">包含元素</button>
+      </div>
+      <div class="chip-wrap" id="chipWrap" aria-label="已选元素"></div>
+      <div class="search-actions">
+        <button class="magic-btn accent full" id="btnSearch">🔍 查询数据库</button>
+        <button class="magic-btn ghost full" id="btnServerSearch" title="通过碘队服务器查询 COD 在线库（约 50 万条晶体结构）">🛰 查询碘队服务器</button>
+        <button class="magic-btn ghost full" id="btnClear">清空条件</button>
+      </div>
+      <p class="server-hint">本地库之外，还可通过<strong>碘队服务器</strong>在线检索 <a href="https://www.crystallography.net/cod/" target="_blank" rel="noopener">COD 开放晶体学数据库</a>（约 50 万条）——输入化学式（如 Fe2O3、B6）后点击上方按钮即可。</p>
+
+      <!-- 高级条件（可折叠） -->
+      <details class="adv-box" id="advBox">
+        <summary>高级条件</summary>
+        <div class="adv-body">
+          <label class="adv-label">晶系</label>
+          <select id="system-select">
+            <option value="">全部晶系</option>
+            <option value="triclinic">三斜</option>
+            <option value="monoclinic">单斜</option>
+            <option value="orthorhombic">正交</option>
+            <option value="tetragonal">四方</option>
+            <option value="trigonal">三方</option>
+            <option value="hexagonal">六方</option>
+            <option value="cubic">立方</option>
+          </select>
+          <label class="adv-label">晶胞原子总数 ≥ <span id="atomRangeVal" class="adv-val">0</span></label>
+          <input type="range" id="atom-range" min="0" max="120" step="5" value="0">
+          <label class="adv-label">关键词（矿物名/化合物）</label>
+          <input type="text" id="keyword-input" placeholder="如：石英、Calcite…" autocomplete="off">
+        </div>
+      </details>
+
+      <div class="db-summary"><strong id="resultCount">…</strong> 个晶体结构 · 按原子种类/数目检索</div>
+    </aside>
+
+    <!-- 中：3D 视口 -->
+    <section class="viewer-area">
+      <div class="viewer-head">
+        <div>
+          <div class="eyebrow">Active Structure</div>
+          <h2 id="activeName">氯化钠 · Halite</h2>
+          <span class="formula" id="activeFormula">NaCl</span>
+        </div>
+        <div class="viewer-controls">
+          <div class="seg" role="group" aria-label="渲染模式">
+            <button class="segbtn active" data-render="ballstick" aria-pressed="true">球棍</button>
+            <button class="segbtn" data-render="spacefill" aria-pressed="false">填充</button>
+            <button class="segbtn" data-render="polyhedra" aria-pressed="false">多面体</button>
+            <button class="segbtn" data-render="wireframe" aria-pressed="false">线框</button>
+          </div>
+          <div class="seg" role="group" aria-label="超胞">
+            <button class="segbtn active" data-cell="1" aria-pressed="true">1³</button>
+            <button class="segbtn" data-cell="2" aria-pressed="false">2³</button>
+            <button class="segbtn" data-cell="3" aria-pressed="false">3³</button>
+          </div>
+          <label class="switch"><input type="checkbox" id="chkCell" checked><span>晶胞</span></label>
+          <label class="switch"><input type="checkbox" id="chkRot" checked><span>自转</span></label>
+          <label class="switch"><input type="checkbox" id="chkLabels" checked><span>标签</span></label>
+          <input type="range" id="rotSpeed" min="0" max="200" value="30" title="旋转速度" aria-label="旋转速度">
+          <button class="magic-btn ghost icon-only" id="btnMeasure" title="距离测量" aria-label="距离测量">📏</button>
+          <button class="magic-btn ghost icon-only" id="btnShot" title="导出 PNG" aria-label="导出 PNG">⇩</button>
+        </div>
+      </div>
+      <div class="viewer-canvas" id="viewer" role="img" aria-label="三维晶体渲染视图">
+        <div id="scene-container"></div>
+        <div id="legend" class="legend hide"></div>
+        <div id="hint" class="hint">左键旋转 · 滚轮缩放 · 右键平移 · 悬停查看原子 · 点击选择</div>
+        <div id="tooltip" class="tooltip hide"></div>
+        <div id="loading" class="loading hide">
+          <div class="spinner"></div>
+          <span id="loading-text">正在解析晶体结构…</span>
+        </div>
+      </div>
+      <div class="results-head">
+        <span class="eyebrow">Structure Library</span>
+        <span id="resultsMeta" class="results-meta"></span>
+      </div>
+      <div class="results-strip" id="resultsStrip"></div>
+    </section>
+
+    <!-- 右：详情面板 -->
+    <aside class="panel detail-panel" id="detailPanel">
+      <div id="info-body" class="detail-body">
+        <div class="detail-empty">
+          <p>从左侧选择一种晶体结构</p>
+          <p class="detail-empty-sub">或点击下方推荐</p>
+        </div>
+        <div id="recommend" class="recommend"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="toast-wrap" id="toastWrap" role="status" aria-live="polite"></div>
+
+<!-- 碘队服务器查询弹窗 -->
+<div id="serverModal" class="modal-mask hide">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>🛰 碘队服务器查询结果 <em class="modal-sub">（COD 在线库）</em></span>
+      <button class="modal-close" id="serverClose" aria-label="关闭">×</button>
+    </div>
+    <div id="serverStatus" class="server-status">…</div>
+    <div id="serverList" class="server-list"></div>
+  </div>
+</div>
+
+<script type="module" src="./js/main.js?v=4"></script>
+</body>
+</html>

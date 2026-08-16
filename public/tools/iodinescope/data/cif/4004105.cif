@@ -1,0 +1,291 @@
+#------------------------------------------------------------------------------
+#$Date: 2025-03-11 11:47:55 +0200 (Tue, 11 Mar 2025) $
+#$Revision: 298372 $
+#$URL: file:///home/coder/svn-repositories/_RELOADED_COD/cod-reloaded/cif/4/00/41/4004105.cif $
+#------------------------------------------------------------------------------
+#
+# This file is available in the Crystallography Open Database (COD),
+# http://www.crystallography.net/
+#
+# All data on this site have been placed in the public domain by the
+# contributors.
+#
+data_4004105
+loop_
+_publ_author_name
+'Mi, Ruixiang'
+'Hu, Sanlue'
+'Xiao, Zewen'
+_publ_section_title
+;
+ Rock-Salt-Ordered Nitrohalide Double Antiperovskites: Theoretical Design
+ and Experimental Verification
+;
+_journal_issue                   20
+_journal_name_full               'Chemistry of Materials'
+_journal_page_first              9098
+_journal_page_last               9103
+_journal_paper_doi               10.1021/acs.chemmater.2c01925
+_journal_volume                  34
+_journal_year                    2022
+_chemical_formula_sum            'Cl Li'
+_space_group_IT_number           225
+_space_group_name_Hall           '-F 4 2 3'
+_space_group_name_H-M_alt        'F m -3 m'
+_symmetry_cell_setting           cubic
+_symmetry_space_group_name_Hall  '-F 4 2 3'
+_symmetry_space_group_name_H-M   'F m -3 m'
+_cell_angle_alpha                90.0000
+_cell_angle_beta                 90.0000
+_cell_angle_gamma                90.0000
+_cell_formula_units_Z            4
+_cell_length_a                   5.3509(4)
+_cell_length_b                   5.3509(4)
+_cell_length_c                   5.3509(4)
+_cell_volume                     153.21(2)
+_computing_structure_refinement  FULLPROF
+_diffrn_radiation_type           X-ray
+_pd_instr_location               ' ?'
+_pd_meas_2theta_range_inc        0.010002
+_pd_meas_2theta_range_max        80.00000
+_pd_meas_2theta_range_min        5.06000
+_pd_meas_number_of_points        0
+_pd_proc_2theta_range_inc        0.010002
+_pd_proc_2theta_range_max        79.9271
+_pd_proc_2theta_range_min        4.9871
+_pd_proc_ls_pref_orient_corr     ' ?'
+_pd_proc_ls_prof_R_factor        5.3237
+_pd_proc_ls_prof_wR_expected     1.5173
+_pd_proc_ls_prof_wR_factor       7.1895
+_pd_proc_wavelength              1.540560
+_pd_spec_mounting                ' ?'
+_refine_ls_number_parameters     101
+_refine_ls_number_reflns         16
+_refine_ls_number_restraints     0
+_refine_ls_R_I_factor            4.7076
+_cod_data_source_file            cm2c01925_si_004.cif
+_cod_data_source_block           '#'
+_cod_depositor_comments
+;
+The following automatic conversions were performed:
+
+data item '_symmetry_cell_setting' value 'Cubic' was changed to
+'cubic' in accordance with the built-in table derived from the CIF
+Core dictionary named 'cif_core.dic' version 2.4.5 last updated on
+2014-11-21.
+
+Automatic conversion script
+Id: cif_fix_values 8738 2021-04-28 16:35:53Z antanas 
+;
+_cod_original_cell_volume        153.212(19)
+_cod_database_code               4004105
+_pd_proc_ls_prof_cr_factor       16.7189
+_pd_proc_ls_prof_cwr_factor      14.5138
+_pd_proc_ls_prof_cwr_expected    3.0631
+_pd_proc_ls_prof_chi2            22.4519
+_pd_proc_ls_prof_echi2           30.4710
+loop_
+_symmetry_equiv_pos_as_xyz
+x,y,z
+x,-y,-z
+-x,y,-z
+-x,-y,z
+y,z,x
+-y,-z,x
+y,-z,-x
+-y,z,-x
+z,x,y
+-z,x,-y
+-z,-x,y
+z,-x,-y
+y,x,z
+-y,x,-z
+y,-x,-z
+-y,-x,z
+z,y,x
+-z,-y,x
+-z,y,-x
+z,-y,-x
+x,z,y
+x,-z,-y
+-x,-z,y
+-x,z,-y
+-x,-y,-z
+-x,y,z
+x,-y,z
+x,y,-z
+-y,-z,-x
+y,z,-x
+-y,z,x
+y,-z,x
+-z,-x,-y
+z,-x,y
+z,x,-y
+-z,x,y
+-y,-x,-z
+y,-x,z
+-y,x,z
+y,x,-z
+-z,-y,-x
+z,y,-x
+z,-y,x
+-z,y,x
+-x,-z,-y
+-x,z,y
+x,z,-y
+x,-z,y
+x+1/2,y+1/2,z
+x+1/2,-y+1/2,-z
+-x+1/2,y+1/2,-z
+-x+1/2,-y+1/2,z
+y+1/2,z+1/2,x
+-y+1/2,-z+1/2,x
+y+1/2,-z+1/2,-x
+-y+1/2,z+1/2,-x
+z+1/2,x+1/2,y
+-z+1/2,x+1/2,-y
+-z+1/2,-x+1/2,y
+z+1/2,-x+1/2,-y
+y+1/2,x+1/2,z
+-y+1/2,x+1/2,-z
+y+1/2,-x+1/2,-z
+-y+1/2,-x+1/2,z
+z+1/2,y+1/2,x
+-z+1/2,-y+1/2,x
+-z+1/2,y+1/2,-x
+z+1/2,-y+1/2,-x
+x+1/2,z+1/2,y
+x+1/2,-z+1/2,-y
+-x+1/2,-z+1/2,y
+-x+1/2,z+1/2,-y
+-x+1/2,-y+1/2,-z
+-x+1/2,y+1/2,z
+x+1/2,-y+1/2,z
+x+1/2,y+1/2,-z
+-y+1/2,-z+1/2,-x
+y+1/2,z+1/2,-x
+-y+1/2,z+1/2,x
+y+1/2,-z+1/2,x
+-z+1/2,-x+1/2,-y
+z+1/2,-x+1/2,y
+z+1/2,x+1/2,-y
+-z+1/2,x+1/2,y
+-y+1/2,-x+1/2,-z
+y+1/2,-x+1/2,z
+-y+1/2,x+1/2,z
+y+1/2,x+1/2,-z
+-z+1/2,-y+1/2,-x
+z+1/2,y+1/2,-x
+z+1/2,-y+1/2,x
+-z+1/2,y+1/2,x
+-x+1/2,-z+1/2,-y
+-x+1/2,z+1/2,y
+x+1/2,z+1/2,-y
+x+1/2,-z+1/2,y
+x+1/2,y,z+1/2
+x+1/2,-y,-z+1/2
+-x+1/2,y,-z+1/2
+-x+1/2,-y,z+1/2
+y+1/2,z,x+1/2
+-y+1/2,-z,x+1/2
+y+1/2,-z,-x+1/2
+-y+1/2,z,-x+1/2
+z+1/2,x,y+1/2
+-z+1/2,x,-y+1/2
+-z+1/2,-x,y+1/2
+z+1/2,-x,-y+1/2
+y+1/2,x,z+1/2
+-y+1/2,x,-z+1/2
+y+1/2,-x,-z+1/2
+-y+1/2,-x,z+1/2
+z+1/2,y,x+1/2
+-z+1/2,-y,x+1/2
+-z+1/2,y,-x+1/2
+z+1/2,-y,-x+1/2
+x+1/2,z,y+1/2
+x+1/2,-z,-y+1/2
+-x+1/2,-z,y+1/2
+-x+1/2,z,-y+1/2
+-x+1/2,-y,-z+1/2
+-x+1/2,y,z+1/2
+x+1/2,-y,z+1/2
+x+1/2,y,-z+1/2
+-y+1/2,-z,-x+1/2
+y+1/2,z,-x+1/2
+-y+1/2,z,x+1/2
+y+1/2,-z,x+1/2
+-z+1/2,-x,-y+1/2
+z+1/2,-x,y+1/2
+z+1/2,x,-y+1/2
+-z+1/2,x,y+1/2
+-y+1/2,-x,-z+1/2
+y+1/2,-x,z+1/2
+-y+1/2,x,z+1/2
+y+1/2,x,-z+1/2
+-z+1/2,-y,-x+1/2
+z+1/2,y,-x+1/2
+z+1/2,-y,x+1/2
+-z+1/2,y,x+1/2
+-x+1/2,-z,-y+1/2
+-x+1/2,z,y+1/2
+x+1/2,z,-y+1/2
+x+1/2,-z,y+1/2
+x,y+1/2,z+1/2
+x,-y+1/2,-z+1/2
+-x,y+1/2,-z+1/2
+-x,-y+1/2,z+1/2
+y,z+1/2,x+1/2
+-y,-z+1/2,x+1/2
+y,-z+1/2,-x+1/2
+-y,z+1/2,-x+1/2
+z,x+1/2,y+1/2
+-z,x+1/2,-y+1/2
+-z,-x+1/2,y+1/2
+z,-x+1/2,-y+1/2
+y,x+1/2,z+1/2
+-y,x+1/2,-z+1/2
+y,-x+1/2,-z+1/2
+-y,-x+1/2,z+1/2
+z,y+1/2,x+1/2
+-z,-y+1/2,x+1/2
+-z,y+1/2,-x+1/2
+z,-y+1/2,-x+1/2
+x,z+1/2,y+1/2
+x,-z+1/2,-y+1/2
+-x,-z+1/2,y+1/2
+-x,z+1/2,-y+1/2
+-x,-y+1/2,-z+1/2
+-x,y+1/2,z+1/2
+x,-y+1/2,z+1/2
+x,y+1/2,-z+1/2
+-y,-z+1/2,-x+1/2
+y,z+1/2,-x+1/2
+-y,z+1/2,x+1/2
+y,-z+1/2,x+1/2
+-z,-x+1/2,-y+1/2
+z,-x+1/2,y+1/2
+z,x+1/2,-y+1/2
+-z,x+1/2,y+1/2
+-y,-x+1/2,-z+1/2
+y,-x+1/2,z+1/2
+-y,x+1/2,z+1/2
+y,x+1/2,-z+1/2
+-z,-y+1/2,-x+1/2
+z,y+1/2,-x+1/2
+z,-y+1/2,x+1/2
+-z,y+1/2,x+1/2
+-x,-z+1/2,-y+1/2
+-x,z+1/2,y+1/2
+x,z+1/2,-y+1/2
+x,-z+1/2,y+1/2
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+_atom_site_occupancy
+_atom_site_adp_type
+_atom_site_type_symbol
+Li1 0.00000 0.00000 0.00000 0.12884 1.00000 Uiso Li
+Cl1 0.50000 0.50000 0.50000 0.04049 0.80604 Uiso Cl

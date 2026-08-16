@@ -1,0 +1,691 @@
+{
+ "9011997": {
+  "name": "金刚石",
+  "note": "金刚石：碳的 sp³ 杂化，每个 C 与 4 个 C 形成四面体配位（配位数 4），构成无限三维共价网络。",
+  "mineral": "Diamond"
+ },
+ "1200018": {
+  "name": "石墨",
+  "note": "石墨：碳 sp² 杂化，层内六元环平面网状结构（C-C 1.42 Å），层间范德华力结合，可导电、可作润滑剂。",
+  "mineral": "Graphite 3R"
+ },
+ "1200019": {
+  "name": "朗斯代尔石 六方金刚石",
+  "note": "六方金刚石",
+  "mineral": "Lonsdaleite"
+ },
+ "9000669": {
+  "name": "体心立方铁 α-Fe",
+  "note": "α-Fe（体心立方 bcc）：体心与顶角各一个 Fe，配位数 8。室温下铁的稳定相，具有铁磁性。",
+  "mineral": "Iron"
+ },
+ "4105040": {
+  "name": "面心立方铜",
+  "note": "铜（面心立方 fcc）：密堆积结构，配位数 12，延展性和导电性优异。",
+  "mineral": ""
+ },
+ "9011608": {
+  "name": "面心立方银",
+  "note": "银（面心立方 fcc）：配位数 12，电导率最高的金属。",
+  "mineral": "Silver"
+ },
+ "9011612": {
+  "name": "面心立方金",
+  "note": "金（面心立方 fcc）：配位数 12，化学惰性，延展性极佳。",
+  "mineral": "Gold"
+ },
+ "1502689": {
+  "name": "铝",
+  "note": "铝（面心立方 fcc）：配位数 12，轻金属，表面易形成致密氧化膜。",
+  "mineral": ""
+ },
+ "9013054": {
+  "name": "镁",
+  "note": "镁（六方密堆积 hcp）：配位数 12，ABAB 双层堆积。",
+  "mineral": "Magnesium"
+ },
+ "9012435": {
+  "name": "锌",
+  "note": "锌（六方密堆积 hcp）：配位数 12，ABAB 堆积。",
+  "mineral": "Zinc"
+ },
+ "9011609": {
+  "name": "钨",
+  "note": "钨，体心立方",
+  "mineral": "Tungsten"
+ },
+ "2300256": {
+  "name": "铅",
+  "note": "铅，面心立方",
+  "mineral": ""
+ },
+ "1534892": {
+  "name": "镍",
+  "note": "镍，面心立方",
+  "mineral": ""
+ },
+ "2104029": {
+  "name": "铂",
+  "note": "铂，面心立方",
+  "mineral": ""
+ },
+ "7222459": {
+  "name": "锡 α-Sn",
+  "note": "α锡（灰锡），金刚石型",
+  "mineral": ""
+ },
+ "1526655": {
+  "name": "硅",
+  "note": "硅：金刚石型结构（sp³ 杂化），4 配位四面体。硅是重要的半导体材料，本征导电性弱于金属。",
+  "mineral": ""
+ },
+ "1563565": {
+  "name": "锗",
+  "note": "锗：金刚石型结构，与硅同族同构，半导体材料。",
+  "mineral": ""
+ },
+ "9013137": {
+  "name": "硒",
+  "note": "灰硒，螺旋链结构",
+  "mineral": "Selenium"
+ },
+ "1557220": {
+  "name": "硫 S8环",
+  "note": "正交硫，S8环",
+  "mineral": ""
+ },
+ "9013110": {
+  "name": "白磷 P4",
+  "note": "白磷，P4分子",
+  "mineral": ""
+ },
+ "1010091": {
+  "name": "碘 I2",
+  "note": "碘，I2分子层",
+  "mineral": ""
+ },
+ "9008576": {
+  "name": "铋",
+  "note": "铋，菱方层状",
+  "mineral": "Bismuth"
+ },
+ "9008575": {
+  "name": "锑",
+  "note": "锑，菱方层状",
+  "mineral": "Antimony"
+ },
+ "1532765": {
+  "name": "钛",
+  "note": "钛，六方密堆积",
+  "mineral": ""
+ },
+ "9008492": {
+  "name": "钴",
+  "note": "钴，六方密堆积",
+  "mineral": "Cobalt"
+ },
+ "9008531": {
+  "name": "铬",
+  "note": "铬（体心立方 bcc）：配位数 8，硬度最高的金属之一。",
+  "mineral": "Chromium"
+ },
+ "1541266": {
+  "name": "钽",
+  "note": "钽，体心立方",
+  "mineral": ""
+ },
+ "9008523": {
+  "name": "锆",
+  "note": "锆，六方密堆积",
+  "mineral": "Zirconium"
+ },
+ "9000629": {
+  "name": "氯化钠 NaCl 岩盐",
+  "note": "氯化钠（岩盐型）：Cl⁻ 作面心立方密堆积，Na⁺ 填入全部八面体空隙。每个离子配位数均为 6，是最典型的 AB 型离子晶体。",
+  "mineral": "Halite"
+ },
+ "9003118": {
+  "name": "氯化钾 KCl 钾盐",
+  "note": "氯化钾：岩盐型结构（与 NaCl 同构），K⁺ 与 Cl⁻ 配位数均为 6。",
+  "mineral": "Sylvite"
+ },
+ "9009743": {
+  "name": "氯化铯 CsCl",
+  "note": "氯化铯：CsCl 型结构，Cs⁺ 位于简单立方 Cl⁻ 晶胞的体心，配位数 8。注意：CsCl 是简单立方（非 bcc，两离子不同）。",
+  "mineral": ""
+ },
+ "3500146": {
+  "name": "溴化钠 NaBr",
+  "note": "NaCl型",
+  "mineral": ""
+ },
+ "1010046": {
+  "name": "溴化钾 KBr",
+  "note": "NaCl型",
+  "mineral": ""
+ },
+ "9008681": {
+  "name": "碘化钠 NaI",
+  "note": "NaCl型",
+  "mineral": ""
+ },
+ "9009735": {
+  "name": "碘化钾 KI",
+  "note": "NaCl型",
+  "mineral": ""
+ },
+ "9008829": {
+  "name": "碘化银 AgI",
+  "note": "闪锌矿型",
+  "mineral": ""
+ },
+ "9011671": {
+  "name": "氯化银 AgCl 角银矿",
+  "note": "角银矿，NaCl型",
+  "mineral": "Chlorargyrite"
+ },
+ "9008667": {
+  "name": "氟化锂 LiF",
+  "note": "NaCl型",
+  "mineral": "Griceite"
+ },
+ "1011141": {
+  "name": "氟化钠 NaF",
+  "note": "NaCl型",
+  "mineral": "Villiaumite"
+ },
+ "9007071": {
+  "name": "氟化钙 CaF2 萤石",
+  "note": "萤石（CaF₂）：Ca²⁺ 作面心立方堆积，F⁻ 填入全部四面体空隙。Ca²⁺ 配位数 8（立方体），F⁻ 配位数 4（四面体）。",
+  "mineral": "Fluorite"
+ },
+ "9009004": {
+  "name": "氟化钡 BaF2",
+  "note": "氟化钡：萤石型结构，Ba²⁺ 8 配位、F⁻ 4 配位。",
+  "mineral": "Frankdicksonite"
+ },
+ "1011280": {
+  "name": "氯化钙 CaCl2",
+  "note": "金红石型变形",
+  "mineral": "Hydrophilite"
+ },
+ "1534338": {
+  "name": "氯化镁 MgCl2",
+  "note": "CdCl2型层状",
+  "mineral": ""
+ },
+ "1010563": {
+  "name": "氯化铝 AlCl3",
+  "note": "AlCl3层状",
+  "mineral": ""
+ },
+ "9013245": {
+  "name": "氧化镁 MgO",
+  "note": "氧化镁（方镁石）：岩盐型结构，Mg²⁺ 与 O²⁻ 配位数均为 6。熔点高达 2852℃，是最耐热的简单氧化物之一。",
+  "mineral": "Periclase"
+ },
+ "1011327": {
+  "name": "氧化钙 CaO 石灰",
+  "note": "石灰，NaCl型",
+  "mineral": "Lime"
+ },
+ "4001311": {
+  "name": "氧化锶 SrO",
+  "note": "NaCl型",
+  "mineral": ""
+ },
+ "1011362": {
+  "name": "氧化钡 BaO",
+  "note": "NaCl型",
+  "mineral": ""
+ },
+ "9008693": {
+  "name": "氧化镍 NiO",
+  "note": "NaCl型",
+  "mineral": "Bunsenite"
+ },
+ "1541642": {
+  "name": "氧化钴 CoO",
+  "note": "NaCl型",
+  "mineral": ""
+ },
+ "9006670": {
+  "name": "氧化锰 MnO",
+  "note": "NaCl型",
+  "mineral": "Manganosite"
+ },
+ "1011258": {
+  "name": "氧化锌 ZnO 红锌矿",
+  "note": "红锌矿，纤锌矿型",
+  "mineral": "Zincite"
+ },
+ "1011148": {
+  "name": "氧化铜 CuO 黑铜矿",
+  "note": "黑铜矿",
+  "mineral": "Tenorite"
+ },
+ "1000063": {
+  "name": "氧化亚铜 Cu2O 赤铜矿",
+  "note": "赤铜矿",
+  "mineral": "Cuprite"
+ },
+ "1010914": {
+  "name": "氧化铝 α-Al2O3 刚玉",
+  "note": "刚玉（α-Al₂O₃）：O²⁻ 六方密堆积，Al³⁺ 填充 2/3 八面体空隙，配位数 6。硬度 9（莫氏），仅次于金刚石。",
+  "mineral": "Corundum"
+ },
+ "9009782": {
+  "name": "氧化铁 Fe2O3 赤铁矿",
+  "note": "赤铁矿（α-Fe₂O₃）：刚玉型结构，Fe³⁺ 6 配位八面体。铁锈的主要成分，重要的铁矿石。",
+  "mineral": "Hematite"
+ },
+ "9002332": {
+  "name": "四氧化三铁 Fe3O4 磁铁矿",
+  "note": "磁铁矿（Fe₃O₄）：反尖晶石结构。Fe²⁺ 占八面体空隙，Fe³⁺ 一半占四面体、一半占八面体空隙。具铁磁性。",
+  "mineral": "Magnetite-h"
+ },
+ "9004141": {
+  "name": "氧化钛 TiO2 金红石",
+  "note": "金红石（TiO₂）：Ti⁴⁺ 6 配位八面体，O²⁻ 3 配位。TiO₂ 是重要的白色颜料（钛白粉）与光催化材料。",
+  "mineral": "Rutile"
+ },
+ "1010942": {
+  "name": "氧化钛 TiO2 锐钛矿",
+  "note": "锐钛矿（TiO₂）：TiO₂ 的四方变体，Ti⁴⁺ 6 配位八面体，八面体共边连接方式与金红石不同。",
+  "mineral": "Anatase"
+ },
+ "9005835": {
+  "name": "氧化锆 ZrO2 斜锆石",
+  "note": "斜锆石",
+  "mineral": "Baddeleyite"
+ },
+ "2104743": {
+  "name": "氧化锡 SnO2 锡石",
+  "note": "锡石，金红石型",
+  "mineral": "Cassiterite"
+ },
+ "9012698": {
+  "name": "氧化铅 PbO 铅黄",
+  "note": "铅黄",
+  "mineral": "Litharge"
+ },
+ "9007543": {
+  "name": "二氧化铅 PbO2",
+  "note": "金红石型",
+  "mineral": "Plattnerite"
+ },
+ "4124511": {
+  "name": "五氧化二钒 V2O5",
+  "note": "五氧化二钒",
+  "mineral": ""
+ },
+ "1521533": {
+  "name": "三氧化钨 WO3",
+  "note": "三氧化钨",
+  "mineral": ""
+ },
+ "9012605": {
+  "name": "二氧化硅 石英",
+  "note": "α-石英（SiO₂）：Si⁴⁺ 4 配位 [SiO₄] 四面体共角顶连接成三维骨架，O 桥接两个 Si（Si-O-Si 角约 144°）。水晶、玛瑙的主要成分。",
+  "mineral": "Quartz"
+ },
+ "9016249": {
+  "name": "二氧化硅 方石英",
+  "note": "方石英（SiO₂）：SiO₂ 高温变体，[SiO₄] 四面体共角顶连接，骨架比石英更空旷。",
+  "mineral": "Cristobalite"
+ },
+ "9017372": {
+  "name": "二氧化硅 鳞石英",
+  "note": "鳞石英（SiO₂）：SiO₂ 高温变体，六方层状骨架，[SiO₄] 四面体共角顶。",
+  "mineral": "Tridymite"
+ },
+ "9007154": {
+  "name": "二氧化硅 斯石英",
+  "note": "斯石英（SiO₂）：SiO₂ 高压变体（金红石型），Si⁴⁺ 6 配位。由陨石撞击产生，自然界极罕见。",
+  "mineral": "Stishovite"
+ },
+ "5000088": {
+  "name": "硫化锌 闪锌矿",
+  "note": "闪锌矿（ZnS）：S²⁻ 面心立方堆积，Zn²⁺ 填入半数四面体空隙。Zn²⁺ 与 S²⁻ 均为 4 配位。III-V 族半导体的原型结构。",
+  "mineral": "Sphalerite"
+ },
+ "9013420": {
+  "name": "硫化锌 纤锌矿",
+  "note": "纤锌矿（ZnS）：S²⁻ 六方密堆积，Zn²⁺ 填入半数四面体空隙，4 配位。纤锌矿型是 GaN、ZnO 等的原型结构。",
+  "mineral": "Wurtzite-2H"
+ },
+ "9013400": {
+  "name": "硫化铅 PbS 方铅矿",
+  "note": "方铅矿（PbS）：岩盐型结构，Pb²⁺ 与 S²⁻ 均为 6 配位。最重要的铅矿石。",
+  "mineral": "Galena"
+ },
+ "9011663": {
+  "name": "硫化镉 CdS 硫镉矿",
+  "note": "硫镉矿",
+  "mineral": "Greenockite"
+ },
+ "1544893": {
+  "name": "硫化铁 FeS2 黄铁矿",
+  "note": "黄铁矿（FeS₂）：S₂²⁻ 哑铃对与 Fe²⁺ 构成 NaCl 型排列。俗称\"愚人金\"。",
+  "mineral": "pyrite at 4.2 GPa"
+ },
+ "9008372": {
+  "name": "硫化铜 CuS 铜蓝",
+  "note": "铜蓝",
+  "mineral": "Covellite"
+ },
+ "9011414": {
+  "name": "硫化银 Ag2S 辉银矿",
+  "note": "辉银矿",
+  "mineral": "Acanthite"
+ },
+ "9012082": {
+  "name": "硫化汞 HgS 辰砂",
+  "note": "辰砂",
+  "mineral": "Cinnabar"
+ },
+ "9007246": {
+  "name": "硫化锑 Sb2S3 辉锑矿",
+  "note": "辉锑矿",
+  "mineral": "Stibnite"
+ },
+ "9016056": {
+  "name": "硒化镉 CdSe",
+  "note": "硒化镉",
+  "mineral": "Cadmoselite"
+ },
+ "1540817": {
+  "name": "碲化镉 CdTe",
+  "note": "碲化镉，闪锌矿型",
+  "mineral": ""
+ },
+ "1535443": {
+  "name": "氮化镓 GaN",
+  "note": "纤锌矿型半导体",
+  "mineral": ""
+ },
+ "7234258": {
+  "name": "氮化铝 AlN",
+  "note": "纤锌矿型",
+  "mineral": ""
+ },
+ "9008997": {
+  "name": "氮化硼 六方",
+  "note": "六方氮化硼（h-BN）：类石墨层状结构，层内 B-N 六元环、层间范德华力。白色固体，俗称\"白石墨\"。",
+  "mineral": ""
+ },
+ "9008834": {
+  "name": "氮化硼 立方",
+  "note": "立方氮化硼（c-BN）：闪锌矿型结构，硬度仅次于金刚石，高温化学稳定性优于金刚石。",
+  "mineral": "Qingsongite"
+ },
+ "9008845": {
+  "name": "砷化镓 GaAs",
+  "note": "砷化镓（GaAs）：闪锌矿型结构，Ga 与 As 各 4 配位。第二代半导体材料，高频性能优于硅。",
+  "mineral": ""
+ },
+ "1537857": {
+  "name": "磷化铟 InP",
+  "note": "闪锌矿型",
+  "mineral": ""
+ },
+ "9008846": {
+  "name": "磷化镓 GaP",
+  "note": "闪锌矿型",
+  "mineral": ""
+ },
+ "1011354": {
+  "name": "锑化铟 InSb",
+  "note": "闪锌矿型",
+  "mineral": ""
+ },
+ "9008856": {
+  "name": "碳化硅 SiC",
+  "note": "碳化硅，闪锌矿型",
+  "mineral": ""
+ },
+ "1501528": {
+  "name": "碳化钨 WC",
+  "note": "碳化钨",
+  "mineral": ""
+ },
+ "1542141": {
+  "name": "铯铅氯钙钛矿 CsPbCl3",
+  "note": "铯铅氯钙钛矿（CsPbCl₃）：卤化物钙钛矿，Pb²⁺ 6 配位八面体。铅卤钙钛矿是近年光伏与发光材料的研究热点。",
+  "mineral": ""
+ },
+ "1530681": {
+  "name": "铯铅溴钙钛矿 CsPbBr3",
+  "note": "卤化物钙钛矿",
+  "mineral": ""
+ },
+ "1010928": {
+  "name": "方解石 CaCO3",
+  "note": "方解石（CaCO₃）：[CO₃]²⁻ 平面三角形，Ca²⁺ 6 配位，菱面体晶胞。石灰岩、大理石的主要成分。",
+  "mineral": "Calcite"
+ },
+ "5000085": {
+  "name": "文石 CaCO3",
+  "note": "文石（霰石）：CaCO₃ 的另一种晶型，Ca²⁺ 9 配位，正交晶系。珍珠、贝壳的主要成分。",
+  "mineral": "Aragonite"
+ },
+ "9001419": {
+  "name": "白云石 CaMg(CO3)2",
+  "note": "白云石 [CaMg(CO₃)₂]：Ca²⁺ 与 Mg²⁺ 在晶格中有序交替排列（阳离子有序），碳酸盐矿物。",
+  "mineral": "Dolomite"
+ },
+ "9002820": {
+  "name": "菱镁矿 MgCO3",
+  "note": "菱镁矿",
+  "mineral": "Magnesite"
+ },
+ "9015685": {
+  "name": "菱铁矿 FeCO3",
+  "note": "菱铁矿",
+  "mineral": "Siderite"
+ },
+ "9004485": {
+  "name": "重晶石 BaSO4",
+  "note": "重晶石（BaSO₄）：[SO₄]²⁻ 四面体与 Ba²⁺ 构成正交结构。不溶于水、密度大，用于钻井泥浆加重剂。",
+  "mineral": "Barite"
+ },
+ "9013171": {
+  "name": "石膏 CaSO4·2H2O",
+  "note": "石膏（CaSO₄·2H₂O）：层状结构，水分子夹在 [CaSO₄] 层之间，层间结合弱故硬度低（莫氏 2）。",
+  "mineral": "Gypsum"
+ },
+ "9017401": {
+  "name": "硬石膏 CaSO4",
+  "note": "硬石膏",
+  "mineral": "Anhydrite (soluble)"
+ },
+ "1010543": {
+  "name": "天青石 SrSO4",
+  "note": "天青石",
+  "mineral": "Celestine"
+ },
+ "9006954": {
+  "name": "氟磷灰石 Ca5(PO4)3F",
+  "note": "氟磷灰石 [Ca₅(PO₄)₃F]：磷灰石族代表矿物，[PO₄]³⁻ 四面体与 Ca²⁺ 构成六方柱状骨架。牙齿和骨骼的主要无机成分。",
+  "mineral": "Fluorapatite"
+ },
+ "9016991": {
+  "name": "橄榄石 Mg2SiO4",
+  "note": "橄榄石（Mg₂SiO₄）：O²⁻ 近似六方密堆积，Mg²⁺ 占八面体空隙、Si⁴⁺ 占四面体空隙。地幔主要矿物。",
+  "mineral": "Forsterite"
+ },
+ "9000691": {
+  "name": "锆石 ZrSiO4",
+  "note": "锆石（ZrSiO₄）：Zr⁴⁺ 8 配位、Si⁴⁺ 4 配位。极稳定的矿物，用于 U-Pb 同位素定年。",
+  "mineral": "Zircon"
+ },
+ "9000161": {
+  "name": "正长石 KAlSi3O8",
+  "note": "正长石（KAlSi₃O₈）：架状硅酸盐，[AlO₄] 与 [SiO₄] 四面体共角顶构成三维骨架，K⁺ 位于孔道中。",
+  "mineral": "Orthoclase"
+ },
+ "9003702": {
+  "name": "钠长石 NaAlSi3O8",
+  "note": "钠长石（NaAlSi₃O₈）：架状硅酸盐，与正长石同族（斜长石端元）。",
+  "mineral": "Albite"
+ },
+ "9017403": {
+  "name": "滑石 Mg3Si4O10(OH)2",
+  "note": "滑石 [Mg₃Si₄O₁₀(OH)₂]：层状硅酸盐，层间仅范德华力，故极软（莫氏 1），可用作爽身粉。",
+  "mineral": "Talc"
+ },
+ "1100014": {
+  "name": "白云母 KAl2Si3O10(OH)2",
+  "note": "白云母",
+  "mineral": "Muscovite 3T"
+ },
+ "9009234": {
+  "name": "高岭石 Al2Si2O5(OH)4",
+  "note": "高岭石 [Al₂Si₂O₅(OH)₄]：层状硅酸盐，1:1 型双层结构，陶瓷工业原料。",
+  "mineral": "Kaolinite"
+ },
+ "9009463": {
+  "name": "霞石 NaAlSiO4",
+  "note": "霞石，架状硅酸盐，沸石类骨架",
+  "mineral": "Nepheline"
+ },
+ "9005057": {
+  "name": "钠沸石 Na2Al2Si3O10·2H2O",
+  "note": "钠沸石 [Na₂Al₂Si₃O₁₀·2H₂O]：沸石族矿物，[SiO₄]/[AlO₄] 四面体构成含孔道三维骨架，Na⁺ 与水分子位于孔道中。沸石具有离子交换与吸附功能。",
+  "mineral": "Natrolite"
+ },
+ "9001021": {
+  "name": "绿柱石 Be3Al2Si6O18",
+  "note": "绿柱石（Be₃Al₂Si₆O₁₈）：环状硅酸盐，[Si₆O₁₈]¹²⁻ 六元环沿 c 轴叠成隧道，Be²⁺ 与 Al³⁺ 连接环间。祖母绿、海蓝宝石即含杂质离子的绿柱石。",
+  "mineral": "Beryl"
+ },
+ "1011211": {
+  "name": "钙钛矿 CaTiO3",
+  "note": "钙钛矿（CaTiO₃）：Ti⁴⁺ 6 配位八面体共角顶连接，Ca²⁺ 位于八面体间隙（12 配位）。无数功能材料（铁电、超导、光伏）的原型结构。",
+  "mineral": "Perovskite"
+ },
+ "1540757": {
+  "name": "钛酸钡 BaTiO3",
+  "note": "钛酸钡（BaTiO₃）：钙钛矿型铁电体，居里温度以上为立方结构。压电陶瓷的重要组分。",
+  "mineral": ""
+ },
+ "7212245": {
+  "name": "钛酸锶 SrTiO3",
+  "note": "钛酸锶（SrTiO₃）：钙钛矿型，禁带宽度约 3.2 eV 的宽带隙半导体。",
+  "mineral": "Tausonite"
+ },
+ "1531017": {
+  "name": "铁酸铋 BiFeO3",
+  "note": "铁酸铋（BiFeO₃）：钙钛矿型多铁材料，室温下同时具有铁电性与反铁磁性。",
+  "mineral": ""
+ },
+ "1572227": {
+  "name": "冰 冰Ih",
+  "note": "冰 Ih（六方冰）：O 4 配位四面体，氢键连接成六方对称骨架，H 位于 O-O 连线偏置位置（O-H 0.98 Å）。水的常见冰型，雪花即其晶体形态。",
+  "mineral": ""
+ },
+ "1541503": {
+  "name": "冰 冰Ic",
+  "note": "冰 Ic（立方冰）：O 4 配位四面体，氢键网络呈金刚石型拓扑。常在极低温度或星际空间形成。",
+  "mineral": ""
+ },
+ "9015045": {
+  "name": "冰 冰II",
+  "note": "高压冰",
+  "mineral": "Ice II"
+ },
+ "9016611": {
+  "name": "冰 冰VII",
+  "note": "高压冰",
+  "mineral": "Ice VII"
+ },
+ "1544226": {
+  "name": "尿素",
+  "note": "尿素：含 N-H···O 氢键的分子晶体，四方晶系。氢键在生物分子（蛋白质、DNA）中至关重要。",
+  "mineral": ""
+ },
+ "2003450": {
+  "name": "蔗糖",
+  "note": "蔗糖：分子晶体，C₁₂H₂₂O₁₁ 分子间以 O-H···O 氢键结合，单斜晶系。",
+  "mineral": ""
+ },
+ "4504974": {
+  "name": "甘氨酸",
+  "note": "甘氨酸晶体",
+  "mineral": ""
+ },
+ "5000172": {
+  "name": "L-丙氨酸",
+  "note": "L-丙氨酸",
+  "mineral": ""
+ },
+ "2005161": {
+  "name": "L-缬氨酸",
+  "note": "L-缬氨酸",
+  "mineral": ""
+ },
+ "2102119": {
+  "name": "L-亮氨酸",
+  "note": "L-亮氨酸",
+  "mineral": ""
+ },
+ "2215317": {
+  "name": "L-天冬酰胺",
+  "note": "L-天冬酰胺",
+  "mineral": ""
+ },
+ "2104165": {
+  "name": "L-谷氨酰胺",
+  "note": "L-谷氨酰胺",
+  "mineral": ""
+ },
+ "2108876": {
+  "name": "L-组氨酸",
+  "note": "L-组氨酸",
+  "mineral": ""
+ },
+ "7050550": {
+  "name": "咖啡因",
+  "note": "咖啡因",
+  "mineral": ""
+ },
+ "4030004": {
+  "name": "阿司匹林",
+  "note": "乙酰水杨酸",
+  "mineral": ""
+ },
+ "3500098": {
+  "name": "维生素C",
+  "note": "抗坏血酸",
+  "mineral": ""
+ },
+ "2241090": {
+  "name": "α-葡萄糖",
+  "note": "α-D-葡萄糖",
+  "mineral": ""
+ },
+ "4511296": {
+  "name": "烟酰胺",
+  "note": "维生素B3",
+  "mineral": ""
+ },
+ "5000063": {
+  "name": "柠檬酸",
+  "note": "柠檬酸",
+  "mineral": ""
+ },
+ "4507987": {
+  "name": "草酸",
+  "note": "草酸",
+  "mineral": ""
+ },
+ "7208093": {
+  "name": "苯甲酸",
+  "note": "苯甲酸",
+  "mineral": ""
+ },
+ "9011258": {
+  "name": "9011258",
+  "note": "氧化锌（红锌矿）：纤锌矿型结构，Zn²⁺ 与 O²⁻ 均为 4 配位四面体。宽带隙半导体，紫外光吸收材料。"
+ }
+}
