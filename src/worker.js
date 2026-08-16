@@ -3,17 +3,13 @@
  *
  * 功能：
  * 1. 托管静态文件（public/ 目录）
- * 2. /api/chat → 用户可选 DeepSeek Flash 或 Gemini 2.5 Flash
+ * 2. /api/chat → 用户可选 Gemini（直连 Google）或 Workers AI（免费）
  * 3. /api/*    → hteamgame.com 反向代理（puzzles, scores 等）
  */
 
-// DeepSeek API 配置
-const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
-const DEEPSEEK_MODEL = 'deepseek-chat';
-
 // Gemini 端点
 // 主路径：htgemini Worker（用户自己的 Gemini Key 直连 Google，Cloudflare 出口，模型 gemini-3.5-flash）
-// 兜底：直连氢队（若其解封 Cloudflare IP 则恢复）；再失败由上层降级 DeepSeek。
+// 兜底：直连氢队（若其解封 Cloudflare IP 则恢复）；再失败由上层降级 Workers AI。
 const GEMINI_VIA_HTGEMINI = 'https://htgmn.iteamgame.dpdns.org/';
 const GEMINI_DIRECT = 'https://hteamgame.com/api/gemini/generate';
 
@@ -159,59 +155,47 @@ async function callGemini(systemPrompt, userMessage) {
 }
 
 /**
- * 调用 DeepSeek Flash
+ * 调用 Cloudflare Workers AI（免费额度，替代 DeepSeek）
+ * 模型默认 @cf/meta/llama-3.3-70b-instruct-fp8-fast，可用 Secret WORKERS_AI_MODEL 覆盖
  */
-async function callDeepSeek(env, messages) {
-  const resp = await fetch(DEEPSEEK_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${env.DEEPSEEK_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
-      messages,
-      temperature: 0.8,
-      max_tokens: 1024,
-      thinking: { type: 'enabled' },
-    }),
-  });
-  if (!resp.ok) throw new Error(`DeepSeek returned ${resp.status}`);
-  const data = await resp.json();
-  const reply = data.choices?.[0]?.message?.content;
-  if (!reply) throw new Error('Empty DeepSeek response');
+async function callWorkersAI(env, systemPrompt, userMessage, history) {
+  const model = env.WORKERS_AI_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...(history || []),
+    { role: 'user', content: `玩家提问：${userMessage}` },
+  ];
+  const result = await env.AI.run(model, { messages });
+  // Workers AI 常见返回格式：{ response } / { choices:[{message:{content}}] } / { output_text }
+  const reply = result?.response
+    || result?.choices?.[0]?.message?.content
+    || result?.output_text;
+  if (!reply) throw new Error('Empty Workers AI response');
   return reply;
 }
 
 /**
  * 主 AI 调度：根据 model 参数选择后端
- * @param {'deepseek'|'gemini'} model - 用户选择的模型
+ * @param {'deepseek'|'gemini'} model - 用户选择的模型（deepseek 实际走 Cloudflare Workers AI）
  */
 async function callAI(env, puzzle, userMessage, history, model) {
   const { ds, df } = await loadPrompts(env);
   const promptTemplate = model === 'deepseek' ? ds : df;
   const systemPrompt = promptTemplate.replace(/\{PUZZLE_CONTEXT\}/g, puzzle);
 
-  // 构建 DeepSeek 格式 messages（也用于 Gemini 降级场景）
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...history,
-    { role: 'user', content: `玩家提问：${userMessage}` },
-  ];
-
-  // Gemini 模式：直接走 hteamgame
+  // Gemini 模式：主路径 Gemini，失败降级 Workers AI
   if (model === 'gemini') {
     console.log('[AI] using Gemini (user selected)');
     try {
       const reply = await callGemini(systemPrompt, userMessage);
       return { reply, source: 'gemini' };
     } catch (e) {
-      console.warn(`[AI] Gemini error: ${e.message}, falling back to DeepSeek`);
+      console.warn(`[AI] Gemini error: ${e.message}, falling back to Workers AI`);
       try {
-        const reply = await callDeepSeek(env, messages);
-        return { reply, source: 'deepseek-fallback' };
+        const reply = await callWorkersAI(env, systemPrompt, userMessage, history);
+        return { reply, source: 'workers-ai-fallback' };
       } catch (e2) {
-        console.warn(`[AI] DeepSeek fallback also failed: ${e2.message}`);
+        console.warn(`[AI] Workers AI fallback also failed: ${e2.message}`);
       }
       return {
         reply: '唔……抱歉呢神明大人，小八刚才不小心走神了🌙能再问一次吗？',
@@ -220,25 +204,22 @@ async function callAI(env, puzzle, userMessage, history, model) {
     }
   }
 
-  // DeepSeek 模式（默认）：主路径
-  console.log('[AI] using DeepSeek Flash');
+  // 默认模式：Cloudflare Workers AI（免费，替代 DeepSeek）
+  console.log('[AI] using Cloudflare Workers AI');
 
   try {
-    const reply = await callDeepSeek(env, messages);
-    return { reply, source: 'deepseek' };
+    const reply = await callWorkersAI(env, systemPrompt, userMessage, history);
+    return { reply, source: 'workers-ai' };
   } catch (e) {
-    console.warn(`[AI] DeepSeek error: ${e.message}`);
+    console.warn(`[AI] Workers AI error: ${e.message}`);
   }
 
-  // DeepSeek 失败 → 降级到 Gemini
-  if (model !== 'gemini') {
-    console.log('[AI] falling back to Gemini');
-    try {
-      const reply = await callGemini(systemPrompt, userMessage);
-      return { reply, source: 'gemini-fallback' };
-    } catch (e2) {
-      console.warn(`[AI] Gemini fallback also failed: ${e2.message}`);
-    }
+  // Workers AI 失败 → 降级到 Gemini
+  try {
+    const reply = await callGemini(systemPrompt, userMessage);
+    return { reply, source: 'gemini-fallback' };
+  } catch (e2) {
+    console.warn(`[AI] Gemini fallback also failed: ${e2.message}`);
   }
 
   // 双重失败
