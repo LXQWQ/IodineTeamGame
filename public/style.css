@@ -160,6 +160,72 @@
             --shadow-md: 0 10px 18px rgba(0,0,0,0.55);
             --modal-bg: #1e1d2f;
         }
+        /* 科技模式 - 赛博朋克霓虹 */
+        [data-theme="cyber"] {
+            --bg-primary: #04060f;
+            --bg-card: #0a1020;
+            --text-primary: #d2f6ff;
+            --text-secondary: #6fb4c8;
+            --border: #123a4d;
+            --accent: #00f0ff;
+            --accent-light: #7df9ff;
+            --accent-bg: rgba(0, 240, 255, 0.08);
+            --accent-starch: #ff00a8;
+            --crystal-dark: #00e5ff;
+            --shadow-sm: 0 4px 8px rgba(0,240,255,0.12);
+            --shadow-md: 0 10px 20px rgba(0,240,255,0.2);
+            --header-gradient: linear-gradient(135deg, #000208 0%, #0a1a2e 40%, #10142a 100%);
+            --modal-bg: #0a1020;
+        }
+        /* 科技模式 - 赛博网格背景 */
+        [data-theme="cyber"] body {
+            background-image:
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 42px 42px;
+            background-attachment: fixed;
+        }
+        [data-theme="cyber"] .hero h1 {
+            text-shadow: 0 0 18px rgba(0,240,255,0.65), 0 0 42px rgba(255,0,168,0.35);
+        }
+        [data-theme="cyber"] .game-card {
+            border: 1px solid rgba(0,240,255,0.28);
+            box-shadow: 0 0 16px rgba(0,240,255,0.12), inset 0 0 24px rgba(0,240,255,0.04);
+        }
+        [data-theme="cyber"] .game-card:hover {
+            box-shadow: 0 0 28px rgba(0,240,255,0.28), 0 0 60px rgba(255,0,168,0.15);
+            border-color: rgba(0,240,255,0.6);
+        }
+        [data-theme="cyber"] .play-btn,
+        [data-theme="cyber"] .theme-toggle-btn,
+        [data-theme="cyber"] .auth-btn,
+        [data-theme="cyber"] .feedback-btn {
+            background: linear-gradient(90deg, #00f0ff, #ff00a8) !important;
+            color: #fff !important;
+            box-shadow: 0 0 16px rgba(0,240,255,0.4);
+            border: none;
+        }
+        [data-theme="cyber"] .play-btn:hover,
+        [data-theme="cyber"] .theme-toggle-btn:hover,
+        [data-theme="cyber"] .auth-btn:hover,
+        [data-theme="cyber"] .feedback-btn:hover {
+            box-shadow: 0 0 30px rgba(0,240,255,0.7), 0 0 50px rgba(255,0,168,0.4);
+        }
+        [data-theme="cyber"] .iodine-formula {
+            color: #00f0ff;
+            text-shadow: 0 0 12px rgba(0,240,255,0.8);
+        }
+        [data-theme="cyber"] .game-tag {
+            background: rgba(0,240,255,0.12);
+            color: #00f0ff;
+            border: 1px solid rgba(0,240,255,0.35);
+        }
+        [data-theme="cyber"] .section-title {
+            border-left-color: #00f0ff;
+        }
+        [data-theme="cyber"] ::-webkit-scrollbar { width: 8px; }
+        [data-theme="cyber"] ::-webkit-scrollbar-track { background: #04060f; }
+        [data-theme="cyber"] ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #00f0ff, #ff00a8); border-radius: 4px; }
         @property --reveal {
             syntax: '<percentage>';
             inherits: false;

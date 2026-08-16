@@ -344,7 +344,8 @@
             'carbon': '活性炭',
             'classic-light': '经典浅色',
             'classic-dark': '经典暗色',
-            'tsukuyomi': '月读'
+            'tsukuyomi': '月读',
+            'cyber': '科技'
         };
         function initTheme() {
             const themeBtn = document.getElementById('themeSwitcher');
