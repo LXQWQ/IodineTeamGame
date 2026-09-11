@@ -1355,8 +1355,11 @@ function floatDmg(el,val){
 /* ============ 回合流程 ============ */
 function newRound(){
   S.round++;
+  // 回合开始：双方对称补给（各 +4 化合能、各抽 1 张牌）
   S.energy=Math.min(S.maxEnergy,S.energy+4);
+  foe().energy=Math.min(S.maxEnergy,foe().energy+4);
   drawCard('player');
+  drawCard('enemy');
   S.phase='player';
   banner(S.mode==='pvp' ? `玩家1 的回合 · 第 ${S.round} 回合` : `你的回合 · 第 ${S.round} 回合`, S.camp==='red'?'#ff7d85':'#7dc1ff');
   renderAll();
@@ -1374,7 +1377,6 @@ async function endTurn(){
       const win=await resolveCombat('player');
       if(win){ return endGame(true); }
       S.phase='enemy';
-      foe().energy=Math.min(S.maxEnergy, foe().energy+4);
       renderHud();
       if(S.mode==='pvp'){
         banner('玩家2 的回合', '#7dc1ff');
