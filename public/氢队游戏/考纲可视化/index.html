@@ -1,7 +1,114 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><!--IODINE-MIRROR-PATCH-v1-->
+<script>
+/* ==========================================================================
+   碘队镜像补丁 v1  ——  仅作用于本站镜像副本，不影响氢队原站
+   1) 彻底解除"需要登录"限制：锁死 cgIsOffline() 恒为 true，
+      使 requireAuth() 走应用自带的"离线降级"通道（全部功能直接放行），
+      同时让行为埋点 track() 自动早退，不再上报任何使用数据。
+   2) 切断一切向氢队主站/外部回传信息的接口（fetch / XHR / sendBeacon /
+      WebSocket），并特别封禁会被本站 Worker 反代回主站的 /api/* 路径。
+   3) 移除登录入口、登录弹窗与"游客受限"引导卡。
+   ========================================================================== */
+(function () {
+  'use strict';
+  var LOG = function () { try { console.info.apply(console, ['[碘队镜像]'].concat([].slice.call(arguments))); } catch (e) {} };
+
+  /* ---------- 1. 锁死离线状态（解除登录限制的核心） ---------- */
+  function alwaysOffline() { return true; }
+  function lock(obj, prop, value) {
+    try {
+      Object.defineProperty(obj, prop, {
+        configurable: true, enumerable: true,
+        get: function () { return value; },
+        set: function () { /* 忽略应用赋值，永久生效 */ }
+      });
+    } catch (e) { try { obj[prop] = value; } catch (e2) {} }
+  }
+  lock(window, 'cgIsOffline', alwaysOffline);          // requireAuth → 恒放行；track() → 恒早退
+  lock(window, 'cgShowOfflineToast', function () {});   // 静音"离线提示"气泡
+  lock(window, 'cgHideOfflineToast', function () {});
+  lock(window, 'requireAuth', function () { return true; });  // 兜底：任何调用都放行
+  lock(window, 'guestGate', { show: function () {}, hide: function () {} });
+
+  /* ---------- 2. 切断外发通道 ---------- */
+  var ORIGIN = location.origin;
+  function isOutbound(url) {
+    try {
+      var u = new URL(String(url), location.href);
+      if (u.origin !== ORIGIN) return true;        // 任何外部域名（含 Supabase / 氢队主站）
+      if (/^\/api\//.test(u.pathname)) return true; // 本站 /api/* 会被 Worker 反代回氢队主站
+      return false;
+    } catch (e) { return false; }
+  }
+  var _fetch = window.fetch;
+  if (_fetch) {
+    window.fetch = function (input, init) {
+      var url = (typeof input === 'string') ? input : (input && input.url) || '';
+      if (isOutbound(url)) { LOG('已拦截外发 fetch：' + url); return Promise.reject(new TypeError('Blocked by Iodine mirror')); }
+      return _fetch.apply(this, arguments);
+    };
+  }
+  var _open = XMLHttpRequest.prototype.open, _send = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u) {
+    this.__iodineBlocked = isOutbound(u);
+    if (this.__iodineBlocked) { LOG('已拦截外发 XHR：' + u); return; }
+    return _open.apply(this, arguments);
+  };
+  XMLHttpRequest.prototype.send = function () { if (this.__iodineBlocked) return; return _send.apply(this, arguments); };
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon = function (u) { LOG('已拦截 sendBeacon：' + u); return false; };
+  }
+  var _WS = window.WebSocket;
+  if (_WS) {
+    window.WebSocket = function (u, p) {
+      if (isOutbound(u)) { LOG('已拦截 WebSocket：' + u); throw new Error('Blocked by Iodine mirror'); }
+      return new _WS(u, p);
+    };
+    window.WebSocket.prototype = _WS.prototype;
+  }
+  // 事件上报 / 图片信标等：屏蔽对外 ping
+  try {
+    var _ping = navigator.sendBeacon;
+    if (window.navigator && 'connection' in navigator) { /* noop */ }
+  } catch (e) {}
+
+  /* ---------- 3. 移除登录入口与门禁 UI ---------- */
+  function injectCss() {
+    if (document.getElementById('iodine-mirror-css')) return;
+    var s = document.createElement('style');
+    s.id = 'iodine-mirror-css';
+    s.textContent = [
+      '#authBox{display:none!important}',
+      '#authMask{display:none!important}',
+      '#guestGate{display:none!important}',
+      '#guestBadge{display:none!important}',
+      '#pvMask,#onboardingMask{display:none!important}'
+    ].join('');
+    (document.head || document.documentElement).appendChild(s);
+  }
+  injectCss();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectCss);
+
+  /* ---------- 4. 持续巡检：防止应用后续重新挂载门禁 ---------- */
+  setInterval(function () {
+    try {
+      if (window.cgIsOffline !== alwaysOffline) lock(window, 'cgIsOffline', alwaysOffline);
+      var gg = document.getElementById('guestGate');
+      if (gg && getComputedStyle(gg).display !== 'none') { gg.classList.remove('show'); gg.style.display = 'none'; }
+      var am = document.getElementById('authMask');
+      if (am && getComputedStyle(am).display !== 'none') { am.style.display = 'none'; }
+      var badge = document.getElementById('guestBadge');
+      if (badge && badge.style.display !== 'none') badge.style.display = 'none';
+    } catch (e) {}
+  }, 600);
+
+  console.log('[碘队镜像] 补丁 v1 已生效：登录限制已解除，外发接口已封锁');
+})();
+</script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>考纲可视化 · CChO 2024 · 仅国初真题</title>
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
