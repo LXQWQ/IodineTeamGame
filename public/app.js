@@ -205,6 +205,159 @@
             { id:9, name:"酸碱大冒险 Acid and Base", emoji:"⚗️", tag:"双人合作", desc:"双人合作平台跳跃！酸人（绿）和碱人（蓝）各守其道，收集化学物质获得特效，合作通过关卡出口。支持双人闯关和单人无尽模式，手机触屏直接操作！", link:"氢队游戏/acid-base-beta/", newWindow:true },
             { id:10, name:"化学溶解大师 ChemFlow", emoji:"🧪", tag:"闯关解谜", desc:"用试剂溶解难溶固体，引导水流到容器！60关闯关模式+无限模式，涵盖酸碱反应、王水、铵盐溶解等真实化学知识。", link:"氢队游戏/dissolver/", newWindow:true }
         ];
+        /* 碘队游戏卡片图标：原创 inline SVG 微反应动效（SMIL，无外部依赖） */
+        const GAME_ICONS = {
+            1: `<div class="gi gi-dandao"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="ddGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffd98a" stop-opacity=".9"/><stop offset="55%" stop-color="#f59e0b" stop-opacity=".3"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/></radialGradient>
+<linearGradient id="ddBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c08a4a"/><stop offset="40%" stop-color="#8a5a2c"/><stop offset="100%" stop-color="#3d2410"/></linearGradient>
+<linearGradient id="ddRim" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#8a5a25"/><stop offset="28%" stop-color="#f7dda0"/><stop offset="52%" stop-color="#c9963f"/><stop offset="100%" stop-color="#6d451a"/></linearGradient>
+<linearGradient id="ddL1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6ee7d7"/><stop offset="100%" stop-color="#047857"/></linearGradient>
+<linearGradient id="ddL2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fde68a"/><stop offset="100%" stop-color="#b45309"/></linearGradient>
+<linearGradient id="ddL3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fca5a5"/><stop offset="100%" stop-color="#991b1b"/></linearGradient>
+<clipPath id="ddClip"><path d="M32 57 H88 L80 88 Q60 98 40 88 Z"/></clipPath>
+</defs>
+<g transform="translate(60 68) scale(1.18) translate(-60 -68)">
+<g transform="translate(60 74)"><g><animateTransform attributeName="transform" type="scale" values="1;1.12;1" dur="3.8s" repeatCount="indefinite"/><circle r="42" fill="url(#ddGlow)"/></g></g>
+<path d="M41 88 l-7 15 h9 l5 -12 z" fill="#5c3a18"/>
+<path d="M60 92 l0 15 h9 l0 -15 z" fill="#6d451c"/>
+<path d="M79 88 l7 15 h-9 l-5 -12 z" fill="#5c3a18"/>
+<path d="M32 57 H88 L80 88 Q60 98 40 88 Z" fill="url(#ddBody)"/>
+<g clip-path="url(#ddClip)">
+<rect x="30" y="58" width="60" height="36" fill="url(#ddL1)"/>
+<rect x="30" y="58" width="60" height="36" fill="url(#ddL2)" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.28;.4;.56;.68;1" dur="4.6s" repeatCount="indefinite"/></rect>
+<rect x="30" y="58" width="60" height="36" fill="url(#ddL3)" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.58;.7;.84;.92;1" dur="4.6s" repeatCount="indefinite"/></rect>
+<circle cx="50" cy="82" r="3" fill="#f0fdfa" opacity="0"><animate attributeName="cy" values="84;62" dur="2.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.95;0" keyTimes="0;.25;1" dur="2.2s" repeatCount="indefinite"/></circle>
+<circle cx="62" cy="84" r="2.4" fill="#f0fdfa" opacity="0"><animate attributeName="cy" values="86;64" dur="2.6s" begin=".7s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.9;0" keyTimes="0;.25;1" dur="2.6s" begin=".7s" repeatCount="indefinite"/></circle>
+<circle cx="70" cy="82" r="1.9" fill="#f0fdfa" opacity="0"><animate attributeName="cy" values="84;64" dur="2.4s" begin="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.85;0" keyTimes="0;.25;1" dur="2.4s" begin="1.4s" repeatCount="indefinite"/></circle>
+</g>
+<ellipse cx="60" cy="57" rx="28" ry="7" fill="none" stroke="url(#ddRim)" stroke-width="6"/>
+<ellipse cx="60" cy="57" rx="28" ry="7" fill="#150c03" opacity=".38"/>
+<path d="M54 49 c-7 -9 5 -13 0 -21" fill="none" stroke="#ffe6b8" stroke-width="3" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;.8;0" dur="3.2s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 8;0 -12" dur="3.2s" repeatCount="indefinite"/></path>
+<path d="M67 47 c7 -10 -5 -14 1 -22" fill="none" stroke="#fff2d6" stroke-width="2.4" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;.65;0" dur="3.7s" begin="1.2s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 8;0 -14" dur="3.7s" begin="1.2s" repeatCount="indefinite"/></path>
+</g></svg></div>`,
+            2: `<div class="gi gi-evz"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="evHalo" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#c4b5fd" stop-opacity=".85"/><stop offset="55%" stop-color="#7c3aed" stop-opacity=".3"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/></radialGradient>
+<radialGradient id="evCore" cx="38%" cy="34%" r="72%"><stop offset="0%" stop-color="#ffffff"/><stop offset="38%" stop-color="#ddd6fe"/><stop offset="100%" stop-color="#6d28d9"/></radialGradient>
+<linearGradient id="evRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c4b5fd"/><stop offset="50%" stop-color="#38bdf8" stop-opacity=".7"/><stop offset="100%" stop-color="#34d399"/></linearGradient>
+<filter id="evBlur" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3"/></filter>
+</defs>
+<g transform="translate(60 60)"><g><animateTransform attributeName="transform" type="scale" values="1;1.14;1" dur="3.2s" repeatCount="indefinite"/><circle r="40" fill="url(#evHalo)"/></g></g>
+<g><animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="7s" repeatCount="indefinite"/>
+<ellipse cx="60" cy="60" rx="44" ry="16" fill="none" stroke="url(#evRing)" stroke-width="2.4" opacity=".95"/>
+<g transform="translate(104 60)"><circle r="6" fill="#a78bfa" opacity=".85" filter="url(#evBlur)"/><circle r="3.8" fill="#f5f3ff" opacity="0"><animate attributeName="opacity" values="1;.55;1" dur="1.6s" repeatCount="indefinite"/></circle></g>
+</g>
+<g transform="rotate(60 60 60)"><g><animateTransform attributeName="transform" type="rotate" from="0 60 60" to="-360 60 60" dur="9s" repeatCount="indefinite"/>
+<ellipse cx="60" cy="60" rx="44" ry="16" fill="none" stroke="url(#evRing)" stroke-width="2.4" opacity=".8"/>
+<g transform="translate(104 60)"><circle r="6" fill="#38bdf8" opacity=".85" filter="url(#evBlur)"/><circle r="3.8" fill="#e0f2fe" opacity="0"><animate attributeName="opacity" values="1;.55;1" dur="1.9s" repeatCount="indefinite"/></circle></g>
+</g></g>
+<g transform="rotate(120 60 60)"><g><animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="11s" repeatCount="indefinite"/>
+<ellipse cx="60" cy="60" rx="44" ry="16" fill="none" stroke="url(#evRing)" stroke-width="2.4" opacity=".7"/>
+<g transform="translate(104 60)"><circle r="6" fill="#34d399" opacity=".85" filter="url(#evBlur)"/><circle r="3.8" fill="#ecfdf5" opacity="0"><animate attributeName="opacity" values="1;.55;1" dur="2.2s" repeatCount="indefinite"/></circle></g>
+</g></g>
+<circle cx="60" cy="60" r="10" fill="url(#evCore)"/>
+<circle cx="60" cy="60" r="10" fill="none" stroke="#ede9fe" stroke-width="1.2" opacity=".75"><animate attributeName="r" values="10;15;10" dur="2.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".75;0;.75" dur="2.6s" repeatCount="indefinite"/></circle>
+</svg></div>`,
+            3: `<div class="gi gi-phase"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<linearGradient id="ptGlass" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffffff" stop-opacity=".34"/><stop offset="46%" stop-color="#ffffff" stop-opacity=".05"/><stop offset="100%" stop-color="#ffffff" stop-opacity=".22"/></linearGradient>
+<linearGradient id="ptOil" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fef3c7"/><stop offset="45%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#b45309"/></linearGradient>
+<linearGradient id="ptWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="45%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1e3a8a"/></linearGradient>
+<clipPath id="ptClip"><path d="M41 27 H79 V74 A19 19 0 0 1 41 74 Z"/></clipPath>
+<filter id="ptBlur" x="-90%" y="-90%" width="280%" height="280%"><feGaussianBlur stdDeviation="3"/></filter>
+</defs>
+<g transform="translate(60 62) scale(1.18) translate(-60 -62)">
+<g clip-path="url(#ptClip)">
+<rect x="39" y="27" width="42" height="74" fill="url(#ptGlass)"/>
+<rect x="39" y="38" width="42" height="21" fill="url(#ptOil)"/>
+<rect x="39" y="58" width="42" height="48" fill="url(#ptWater)"/>
+<ellipse cx="60" cy="58.6" rx="20" ry="3.2" fill="#fef9c3" opacity=".5"/>
+<circle cx="50" cy="92" r="2.8" fill="#e0f2fe" opacity="0"><animate attributeName="cy" values="94;60" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.9;0" keyTimes="0;.25;1" dur="3s" repeatCount="indefinite"/></circle>
+<circle cx="69" cy="94" r="2.2" fill="#e0f2fe" opacity="0"><animate attributeName="cy" values="96;62" dur="3.4s" begin="1.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.85;0" keyTimes="0;.25;1" dur="3.4s" begin="1.2s" repeatCount="indefinite"/></circle>
+<g><animateTransform attributeName="transform" type="translate" values="0 20; 0 -19; 0 20" dur="4.6s" repeatCount="indefinite"/>
+<circle cx="60" cy="63.5" r="3" fill="#fb7185" opacity=".26"/>
+<circle cx="60" cy="56.5" r="2.6" fill="#fb7185" opacity=".18"/>
+<circle cx="60" cy="58" r="10.5" fill="#f43f5e" opacity=".45" filter="url(#ptBlur)"/>
+<circle cx="60" cy="58" r="5.6" fill="#f43f5e"/>
+<circle cx="58" cy="55.8" r="1.8" fill="#fff1f2" opacity=".95"/>
+<circle cx="67.2" cy="54.4" r="2.5" fill="#fda4af"/>
+<circle cx="53.2" cy="61.6" r="2.3" fill="#fda4af"/>
+</g>
+</g>
+<path d="M41 27 H79 V74 A19 19 0 0 1 41 74 Z" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2"/>
+<ellipse cx="60" cy="27" rx="19" ry="3.4" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2"/>
+<path d="M45.5 33 v38" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" opacity=".28"/>
+</g></svg></div>`,
+            4: `<div class="gi gi-chain"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="chC" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#f1f5f9"/><stop offset="52%" stop-color="#8b9cb3"/><stop offset="100%" stop-color="#2b3a4d"/></radialGradient>
+<radialGradient id="chNew" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#ffe4e6"/><stop offset="52%" stop-color="#fb7185"/><stop offset="100%" stop-color="#881337"/></radialGradient>
+<radialGradient id="chH" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#ffffff"/><stop offset="55%" stop-color="#bae6fd"/><stop offset="100%" stop-color="#0369a1"/></radialGradient>
+<filter id="chBlur" x="-90%" y="-90%" width="280%" height="280%"><feGaussianBlur stdDeviation="3.2"/></filter>
+</defs>
+<g transform="translate(60 62)"><g><animateTransform attributeName="transform" type="rotate" values="-6;6;-6" dur="7s" repeatCount="indefinite"/>
+<g transform="translate(-60 -62)">
+<path d="M26 76 L42 50 L58 76 L74 50 L90 76" fill="none" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity=".92"/>
+<circle cx="26" cy="76" r="8" fill="url(#chC)"/>
+<circle cx="42" cy="50" r="8" fill="url(#chC)"/>
+<circle cx="58" cy="76" r="8" fill="url(#chC)"/>
+<circle cx="74" cy="50" r="8" fill="url(#chC)"/>
+<circle cx="20" cy="52" r="3.4" fill="url(#chH)" opacity=".9"/>
+<circle cx="30" cy="46" r="3" fill="url(#chH)" opacity=".75"/>
+<g transform="translate(90 76)"><circle r="14" fill="#fb7185" opacity=".35" filter="url(#chBlur)"/><circle r="8" fill="url(#chNew)"/><animateTransform attributeName="transform" type="scale" values="1;1.14;1" dur="2.6s" repeatCount="indefinite" additive="sum"/></g>
+</g></g></g>
+</svg></div>`,
+            7: `<div class="gi gi-chemv1"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="ctRed" cx="35%" cy="28%" r="80%"><stop offset="0%" stop-color="#ff9aa2"/><stop offset="55%" stop-color="#ff4655"/><stop offset="100%" stop-color="#8c1220"/></radialGradient>
+<radialGradient id="ctBlue" cx="35%" cy="28%" r="80%"><stop offset="0%" stop-color="#a8d8ff"/><stop offset="55%" stop-color="#3aa0ff"/><stop offset="100%" stop-color="#123a63"/></radialGradient>
+<radialGradient id="ctPurple" cx="35%" cy="28%" r="80%"><stop offset="0%" stop-color="#e9d5ff"/><stop offset="55%" stop-color="#a855f7"/><stop offset="100%" stop-color="#4c1d95"/></radialGradient>
+<radialGradient id="ctGlowR" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ff4655" stop-opacity=".75"/><stop offset="100%" stop-color="#ff4655" stop-opacity="0"/></radialGradient>
+<radialGradient id="ctGlowB" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#3aa0ff" stop-opacity=".75"/><stop offset="100%" stop-color="#3aa0ff" stop-opacity="0"/></radialGradient>
+</defs>
+<circle cx="33" cy="60" r="28" fill="url(#ctGlowR)"><animate attributeName="opacity" values=".45;1;.45" dur="3.6s" repeatCount="indefinite"/></circle>
+<circle cx="87" cy="60" r="28" fill="url(#ctGlowB)"><animate attributeName="opacity" values="1;.45;1" dur="3.6s" repeatCount="indefinite"/></circle>
+<path d="M60.0 15.0 L72.1 22.0 L72.1 36.0 L60.0 43.0 L47.9 36.0 L47.9 22.0 Z" fill="url(#ctPurple)" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/>
+<path d="M86.8 30.5 L98.9 37.5 L98.9 51.5 L86.8 58.5 L74.7 51.5 L74.7 37.5 Z" fill="url(#ctBlue)" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/>
+<path d="M86.8 61.5 L98.9 68.5 L98.9 82.5 L86.8 89.5 L74.7 82.5 L74.7 68.5 Z" fill="url(#ctBlue)" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/>
+<path d="M60.0 77.0 L72.1 84.0 L72.1 98.0 L60.0 105.0 L47.9 98.0 L47.9 84.0 Z" fill="url(#ctPurple)" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/>
+<path d="M33.2 61.5 L45.3 68.5 L45.3 82.5 L33.2 89.5 L21.1 82.5 L21.1 68.5 Z" fill="url(#ctRed)" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/>
+<path d="M33.2 30.5 L45.3 37.5 L45.3 51.5 L33.2 58.5 L21.1 51.5 L21.1 37.5 Z" fill="url(#ctRed)" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/>
+<path d="M60.0 46.0 L72.1 53.0 L72.1 67.0 L60.0 74.0 L47.9 67.0 L47.9 53.0 Z" fill="url(#ctRed)"><animate attributeName="opacity" values="1;0;0;1" keyTimes="0;.3;.7;1" dur="3.6s" repeatCount="indefinite"/></path>
+<path d="M60.0 46.0 L72.1 53.0 L72.1 67.0 L60.0 74.0 L47.9 67.0 L47.9 53.0 Z" fill="url(#ctBlue)"><animate attributeName="opacity" values="0;0;1;0" keyTimes="0;.3;.7;1" dur="3.6s" repeatCount="indefinite"/></path>
+<path d="M60.0 46.0 L72.1 53.0 L72.1 67.0 L60.0 74.0 L47.9 67.0 L47.9 53.0 Z" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.4"/>
+<circle cx="56" cy="55" r="2.6" fill="#ffffff" opacity=".35"/>
+</svg></div>`,
+            9: `<div style="font-size: 3rem;">🐢</div>`,
+            10: `<div style="font-size: 3rem;">🧟</div>`,
+            11: `<div class="gi gi-chemv2"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="hjRed" cx="34%" cy="30%" r="72%"><stop offset="0%" stop-color="#ffe0e4"/><stop offset="38%" stop-color="#ff4655"/><stop offset="100%" stop-color="#5c0f19"/></radialGradient>
+<radialGradient id="hjBlue" cx="34%" cy="30%" r="72%"><stop offset="0%" stop-color="#e0f2ff"/><stop offset="38%" stop-color="#3aa0ff"/><stop offset="100%" stop-color="#0d2c4d"/></radialGradient>
+<radialGradient id="hjGlowR" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ff4655" stop-opacity=".85"/><stop offset="62%" stop-color="#ff4655" stop-opacity=".22"/><stop offset="100%" stop-color="#ff4655" stop-opacity="0"/></radialGradient>
+<radialGradient id="hjGlowB" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#3aa0ff" stop-opacity=".85"/><stop offset="62%" stop-color="#3aa0ff" stop-opacity=".22"/><stop offset="100%" stop-color="#3aa0ff" stop-opacity="0"/></radialGradient>
+<linearGradient id="hjArc" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#3aa0ff" stop-opacity=".12"/><stop offset="50%" stop-color="#a5f3fc" stop-opacity=".6"/><stop offset="100%" stop-color="#ff4655" stop-opacity=".12"/></linearGradient>
+<filter id="hjBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3.4"/></filter>
+</defs>
+<g transform="translate(32 70)"><g><animateTransform attributeName="transform" type="scale" values="1;1.16;1" dur="2.4s" repeatCount="indefinite"/><circle r="30" fill="url(#hjGlowR)"/></g></g>
+<g transform="translate(88 70)"><g><animateTransform attributeName="transform" type="scale" values="1.16;1;1.16" dur="2.4s" repeatCount="indefinite"/><circle r="30" fill="url(#hjGlowB)"/></g></g>
+<path d="M46 66 Q60 26 74 66" fill="none" stroke="url(#hjArc)" stroke-width="2"/>
+<circle cx="32" cy="70" r="15" fill="url(#hjRed)"/>
+<circle cx="88" cy="70" r="15" fill="url(#hjBlue)"/>
+<circle cx="27" cy="63.5" r="4" fill="#ffffff" opacity=".5"/>
+<circle cx="83" cy="63.5" r="4" fill="#ffffff" opacity=".5"/>
+<circle cx="32" cy="70" r="15" fill="none" stroke="#ffd0d5" stroke-width="1.4" opacity=".5"><animate attributeName="r" values="15;19.5;15" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;0;.5" dur="2.4s" repeatCount="indefinite"/></circle>
+<circle cx="88" cy="70" r="15" fill="none" stroke="#d8ecff" stroke-width="1.4" opacity=".5"><animate attributeName="r" values="19.5;15;19.5" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.5;0" dur="2.4s" repeatCount="indefinite"/></circle>
+<circle r="3.4" fill="#67e8f9" opacity=".3" filter="url(#hjBlur)"><animateMotion dur="2.4s" begin="-0.18s" repeatCount="indefinite" path="M88 70 Q60 30 32 70"/></circle>
+<circle r="3" fill="#a5f3fc" opacity=".55"><animateMotion dur="2.4s" begin="-0.09s" repeatCount="indefinite" path="M88 70 Q60 30 32 70"/></circle>
+<circle r="4.8" fill="#67e8f9" opacity=".9" filter="url(#hjBlur)"><animateMotion dur="2.4s" repeatCount="indefinite" path="M88 70 Q60 30 32 70"/></circle>
+<circle r="3.2" fill="#f0fdff"><animateMotion dur="2.4s" repeatCount="indefinite" path="M88 70 Q60 30 32 70"/></circle>
+<circle cx="32" cy="70" r="15" fill="none" stroke="#a5f3fc" stroke-width="2.4" opacity="0"><animate attributeName="opacity" values="0;0;.95;0;0" keyTimes="0;.86;.92;1;1" dur="2.4s" repeatCount="indefinite"/><animate attributeName="r" values="15;15;26;30;30" keyTimes="0;.86;.92;1;1" dur="2.4s" repeatCount="indefinite"/></circle>
+</svg></div>`
+        };
+
+
         function renderGames(gamesArray, gridId, isDev) {
             const grid = document.getElementById(gridId);
             if (!grid) return;
@@ -229,24 +382,8 @@
                     // 氢队游戏和开发中游戏使用简单emoji
                     gameIcon = `<div style="font-size: 3rem; opacity: ${isDev ? '0.4' : '1'};">${game.emoji}</div>`;
                 } else {
-                    // 碘队游戏使用SVG动画图标
-                    if (game.id === 1) {
-                        gameIcon = '<div class="micro-reaction"><div class="crucible"></div></div>';
-                    } else if (game.id === 2) {
-                        gameIcon = '<div class="micro-reaction"><div class="electron-orbit"><div class="electron"></div></div></div>';
-                    } else if (game.id === 3) {
-                        gameIcon = '<div class="micro-reaction"><div class="phase-transfer"><div class="phase-drop"></div><div class="phase-drop"></div><div class="solute"></div></div></div>';
-                    } else if (game.id === 4) {
-                        gameIcon = '<div class="micro-reaction"><div class="floating-molecule"></div><div class="floating-molecule"></div><div class="floating-molecule"></div><div class="floating-molecule"></div></div>';
-                    } else if (game.id === 9) {
-                        gameIcon = '<div style="font-size: 3rem;">🐢</div>';
-                    } else if (game.id === 10) {
-                        gameIcon = '<div style="font-size: 3rem;">🧟</div>';
-                    } else if (game.id === 11) {
-                        gameIcon = '<div style="font-size: 3rem;">⚔️🧪</div>';
-                    } else {
-                        gameIcon = '<div style="font-size: 3rem; opacity: 0.5;">🔮</div>';
-                    }
+                    // 碘队游戏使用原创 SVG 微反应动效
+                    gameIcon = GAME_ICONS[game.id] || '<div style="font-size: 3rem; opacity: 0.5;">&#128302;</div>';
                 }
                 const isComingSoon = !game.link || isDev;
                 const imgStyle = (isComingSoon || isDev) ? 'background: #1e293b; opacity: 0.6;' : '';

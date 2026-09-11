@@ -618,81 +618,22 @@
                 transform: translate(-50%, -50%) scale(1.5);
             }
         }
-        .micro-reaction{width:60px;height:60px;position:relative}
-        .crucible{width:40px;height:30px;background:linear-gradient(135deg,#8b5cf6,#a78bfa);border-radius:0 0 20px 20px;margin:0 auto;position:relative;overflow:hidden;animation:crucible-glow 3s ease-in-out infinite}
-        .crucible::before{content:'';position:absolute;bottom:0;left:0;right:0;height:15px;background-color:#10b981;animation:alchemical-color 3s ease-in-out infinite}
-        @keyframes crucible-glow{0%,100%{box-shadow:0 0 15px rgba(16,185,129,0.3)}33%{box-shadow:0 0 20px rgba(251,191,36,0.5)}66%{box-shadow:0 0 25px rgba(239,68,68,0.6)}}
-        @keyframes alchemical-color{0%,25%{background-color:#10b981}26%,35%{background-color:#fbbf24}36%,45%{background-color:#fbbf24}46%,60%{background-color:#ef4444}61%,100%{background-color:#10b981}}
-        .electron-orbit{width:50px;height:50px;border:2px solid rgba(139,92,246,0.3);border-radius:50%;position:relative;margin:0 auto;animation:orbital-rotate 4s linear infinite}
-        .electron{position:absolute;width:6px;height:6px;background:#8b5cf6;border-radius:50%;top:-3px;left:50%;transform:translateX(-50%);animation:electron-energy 2s ease-in-out infinite}
-        @keyframes orbital-rotate{to{transform:rotate(360deg)}}
-        @keyframes electron-energy{0%,100%{background:#8b5cf6;box-shadow:0 0 8px #8b5cf6}25%{background:#3b82f6;box-shadow:0 0 8px #3b82f6}50%{background:#10b981;box-shadow:0 0 8px #10b981}75%{background:#f59e0b;box-shadow:0 0 8px #f59e0b}}
-        .phase-transfer .phase-transfer{width:60px;height:40px;display:flex;gap:5px;justify-content:center;align-items:center;position:relative}
-        .phase-drop{width:20px;height:30px;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;position:relative}
-        .phase-drop:first-child{background:#3b82f6}
-        .phase-drop:last-child{background:#f59e0b}
-        .solute{position:absolute;width:4px;height:4px;background:#ef4444;border-radius:50%;animation:phase-migration 4s ease-in-out infinite}
-        @keyframes phase-migration{0%,100%{left:8px;transform:translateY(0);animation-timing-function:ease-in-out}20%{left:18px;transform:translateY(-2px);animation-timing-function:ease-out}25%,35%{left:20px;transform:translateY(-5px);animation-timing-function:ease-in-out}40%{left:22px;transform:translateY(-3px);animation-timing-function:ease-out}45%,55%{left:24px;transform:translateY(0);animation-timing-function:ease-in-out}60%{left:26px;transform:translateY(2px);animation-timing-function:ease-out}65%,75%{left:28px;transform:translateY(5px);animation-timing-function:ease-in-out}80%{left:30px;transform:translateY(3px);animation-timing-function:ease-out}85%,95%{left:32px;transform:translateY(0);animation-timing-function:ease-in-out}98%{left:34px;transform:translateY(-2px);animation-timing-function:ease-out}}
-        /* 分子飘浮随机抖动 */
-        .floating-molecule {
-            position: absolute;
-            pointer-events: none;
-            opacity: 0.6;
-            animation: molecule-float 8s ease-in-out infinite;
+        /* ============ 碘队游戏卡片图标：原创 SVG 微反应动效 ============ */
+        .gi {
+            width: 104px;
+            height: 104px;
+            display: block;
+            overflow: visible;
+            filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.38));
         }
-        .floating-molecule:nth-child(1) {
-            top: 10%;
-            left: 15%;
-            animation-delay: 0s;
-            animation-duration: 7s;
+        .gi svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            overflow: visible;
         }
-        .floating-molecule:nth-child(2) {
-            top: 20%;
-            left: 80%;
-            animation-delay: 1s;
-            animation-duration: 9s;
-        }
-        .floating-molecule:nth-child(3) {
-            top: 60%;
-            left: 25%;
-            animation-delay: 2s;
-            animation-duration: 8s;
-        }
-        .floating-molecule:nth-child(4) {
-            top: 70%;
-            left: 70%;
-            animation-delay: 3s;
-            animation-duration: 10s;
-        }
-        @keyframes molecule-float {
-            0%, 100% {
-                transform: translate(0, 0) rotate(0deg);
-                opacity: 0.6;
-            }
-            15% {
-                transform: translate(3px, -2px) rotate(5deg);
-                opacity: 0.7;
-            }
-            30% {
-                transform: translate(-2px, 3px) rotate(-3deg);
-                opacity: 0.5;
-            }
-            45% {
-                transform: translate(4px, 1px) rotate(7deg);
-                opacity: 0.8;
-            }
-            60% {
-                transform: translate(-3px, -4px) rotate(-5deg);
-                opacity: 0.6;
-            }
-            75% {
-                transform: translate(2px, 3px) rotate(3deg);
-                opacity: 0.7;
-            }
-            90% {
-                transform: translate(-1px, -2px) rotate(-2deg);
-                opacity: 0.5;
-            }
+        @media (max-width: 640px) {
+            .gi { width: 84px; height: 84px; }
         }
         /* 色谱斑点线分隔符 */
         .chromatography-separator {
