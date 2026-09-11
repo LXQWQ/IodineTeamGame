@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#005CFF">
+<title>更新日志 · CChO 考纲可视化</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="assets/favicon-192.png">
+<link rel="shortcut icon" href="assets/favicon.ico">
+<style>
+:root{
+  --bg:#0d111a;
+  --bg2:#0f1422;
+  --panel:#161c2c;
+  --panel2:#1a2236;
+  --line:#2a3550;
+  --text:#e6ecff;
+  --muted:#9aa6c8;
+  --muted2:#6c7898;
+  --brand:#005CFF;
+  --brand2:#3b78ff;
+  --brand-soft:#80a8ff;
+  --accent:#7cc4ff;
+  --accent2:#ffc450;
+  --ok:#4ade80;
+  --warn:#ffa028;
+  --new:#ff5572;
+  --shadow-card:0 1px 0 rgba(0,92,255,.08), 0 2px 8px rgba(0,0,0,.25);
+  --shadow-card-hover:0 1px 0 rgba(0,92,255,.18), 0 6px 20px rgba(0,92,255,.18);
+  --radius-card:12px;
+  --radius-sm:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+  font:14.5px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:var(--brand-soft);text-decoration:none}
+a:hover{color:var(--brand2)}
+img{max-width:100%;height:auto}
+code{font-family:Menlo,Consolas,"Courier New",monospace;font-size:.92em;
+  padding:1px 6px;border-radius:4px;background:rgba(0,92,255,.12);color:var(--brand-soft)}
+strong{color:var(--text);font-weight:600}
+
+/* ===== 顶栏（与主站对齐） ===== */
+.topbar{height:52px;display:flex;align-items:center;gap:14px;padding:0 18px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#161c2c 0%,var(--panel) 100%);
+  box-shadow:0 0 0 1px rgba(0,92,255,.08),0 1px 0 rgba(0,92,255,.18);
+  position:sticky;top:0;z-index:50;backdrop-filter:blur(8px)}
+.topbar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:linear-gradient(90deg,var(--brand) 0%,var(--brand2) 35%,transparent 100%);
+  opacity:.85;pointer-events:none}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.brand-logo{height:30px;width:auto;display:block;
+  filter:drop-shadow(0 0 6px rgba(0,92,255,.35))}
+.brand-text{display:flex;flex-direction:column;line-height:1.05;gap:1px}
+.brand-name{font-size:13.5px;font-weight:700;letter-spacing:.4px;
+  background:linear-gradient(90deg,#fff 0%,#c8d6ff 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.divider{width:1px;height:22px;background:var(--line)}
+.topbar h1{font-size:14.5px;font-weight:600;margin:0;white-space:nowrap}
+.topbar .spacer{flex:1}
+.topbar .back{display:inline-flex;align-items:center;gap:6px;
+  font-size:12.5px;color:var(--muted);padding:5px 12px;
+  border:1px solid var(--line);border-radius:6px;
+  background:rgba(0,92,255,.04);transition:all .15s}
+.topbar .back:hover{color:var(--text);border-color:var(--brand2);
+  background:rgba(0,92,255,.12)}
+
+/* ===== Hero ===== */
+.hero{padding:48px 24px 32px;text-align:center;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,92,255,.18) 0%,transparent 60%)}
+.hero h2{font-size:32px;font-weight:700;margin:0 0 8px;letter-spacing:-.5px;
+  background:linear-gradient(90deg,#fff 0%,var(--brand-soft) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:15px;color:var(--muted);margin:0 auto;max-width:600px}
+
+/* ===== 容器 ===== */
+.wrap{max-width:860px;margin:0 auto;padding:0 24px 60px}
+
+/* ===== 时间轴 ===== */
+.timeline{position:relative;margin-top:32px;padding-left:32px}
+.timeline::before{content:"";position:absolute;left:9px;top:14px;bottom:14px;
+  width:2px;background:linear-gradient(180deg,var(--brand) 0%,var(--brand2) 50%,var(--line) 100%)}
+
+.entry{position:relative;margin-bottom:28px}
+.entry::before{content:"";position:absolute;left:-28px;top:14px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--panel);border:2px solid var(--brand2);
+  box-shadow:0 0 0 4px rgba(0,92,255,.12)}
+.entry.is-latest::before{background:var(--brand2);
+  box-shadow:0 0 0 4px rgba(0,92,255,.25),0 0 12px rgba(0,92,255,.5)}
+
+.entry-head{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.entry-date{font-family:Menlo,Consolas,monospace;font-size:12.5px;
+  color:var(--muted);padding:2px 10px;border:1px solid var(--line);
+  border-radius:4px;background:rgba(0,92,255,.04)}
+.entry-title{font-size:17px;font-weight:600;color:var(--text);margin:0}
+.entry-tag{font-size:11px;padding:2px 8px;border-radius:4px;
+  letter-spacing:.4px;font-weight:600}
+.entry-tag.tag-feat{background:rgba(74,222,128,.14);color:var(--ok);
+  border:1px solid rgba(74,222,128,.3)}
+.entry-tag.tag-fix{background:rgba(255,160,40,.14);color:var(--warn);
+  border:1px solid rgba(255,160,40,.3)}
+.entry-tag.tag-data{background:rgba(124,196,255,.14);color:var(--accent);
+  border:1px solid rgba(124,196,255,.3)}
+.entry-tag.tag-new{background:rgba(255,85,114,.14);color:var(--new);
+  border:1px solid rgba(255,85,114,.3)}
+
+.entry-body{background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius-card);padding:14px 18px;
+  box-shadow:var(--shadow-card)}
+.entry-body p{margin:0 0 8px;font-size:13.5px;line-height:1.7;color:var(--muted)}
+.entry-body p:last-child{margin:0}
+.entry-body p strong{color:var(--text)}
+.entry-body ul{margin:6px 0;padding-left:20px;color:var(--muted);
+  font-size:13.5px;line-height:1.75}
+.entry-body li{margin:3px 0}
+.entry-body li strong{color:var(--text)}
+.entry-body .label-pill{display:inline-block;font-size:11.5px;
+  padding:1px 8px;margin-right:4px;border-radius:3px;
+  background:rgba(128,168,255,.1);color:var(--brand-soft);
+  border:1px solid rgba(128,168,255,.25)}
+
+/* ===== 底栏 ===== */
+.foot{margin-top:50px;padding:24px 0;border-top:1px solid var(--line);
+  text-align:center;color:var(--muted2);font-size:12px}
+.foot a{color:var(--muted)}
+.foot .ver{font-family:Menlo,Consolas,monospace;font-size:11px;
+  padding:2px 8px;border:1px solid var(--line);border-radius:4px;
+  margin-left:6px;opacity:.7}
+
+/* ===== 移动端 ===== */
+@media (max-width:640px){
+  .topbar{height:48px;gap:8px;padding:0 12px}
+  .topbar .brand-text{display:none}
+  .topbar h1{font-size:13px}
+  .topbar .divider{display:none}
+  .topbar .back{padding:5px 10px;font-size:12px}
+  .hero{padding:32px 16px 24px}
+  .hero h2{font-size:24px}
+  .hero p{font-size:13.5px}
+  .wrap{padding:0 16px 40px}
+  .timeline{padding-left:24px}
+  .entry::before{left:-22px;width:12px;height:12px}
+  .entry-title{font-size:15.5px}
+  .entry-body{padding:12px 14px}
+  .entry-body p,.entry-body ul{font-size:13px}
+}
+
+/* ===== 打印 ===== */
+@media print{
+  html,body{background:#fff !important;color:#111 !important}
+  .topbar,.hero{display:none !important}
+  .entry-body{background:#fff !important;border-color:#ddd !important;
+    color:#111 !important;break-inside:avoid;box-shadow:none !important}
+  .entry-body p,.entry-body ul{color:#444 !important}
+  .entry-body p strong,.entry-body li strong{color:#111 !important}
+  .entry-title{color:#111 !important}
+  .timeline::before{background:#005CFF !important}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="index.html" aria-label="氢队">
+    <img class="brand-logo" src="assets/logo-60h.png" alt="H-Team logo">
+    <span class="brand-text">
+      <span class="brand-name">氢队 · H-Team</span>
+    </span>
+  </a>
+  <span class="divider"></span>
+  <h1>🔔 更新日志</h1>
+  <span class="spacer"></span>
+  <a class="back" href="index.html" title="回到主站">← 返回主页</a>
+</div>
+
+<div class="hero">
+  <h2>看看我们最近做了哪些改进</h2>
+  <p>这个工具一直在迭代，按反馈修 bug、按需要加功能。下方按时间倒序排列，最新一条在最上面。</p>
+</div>
+
+<div class="wrap">
+<div class="timeline">
+
+<!-- ============================================== -->
+<!-- 维护提示：新版本只需在这里追加一个 .entry 块。   -->
+<!-- 同步把 index.html 里 LATEST_CHANGELOG_VERSION    -->
+<!-- 改成新日期，弹窗会自动给老用户弹一次。           -->
+<!-- ============================================== -->
+
+<article class="entry is-latest">
+  <div class="entry-head">
+    <span class="entry-date">2026-08-29</span>
+    <h3 class="entry-title">决赛 + IChO 真题入库，题量 283 → 526</h3>
+    <span class="entry-tag tag-new">NEW</span>
+  </div>
+  <div class="entry-body">
+    <p>题库不再只有国初真题。本次新增 CChO 决赛与 IChO 理论真题，全部带考点挂载，可检索、可筛选、可加入组卷篮。</p>
+    <ul>
+      <li><strong>新增题量</strong>：决赛真题 110 题、IChO 理论真题 133 题，合计题库达 <code>526</code> 题</li>
+      <li><strong>考点挂载</strong>：新题全部挂到考纲，与初赛共通的考点落在通用编号上，用初赛考点检索同样能找到决赛题</li>
+      <li><strong>来源分色</strong>：题卡角标按来源区分，决赛为绿色、IChO 为紫色，一眼可辨</li>
+      <li><strong>筛选项</strong>：来源筛选新增 <code>IChO真题</code></li>
+      <li><strong>考察频率口径</strong>：频率统计与年份趋势只计国内真题（初赛 + 决赛），IChO 可检索可筛选但不计入频率，避免国际赛题拉偏国内复习参考</li>
+      <li><strong>搜索修复</strong>：修掉一处长期存在的字段名错误，此前题干正文实际未进入搜索索引，现已全部纳入</li>
+    </ul>
+    <p>IChO 部分答案为英文原文，中文翻译暂时缺失；少量题目暂无答案或分值，均已在题面标注。</p>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-08-26</span>
+    <h3 class="entry-title">修正两处题干数据错误</h3>
+    <span class="entry-tag tag-data">数据</span>
+  </div>
+  <div class="entry-body">
+    <p>感谢教练通过反馈按钮报错，两处题干录入错误已修正。</p>
+    <ul>
+      <li><strong>2018 国初第 1 题 1-3</strong>：原录入为「单质磷与过量 NaBH₄ 反应制备硼氢化钠」，与原卷不符且逻辑不通（NaBH₄ 是反应物不是产物）。已按原卷改为「<strong>单质碲</strong>与过量 NaBH₄ 反应制备<strong>碲氢化钠</strong>」</li>
+      <li><strong>2002 国初第 5 题</strong>：组成分析中 M 的质量分数原录入 <code>31.68%</code>，与原卷及标准答案的推导（58.7 g/mol → Ni）矛盾。已改为 <code>21.68%</code></li>
+      <li><strong>2018 国初第 5 题 5-2 新增「原卷勘误提示」</strong>：该题 Lu / Hf 同位素质量数确有错误，但<strong>错在 2018 年原卷本身</strong>（官方答案已红字承认「误将 ¹⁷⁶Lu/¹⁷⁷Hf 写作 ¹⁷⁷Lu/¹⁷⁷Hf，导致本题无法求算」）。题干正文保持原卷原样，题后新增编者注说明正确同位素、官方两种给分办法及岩石年龄 5.06×10⁸ 年</li>
+    </ul>
+    <p>另已对全部 283 道题做了一轮计量自洽性体检（元素百分数反推、天然同位素质量数、产物/反应物逻辑、中文元素名↔符号一致性、跨源数字比对），未发现其他同类错误。</p>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-08-16</span>
+    <h3 class="entry-title">账号需重新注册（云数据库迁移）</h3>
+    <span class="entry-tag tag-new">NEW</span>
+  </div>
+  <div class="entry-body">
+    <p><strong>由于第三方云数据库问题，各位教练 / 同学的账号需重新注册，给您带来的不便致歉！</strong></p>
+    <ul>
+      <li>请用原邮箱<strong>重新注册</strong>即可，注册后可直接登录，无需等待确认邮件</li>
+      <li><strong>题库、考纲、教材索引均不受影响</strong>，内容完整保留</li>
+      <li>组卷篮子存在本机浏览器中，也不受影响</li>
+      <li>此前的登录记录与浏览历史无法迁移，敬请谅解</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-07-07</span>
+    <h3 class="entry-title">组卷全选 + 修复部分题目题干空白</h3>
+    <span class="entry-tag tag-new">NEW</span>
+  </div>
+  <div class="entry-body">
+    <p>两处改动：一个新功能，一个 bug 修复。</p>
+    <ul>
+      <li><strong>组卷一键全选</strong>：主视图工具栏和搜索面板筛选条各多了一个按钮。当前筛选下的题目<strong>一键全部加入组卷</strong>，再点一次<strong>全部移出</strong>。按钮实时显示 <code>已加入 / 总数</code>，全部加入时变琥珀色提示可移出</li>
+      <li><strong>修复部分题目题干不显示</strong>：某些题目打开后题干区域空白、只有答案和解析可见的问题已修好</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-17</span>
+    <h3 class="entry-title">题图 / 解析图全部支持点击放大</h3>
+    <span class="entry-tag tag-new">NEW</span>
+  </div>
+  <div class="entry-body">
+    <p>题干和解析里的图都可以<strong>点击放大查看</strong>了。之前只有题目缩略图能放大，解析图压在原位看不清的问题修复。</p>
+    <ul>
+      <li>打开后默认按<strong>视窗适配</strong>，再点一次切到<strong>原始尺寸</strong>看长图细节</li>
+      <li>顶部工具栏：<strong>🔍 切换尺寸</strong> / <strong>↗ 新窗口</strong>（兜底超长解析图）/ <strong>× 关闭</strong></li>
+      <li>键盘：<strong>F</strong> 切尺寸、<strong>ESC</strong> 关闭、点遮罩外侧也关</li>
+      <li>覆盖范围：题目缩略图、题干 Markdown 内插图、答案解析插图，统一处理</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-13</span>
+    <h3 class="entry-title">组卷一键下载 PDF</h3>
+    <span class="entry-tag tag-feat">新功能</span>
+  </div>
+  <div class="entry-body">
+    <p>组卷生成的试卷现在可以<strong>一键下载 PDF</strong>，所有浏览器通用，包括夸克 / UC / 微信内置等阉割了系统打印的环境。</p>
+    <ul>
+      <li>组卷预览右上角新增 <strong>📥 下载 PDF</strong> 主按钮（推荐）</li>
+      <li>原 <strong>🖨 打印</strong> 按钮保留作为备用，走浏览器打印对话框</li>
+      <li>下载 PDF 走服务端生成，5-15 秒后浏览器弹原生下载，文件名自动带学校 + 日期</li>
+      <li>失败会自动询问要不要回退到打印对话框</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-13</span>
+    <h3 class="entry-title">忘记密码错误提示更友好</h3>
+    <span class="entry-tag tag-fix">优化</span>
+  </div>
+  <div class="entry-body">
+    <p>找回密码流程中的报错信息从英文改为中文友好提示。邮箱不存在、链接过期、新密码不合规等场景下，错误文案直接告诉你怎么处理，不再是裸的 Supabase 错误码。</p>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-12</span>
+    <h3 class="entry-title">忘记密码 + 用户须知 + 隐私说明</h3>
+    <span class="entry-tag tag-feat">新功能</span>
+  </div>
+  <div class="entry-body">
+    <ul>
+      <li>登录页新增 <strong>忘记密码</strong> 入口，邮箱收到重置链接 → 设置新密码 → 自动登录</li>
+      <li>注册页加入 <strong>用户须知</strong> 和 <strong>隐私说明</strong> 勾选条款，明确数据使用范围</li>
+      <li>登录页底部任意时刻可点开隐私说明独立查看</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-12</span>
+    <h3 class="entry-title">国内访问加速</h3>
+    <span class="entry-tag tag-fix">优化</span>
+  </div>
+  <div class="entry-body">
+    <p>所有数据库请求走<strong>同源反向代理</strong>，不再依赖被 GFW 干扰的 <code>*.workers.dev</code> 域名。国内用户登录、加题、组卷的速度和稳定性提升一个台阶。</p>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-09</span>
+    <h3 class="entry-title">离线 / 掉线优雅降级</h3>
+    <span class="entry-tag tag-fix">优化</span>
+  </div>
+  <div class="entry-body">
+    <p>数据库临时挂掉或网络不通时，页面不再白屏。题库、考纲、教材索引这些<strong>静态内容继续可用</strong>，只有需要登录态的功能（加篮、组卷、提交反馈）会提示稍后重试。</p>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-08</span>
+    <h3 class="entry-title">题目↔考点匹配重做</h3>
+    <span class="entry-tag tag-data">数据</span>
+  </div>
+  <div class="entry-body">
+    <p>用 embedding 语义匹配重新挂载所有题目到考纲考点。按考点筛题更准，避免之前关键词匹配漏挂或误挂的情况。</p>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-08</span>
+    <h3 class="entry-title">搜索引擎升级（Fuse.js）</h3>
+    <span class="entry-tag tag-feat">新功能</span>
+  </div>
+  <div class="entry-body">
+    <ul>
+      <li>支持<strong>模糊匹配</strong>，错别字、缺字、近义词都能搜到</li>
+      <li>三栏并排显示：<strong>题目 / 考点 / 教材</strong>，每栏独立排序</li>
+      <li>搜索结果按相关性 + 年份倒序，每栏限制 30 条以保流畅</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-06</span>
+    <h3 class="entry-title">CCO36（2022 届）入库</h3>
+    <span class="entry-tag tag-data">数据</span>
+  </div>
+  <div class="entry-body">
+    <p>补齐 2022 年第 36 届 CChO 国初真题。当前在线版收录 <strong>CCO14-39 共 26 届</strong>，合计 283 题国初真题完整文字版。</p>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-06-02</span>
+    <h3 class="entry-title">组卷工作流上线</h3>
+    <span class="entry-tag tag-new">NEW</span>
+  </div>
+  <div class="entry-body">
+    <ul>
+      <li>勾选题目进篮子 → 拖拽排序 → 一键生成试卷</li>
+      <li>试卷自动重排题号、含答案/解析</li>
+      <li>支持<strong>学生模式</strong>（藏答案）和教师模式</li>
+      <li>排版优化：图片大小自适应、跨页避免切断</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <div class="entry-head">
+    <span class="entry-date">2026-05-30</span>
+    <h3 class="entry-title">CChO 14-39 国初真题完整入库</h3>
+    <span class="entry-tag tag-data">数据</span>
+  </div>
+  <div class="entry-body">
+    <p>26 届国初真题（CCO14-39 共 283 题）完整文字版上线，每题含：</p>
+    <ul>
+      <li>KaTeX 渲染的化学式与数学公式</li>
+      <li>结构 / 机理图切片（与文字版按位置对齐）</li>
+      <li>答案与解析（可折叠，学生模式自动隐藏）</li>
+      <li>按考纲考点反向挂载</li>
+    </ul>
+  </div>
+</article>
+
+</div>
+</div>
+
+<div class="foot">
+  <span>CChO 考纲可视化 · 氢队 H-Team</span>
+  <span class="ver" id="footVer">更新日志</span>
+  <br><br>
+  <a href="index.html">← 返回主页</a>
+  &nbsp;·&nbsp;
+  <a href="guide.html">📖 使用指南</a>
+</div>
+
+</body>
+</html>

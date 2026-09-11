@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#005CFF">
+<title>使用指南 · CChO 考纲可视化</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="assets/favicon-192.png">
+<link rel="shortcut icon" href="assets/favicon.ico">
+<style>
+:root{
+  --bg:#0d111a;
+  --bg2:#0f1422;
+  --panel:#161c2c;
+  --panel2:#1a2236;
+  --line:#2a3550;
+  --text:#e6ecff;
+  --muted:#9aa6c8;
+  --muted2:#6c7898;
+  --brand:#005CFF;
+  --brand2:#3b78ff;
+  --brand-soft:#80a8ff;
+  --accent:#7cc4ff;
+  --accent2:#ffc450;
+  --ok:#4ade80;
+  --warn:#ffa028;
+  --shadow-card:0 1px 0 rgba(0,92,255,.08), 0 2px 8px rgba(0,0,0,.25);
+  --shadow-card-hover:0 1px 0 rgba(0,92,255,.18), 0 6px 20px rgba(0,92,255,.18);
+  --radius-card:12px;
+  --radius-sm:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+  font:14.5px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:var(--brand-soft);text-decoration:none}
+a:hover{color:var(--brand2)}
+img{max-width:100%;height:auto}
+code{font-family:Menlo,Consolas,"Courier New",monospace;font-size:.92em;
+  padding:1px 6px;border-radius:4px;background:rgba(0,92,255,.12);color:var(--brand-soft)}
+strong{color:var(--text);font-weight:600}
+
+/* ===== 顶栏（与主站对齐） ===== */
+.topbar{height:52px;display:flex;align-items:center;gap:14px;padding:0 18px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#161c2c 0%,var(--panel) 100%);
+  box-shadow:0 0 0 1px rgba(0,92,255,.08),0 1px 0 rgba(0,92,255,.18);
+  position:sticky;top:0;z-index:50;backdrop-filter:blur(8px)}
+.topbar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:linear-gradient(90deg,var(--brand) 0%,var(--brand2) 35%,transparent 100%);
+  opacity:.85;pointer-events:none}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.brand-logo{height:30px;width:auto;display:block;
+  filter:drop-shadow(0 0 6px rgba(0,92,255,.35))}
+.brand-text{display:flex;flex-direction:column;line-height:1.05;gap:1px}
+.brand-name{font-size:13.5px;font-weight:700;letter-spacing:.4px;
+  background:linear-gradient(90deg,#fff 0%,#c8d6ff 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.divider{width:1px;height:22px;background:var(--line)}
+.topbar h1{font-size:14.5px;font-weight:600;margin:0;white-space:nowrap}
+.topbar .spacer{flex:1}
+.topbar .back{display:inline-flex;align-items:center;gap:6px;
+  font-size:12.5px;color:var(--muted);padding:5px 12px;
+  border:1px solid var(--line);border-radius:6px;
+  background:rgba(0,92,255,.04);transition:all .15s}
+.topbar .back:hover{color:var(--text);border-color:var(--brand2);
+  background:rgba(0,92,255,.12)}
+
+/* ===== Hero ===== */
+.hero{padding:48px 24px 32px;text-align:center;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,92,255,.18) 0%,transparent 60%)}
+.hero h2{font-size:32px;font-weight:700;margin:0 0 8px;letter-spacing:-.5px;
+  background:linear-gradient(90deg,#fff 0%,var(--brand-soft) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:15px;color:var(--muted);margin:0 auto;max-width:600px}
+.hero .cta{display:inline-flex;gap:10px;margin-top:24px;flex-wrap:wrap;justify-content:center}
+.hero .cta a{padding:9px 18px;border-radius:8px;font-size:13.5px;font-weight:500;
+  transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.hero .cta .primary{background:linear-gradient(135deg,var(--brand) 0%,var(--brand2) 100%);
+  color:#fff;box-shadow:0 4px 14px rgba(0,92,255,.4)}
+.hero .cta .primary:hover{transform:translateY(-1px);
+  box-shadow:0 6px 18px rgba(0,92,255,.55)}
+.hero .cta .ghost{border:1px solid var(--line);color:var(--text);
+  background:rgba(255,255,255,.02)}
+.hero .cta .ghost:hover{border-color:var(--brand2);background:rgba(0,92,255,.08)}
+
+/* ===== 容器 ===== */
+.wrap{max-width:920px;margin:0 auto;padding:0 24px 60px}
+section{margin-top:44px}
+section h3{font-size:22px;font-weight:700;margin:0 0 6px;
+  padding-left:14px;position:relative;letter-spacing:-.2px}
+section h3::before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:4px;
+  background:linear-gradient(180deg,var(--brand) 0%,var(--brand2) 100%);
+  border-radius:2px}
+section .lead{color:var(--muted);font-size:13.5px;margin:0 0 20px;padding-left:14px}
+
+/* ===== 卡片网格 ===== */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-card);
+  padding:18px;box-shadow:var(--shadow-card);
+  border-left:3px solid var(--brand);transition:all .18s}
+.card:hover{border-left-color:var(--brand2);box-shadow:var(--shadow-card-hover);
+  transform:translateY(-1px)}
+.card .ico{font-size:22px;margin-bottom:8px;display:block}
+.card h4{font-size:15px;font-weight:600;margin:0 0 6px;color:var(--text)}
+.card p{font-size:13px;color:var(--muted);margin:0;line-height:1.65}
+.card .tip{margin-top:10px;font-size:12px;color:var(--brand-soft);
+  padding:5px 8px;background:rgba(0,92,255,.08);border-radius:4px;
+  border:1px solid rgba(0,92,255,.18)}
+
+/* ===== 6 步 ===== */
+.steps{display:flex;flex-direction:column;gap:14px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-card);
+  padding:18px 18px 18px 64px;position:relative;box-shadow:var(--shadow-card)}
+.step::before{content:counter(s);counter-increment:s;
+  position:absolute;left:18px;top:18px;width:32px;height:32px;
+  background:linear-gradient(135deg,var(--brand) 0%,var(--brand2) 100%);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;
+  box-shadow:0 2px 8px rgba(0,92,255,.4)}
+.steps{counter-reset:s}
+.step h4{font-size:15.5px;font-weight:600;margin:0 0 6px;color:var(--text)}
+.step p{font-size:13.5px;color:var(--muted);margin:0;line-height:1.7}
+.step p strong{color:var(--text)}
+.step p code{font-size:.88em}
+.step .anchor{display:inline-block;margin-top:8px;font-size:11.5px;
+  color:var(--muted2);font-family:Menlo,Consolas,monospace;
+  padding:2px 7px;border:1px dashed var(--line);border-radius:4px}
+
+/* ===== FAQ ===== */
+.faq{display:flex;flex-direction:column;gap:10px}
+.faq details{background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:0;overflow:hidden;
+  transition:border-color .15s}
+.faq details[open]{border-color:var(--brand2)}
+.faq summary{padding:14px 18px;cursor:pointer;font-size:14px;font-weight:500;
+  display:flex;align-items:center;gap:10px;list-style:none;
+  color:var(--text);user-select:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:"+";display:inline-flex;width:20px;height:20px;
+  align-items:center;justify-content:center;border-radius:50%;
+  background:rgba(0,92,255,.12);color:var(--brand-soft);font-size:14px;
+  flex-shrink:0;transition:transform .2s}
+.faq details[open] summary::before{content:"−";transform:rotate(180deg)}
+.faq summary:hover{background:rgba(0,92,255,.04)}
+.faq .answer{padding:0 18px 14px 48px;color:var(--muted);
+  font-size:13px;line-height:1.75}
+.faq .answer p{margin:0 0 8px}
+.faq .answer p:last-child{margin:0}
+.faq .answer ul{margin:6px 0;padding-left:18px}
+.faq .answer li{margin:3px 0}
+
+/* ===== 联系 / 反馈 ===== */
+.contact{background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius-card);padding:24px;
+  border-left:3px solid var(--accent2);box-shadow:var(--shadow-card)}
+.contact h4{font-size:16px;font-weight:600;margin:0 0 10px}
+.contact p{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+.contact .channels{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.contact .channels span{padding:6px 12px;border-radius:6px;
+  background:rgba(255,196,80,.12);color:var(--accent2);font-size:12.5px;
+  border:1px solid rgba(255,196,80,.3)}
+
+/* ===== 底栏 ===== */
+.foot{margin-top:50px;padding:24px 0;border-top:1px solid var(--line);
+  text-align:center;color:var(--muted2);font-size:12px}
+.foot a{color:var(--muted)}
+.foot .ver{font-family:Menlo,Consolas,monospace;font-size:11px;
+  padding:2px 8px;border:1px solid var(--line);border-radius:4px;
+  margin-left:6px;opacity:.7}
+
+/* ===== 移动端 ===== */
+@media (max-width:640px){
+  .topbar{height:48px;gap:8px;padding:0 12px}
+  .topbar .brand-text{display:none}
+  .topbar h1{font-size:13px}
+  .topbar .divider{display:none}
+  .topbar .back{padding:5px 10px;font-size:12px}
+  .hero{padding:32px 16px 24px}
+  .hero h2{font-size:24px}
+  .hero p{font-size:13.5px}
+  .wrap{padding:0 16px 40px}
+  section{margin-top:32px}
+  section h3{font-size:18px}
+  .cards{grid-template-columns:1fr;gap:12px}
+  .card{padding:16px}
+  .step{padding:16px 16px 16px 56px}
+  .step::before{width:28px;height:28px;font-size:13px;left:16px;top:16px}
+  .faq summary{padding:12px 14px;font-size:13.5px}
+  .faq .answer{padding:0 14px 12px 42px;font-size:12.5px}
+  .contact{padding:18px}
+}
+
+/* ===== 打印 ===== */
+@media print{
+  html,body{background:#fff !important;color:#111 !important}
+  .topbar,.hero .cta,.contact .channels{display:none !important}
+  .hero{background:none !important;padding:20px 0 16px}
+  .hero h2{color:#111 !important;-webkit-text-fill-color:#111}
+  .card,.step,.faq details,.contact{background:#fff !important;
+    border-color:#ddd !important;color:#111 !important;
+    break-inside:avoid;box-shadow:none !important}
+  .card h4,.step h4,.contact h4,.faq summary{color:#111 !important}
+  .card p,.step p,.faq .answer,.contact p{color:#444 !important}
+  .faq details{open:open}
+  .faq summary::before{display:none}
+  .faq .answer{padding-left:18px;display:block !important}
+  section h3{color:#005CFF !important}
+  a{color:#005CFF !important;text-decoration:underline}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="index.html" aria-label="氢队">
+    <img class="brand-logo" src="assets/logo-60h.png" alt="H-Team logo">
+    <span class="brand-text">
+      <span class="brand-name">氢队 · H-Team</span>
+    </span>
+  </a>
+  <span class="divider"></span>
+  <h1>📖 使用指南</h1>
+  <span class="spacer"></span>
+  <a class="back" href="index.html" title="回到主站">← 返回主页</a>
+</div>
+
+<div class="hero">
+  <h2>CChO 考纲可视化 · 上手手册</h2>
+  <p>把官方考纲、历届国初真题、主流教材原文串到一起。这份指南帮你 3 分钟用起来。</p>
+  <div class="cta">
+    <a class="primary" href="index.html">▶ 开始使用</a>
+    <a class="ghost" href="#steps">↓ 直接看 6 步上手</a>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section>
+  <h3>这是什么</h3>
+  <p class="lead">面向化学竞赛教师和学生的一站式题库工具，覆盖 CCO14-39 共 26 届国初真题。</p>
+  <div class="cards">
+    <div class="card">
+      <span class="ico">🗂</span>
+      <h4>考纲三层互链</h4>
+      <p>官方 8 大模块 95 个考点，每个考点直连相关真题、教材原文片段、考察频率分析。</p>
+    </div>
+    <div class="card">
+      <span class="ico">📚</span>
+      <h4>主流教材索引</h4>
+      <p>Clayden 有机、严宣申无机、Housecroft、武大无机分析、结构化学、Atkins 物化等 8 本教材的关键术语全文索引，点关键词跳教材原文。</p>
+    </div>
+    <div class="card">
+      <span class="ico">🧪</span>
+      <h4>283 题国初真题</h4>
+      <p>CChO 14-39 届全题完整文字版（含化学式 KaTeX 渲染、机理图切片、答案/解析），按考点反向挂载。</p>
+    </div>
+    <div class="card">
+      <span class="ico">📋</span>
+      <h4>组卷工作流</h4>
+      <p>勾选题目进篮子 → 排序 → 一键生成试卷 → 打印或另存 PDF。支持学生模式（藏答案）和题号自动重排。</p>
+    </div>
+    <div class="card">
+      <span class="ico">📊</span>
+      <h4>考察频率可视化</h4>
+      <p>每个考点 26 届柱状图 + 趋势分析（高频/中频/低频/冷门 + 上升/稳定/下降），辅助命题选材。</p>
+    </div>
+    <div class="card">
+      <span class="ico">💬</span>
+      <h4>反馈直达</h4>
+      <p>右下角 💬 按钮提交错题、bug、建议，会直接进飞书反馈群，作者第一时间能看到。</p>
+    </div>
+  </div>
+</section>
+
+<section id="steps">
+  <h3>上手 6 步</h3>
+  <p class="lead">和首页氢松小助手讲的是同一套，纸面版方便随时查。</p>
+  <div class="steps">
+    <div class="step">
+      <h4>注册并登录账号</h4>
+      <p>顶栏右上角点 <strong>登录 / 注册</strong>。看题、组卷、提交反馈这些核心功能都需要登录账号。游客可见目录和题目标题，但展开题干、加入篮子、生成试卷都会被拦。</p>
+      <span class="anchor">入口：顶栏右上 · 登录按钮</span>
+    </div>
+    <div class="step">
+      <h4>用搜索框找东西</h4>
+      <p>左上角搜索框能搜<strong>考点关键词</strong>（如 <code>氧化</code> <code>晶胞</code>）、<strong>题号</strong>（如 <code>CCO38-08</code>）、甚至<strong>化合物名</strong>（如 <code>二茂铁</code>）。出题遇到生词最先来这。</p>
+      <span class="anchor">锚点：#search</span>
+    </div>
+    <div class="step">
+      <h4>看左侧考纲目录</h4>
+      <p>左侧是按官方 8 大模块组织的考纲目录。点任一节点，中栏会展开该考点的<strong>关键词列表、相关例题、考察频率柱状图</strong>。</p>
+      <span class="anchor">锚点：#tree</span>
+    </div>
+    <div class="step">
+      <h4>读中栏题卡</h4>
+      <p>中栏是考点详情。<strong>蓝色左边框</strong>的题卡是这个考点挂的真题。点开看完整题干、答案、以及每道题对应的<strong>教材原文片段</strong>（橙色 chip 是命中教材的关键词，点击弹原文）。</p>
+      <span class="anchor">锚点：#colM</span>
+    </div>
+    <div class="step">
+      <h4>勾选题目进组卷篮</h4>
+      <p>每张题卡<strong>左上角勾选框</strong>加入篮子。底部组卷篮显示已选数量，点开能<strong>拖拽排序、批量预览、一键生成试卷</strong>。生成的试卷自动重排题号、含答案/解析、可切学生模式藏答案。</p>
+      <span class="anchor">锚点：#basketBar</span>
+    </div>
+    <div class="step">
+      <h4>生成卷 → 下载 PDF / 打印</h4>
+      <p>组卷完成点 <strong>📋 生成卷</strong>，会在当前页全屏铺开试卷预览。右上角有两个按钮：</p>
+      <ul>
+        <li><strong>📥 下载 PDF（推荐）</strong>：服务端直接生成 PDF 给浏览器下载，<strong>一键完事</strong>。所有浏览器都通用，包括夸克 / UC / 微信内置等不支持系统打印的环境。生成耗时约 5-15 秒，请耐心等待。</li>
+        <li><strong>🖨 打印（备用）</strong>：走浏览器原生打印对话框，可在打印机或"另存为 PDF"虚拟打印机里手动选择。手机端会弹引导卡走系统"分享 → 打印"。</li>
+      </ul>
+      <p class="hint">如果"下载 PDF"出错，会自动询问要不要回退到打印对话框。</p>
+      <span class="anchor">配套：组卷篮底栏</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h3>常见问答</h3>
+  <p class="lead">遇到这些情况通常不是 bug。</p>
+  <div class="faq">
+    <details>
+      <summary>为什么点题目卡片没反应？</summary>
+      <div class="answer">
+        <p>大概率是没登录。游客可看目录、题目标题、考察频率，但<strong>展开题干、加篮、生成卷、提交反馈</strong>都需要登录账号——这是为了保护题库内容。</p>
+        <p>顶栏右上角点 <strong>登录 / 注册</strong>，邮箱注册即可，无需邮箱验证。</p>
+      </div>
+    </details>
+    <details>
+      <summary>教材链接点了打不开 PDF？</summary>
+      <div class="answer">
+        <p>在线版没托管教材 PDF 文件（12 本现役教材合计 1.17 GB，超出托管平台单文件 25 MB 限制）。点击教材链接显示的是<strong>页码定位卡</strong>——告诉你这个知识点在哪本书的第几页。</p>
+        <p>请配套<strong>纸质书</strong>或自己保存的电子版翻阅。常用教材：Clayden 有机、严宣申无机、Housecroft、武大无机分析、徐光宪结构化学、Atkins 物化、傅献彩物化等。</p>
+      </div>
+    </details>
+    <details>
+      <summary>组卷生成的 PDF 在手机上保存不了？/ 夸克浏览器没法另存 PDF？</summary>
+      <div class="answer">
+        <p><strong>首选：直接点 📥 下载 PDF 按钮</strong>。这条路径走服务端生成，所有浏览器通用，包括夸克 PC / 夸克手机 / UC / 微信内置浏览器这些<strong>阉割了打印功能</strong>的环境。生成需要 5-15 秒，浏览器会弹原生下载弹窗。</p>
+        <p>如果非要走"🖨 打印"按钮：</p>
+        <ul>
+          <li>iOS Safari：弹引导浮层 → 走系统<strong>分享 ⬆️ → 打印 → 双指放大 → 存储到文件</strong></li>
+          <li>Android Chrome：浏览器菜单 ⋮ → 打印 → 另存为 PDF</li>
+          <li>夸克 / UC：菜单里找不到"打印"，只能走"📥 下载 PDF"</li>
+          <li>微信内置浏览器：右上角 ··· → <strong>在浏览器中打开</strong>，再走打印</li>
+        </ul>
+        <p>桌面版直接走 📥 下载 PDF 最省事；想看预览/调页边距就用 🖨 打印。</p>
+      </div>
+    </details>
+    <details>
+      <summary>题目里的化学式显示成乱码？</summary>
+      <div class="answer">
+        <p>页面用 KaTeX 渲染所有化学式（<code>$\ce{H2SO4}$</code>）和数学公式。如果偶现乱码：</p>
+        <ul>
+          <li>刷新一次页面（Ctrl/Cmd + R），KaTeX 资源可能没加载完</li>
+          <li>个别老题的 OCR 可能漏标，用右下角 💬 反馈贴个题号给作者</li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>搜索结果排序怎么定的？</summary>
+      <div class="answer">
+        <p>三栏并排：<strong>题目 / 考点 / 教材</strong>，每栏内默认按相关性 + 年份倒序。题目栏可切换"按年份倒序 / 按命中度"，每栏限制最多 30 条以保流畅。</p>
+        <p>搜不到的话，试试缩短关键词到 2-4 字，或换近义术语（如"晶胞" / "晶格" / "密堆积"互查）。</p>
+      </div>
+    </details>
+    <details>
+      <summary>怎么知道某考点近年考没考过？</summary>
+      <div class="answer">
+        <p>点开任意考点 → 中栏滚到底有<strong>考察频率 / 趋势</strong>卡片：</p>
+        <ul>
+          <li>26 届柱状图（每年命中题数）</li>
+          <li>四级标签：高频（&ge;70%）/ 中频（&ge;40%）/ 低频（&ge;15%）/ 冷门</li>
+          <li>三向趋势：上升 / 稳定 / 下降（前后两段平均比对）</li>
+          <li>"最近 5 届中 N 届涉及"——命题选材最直接的指标</li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>能不能下载离线版？</summary>
+      <div class="answer">
+        <p>暂时只发布在线版（Cloudflare Pages）。离线版本是 <code>考纲速查_v6.html</code> 单文件 16 MB + 配套图片目录共 80+ MB，主要给作者本地用，未来如有需求会发 zip 包。</p>
+        <p>如果常用，建议直接收藏 <code>https://h-teamsyllabus.pages.dev/</code> 到浏览器主屏。</p>
+      </div>
+    </details>
+    <details>
+      <summary>为什么不显示 CCO40 / 缺哪一届？</summary>
+      <div class="answer">
+        <p>当前在线版收录 <strong>CCO14-39 共 26 届</strong>（其中 2022 年 CCO36 那届首次入库于 2026-06-06）。CCO40 等新届会在赛季结束后陆续补入。</p>
+        <p>如发现哪一届题号断档（如 CCO38 跳号），用 💬 反馈告诉作者。</p>
+      </div>
+    </details>
+    <details>
+      <summary>怎么再次看一遍氢松小助手的引导？</summary>
+      <div class="answer">
+        <p>右下角 <strong>❓ 帮助</strong> 按钮（蓝色圆形 FAB，💬 反馈按钮上面）随时点开重走 6 步。</p>
+        <p>或在浏览器控制台执行 <code>HSongTour.reset()</code> 清掉首访标记，下次刷新会自动弹。</p>
+      </div>
+    </details>
+    <details>
+      <summary>数据有错误怎么办？</summary>
+      <div class="answer">
+        <p>右下角 💬 反馈按钮，选"题目错误"类型，写题号 + 简短描述（如 <code>CCO38-04 Q3 答案疑似漏算</code>）。会直达作者飞书群，通常 1-2 天内响应。</p>
+        <p>不需要登录飞书，反馈也不会暴露你的任何隐私。</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section>
+  <h3>反馈与联系</h3>
+  <div class="contact">
+    <h4>这是个持续在迭代的工具</h4>
+    <p>从 2026 年 4 月起逐届入库、按反馈修复。任何 bug、错题、改进建议都会被认真看一眼。</p>
+    <div class="channels">
+      <span>💬 网页内反馈按钮（推荐）</span>
+      <span>📧 飞书群直达</span>
+      <span>🔁 持续更新</span>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="foot">
+  <span>CChO 考纲可视化 · 氢队 H-Team</span>
+  <span class="ver">v6_lite · 2026-06-06</span>
+  <br><br>
+  <a href="index.html">← 返回主页</a>
+  &nbsp;·&nbsp;
+  <a href="changelog.html">🔔 更新日志</a>
+</div>
+
+</body>
+</html>
