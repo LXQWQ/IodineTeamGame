@@ -194,17 +194,17 @@
             { id:3, name:"IodineScope 移动版", emoji:"📱", tag:"晶体学·触屏", desc:"IodineScope 手机版！触屏优化，手机上随时旋转查看晶体结构、检索元素组成、测量原子距离。", link:"tools/iodinescope-mobile/", newWindow:false }
         ];
                 const hydrogenGames = [
-            { id:1, name:"化境探雷", emoji:"💣", tag:"有机化学", desc:"三维有机化学扫雷！在蜂窝（L1）、立方体（L2）等3D结构中排雷，答对化学题获得积分。内含酸碱棋对战与快问快答模式，积分商店解锁更多挑战。", link:"氢队游戏/化境探雷/", newWindow:true },
-            { id:2, name:"Chemcraft: 元素觉醒", emoji:"⚗️", tag:"化学反应", desc:"化学反应卡牌策略游戏！收集元素，合成化合物，用真实的化学反应击败对手。支持单人挑战AI（四档难度）和双人PvP对战，61条化学反应等你探索。手机电脑均可畅玩！", link:"氢队游戏/chemcraft-beta/", newWindow:true },
-            { id:3, name:"有机过熟 Organic Overcooked", emoji:"🍳", tag:"有机合成", desc:"灵感来自《胡闹厨房》——不过这次你的'厨房'是有机实验室！根据订单选择正确的试剂和反应顺序，在时间耗尽前合成目标分子。支持单人闯关和双人合作，Simple→Hard→Hell 难度递增，你能撑到第几关？", link:"氢队游戏/有机过熟/", newWindow:true },
-            { id:4, name:"丹道化学", emoji:"🔮", tag:"古代化学", desc:"穿越到古代炼丹房！收集五金八石（金银铜铁朱砂雄黄……），翻阅《黄帝九鼎》《周易参同契》等古代典籍，用真实的化学知识完成炼丹任务。还能在世界地图上寻找矿产、解锁技能树，在古代炼金术与现代化学之间自由穿梭！", link:"氢队游戏/丹道化学/", newWindow:true },
-            { id:5, name:"环己烷大作战", emoji:"♟️", tag:"立体化学", desc:"立体化学变成了策略棋盘！支持AI人机对战（三种难度）和双人PvP。用 SN2、消除、加成等试剂卡在环己烷椅式构象上占领位点，翻转构象逆转战局！", link:"氢队游戏/环己烷大作战/", newWindow:true },
-            { id:6, name:"pKa酸性吞噬 Acid Arena", emoji:"🧪", tag:"酸碱化学", desc:"酸碱大乱斗 agar.io！你控制一个分子在酸池里游泳——遇到 pKa 比你大的（酸性更弱的），一口吞掉它变大；遇到 pKa 比你小的，赶紧跑！从羧酸到磺酸，7 个关卡帮你把 pKa 大小牢牢记住。", link:"氢队游戏/酸性吞噬/", newWindow:true },
-            { id:7, name:"元素大战僵尸 Elements vs. Zombies", emoji:"🧟", tag:"元素性质", desc:"PvZ 的化学版！用元素周期表上的元素守卫你的实验室——钠发火球、氟放毒气、氦做盾牌。每种元素都有独特的化学属性加成，需要消耗'电子'资源来部署。僵尸正在靠近，准备好你的元素防线了吗？", link:"氢队游戏/元素大战僵尸/", newWindow:true },
-            { id:11, name:"元素大战僵尸 · 新版", emoji:"🧟‍♂️", tag:"元素性质 · 重制", desc:"氢队重制的元素大战僵尸新版！PvZ 化学塔防全面翻新——钠发火球、氟放毒气、氦做盾牌，每种元素都有独特化学属性加成，消耗'电子'资源部署防线。经典玩法保留，手感与表现升级，来试试新版防线！（旧版经典版仍在下方列表）", link:"氢队游戏/元素大战僵尸-新版/", newWindow:true },
-            { id:8, name:"CChO 考纲可视化", emoji:"📊", tag:"竞赛考纲 v6", desc:"CChO 中国化学奥林匹克基本要求交互式知识图谱（v6 · 2024 修订版）！共 95 项考点 · 8 大类，题库 526 道（国初 283 + 决赛 110 + IChO 理论 133），原题图片与答案解析完整收录，按考点分类浏览、串联考纲—真题—教材。已解除登录限制，全部功能开箱即用；附使用指南与更新日志。", link:"氢队游戏/考纲可视化/", newWindow:true },
-            { id:9, name:"酸碱大冒险 Acid and Base", emoji:"⚗️", tag:"双人合作", desc:"双人合作平台跳跃全新升级！酸人（绿）与碱人（蓝）各守其道——酸人碰碱、碱人碰酸即死，只有同类物质才能安全收集。H₂O 护盾、HCl/HNO₃ 加速、NaOH 弹跳、Li 缩小穿越狭缝；★必需品集齐出口才会打开，两人需同时到达各自出口。三大关卡（初始反应 / 双重阶梯 / 元素炼狱）+ 单人无尽模式，手机触屏可玩！", link:"氢队游戏/acid-base-beta/", newWindow:true },
-            { id:10, name:"化学溶解大师 ChemFlow", emoji:"🧪", tag:"闯关解谜", desc:"用试剂溶解难溶固体，引导水流到容器！60关闯关模式+无限模式，涵盖酸碱反应、王水、铵盐溶解等真实化学知识。", link:"氢队游戏/dissolver/", newWindow:true }
+            { id:1, name:"化境探雷", emoji:"💣", tag:"有机化学", desc:"三维有机化学扫雷！在蜂窝（L1）、立方体（L2）等3D结构中排雷，答对化学题获得积分。内含酸碱棋对战与快问快答模式，积分商店解锁更多挑战。", link:"氢队游戏/化境探雷/", newWindow:false },
+            { id:2, name:"Chemcraft: 元素觉醒", emoji:"⚗️", tag:"化学反应", desc:"化学反应卡牌策略游戏！收集元素，合成化合物，用真实的化学反应击败对手。支持单人挑战AI（四档难度）和双人PvP对战，61条化学反应等你探索。手机电脑均可畅玩！", link:"氢队游戏/chemcraft-beta/", newWindow:false },
+            { id:3, name:"有机过熟 Organic Overcooked", emoji:"🍳", tag:"有机合成", desc:"灵感来自《胡闹厨房》——不过这次你的'厨房'是有机实验室！根据订单选择正确的试剂和反应顺序，在时间耗尽前合成目标分子。支持单人闯关和双人合作，Simple→Hard→Hell 难度递增，你能撑到第几关？", link:"氢队游戏/有机过熟/", newWindow:false },
+            { id:4, name:"丹道化学", emoji:"🔮", tag:"古代化学", desc:"穿越到古代炼丹房！收集五金八石（金银铜铁朱砂雄黄……），翻阅《黄帝九鼎》《周易参同契》等古代典籍，用真实的化学知识完成炼丹任务。还能在世界地图上寻找矿产、解锁技能树，在古代炼金术与现代化学之间自由穿梭！", link:"氢队游戏/丹道化学/", newWindow:false },
+            { id:5, name:"环己烷大作战", emoji:"♟️", tag:"立体化学", desc:"立体化学变成了策略棋盘！支持AI人机对战（三种难度）和双人PvP。用 SN2、消除、加成等试剂卡在环己烷椅式构象上占领位点，翻转构象逆转战局！", link:"氢队游戏/环己烷大作战/", newWindow:false },
+            { id:6, name:"pKa酸性吞噬 Acid Arena", emoji:"🧪", tag:"酸碱化学", desc:"酸碱大乱斗 agar.io！你控制一个分子在酸池里游泳——遇到 pKa 比你大的（酸性更弱的），一口吞掉它变大；遇到 pKa 比你小的，赶紧跑！从羧酸到磺酸，7 个关卡帮你把 pKa 大小牢牢记住。", link:"氢队游戏/酸性吞噬/", newWindow:false },
+            { id:7, name:"元素大战僵尸 Elements vs. Zombies", emoji:"🧟", tag:"元素性质", desc:"PvZ 的化学版！用元素周期表上的元素守卫你的实验室——钠发火球、氟放毒气、氦做盾牌。每种元素都有独特的化学属性加成，需要消耗'电子'资源来部署。僵尸正在靠近，准备好你的元素防线了吗？", link:"氢队游戏/元素大战僵尸/", newWindow:false },
+            { id:11, name:"元素大战僵尸 · 新版", emoji:"🧟‍♂️", tag:"元素性质 · 重制", desc:"氢队重制的元素大战僵尸新版！PvZ 化学塔防全面翻新——钠发火球、氟放毒气、氦做盾牌，每种元素都有独特化学属性加成，消耗'电子'资源部署防线。经典玩法保留，手感与表现升级，来试试新版防线！（旧版经典版仍在下方列表）", link:"氢队游戏/元素大战僵尸-新版/", newWindow:false },
+            { id:8, name:"CChO 考纲可视化", emoji:"📊", tag:"竞赛考纲 v6", desc:"CChO 中国化学奥林匹克基本要求交互式知识图谱（v6 · 2024 修订版）！共 95 项考点 · 8 大类，题库 526 道（国初 283 + 决赛 110 + IChO 理论 133），原题图片与答案解析完整收录，按考点分类浏览、串联考纲—真题—教材。已解除登录限制，全部功能开箱即用；附使用指南与更新日志。", link:"氢队游戏/考纲可视化/", newWindow:false },
+            { id:9, name:"酸碱大冒险 Acid and Base", emoji:"⚗️", tag:"双人合作", desc:"双人合作平台跳跃全新升级！酸人（绿）与碱人（蓝）各守其道——酸人碰碱、碱人碰酸即死，只有同类物质才能安全收集。H₂O 护盾、HCl/HNO₃ 加速、NaOH 弹跳、Li 缩小穿越狭缝；★必需品集齐出口才会打开，两人需同时到达各自出口。三大关卡（初始反应 / 双重阶梯 / 元素炼狱）+ 单人无尽模式，手机触屏可玩！", link:"氢队游戏/acid-base-beta/", newWindow:false },
+            { id:10, name:"化学溶解大师 ChemFlow", emoji:"🧪", tag:"闯关解谜", desc:"用试剂溶解难溶固体，引导水流到容器！60关闯关模式+无限模式，涵盖酸碱反应、王水、铵盐溶解等真实化学知识。", link:"氢队游戏/dissolver/", newWindow:false }
         ];
         /* 碘队游戏卡片图标：原创 inline SVG 微反应动效（SMIL，无外部依赖） */
         const GAME_ICONS = {
@@ -477,28 +477,29 @@
                 if (document.body.getAttribute('data-theme') === 'tsukuyomi') {
                     initCardParticleAnimation(card);
                 }
-            });
-            document.querySelectorAll('.play-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const link = btn.dataset.link;
-                    const newWindow = btn.dataset.new === 'true';
-                    if (link) {
-                        if (newWindow) {
+                // —— 每张卡只绑定一次事件 ——
+                // （此前在函数尾部用 document.querySelectorAll('.play-btn') 全局重绑，
+                //   而 renderGames 每个分区调用一次，导致同一按钮累积多个监听器：
+                //   新标签方式打开会连开多个标签页，鼠标事件也会重复叠加。）
+                const playBtn = card.querySelector('.play-btn');
+                if (playBtn) {
+                    playBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const link = playBtn.dataset.link;
+                        if (!link) return;
+                        if (playBtn.dataset.new === 'true') {
                             window.open(link, '_blank');
                         } else {
                             window.location.href = link;
                         }
-                    }
-                });
-                // 为所有卡片添加鼠标离开事件
-            document.querySelectorAll('.game-card').forEach(card => {
+                    });
+                }
                 card.addEventListener('mouseleave', () => {
                     card.style.setProperty('--mouse-x', '50%');
                     card.style.setProperty('--mouse-y', '50%');
                     card.style.transform = '';
                 });
-                card.addEventListener('mouseenter', function(e) {
+                card.addEventListener('mouseenter', function (e) {
                     if (!card._lastBurst || Date.now() - card._lastBurst > 600) {
                         card._lastBurst = Date.now();
                         spawnCardParticles(card, e.clientX, e.clientY);
@@ -510,11 +511,8 @@
                     const y = (e.clientY - rect.top) / rect.height;
                     card.style.setProperty('--mouse-x', (x * 100) + '%');
                     card.style.setProperty('--mouse-y', (y * 100) + '%');
-                    const tiltX = (y - 0.5) * -12;
-                    const tiltY = (x - 0.5) * 12;
-                    card.style.transform = 'rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg)';
+                    card.style.transform = 'rotateX(' + ((y - 0.5) * -12) + 'deg) rotateY(' + ((x - 0.5) * 12) + 'deg)';
                 });
-            });
             });
         }
         // ======================= 标签页切换系统 =======================
