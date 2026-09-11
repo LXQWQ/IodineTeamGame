@@ -329,8 +329,78 @@
 <path d="M60.0 46.0 L72.1 53.0 L72.1 67.0 L60.0 74.0 L47.9 67.0 L47.9 53.0 Z" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.4"/>
 <circle cx="56" cy="55" r="2.6" fill="#ffffff" opacity=".35"/>
 </svg></div>`,
-            9: `<div style="font-size: 3rem;">🐢</div>`,
-            10: `<div style="font-size: 3rem;">🧟</div>`,
+            9: `<div class="gi gi-turtle"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<linearGradient id="ttGlass" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffffff" stop-opacity=".38"/><stop offset="45%" stop-color="#ffffff" stop-opacity=".06"/><stop offset="100%" stop-color="#ffffff" stop-opacity=".26"/></linearGradient>
+<linearGradient id="ttLiquid" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="55%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0e7490"/></linearGradient>
+<linearGradient id="ttShell" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#86efac"/><stop offset="55%" stop-color="#22c55e"/><stop offset="100%" stop-color="#15803d"/></linearGradient>
+<linearGradient id="ttSkin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#bbf7d0"/><stop offset="100%" stop-color="#4ade80"/></linearGradient>
+<clipPath id="ttClip"><path d="M24 34 H60 V86 Q60 92 54 92 H30 Q24 92 24 86 Z"/></clipPath>
+<filter id="ttBlur" x="-90%" y="-90%" width="280%" height="280%"><feGaussianBlur stdDeviation="2.8"/></filter>
+</defs>
+<g clip-path="url(#ttClip)">
+<rect x="22" y="34" width="40" height="60" fill="url(#ttGlass)"/>
+<rect x="22" y="58" width="40" height="36" fill="url(#ttLiquid)"/>
+<ellipse cx="42" cy="58.4" rx="18" ry="3" fill="#cffafe" opacity=".55"/>
+<circle cx="34" cy="86" r="2.6" fill="#ecfeff" opacity="0"><animate attributeName="cy" values="88;60" dur="2.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.9;0" keyTimes="0;.28;1" dur="2.8s" repeatCount="indefinite"/></circle>
+<circle cx="50" cy="88" r="2" fill="#ecfeff" opacity="0"><animate attributeName="cy" values="90;62" dur="3.2s" begin="1.1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.85;0" keyTimes="0;.28;1" dur="3.2s" begin="1.1s" repeatCount="indefinite"/></circle>
+<g transform="translate(42 74)"><g><animateTransform attributeName="transform" type="scale" values="1;1.13;1" dur="2.6s" repeatCount="indefinite"/>
+<path d="M-3.6 -6 a4.6 4.6 0 1 1 5.6 4.4 l-2.0 .8 v2.4" fill="none" stroke="#fde68a" stroke-width="4.4" stroke-linecap="round" opacity=".55" filter="url(#ttBlur)"/>
+<path d="M-3.6 -6 a4.6 4.6 0 1 1 5.6 4.4 l-2.0 .8 v2.4" fill="none" stroke="#fef3c7" stroke-width="3.2" stroke-linecap="round"/>
+<circle cx="0" cy="7.4" r="2.2" fill="#fef3c7"/>
+<circle cx="-3.6" cy="-6" r="2" fill="#fbbf24"/>
+<circle cx="1.6" cy="4.4" r="1.7" fill="#f59e0b"/>
+</g></g>
+</g>
+<path d="M24 34 H60 V86 Q60 92 54 92 H30 Q24 92 24 86 Z" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2.2"/>
+<ellipse cx="42" cy="34" rx="18" ry="3.4" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2.2"/>
+<path d="M29.5 40 v40" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" opacity=".3"/>
+<g><g><animateTransform attributeName="transform" type="translate" values="0 0; 0 -3.4; 0 0" dur="2.6s" repeatCount="indefinite"/>
+<path d="M74 90 l-7 4 l8 .6 z" fill="#15803d"/>
+<ellipse cx="73" cy="88.5" rx="4.4" ry="2.6" fill="url(#ttSkin)"/>
+<ellipse cx="101" cy="88.5" rx="4.4" ry="2.6" fill="url(#ttSkin)"/>
+<ellipse cx="88" cy="84" rx="16" ry="11" fill="url(#ttShell)"/>
+<ellipse cx="88" cy="84" rx="16" ry="11" fill="none" stroke="#166534" stroke-width="1.2" opacity=".75"/>
+<path d="M80.5 78.5 l7.5 -4.6 l7.5 4.6 l-7.5 4.6 z" fill="#166534" opacity=".3"/>
+<path d="M88 73.9 v20.2 M72.4 84 h31.2" stroke="#166534" stroke-width="1" opacity=".28"/>
+<circle cx="106" cy="78.5" r="5.4" fill="url(#ttSkin)"/>
+<circle cx="108.2" cy="77.2" r="1.5" fill="#0f172a"/>
+</g></g>
+</svg></div>`,
+            10: `<div class="gi gi-zombie"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<linearGradient id="zwH" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f1f5f9"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient>
+<linearGradient id="zwC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#64748b"/><stop offset="100%" stop-color="#334155"/></linearGradient>
+<linearGradient id="zwO" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fca5a5"/><stop offset="100%" stop-color="#dc2626"/></linearGradient>
+<linearGradient id="zwNa" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d8b4fe"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient>
+<linearGradient id="zwMg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#16a34a"/></linearGradient>
+<linearGradient id="zwCl" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a7f3d0"/><stop offset="100%" stop-color="#0d9488"/></linearGradient>
+<radialGradient id="zwHaze" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#4ade80" stop-opacity=".4"/><stop offset="100%" stop-color="#4ade80" stop-opacity="0"/></radialGradient>
+<filter id="zwBlur" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="2.4"/></filter>
+</defs>
+<circle cx="74" cy="34" r="30" fill="url(#zwHaze)"/>
+<g transform="translate(44 33) scale(.85)"><g opacity=".85"><animateTransform attributeName="transform" type="translate" values="0 0; 1.6 -1.6; 0 0" dur="3.4s" repeatCount="indefinite"/>
+<rect x="-5" y="20" width="4" height="9" rx="2" fill="#14532d"/><rect x="1" y="20" width="4" height="9" rx="2" fill="#14532d"/>
+<rect x="4" y="12" width="12" height="3.4" rx="1.7" fill="#14532d"/><rect x="4" y="7" width="14" height="3.4" rx="1.7" fill="#14532d"/>
+<rect x="-6" y="5" width="12" height="16" rx="4" fill="#166534"/>
+<circle cx="0" cy="0" r="6.4" fill="#166534"/><circle cx="2.4" cy="-1.6" r="1.4" fill="#bbf7d0"/>
+</g></g>
+<g transform="translate(76 28)"><g><animateTransform attributeName="transform" type="translate" values="0 0; 2 -2.4; 0 0" dur="2.6s" repeatCount="indefinite"/>
+<rect x="-5.5" y="20" width="4.4" height="10" rx="2.2" fill="#14532d"/><rect x="1.1" y="20" width="4.4" height="10" rx="2.2" fill="#14532d"/>
+<rect x="4.5" y="12.5" width="14" height="3.8" rx="1.9" fill="#14532d"/><rect x="4.5" y="6.8" width="16" height="3.8" rx="1.9" fill="#14532d"/>
+<rect x="-6.8" y="4.6" width="13.6" height="17" rx="4.4" fill="#166534"/>
+<circle cx="0" cy="-1" r="7" fill="#166534"/><circle cx="2.6" cy="-2.8" r="1.6" fill="#bbf7d0"/>
+</g></g>
+<g>
+<g><rect x="12" y="58" width="30" height="17" rx="3" fill="url(#zwH)" stroke="#0b0f19" stroke-width="1.4"/><text x="27" y="70.5" text-anchor="middle" font-family="Rajdhani,system-ui,sans-serif" font-size="11" font-weight="700" fill="#0f172a">H</text><animate attributeName="opacity" values="1;.72;1" dur="3s" repeatCount="indefinite"/></g>
+<g><rect x="45" y="58" width="30" height="17" rx="3" fill="url(#zwO)" stroke="#0b0f19" stroke-width="1.4"/><text x="60" y="70.5" text-anchor="middle" font-family="Rajdhani,system-ui,sans-serif" font-size="11" font-weight="700" fill="#ffffff">O</text><animate attributeName="opacity" values="1;.72;1" dur="3s" begin=".5s" repeatCount="indefinite"/></g>
+<g><rect x="78" y="58" width="30" height="17" rx="3" fill="url(#zwNa)" stroke="#0b0f19" stroke-width="1.4"/><text x="93" y="70.5" text-anchor="middle" font-family="Rajdhani,system-ui,sans-serif" font-size="10" font-weight="700" fill="#ffffff">Na</text><animate attributeName="opacity" values="1;.72;1" dur="3s" begin="1s" repeatCount="indefinite"/></g>
+<g><rect x="12" y="77" width="30" height="17" rx="3" fill="url(#zwC)" stroke="#0b0f19" stroke-width="1.4"/><text x="27" y="89.5" text-anchor="middle" font-family="Rajdhani,system-ui,sans-serif" font-size="11" font-weight="700" fill="#e2e8f0">C</text><animate attributeName="opacity" values="1;.72;1" dur="3s" begin="1.5s" repeatCount="indefinite"/></g>
+<g><rect x="45" y="77" width="30" height="17" rx="3" fill="url(#zwMg)" stroke="#0b0f19" stroke-width="1.4"/><text x="60" y="89.5" text-anchor="middle" font-family="Rajdhani,system-ui,sans-serif" font-size="10" font-weight="700" fill="#ffffff">Mg</text><animate attributeName="opacity" values="1;.72;1" dur="3s" begin="2s" repeatCount="indefinite"/></g>
+<g><rect x="78" y="77" width="30" height="17" rx="3" fill="url(#zwCl)" stroke="#0b0f19" stroke-width="1.4"/><text x="93" y="89.5" text-anchor="middle" font-family="Rajdhani,system-ui,sans-serif" font-size="10" font-weight="700" fill="#ffffff">Cl</text><animate attributeName="opacity" values="1;.72;1" dur="3s" begin="2.5s" repeatCount="indefinite"/></g>
+</g>
+<ellipse cx="60" cy="96" rx="46" ry="5" fill="#000000" opacity=".25" filter="url(#zwBlur)"/>
+</svg></div>`,
             11: `<div class="gi gi-chemv2"><svg viewBox="0 0 120 120" aria-hidden="true">
 <defs>
 <radialGradient id="hjRed" cx="34%" cy="30%" r="72%"><stop offset="0%" stop-color="#ffe0e4"/><stop offset="38%" stop-color="#ff4655"/><stop offset="100%" stop-color="#5c0f19"/></radialGradient>
