@@ -433,14 +433,15 @@
             if (!grid) return;
             grid.innerHTML = '';
             isDev = isDev || false;
-            // 检查是否为氢队游戏
+            // 检查游戏分区类型（碘队现役 / 氢队镜像 / 实用工具 / 开发中）
             const isHydrogenGames = gridId === 'hydrogenGameGrid';
+            const isIodineGames = gridId === 'iodineGameGrid';
             gamesArray.forEach(game => {
                 const card = document.createElement('div');
                 card.className = 'game-card';
                 if (isDev) card.classList.add('dev-card');
-                // 添加游戏特定类名（仅对碘队现役游戏）
-                if (!isHydrogenGames && !isDev) {
+                // 添加游戏特定类名（仅对碘队现役游戏，避免工具卡 id 撞车）
+                if (isIodineGames && !isDev) {
                     if (game.id === 1) card.classList.add('dandao');
                     if (game.id === 2) card.classList.add('evz');
                     if (game.id === 3) card.classList.add('phase-transfer');
@@ -448,12 +449,12 @@
                     if (game.id === 11) card.classList.add('chem-territory-v2');
                 }
                 let gameIcon = '';
-                if (isHydrogenGames || isDev) {
-                    // 氢队游戏和开发中游戏使用简单emoji
-                    gameIcon = `<div style="font-size: 3rem; opacity: ${isDev ? '0.4' : '1'};">${game.emoji}</div>`;
-                } else {
-                    // 碘队游戏使用原创 SVG 微反应动效
+                if (isIodineGames && !isDev) {
+                    // 碘队现役游戏：原创 SVG 微反应动效
                     gameIcon = GAME_ICONS[game.id] || '<div style="font-size: 3rem; opacity: 0.5;">&#128302;</div>';
+                } else {
+                    // 氢队镜像 / 实用工具 / 开发中：各自 emoji
+                    gameIcon = `<div style="font-size: 3rem; opacity: ${isDev ? '0.4' : '1'};">${game.emoji}</div>`;
                 }
                 const isComingSoon = !game.link || isDev;
                 const imgStyle = (isComingSoon || isDev) ? 'background: #1e293b; opacity: 0.6;' : '';
