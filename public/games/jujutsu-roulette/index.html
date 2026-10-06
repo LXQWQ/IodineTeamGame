@@ -631,6 +631,7 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
         <button class="btn ghost" id="btnLoadGame">📂 读 档</button>
         <button class="btn ghost" id="btnNpc">👥 人 物</button>
         <button class="btn ghost" id="btnTame" style="display:none">🐺 调 服 仪 式</button>
+        <button class="btn ghost" id="btnUlt" style="display:none">♾️ 极 之 番 · 流 派</button>
       </div>
     </div>
   </div>
@@ -792,8 +793,9 @@ const EFF_ANCHOR=700;    // 锚点：S=3.8333（特别一级）时的术式伤�
 const ANCHOR_S=3.8333;
 const HP_RATIO=100;      // 生命 = 术式伤害中值 ×100（同级对拼 6~8 回合）
 const CP_RATIO=60;       // 咒力 = 术式伤害中值 ×60（×5 版：弱特级约 8.9 万，标准特级约 12.3 万）
-/** 每回合基础回蓝（占上限比例）：默认 0 = 不回蓝（现状）；觉得还是紧就调到 0.05~0.10 */
-let CP_REGEN_PER_ROUND=0;
+/** 每回合基础回蓝（占上限比例）：现在默认 5%（每回合自动回一点蓝，双方一致）
+ *  想更宽松就调大（0.10 = 每回合回 10%），想关掉就改成 0 */
+let CP_REGEN_PER_ROUND=0.05;
 const CTL_RATIO=0.06;    // 操控 = 术式伤害中值 ×0.06
 const BAND=0.18;         // 每档上下浮动 ±18%（小级之间只差 1.38 倍，浮动太宽会让相邻档位分不清）
 /** 大级区段 [起始档位, 结束档位)，与 LEVELS 的顺序一一对应 */
@@ -1106,12 +1108,15 @@ const Player={
       adv:(draws.adv||{}), // 创建时抽到的高级技巧
       domainLearned:false, // 领域展开
       ultimateLearned:false, // 极之番（熟练度300%）
+      ultArt:{mode:'normal'}, // 极之番流派：normal 常规 / tech 术式自带 / custom 自建（主界面「极之番」面板可随时更换）
       sixEyes:false, // 六眼（怀玉篇反派战胜觉醒五条悟获得：所有咒力消耗为0）
       jinTools:null, // 伏黑甚尔四件道具（怀玉篇正派战胜甚尔获得：天逆鉾/释魂刀/游云/万里锁）
       statBoost:1.0, // 黑闪累计永久倍率
       stolen:[], // 死而替生夺取的术式名（兼容）
       stolenTechs:[], // 死而替生夺取的完整术式 {name,flag,domain,prof}，各自独立熟练度
       absorbed:[], // 咒灵操术/降灵术永久吸收的敌人快照（数值固定不成长）
+      soulBank:[], // 无为转变·灵魂库：{id,name,li,purity} 只保留纯净度（0~100%，1 位小数），不继承术式
+      soulFusions:[], // 无为转变·改造人库存：{id,form,name,li,purityAvg,souls:[id]}（融合不可逆）
       flashCount:0,battleCount:0,huntCount:0,killCount:0,
       eventsDone:[], // 已完成的剧情节点
       notes:[], // 后日谈用关键记录
@@ -1195,7 +1200,7 @@ const Player={
     // 主术式：熟练度累积到 1000 封顶。300% 领悟极之番；500% 满足领域的术式侧条件（还差结界术）
     if(P.prof<PROF_CAP){
       P.prof=clamp(P.prof+n*bonus,0,PROF_CAP);
-      if(!P.ultimateLearned&&P.prof>=300){P.ultimateLearned=true;P.notes.push('术式熟练度达到300%，领悟终极奥义【极之番】！');}
+      if(!P.ultimateLearned&&P.prof>=300){P.ultimateLearned=true;P.notes.push('术式熟练度达到300%，领悟终极奥义【极之番】！——到主界面的「极之番」面板选择流派（常规／术式自带／轮盘自建／调用本地传承模板）。');}
       if(!P.prof400Noted&&P.prof>=400){P.prof400Noted=true;P.notes.push('术式熟练度达到400%，领域的术式侧条件已经满足——剩下的门槛在结界术。');}
     }
     // 死而替生夺取的每个术式拥有独立熟练度，同步成长
@@ -1213,6 +1218,14 @@ const Player={
   },
   /** 把 domainLearned / ultimateLearned 这两个旧字段与新规则同步
    *  （结局文案、makePlayerUnit 都还在读它们，这里统一维护，避免满地改判断） */
+  /** 极之番流派：旧存档没有该字段时补默认「常规」 */
+  syncUlt(P){
+    if(!P)return P;
+    if(!P.ultArt||typeof P.ultArt!=='object')P.ultArt={mode:'normal'};
+    if(!P.ultArt.mode)P.ultArt.mode='normal';
+    if(P.ultArt.mode==='custom'&&!P.ultArt.id)P.ultArt={mode:'normal'};
+    return P.ultArt;
+  },
   syncDomain(P){
     if(!P)return 0;
     if(P.ultimateLearned===undefined)P.ultimateLearned=(P.prof||0)>=300;
@@ -1269,15 +1282,16 @@ const Player={
     return pool;
   },
   /** 战后成长奖励（按敌方最高等级） */
-  reward(P,enemyLi,victory=true){
+  reward(P,enemyLi,victory=true,mult=1){
     if(!victory)return '';
+    const M=Math.max(1,Math.round(mult||1));   // 数量奖励倍率（1 次结算里直接乘进去，别在调用处循环）
     const ageK=(1+(P.ageGrowthBonus||0));
-    const profGain=Math.max(1,6+enemyLi);
+    const profGain=Math.max(1,6+enemyLi)*M;
     const k=P.growthMult*ageK;
-    const cpAdd=fixedGain('cp',enemyLi,k*0.6*genderGainMult(P.gender,'cp'));
-    const hpAdd=fixedGain('hp',enemyLi,k*0.6*genderGainMult(P.gender,'hp'));
-    const dHi=fixedGain('dmg',enemyLi,k*0.6*genderGainMult(P.gender,'eff')),dLo=Math.max(1,Math.round(dHi*0.6));
-    const ctlAdd=fixedGain('ctl',enemyLi,k*0.5*genderGainMult(P.gender,'ctl'));
+    const cpAdd=fixedGain('cp',enemyLi,k*0.6*genderGainMult(P.gender,'cp'))*M;
+    const hpAdd=fixedGain('hp',enemyLi,k*0.6*genderGainMult(P.gender,'hp'))*M;
+    const dHi=fixedGain('dmg',enemyLi,k*0.6*genderGainMult(P.gender,'eff'))*M,dLo=Math.max(1,Math.round(dHi*0.6));
+    const ctlAdd=fixedGain('ctl',enemyLi,k*0.5*genderGainMult(P.gender,'ctl'))*M;
     P.maxCp+=cpAdd;P.cp=P.maxCp;
     P.maxHp+=hpAdd;P.hp=P.maxHp;
     P.eff[0]+=dLo;P.eff[1]+=dHi;
@@ -1285,7 +1299,7 @@ const Player={
     P.ctl+=ctlAdd;
     Player.gainProf(P,profGain);
     const old=P.levelIndex;P.levelIndex=Player.evalLevel(P);
-    let t=`战胜奖励（固定）：咒力+${cpAdd}、生命+${hpAdd}、术式伤害+${dLo}~${dHi}、减免+${ctlAdd}、熟练度+${profGain}%`;
+    let t=`战胜奖励（固定）：咒力+${cpAdd}、生命+${hpAdd}、术式伤害+${dLo}~${dHi}、减免+${ctlAdd}、熟练度+${profGain}%`+(M>1?('　★ 数量奖励 ×'+M+' 已计入上述数值'):'');
     if(P.levelIndex>old)t+=`；综合评级提升至【${lvName(P.levelIndex)}】`;
     return t;
   }
@@ -1401,7 +1415,7 @@ class WheelView{
 const TECH_MOVE={
  limitless:['苍·引力坍缩','赫·斥力爆散','茈·虚式轰击'],shadows:['影潜','影藏','式神附体'],
  cleave:['解·无形斩','捌·必中斩','开·火焰','灶·炎灾'],straw:['刍灵共鸣','簪·钉子贯魂'],ratio:['十划·7:3弱点必破'],
- cursedSpeech:['咒言·爆裂吧','咒言·停下','咒言·睡吧'],spiritControl:['驱使吸收咒灵群袭'],idleTrans:['无为转变·灵魂改写'],
+ cursedSpeech:['咒言·爆裂吧','咒言·停下','咒言·睡吧'],spiritControl:['驱使吸收咒灵群袭'],idleTrans:['无为转变·灵魂改写','单重魂·污体','多重魂·拨体','多重魂·几魂异性体','无为转变·遍杀即灵体'],
  swap:['不义游戏·强制换位'],blood:['赤血·穿刺血弹','赤血·超新星','赤血·血刃斩'],crows:['黑鸟群·共享视野突袭'],
  projection:['投射咒法·24帧位移斩'],construct:['构筑术式·咒具具现'],puppet:['傀儡操术·人偶强袭'],
  moon:['淀月·毒触手侵蚀'],rot:['蚀烂腐术·腐血侵入'],miracle:['奇迹·伤害转化再生'],jacob:['雅各布天梯·圣光剥离'],
@@ -1542,8 +1556,84 @@ const SHADOW_MOVES={
   '式神附体':{special:'possession', ap:[0], spd:[11], cast:[0], cd:0, kind:'tech', mult:[1], scope:'self', cost:0, chargeable:false,
              desc:'不消耗行动点：借式神的术式上身或直接打出它的术式，选完立刻生效（每回合一次，代价是咒力）。点名四门（円鹿/魔虚罗/玉犬·黑/満象）占唯一上身位，其余式神不占位。'}
 };
+/* ==================== 极之番 · 流派（四种类型 + 自建效果 + 术式签名） ==================== */
+/** 四种类型：轮盘第一段「极之番为什么类型？」；特性写进面板与轮盘描述 */
+const ULT_TYPES=[
+  {key:'atk', name:'攻击类', tag:'爆发 · 清场', desc:'直接造成大伤害，次数最多——适合一口气打崩对手。'},
+  {key:'buff', name:'增幅类', tag:'自我强化', desc:'强化自身数回合：攻击、术式或速度，用来滚雪球。'},
+  {key:'def', name:'防御类', tag:'极致防护', desc:'短期极致防护，但一局只能用一次——用来扛过必死的一轮。'},
+  {key:'rule', name:'规则类', tag:'改写规则', desc:'改写战斗规则（必中／夺咒／封域），一局一次，出手时机最关键。'}
+];
+/** 自建效果：轮盘第二段；uses = 一局可用次数；kind 决定结算方式 */
+const ULT_ARTS=[
+  {id:'nova', type:'atk', name:'陨星', uses:3, kind:'dmg', scope:'all', mult:30, desc:'敌全体 3000% 效率伤害。'},
+  {id:'snipe', type:'atk', name:'贯星', uses:3, kind:'dmg', scope:'one', mult:60, desc:'单体 6000% 效率伤害。'},
+  {id:'storm', type:'atk', name:'裂星', uses:2, kind:'dmg', scope:'all', mult:15, vuln:3, desc:'敌全体 1500% 效率伤害，并让敌方全体易伤 +30%（3 回合）。'},
+  {id:'rage', type:'buff', name:'狂化', uses:2, kind:'buff', rounds:3, atk:1.6, taken:0.8, desc:'3 回合内你的攻击 ×1.6、受到的伤害 ×0.8。'},
+  {id:'focus', type:'buff', name:'无我', uses:2, kind:'buff', rounds:3, spell:2.0, desc:'3 回合内你的术式伤害 ×2。'},
+  {id:'swift', type:'buff', name:'神速', uses:2, kind:'buff', rounds:3, spd:2.2, desc:'3 回合内你的出手序 ×2.2。'},
+  {id:'ward2', type:'def', name:'金身', uses:1, kind:'guard', rounds:2, cut:1.0, desc:'2 回合内完全免伤（任何来源的伤害归零）。'},
+  {id:'ward4', type:'def', name:'铁壁', uses:1, kind:'guard', rounds:4, cut:0.9, desc:'4 回合内受到的一切伤害 −90%。'},
+  {id:'ward6', type:'def', name:'坚壁', uses:1, kind:'guard', rounds:6, cut:0.8, desc:'6 回合内受到的一切伤害 −80%。'},
+  {id:'pierce', type:'rule', name:'必中', uses:1, kind:'pierce', rounds:3, desc:'3 回合内你的攻击无视术式免疫与闪避（等同规则级通道）。'},
+  {id:'drain', type:'rule', name:'夺咒', uses:1, kind:'drain', rounds:3, take:0.4, tax:2, desc:'立即削掉敌方全体 40% 当前咒力，并让敌方 3 回合内咒力消耗翻倍。'},
+  {id:'seal', type:'rule', name:'封域', uses:1, kind:'seal', rounds:3, desc:'敌方全体 3 回合内无法展开领域与极之番。'}
+];
+/** 极之番 buff 的中文名（递减到期的日志用） */
+const NLNAMES={ultGuard:'护体',ultAtk:'狂化',ultSpell:'无我',ultSpd:'神速',ultPierce:'必中',cpTax:'夺咒',domainSeal:'封域'};
+function ultTypeOf(key){return ULT_TYPES.find(t=>t.key===key)||null;}
+function ultArtOf(id){return ULT_ARTS.find(a=>a.id===id)||null;}
+/** 术式签名极之番：抽到这些术式的人可以在面板里选「术式自带」 */
+const ULT_TECH={
+  'spiritControl':{name:'漩涡', uses:5, kind:'vortex', desc:'把咒灵库里收录的咒灵全部卷进漩涡轰出去：敌全体伤害 = 2000% + 每条咒灵 200%（上限 6000%）。'},
+  'fire':{name:'陨', uses:2, kind:'dmg', scope:'all', mult:35, burn:0.08, desc:'敌全体 3500% 效率伤害，并附加灼烧（每回合 8% 生命，持续 3 回合）。'},
+  'seance':{name:'万灵归位', uses:1, kind:'summon', n:3, desc:'不耗咒力，立刻把亡灵名录里的 3 个存在唤到场上（当回合即可行动）。'},
+  'shadows':{name:'嵌合暗翳庭', uses:1, kind:'shadows', desc:'不耗咒力，立刻把全部已调服的式神唤到场上，并让它们本回合就能出手。'},
+  'cleave':{name:'伏魔御厨子', uses:1, kind:'dmg', scope:'all', mult:30, pierce:true, desc:'敌全体 3000% 效率伤害，且这一次走规则级通道（无视术式免疫与闪避）。'},
+  'ratio':{name:'真视斩', uses:1, kind:'dmg', scope:'one', mult:50, flash:true, desc:'单体 5000% 效率伤害，并且这一击必定打出黑闪（伤害再 ×10）。'},
+  'blood':{name:'赤血天雨', uses:2, kind:'dmg', scope:'all', mult:25, selfHp:0.1, desc:'敌全体 2500% 效率伤害；以血为武，自身扣除 10% 最大生命。'},
+  'limitless':{name:'苍赫', uses:1, kind:'dmg', scope:'all', mult:25, heal:true, desc:'敌全体 2500% 效率伤害，并把自身生命与咒力回满。'},
+  'straw':{name:'魂钉', uses:1, kind:'dmg', scope:'one', mult:55, pierce:true, desc:'单体 5500% 效率伤害，且这一次走规则级通道。'},
+  'idleTrans':{name:'魂之奔流', uses:2, kind:'soul', souls:3, scope:'all', mult:25, desc:'消耗 3 条灵魂，用它们奔涌的魂力轰击敌全体（2500% 效率伤害）。'}
+};
+function ultTechOf(flag){return flag?(ULT_TECH[flag]||null):null;}
+/** 解析出当前角色实际可用的极之番形态（常规 / 术式自带 / 自建） */
+function ultArtResolve(P){
+  const a=(P&&P.ultArt)||null;
+  if(!a||a.mode==='normal')return {mode:'normal',name:'',uses:1,kind:'normal'};
+  if(a.mode==='tech'){
+    const t=ultTechOf(((P.technique)||{}).flag);
+    if(t)return Object.assign({mode:'tech'},t);
+    return {mode:'normal',name:'',uses:1,kind:'normal'};
+  }
+  if(a.mode==='custom'){
+    const f=ultArtOf(a.id);
+    if(f)return Object.assign({mode:'custom',id:a.id},f);
+    return {mode:'normal',name:'',uses:1,kind:'normal'};
+  }
+  return {mode:'normal',name:'',uses:1,kind:'normal'};
+}
+/** 面板与技能卡上显示的完整名字 */
+function ultArtLabel(res){
+  if(!res)return '极之番';
+  if(res.mode==='normal')return '极之番';
+  return '极之番·'+res.name;
+}
+/** 无为转变的四张召唤卡：与十影专属招式同一套机制（只开面板，选完才扣点数）
+ *  special:'soulPanel' + soulForm 指向 SOUL_FORMS 的 key */
+const SOUL_MOVES={
+  '单重魂·污体':        {special:'soulPanel',soulForm:'污体',        ap:[25],spd:[12],cast:[0],cd:0,kind:'melee',mult:[1],scope:'self',cost:0,chargeable:false,
+                        desc:'从灵魂库里挑一条灵魂，做出最粗糙的改造人（强度四级~二级，按纯净度换算）。不耗咒力。'},
+  '多重魂·拨体':        {special:'soulPanel',soulForm:'拨体',        ap:[40],spd:[12],cast:[0],cd:0,kind:'melee',mult:[1],scope:'self',cost:0,chargeable:false,
+                        desc:'3 条纯净度超过 80% 的灵魂融合成「拨体」：速度更高、攻防俱佳（二级~标准一级）。融合不可逆。'},
+  '多重魂·几魂异性体':  {special:'soulPanel',soulForm:'几魂异性体',  ap:[40],spd:[12],cast:[0],cd:0,kind:'melee',mult:[1],scope:'self',cost:0,chargeable:false,
+                        desc:'5 条纯净度超过 90% 的灵魂融合成「几魂异性体」：防御偏薄，攻击与速度大幅提高（一级~弱特级）。融合不可逆。'},
+  '无为转变·遍杀即灵体':{special:'soulPanel',soulForm:'遍杀即灵体',  ap:[60],spd:[11],cast:[0],cd:0,kind:'tech',mult:[1],scope:'self',cost:0,chargeable:false,
+                        desc:'8 条纯净度超过 95% 的灵魂融合成「遍杀即灵体」：攻防速全面暴涨（标准特级~弱龙级）。融合不可逆。'}
+};
 /** 招式解锁节点覆盖（默认把 300% 均分给各招；十影按设定：影潜 0% / 影藏 100% / 式神附体 300%） */
-const MOVE_NODE_OVERRIDE={shadows:[0,100,300]};
+const MOVE_NODE_OVERRIDE={shadows:[0,100,300],idleTrans:[0,0,100,200,300]};
+/* 无为转变：灵魂改写与单重魂一开局就有（核心玩法），拨体/几魂异性体/遍杀即灵体 依次 100/200/300% 解锁 */
 /** 影藏：影中每「1.0 继承比例」降低多少出手序（按比例算：円鹿 1.0 → -15%、満象 1.5 → -22.5%、魔虚罗 2.5 → -37.5%，最多 -85%） */
 const SHADOW_HIDE_SPD=0.15;
 /** 基础附体：没有独有术式的式神（虎葬）直接以巨躯冲撞时的倍率 */
@@ -1592,7 +1682,7 @@ function buildSkillBar(flag,prof){
   idx.slice(0,6).forEach((mv,i)=>{
     if(prof!=null&&(prof||0)<(nodes[i]||0))return;
     // 十影专属招式：直接挂上各自的 special，不查档位表
-    const sp=(flag==='shadows')?SHADOW_MOVES[mv]:null;
+    const sp=(flag==='shadows')?SHADOW_MOVES[mv]:(SOUL_MOVES[mv]||null);
     if(sp){bar.push({id:flag+':sp:'+mv,name:mv,tier:'basic',node:nodes[i]||0,shadowMove:true,...sp});return;}
     const cfg=skillTierOf(flag,mv);
     bar.push({id:flag+':'+i,name:mv,tier:cfg.tier,cast:cfg.cast,cd:cfg.cd,mult:cfg.mult,
@@ -1687,6 +1777,34 @@ const MAKORA_WHEEL_EVERY=2;
 const MAKORA_ADAPT_REDUCE=[0,0.25,0.50,0.75,1.0,1.0];
 /** 规则级 / 打断级手段（天逆鉾·空间斩·茈·元气弹·星之怒）的适应减伤上限：最多 -75%，不会被完全看破
  *  （它们仍然进适应表、仍然吃减伤，只是永远留得住 25% 的伤害，也就始终是「破法」） */
+/** 无为转变 · 灵魂纯净度：只与「敌人的评级」有关（越强越纯），保留 1 位小数、封顶 100%
+ *  不入流≈30% / 二级≈55% / 一级≈65% / 弱特级≈85% / 强特级≈95% / 弱龙级=100% */
+const SOUL_PURITY_BASE=40, SOUL_PURITY_LI=5, SOUL_PURITY_JITTER=5;
+function rollSoulPurity(li){
+  const raw=SOUL_PURITY_BASE+(li||0)*SOUL_PURITY_LI+randF(-SOUL_PURITY_JITTER,SOUL_PURITY_JITTER);
+  return Math.round(clamp(raw,0,100)*10)/10;
+}
+/** 无为转变 · 改造人形态表
+ *  need：需要的灵魂条数 / min：纯净度门槛（严格大于）/ base·cap：产物档位区间（封顶）
+ *  per：平均纯净度每高出 min 多少 → 档位 +1 / hp·atk·spd：相对曲线的属性倾向 / ap：行动点
+ *  单重魂（need=1）的档位直接由纯净度换算：floor(纯净度/25) → 四级~二级 */
+const SOUL_FORMS=[
+  {key:'污体',       card:'单重魂·污体',           need:1, min:0,  base:0, cap:3,  per:25,   hp:1.00, atk:0.80, spd:0.90, ap:25,
+   desc:'单条灵魂做出的最粗糙的改造人——拿得出灵魂，就能造一个出来。强度只到二级。'},
+  {key:'拨体',       card:'多重魂·拨体',           need:3, min:80, base:3, cap:5,  per:10,   hp:1.15, atk:1.15, spd:1.25, ap:40,
+   desc:'三条「超过 80%」的高纯灵魂融合：速度更高，攻防俱佳。强度二级~标准一级。'},
+  {key:'几魂异性体', card:'多重魂·几魂异性体',     need:5, min:90, base:5, cap:8,  per:3.3,  hp:0.70, atk:1.30, spd:1.30, ap:40,
+   desc:'五条「超过 90%」的灵魂融合：防御偏薄，攻击与速度大幅提高。强度一级~弱特级。'},
+  {key:'遍杀即灵体', card:'无为转变·遍杀即灵体',   need:8, min:95, base:9, cap:13, per:1.25, hp:1.30, atk:1.25, spd:1.20, ap:60,
+   desc:'八条「超过 95%」的灵魂融合：攻击、防御、速度全面暴涨，无为转变的完成形态。强度标准特级~弱龙级。'}
+];
+function soulFormOf(key){return SOUL_FORMS.find(f=>f.key===key||f.card===key)||null;}
+/** 依据「平均纯净度」算产物档位（严格落在该形态的 base~cap 内） */
+function soulFormLi(form,avg){
+  if(!form)return 0;
+  if(form.need<=1)return clamp(Math.floor((avg||0)/25),0,form.cap);
+  return clamp(form.base+Math.floor(((avg||0)-form.min)/form.per),form.base,form.cap);
+}
 const MAKORA_RULE_CAP=0.75;
 /** 每个术式对应的领域名（取自 WHEEL_TECHNIQUE.domain） */
 const TECH_DOMAIN={};WHEEL_TECHNIQUE.forEach(t=>TECH_DOMAIN[t.flag]=t.domain);
@@ -1878,7 +1996,15 @@ class BattleEngine{
             blueMoonOpened:false, // 苍月开启当次行动不消耗锁定次数
             foresightCrit:false, // 念写：闪避后下次攻击必暴击(×3)
             fateType:null,      // 命之契：本场随机契约 atk/def/spd/heal
-            fateRolled:false};  // 命之契是否已roll
+            fateRolled:false,  // 命之契是否已roll
+            /* —— 极之番（流派）挂上的临时状态：都是 {v?,left}，按「自身行动次数」递减 —— */
+            ultGuard:null,     // 防御类：{cut,left}，cut>=1 即完全免伤
+            ultAtk:null,       // 增幅类·狂化：{v:攻击倍率,taken:受伤倍率,left}
+            ultSpell:null,     // 增幅类·无我：{v:术式倍率,left}
+            ultSpd:null,       // 增幅类·神速：{v:出手序倍率,left}
+            ultPierce:null,    // 规则类·必中：{left} 期间攻击走规则级通道
+            cpTax:null,        // 规则类·夺咒：{v:咒力消耗倍率,left}
+            domainSeal:null};  // 规则类·封域：{left} 期间无法展开领域与极之番
     u.flags=u.flags||[];u.skills=u.skills||{};
     u.hasFlag=function(f){return u.flag===f||(u.flags&&u.flags.includes(f));};
     // 投射咒法：战斗时速度大幅提升（原作 24 帧位移）
@@ -1894,6 +2020,7 @@ class BattleEngine{
   /** 有效速度：基础速度受冰灵减速层数影响（每层-20%） */
   effSpeed(u){
     let sp=u.speed*Math.pow(0.8,u.buff.slow||0);
+    if(u.buff&&u.buff.ultSpd)sp*=u.buff.ultSpd.v;   // 极之番·神速
     // 影中的式神压在你身上：藏得越多越慢（按比例，最多 −85%）
     if(u.isPlayer)sp*=Math.max(0.15,1-this.hiddenWeight()*SHADOW_HIDE_SPD);
     return Math.max(0.05,sp);
@@ -2242,7 +2369,7 @@ class BattleEngine{
   ampBlocks(sk){
     if(!sk)return false;
     const sp=sk.special;
-    if(sp==='defend'||sp==='summon')return false;
+    if(sp==='defend'||sp==='summon'||sp==='soulPanel')return false;
     if(sp)return true;                 // ult / domain / sig 等特殊招式一律走术式
     return (sk.kind!=='melee');        // 其余按 kind：melee 放行，tech 封锁
   }
@@ -2286,9 +2413,16 @@ class BattleEngine{
               ap:SKILL_TIERS.domain.ap,spd:SKILL_TIERS.domain.spd});
           });
         }
-        if(u.canUlt)bar.push({id:'__ult',name:'极 之 番',tier:'ult',special:'ult',
-          cd:0,mult:[1],scope:'all',cost:0.50,chargeable:false,kind:'tech',once:true,
-          ap:SKILL_TIERS.ult.ap,spd:SKILL_TIERS.ult.spd});
+        if(u.canUlt){
+          const _ures=(u.isPlayer)?ultArtResolve(this.cfg.player):{mode:'normal',name:'',uses:1,kind:'normal'};
+          if(u.isPlayer)u.ultUses=(_ures.uses||1);   // 每局可用次数（按流派）
+          bar.push({id:'__ult',name:ultArtLabel(_ures),tier:'ult',special:'ult',
+            cd:0,mult:[1],scope:'all',cost:0.25,chargeable:false,kind:'tech',
+            ap:SKILL_TIERS.ult.ap,spd:SKILL_TIERS.ult.spd,
+            ultUses:(_ures.uses||1),ultLabel:ultArtLabel(_ures),
+            ultDesc:(_ures.desc||'耗 25% 咒力上限，对敌全体造成 2400% 效率伤害并回满自身。')});
+        }
+
         u.skillBar=bar;
       }
     });
@@ -2307,8 +2441,11 @@ class BattleEngine{
       if(u.buff){u.buff.bind=0;u.buff.rabbit=0;u.buff.defend=false;u.buff.shadowDive=false;}
       u._diveNoted=false;
       u.planned=[];
-      // 基础回蓝（旋钮，默认 0）：调大就是每回合自动回一点蓝
-      if(CP_REGEN_PER_ROUND>0)u.cp=Math.min(u.maxCp,u.cp+Math.round(u.maxCp*CP_REGEN_PER_ROUND));
+      // 每回合基础回蓝：按当前上限的比例回复（咒力总量大幅上调后补上的续航机制）
+      if(CP_REGEN_PER_ROUND>0&&u.cp<u.maxCp){
+        const _rg=Math.min(u.maxCp-u.cp,Math.round(u.maxCp*CP_REGEN_PER_ROUND));
+        if(_rg>0){u.cp+=_rg;}
+      }
       if(_bind>0)ev.push({type:'info',text:`${u.isPlayer?'你':u.name} 仍被【影缚】缠着——本回合行动点只剩 ${u.ap}。`});
       this.actionsTotal++;
       if(u.buff)u.buff.actCount=(u.buff.actCount||0)+1;
@@ -2350,14 +2487,14 @@ class BattleEngine{
     const plan=[];let ap=u.ap;
     const full=AP_PER_ROUND;
     // 1) 极之番：残血（<40%）且咒力够半管时，一场一次的终极爆发（出手最慢）
-    if(u.canUlt&&!u.ultUsed&&u.hp<u.maxHp*0.40&&((u.skills&&u.skills.sixEyes)||u.cp>=u.maxCp*0.5)&&ap>=full){
+    if(u.canUlt&&!u.ultUsed&&u.hp<u.maxHp*0.40&&!(u.buff&&u.buff.domainSeal)&&((u.skills&&u.skills.sixEyes)||u.cp>=u.maxCp*0.5)&&ap>=full){
       plan.push({name:'极之番',spd:SKILL_TIERS.ult.spd[0],ap:full,special:'ult'});ap-=full;
     }
     // 2) 领域展开：占满整回合（结印即开，出手最快）
     // 咒力不够 30% 就别规划领域（否则整回合白给，看起来像在无限开领域）
     const _domCp=Math.round((u.maxCp||0)*0.30);
     const _domAffordable=(u.skills&&u.skills.sixEyes)||(u.buff&&u.buff.blueMoon>0)||(u.cp>=_domCp);
-    if(!plan.length&&u.canDomain&&(u.domainCd||0)<=0&&ap>=full&&_domAffordable&&this.npcWantsDomain(u)){
+    if(!plan.length&&u.canDomain&&(u.domainCd||0)<=0&&ap>=full&&_domAffordable&&!(u.buff&&u.buff.domainSeal)&&this.npcWantsDomain(u)){
       const _dlist=u.techDomains||[{name:u.domainName||'领域',used:!!u.domainUsed}];
       const _di=Math.max(0,_dlist.findIndex(d=>!d.used));
       plan.push({name:'领域展开',spd:SKILL_TIERS.domain.spd[0],ap:full,special:'domain',domainIdx:_di});ap-=full;
@@ -2405,7 +2542,9 @@ class BattleEngine{
   /** 技能的实际咒力消耗：按上限取整、至少 1 点（咒力池极小的角色也不至于完全用不出术式） */
   skillCpCost(sk,p){
     if(!sk||!sk.cost||sk.cost<=0)return 0;
-    return Math.max(1,Math.round((p.maxCp||0)*sk.cost));
+    let c=p.maxCp||0;
+    if(p.buff&&p.buff.cpTax)c*=(p.buff.cpTax.v||2);   // 极之番·夺咒：咒力消耗翻倍
+    return Math.max(1,Math.round(c*sk.cost));
   }
   /** 玩家声明一次行动：扣行动点并入队；返回 {ok, why} */
   playerDeclare(skillId,stage,targetIdx){
@@ -2419,6 +2558,7 @@ class BattleEngine{
     //   真正消耗等到在面板里选中具体一项时结算（否则面板一打开就没点数可选了）
     if(sk.special==='shadowHide')return {ok:true,openHide:true};
     if(sk.special==='possession')return {ok:true,openPossess:true};
+    if(sk.special==='soulPanel')return {ok:true,openSoul:sk.soulForm};
     const st=Math.max(0,Math.min(stage,(sk.ap||[0]).length-1));
     // 收尾一击：吃掉全部剩余行动点（伤害按 剩余/15 的比例）
     const _filler=sk.special==='filler';
@@ -2426,6 +2566,7 @@ class BattleEngine{
     const cost=_filler?p.ap:((sk.ap&&sk.ap[st])||0);
     if(cost>p.ap)return {ok:false,why:'行动点不足'};
     if(sk.once&&p['_used_'+skillId])return {ok:false,why:'本场已经使用过'};
+    if(sk.special==='ult'&&(p.ultUses||0)<=0)return {ok:false,why:'【'+(sk.ultLabel||'极之番')+'】本局的次数已经用尽'};
     const cpCost=this.skillCpCost(sk,p);
     if(cpCost>0&&p.cp<cpCost)return {ok:false,why:'咒力不足'};
     if(cpCost)p.cp-=cpCost;
@@ -2824,6 +2965,92 @@ class BattleEngine{
     const cur=this.round||0;
     return (P&&P.possessRoundThis===cur)?true:false;
   }
+  /* ==================== 无为转变 · 灵魂库 → 改造人 ==================== */
+  /** 灵魂库摘要（面板与提示用）：灵魂按纯净度从高到低、改造人库存原样返回 */
+  soulBankInfo(){
+    const P=this.cfg&&this.cfg.player;
+    if(!P)return {souls:[],fusions:[]};
+    return {souls:(P.soulBank||[]).slice().sort((a,b)=>b.purity-a.purity),fusions:(P.soulFusions||[]).slice()};
+  }
+  /** 某形态当前的可召唤状态：可（将消耗哪几条 / 复用哪只库存）或不可（原因） */
+  soulFormStatus(formKey){
+    const P=this.cfg&&this.cfg.player;
+    const form=soulFormOf(formKey);
+    if(!P||!form)return {ok:false,why:'没有这种改造人'};
+    const p=this.player;
+    P.soulBank=Array.isArray(P.soulBank)?P.soulBank:[];
+    P.soulFusions=Array.isArray(P.soulFusions)?P.soulFusions:[];
+    if(p&&this.alive(p.side).some(u=>u.soulForm===form.key))return {ok:false,why:'【改造人·'+form.key+'】已经在场上了。'};
+    if(form.need<=1){
+      const best=P.soulBank.slice().sort((a,b)=>b.purity-a.purity);
+      if(!best.length)return {ok:false,why:'灵魂库里还没有灵魂——用无为转变击溃敌人就能收魂。'};
+      return {ok:true,mode:'single',souls:[best[0]],avg:best[0].purity,form:form};
+    }
+    const pool=P.soulBank.filter(x=>x.purity>form.min).sort((a,b)=>b.purity-a.purity);
+    if(pool.length>=form.need){
+      const souls=pool.slice(0,form.need);
+      const avg=Math.round(souls.reduce((a,b)=>a+b.purity,0)/souls.length*10)/10;
+      return {ok:true,mode:'fuse',souls:souls,avg:avg,form:form};
+    }
+    const have=P.soulFusions.filter(f=>f.form===form.key);
+    if(have.length)return {ok:true,mode:'stock',fusion:have[0],avg:have[0].purityAvg,form:form};
+    return {ok:false,why:'灵魂不足：'+form.card+' 需要 '+form.need+' 条纯净度超过 '+form.min+'% 的灵魂（现在只有 '+pool.length+' 条）。'};
+  }
+  /** 召唤改造人：单选指定灵魂 / 自动融合最高纯度的若干条 / 复用已有库存 */
+  playerSoulSummon(formKey,soulId){
+    const p=this.player,P=this.cfg&&this.cfg.player;
+    if(!p||!P)return {ok:false,why:'没有角色数据'};
+    const stt=this.soulFormStatus(formKey);
+    if(!stt.ok)return {ok:false,why:stt.why};
+    const form=stt.form;
+    const cost=form.ap||25;
+    if(p.ap<cost)return {ok:false,why:'行动点不足（'+form.card+' 需要 '+cost+' 点）'};
+    P.soulBank=Array.isArray(P.soulBank)?P.soulBank:[];
+    P.soulFusions=Array.isArray(P.soulFusions)?P.soulFusions:[];
+    const ev=[];
+    let soul=null,fusion=null;
+    if(stt.mode==='single'){
+      soul=(soulId&&P.soulBank.find(x=>x.id===soulId))||stt.souls[0];
+      if(!soul)return {ok:false,why:'那条灵魂已经不在库里了。'};
+    }else if(stt.mode==='stock'){fusion=stt.fusion;}
+    const li=soulFormLi(form,stt.avg);
+    p.ap-=cost;
+    if(stt.mode==='fuse'){
+      fusion={id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+        form:form.key,name:'改造人·'+form.key,li:li,purityAvg:stt.avg,souls:stt.souls.map(s=>s.id)};
+      P.soulFusions.push(fusion);
+      P.soulBank=P.soulBank.filter(x=>stt.souls.indexOf(x)<0);
+      ev.push({type:'skill',text:'【'+form.card+'】你把 '+stt.souls.length+' 条灵魂（纯净度 '+stt.souls.map(s=>s.purity.toFixed(1)+'%').join('、')+'，均值 '+stt.avg.toFixed(1)+'%）压进同一具躯体——融合不可逆，它们从此只是一只【'+fusion.name+'】。'});
+    }
+    const u=this.makeSoulUnit(p,form,li,fusion,soul);
+    if(!u){
+      if(fusion&&stt.mode==='fuse'){P.soulBank=P.soulBank.concat(stt.souls);P.soulFusions=P.soulFusions.filter(f=>f!==fusion);}
+      return {ok:false,why:'改造失败。'};
+    }
+    ev.push({type:'skill',text:'你造出了【'+u.name+'】（'+lvName(li)+'）——它本回合即可行动。战死会连同灵魂一起永久消失，随时可以「收回」保它平安。'});
+    this.checkEnd(ev);
+    return {ok:true,events:ev,unit:u.name,li:li};
+  }
+  /** 按「纯净度 → 档位」的曲线造一只改造人：属性取曲线中值，再乘该形态的属性倾向 */
+  makeSoulUnit(owner,form,li,fusion,soul){
+    const B=statBandAt(levelScore(li));
+    const mid=a=>Math.round((a[0]+a[1])/2);
+    const u=this.addSummon(owner,(fusion?fusion.name:'改造人·'+form.key),1.0,'改造人');
+    if(!u)return null;
+    const atk=v=>Math.max(1,Math.round(v*(form.atk||1)));
+    u.li=li;
+    u.maxHp=Math.max(1,Math.round(mid(B.hp)*(form.hp||1)));u.hp=u.maxHp;
+    u.maxCp=Math.max(1,mid(B.cp));u.cp=u.maxCp;
+    u.melee=[atk(B.dmg[0]),atk(B.dmg[1])];
+    u.eff=[atk(B.dmg[0]),atk(B.dmg[1])];
+    u.ctl=Math.max(0,mid(B.ctl));
+    u.speed=Math.max(1,Math.round(u.speed*(form.spd||1)*10)/10);
+    u.soulForm=form.key;
+    u.soulRef=soul||null;
+    u.fusionRef=fusion||null;
+    u.summonRatio=1.0;
+    return u;
+  }
   /** 自由收回：把场上的召唤物收回来（不算战死——式神回影、咒灵回库，日后可再召唤） */
   playerRecall(u){
     const p=this.player;
@@ -2834,7 +3061,9 @@ class BattleEngine{
     u.alive=false;u.recalled=true;u.planned=[];u.hidden=false;
     ev.push({type:'skill',text:u.spiritRef
       ? '【收回】你把咒灵式神【'+nm+'】收回了咒灵库——它没有战死，库里还留着它，随时可以再召。'
-      : '【收回】你把【'+nm+'】收回了影子——它没有战死，随时可以再召唤。'});
+      : (u.summonTag==='改造人'
+        ? '【收回】你把改造人【'+nm+'】收回了灵魂库——它没有战死，库存里还留着它，随时可以再召。'
+        : '【收回】你把【'+nm+'】收回了影子——它没有战死，随时可以再召唤。')});
     this.checkEnd(ev);
     return {ok:true,events:ev};
   }
@@ -2947,7 +3176,12 @@ class BattleEngine{
       team.forEach((u,i)=>{u.hp=Math.min(u.maxHp,u.hp+h[i]);u.cp=Math.min(u.maxCp,u.cp+c[i]);});
       if(actor.isPlayer)ev.push({type:'heal',text:`【花田·百花缭乱】我方全体恢复10%生命与5%咒力。`,heal:h[0]});}
     // 命之契·治愈契约：每回合恢复10%生命
-    if(actor.buff.fateType==='heal'){const h=Math.round(actor.maxHp*.10);actor.hp=Math.min(actor.maxHp,actor.hp+h);if(actor.isPlayer)ev.push({type:'heal',text:`【命之契·治愈契约】恢复10%生命（+${h}）。`,heal:h});}
+    // 极之番·陨 的灼烧：每回合 8% 生命，3 回合
+    if(actor.buff&&actor.buff.burn&&(actor.buff.burn.left||0)>0){
+      const bd=Math.round(actor.maxHp*(actor.buff.burn.dmg||0.08));
+      actor.buff.burn.left--;
+      this.loseHp(actor,bd,ev,'灼烧');
+    }    if(actor.buff.fateType==='heal'){const h=Math.round(actor.maxHp*.10);actor.hp=Math.min(actor.maxHp,actor.hp+h);if(actor.isPlayer)ev.push({type:'heal',text:`【命之契·治愈契约】恢复10%生命（+${h}）。`,heal:h});}
     // 6. 行动时召唤（十影 / 咒灵操术 / 降灵术已改为玩家主动发起的「召唤」指令，不再自动随机召唤）
     if(this.hasFlag(actor,'puppet')){const n=this.alive(actor.side).filter(u=>u.summonTag==='傀儡'&&u.ownerName===actor.name).length;if(n<3)this.addSummon(actor,'傀儡',.70,'傀儡');}
     // 领域熔断恢复：轮到自身行动时，有反转术式者冷却-1（用完间隔自身一次行动即可再开）
@@ -3027,6 +3261,11 @@ class BattleEngine{
     }
     // 时停冷却按回合流转（眩晕也计时）
     if((actor.buff.zaWorldCd||0)>0&&(actor.buff.zaWorld||0)===0)actor.buff.zaWorldCd--;
+    // 极之番挂上的临时状态：按「自身行动次数」递减，归零即失效
+    if(actor.buff)Object.keys(actor.buff).forEach(k=>{const b=actor.buff[k];
+      if(b&&typeof b==='object'&&b.left!=null){b.left--;if(b.left<=0){actor.buff[k]=null;
+        if(actor.isPlayer)ev.push({type:'info',text:'【极之番】'+(NLNAMES[k]||'效果')+'的效力散去了。'});}}
+    });
     if(actor.isPlayer&&actor.hp<=0)this.guardPlayerDeath(ev);
     this.checkEnd(ev);
   }
@@ -3135,7 +3374,9 @@ class BattleEngine{
   }
   techCost(u){
     if(u.skills&&u.skills.sixEyes)return 0; // 六眼：咒力消耗为0
-    return Math.max(1,Math.round(u.eff[1]*0.08)-u.ctl);
+    let c=Math.max(1,Math.round(u.eff[1]*0.08)-u.ctl);
+    if(u.buff&&u.buff.cpTax)c=Math.round(c*(u.buff.cpTax.v||2));   // 极之番·夺咒
+    return c;
   }
   /** 统一出手（玩家/NPC 共用），kind=melee|tech */
   performStrike(att,target,kind,ev,hitKey,ampTag){
@@ -3251,6 +3492,9 @@ class BattleEngine{
     let amberBonus=0;
     if(kind==='tech'&&this.hasFlag(att,'blood')&&!(att.buff.blueMoon>0)){const c=Math.round(att.maxHp*.10);att.hp-=c;ev.push({type:'hit',text:`【赤血操术】以血为武，消耗自身10%生命（-${c}）。`,dmg:c});}
     if(this.hasFlag(att,'amber')&&!(att.buff.blueMoon>0)){const c=Math.round(att.maxHp*.20);att.hp-=c;amberBonus=c;ev.push({type:'hit',text:`【幻兽琥珀】燃烧20%生命（-${c}）化作雷击附加。`,dmg:c});}
+    // —— 极之番·增幅类：狂化（攻击）、无我（术式）——
+    if(att.buff&&att.buff.ultAtk)mult*=att.buff.ultAtk.v;
+    if(att.buff&&att.buff.ultSpell&&kind==='tech')mult*=att.buff.ultSpell.v;
     // —— 式神附体：犬颚爪/雷装/穿血等把式神的术式挂在自己身上 ——
     if(att.possess){
       // 犬颚爪 / 穿血 都是单纯的攻击加成（穿血虽是赤血操术的奥义，但仍属普通伤害——
@@ -3275,7 +3519,7 @@ class BattleEngine{
     let flash=false;const flashP=_bfBase*(this.hasFlag(att,'ratio')?BLACK_FLASH_P_RATIO:1);
     if((att.skills&&att.skills.alwaysFlash)||(flashP>0&&Math.random()<flashP)){mult*=10;flash=true;}
     // 天逆鉾：持有者攻击强制穿透一切术式免疫（破无下限/镇魂曲/不义游戏/天空）
-    const bypassTool=(att.skills&&att.skills.tools&&att.skills.tools.ama)?true:false;
+    const bypassTool=((att.skills&&att.skills.tools&&att.skills.tools.ama)?true:false)||!!(att.buff&&att.buff.ultPierce);
     const dmg=this.dealDamage(att,target,base,mult,kind,ev,label,flash,bypassTool);
     // —— 附加伤害（命中后追加，不再触发叠层/即死递归）——
     if(target.alive&&dmg>0){
@@ -3327,6 +3571,7 @@ class BattleEngine{
   afterStrike(ev){this._ampHit=null;this._hitKey=null;this.checkEnd(ev);}
   pickMove(flag){const arr=TECH_MOVE[flag];return arr?arr[rand(0,arr.length-1)]:'咒力打击';}
   castDomain(att,ev,domainIdx,prepaid){
+    if(att.buff&&att.buff.domainSeal){if(att.isPlayer)ev.push({type:'info',text:'【极之番·封域】你的领域正被封着（还剩 '+(att.buff.domainSeal.left||0)+' 次自身行动）——先用别的手段。'});return false;}
     if(!att.canDomain)return false;
     // 可用领域清单：主术式 + 各门额外术式（术式槽位扩张后最多 3 个）
     if(!att.techDomains)att.techDomains=[{name:att.domainName||'领域',used:!!att.domainUsed}];
@@ -3348,7 +3593,7 @@ class BattleEngine{
       return false;
     }
     // prepaid=true 表示队列的声明阶段已经扣过咒力（playerDeclare），这里不能再扣第二次
-    const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.15);
+    const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.15*((att.buff&&att.buff.cpTax)?(att.buff.cpTax.v||2):1));
     // ★ 先查咒力再标记领域：否则展开失败时这门领域会被白白消耗掉
     if(!prepaid&&att.cp<cost){
       ev.push({type:'info',text:att.isPlayer?'咒力不足以展开领域（需15%咒力上限）。':`【${doms[idx].name}】展开失败——${att.name} 的咒力不足以维持领域。`});
@@ -3463,21 +3708,122 @@ class BattleEngine{
     });
   }
   /** 极之番（生得术式终极奥义，熟练度300%领悟）：耗50%咒力上限，对敌全体造成效率2400%伤害，释放后回满自身血；一场一次 */
-  castUltimate(att,ev,prepaid){
-    if(!att.canUlt||att.ultUsed)return false;
+  /** 极之番：按「流派」结算（NPC 走常规）
+   *  常规：耗 25% 咒力上限 → 敌全体 2400% + 回满自身（一局一次）
+   *  术式自带（ULT_TECH）/ 轮盘自建（ULT_ARTS）：各自的形态与每局次数
+   *  次数记在 att.ultUses（initTurn 按流派重置）；NPC 仍用 ultUsed 的「一场一次」。 */
+  castUltimate(att,ev,prepaid,art){
+    if(att.buff&&att.buff.domainSeal){if(att.isPlayer)ev.push({type:'info',text:'【极之番·封域】你的极之番正被封着——先用别的手段。'});return false;}
+    if(!att.canUlt)return false;
+    const P=this.cfg&&this.cfg.player;
+    const res=(att.isPlayer&&P)?(art||ultArtResolve(P)):{mode:'normal',name:'',uses:1,kind:'normal'};
+    const label=ultArtLabel(res);
+    if(att.isPlayer){
+      if(att.ultUses==null)att.ultUses=res.uses||1;
+      if(att.ultUses<=0){ev.push({type:'info',text:'【'+label+'】本局的次数已经用尽。'});return false;}
+    }else{
+      if(att.ultUsed)return false;
+    }
+    if(res.kind==='soul'){
+      const need=res.souls||3;
+      const bank=(P&&Array.isArray(P.soulBank))?P.soulBank:[];
+      if(bank.length<need){if(att.isPlayer)ev.push({type:'info',text:'【'+label+'】需要 '+need+' 条灵魂（现在只有 '+bank.length+' 条）。'});return false;}
+    }
     const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.25);
     if(!prepaid){
       if(att.cp<cost){if(att.isPlayer)ev.push({type:'info',text:'咒力不足以释放极之番（需25%咒力上限）。'});return false;}
       att.cp-=cost;
     }
-    att.ultUsed=true;
-    const avg=(att.eff[0]+att.eff[1])/2,dmg=Math.round(avg*24);
+    if(att.isPlayer)att.ultUses=att.ultUses-1; else att.ultUsed=true;
+    const avg=Math.round((att.eff[0]+att.eff[1])/2);
     const tName=att.techName||att.name;
-    ev.push({type:'ultcut',actorName:att.isPlayer?'你':att.name,text:`极之番 · ${tName}`});
-    const foes=att.side==='enemy'?this.alive('ally'):this.alive('enemy');
-    foes.forEach(t=>this.dealDamage(att,t,dmg,1,'tech',ev,`极之番·${tName}`,false,false));
-    const heal=Math.round(att.maxHp-att.hp);att.hp=att.maxHp;
-    if(heal>0)ev.push({type:'heal',from:att.name,text:`${att.isPlayer?'你':att.name} 释放极之番后生命全部恢复（+${heal}）。`,heal});
+    ev.push({type:'ultcut',actorName:att.isPlayer?'你':att.name,text:label+(tName?('　·　'+tName):'')});
+    const foeSide=att.side==='enemy'?'ally':'enemy';
+    const foes=()=>this.alive(foeSide);
+    const K=res.kind||'normal';
+    if(K==='normal'||K==='dmg'||K==='vortex'||K==='soul'){
+      let base=Math.round(avg*24);
+      if(K==='dmg')base=Math.round(avg*(res.mult||24));
+      if(K==='soul')base=Math.round(avg*(res.mult||25));
+      if(K==='vortex'){
+        const n=(P&&Array.isArray(P.absorbed))?P.absorbed.length:0;
+        const mul=Math.min(60,20+n*2);
+        base=Math.round(avg*mul);
+        ev.push({type:'skill',text:'【极之番·漩涡】卷入了 '+n+' 只收录的咒灵——伤害倍率 '+mul+'%。'});
+      }
+      if(res.flash)base*=10;
+      if(res.pierce)ev.push({type:'skill',text:'【'+label+'】走的是规则级通道——术式免疫与闪避都挡不住。'});
+      if(K==='soul'){
+        const need=res.souls||3;
+        const used=P.soulBank.slice().sort((a,b)=>a.purity-b.purity).splice(0,need);
+        P.soulBank=P.soulBank.filter(x=>used.indexOf(x)<0);
+        ev.push({type:'skill',text:'【极之番·魂之奔流】燃尽了 '+need+' 条灵魂（最低纯净度 '+used[0].purity.toFixed(1)+'%）。'});
+      }
+      const list=foes();
+      if((res.scope||'all')==='one'){
+        const t=att.side==='enemy'?this.pickAllyTarget():this.pickEnemyTarget();
+        if(t)this.dealDamage(att,t,base,1,'tech',ev,label,!!res.flash,!!res.pierce);
+      }else{
+        list.forEach(t=>this.dealDamage(att,t,base,1,'tech',ev,label,!!res.flash,!!res.pierce));
+      }
+      if(res.burn)list.forEach(t=>{if(t.alive)t.buff.burn={dmg:res.burn,left:3};});
+      if(res.vuln)list.forEach(t=>{if(t.alive)t.buff.vuln=Math.max(t.buff.vuln||0,res.vuln);});
+      if(res.selfHp){
+        const c=Math.round(att.maxHp*res.selfHp);
+        att.hp=Math.max(1,att.hp-c);
+        ev.push({type:'hit',text:'【'+label+'】以血为武，'+(att.isPlayer?'你':att.name)+' 燃烧自身生命（-'+c+'）。',dmg:c});
+      }
+      if(res.heal)att.cp=att.maxCp;
+      if(K==='normal'||res.heal){
+        const heal=Math.round(att.maxHp-att.hp);att.hp=att.maxHp;
+        if(heal>0)ev.push({type:'heal',from:att.name,text:(att.isPlayer?'你':att.name)+' 的生命全部恢复（+'+heal+'）。',heal});
+      }
+    }
+    else if(K==='buff'){
+      const rd=res.rounds||3;
+      if(res.atk)att.buff.ultAtk={v:res.atk,taken:res.taken||1,left:rd};
+      if(res.spell)att.buff.ultSpell={v:res.spell,left:rd};
+      if(res.spd)att.buff.ultSpd={v:res.spd,left:rd};
+      ev.push({type:'skill',text:'【极之番·'+res.name+'】'+(att.isPlayer?'你':att.name)+' 的状态被改写：'+res.desc+'（剩余 '+rd+' 次自身行动）'});
+    }
+    else if(K==='guard'){
+      att.buff.ultGuard={cut:res.cut,left:res.rounds||2};
+      ev.push({type:'skill',text:'【极之番·'+res.name+'】'+(att.isPlayer?'你':att.name)+' 立起防护：'+res.desc+'（剩余 '+(res.rounds||2)+' 次自身行动）'});
+    }
+    else if(K==='pierce'){
+      att.buff.ultPierce={left:res.rounds||3};
+      ev.push({type:'skill',text:'【极之番·必中】'+(att.isPlayer?'你':att.name)+' 的每一击都走规则级通道——术式免疫与闪避不再有效。'});
+    }
+    else if(K==='drain'){
+      const take=res.take||0.40;
+      foes().forEach(t=>{const d=Math.round(t.cp*take);t.cp=Math.max(0,t.cp-d);t.buff.cpTax={v:res.tax||2,left:res.rounds||3};});
+      ev.push({type:'skill',text:'【极之番·夺咒】敌方全体的咒力被抽走 '+Math.round(take*100)+'%，且 '+(res.rounds||3)+' 次行动内咒力消耗翻倍。'});
+    }
+    else if(K==='seal'){
+      foes().forEach(t=>{t.buff.domainSeal={left:res.rounds||3};});
+      ev.push({type:'skill',text:'【极之番·封域】敌方全体在 '+(res.rounds||3)+' 次行动内无法展开领域与极之番。'});
+    }
+    else if(K==='summon'){
+      let ok=0;
+      for(let i=0;i<(res.n||3);i++){
+        const list=(P&&Array.isArray(P.absorbed))?P.absorbed:[];
+        if(!list.length)break;
+        const sp=list[rand(0,list.length-1)];
+        try{if(this.playerSummon(att,ev,'spirit:'+(sp.id||('i'+i))))ok++;}catch(e){}
+      }
+      if(ok)ev.push({type:'skill',text:'【极之番·万灵归位】'+ok+' 个亡灵应召而来。'});
+    }
+    else if(K==='shadows'){
+      let ok=0;
+      const st=(P&&P.shadows)||{tamed:{}};
+      Object.keys(st.tamed||{}).forEach(n=>{
+        if((st.dead||{})[n])return;
+        const opt=this.summonOptions().find(o=>o.key==='shadow:'+n&&!o.onField);
+        if(!opt)return;
+        try{if(this.playerSummon(att,ev,opt.key))ok++;}catch(e){}
+      });
+      if(ok)ev.push({type:'skill',text:'【极之番·嵌合暗翳庭】'+ok+' 只式神自影中齐出。'});
+    }
     this.checkEnd(ev);
     return true;
   }
@@ -3506,6 +3852,13 @@ class BattleEngine{
       if(!tar._sdNoted){tar._sdNoted=true;ev.push({type:'skill',text:'【简易领域】你在身周张起一圈小小的屏障——领域的必中伤害被挡掉了大半（未展开领域时有效）。'});}
     }
     // —— 苍月：锁定生命期间，任何来源的伤害都无法扣血（含领域/真伤）——
+    // —— 极之番·防御类：金身（免伤）/ 铁壁·坚壁（大额减伤）——先于一切免疫判定 ——
+    if(tar.buff&&tar.buff.ultGuard){
+      const g=tar.buff.ultGuard;
+      if(g.cut>=1){ev.push({type:'skill',text:'【极之番·金身】'+(tar.isPlayer?'你':tar.name)+' 处于绝对防护之中——'+label+' 未能造成任何伤害。'});return 0;}
+      dmg*=(1-g.cut);
+      if(!tar._ultGuardNoted){tar._ultGuardNoted=true;ev.push({type:'skill',text:'【极之番·护体】减伤 '+Math.round(g.cut*100)+'% 正在生效。'});}
+    }
     if((tar.buff.blueMoon||0)>0){
       if(this.makoraBypass(att,'blueMoon')){ev.push({type:'skill',text:`【效果解析】${att.name} 已经完全看破【苍月·天上天下唯我独尊】——锁血被直接穿过，${label} 照常造成损伤。`});}
       else{this.makoraNoteEffect('blueMoon',ev);ev.push({type:'skill',text:`${tar.name}【苍月·天上天下唯我独尊】生命被锁定，${label} 无法造成损伤。`});return 0;}
@@ -3528,6 +3881,7 @@ class BattleEngine{
     if(this.hasFlag(tar,'ironBody')&&!this.makoraBypass(att,'ironBody')){this.makoraNoteEffect('ironBody',ev);dmg*=0.60;}
     if(this.hasFlag(tar,'ironWall')&&!this.makoraBypass(att,'ironWall')){this.makoraNoteEffect('ironWall',ev);const ratio=Math.max(0,tar.hp/tar.maxHp);dmg*=(1-0.50*ratio);} // 满血-50%，空血-0%
     if(tar.buff.fateType==='def')dmg*=0.70;
+    if(tar.buff&&tar.buff.ultAtk&&tar.buff.ultAtk.taken)dmg*=tar.buff.ultAtk.taken;   // 极之番·狂化：受伤 ×0.8
     // —— 魔虚罗·适应：按「术式」逐项适应。见过的就记下来，减伤看适应转数
     //    1转25% / 2转50% / 3转75% / 4转100%，5转时研究出反制术式（主人的话会永久获得免疫）——
     if(tar.makora){
@@ -3645,6 +3999,21 @@ class BattleEngine{
           ev.push({type:'skill',text:`【咒灵操术】你的式神【${nm}】被击溃，其咒灵已从咒灵库中永久消失。`});}
       }
     }
+    // 无为转变：召唤出的改造人被击溃 → 那条灵魂 / 那只融合体一起永久消失（融合不可逆）
+    if(u.summonTag==='改造人'&&u.ownerName){
+      const P2=this.cfg&&this.cfg.player;
+      if(P2){
+        if(u.fusionRef&&Array.isArray(P2.soulFusions)){
+          const i2=P2.soulFusions.indexOf(u.fusionRef);
+          if(i2>=0){const f=P2.soulFusions[i2];P2.soulFusions.splice(i2,1);
+            ev.push({type:'skill',text:`【无为转变】你的改造人【${f.name}】被击溃——融合不可逆，那 ${(f.souls||[]).length} 条灵魂一起消失了。`});}
+        }else if(u.soulRef&&Array.isArray(P2.soulBank)){
+          const i2=P2.soulBank.indexOf(u.soulRef);
+          if(i2>=0){const s2=P2.soulBank[i2];P2.soulBank.splice(i2,1);
+            ev.push({type:'skill',text:`【无为转变】你的改造人【${s2.name}】被击溃，那条灵魂（纯净度 ${s2.purity}%）也随之消散了。`});}
+        }
+      }
+    }
     const snap={name:u.name,maxHp:u.maxHp,maxCp:u.maxCp,melee:u.melee.slice(),eff:u.eff.slice(),li:u.li,ctl:u.ctl,
       // 咒灵操术吸收后，术式 / 术式对应的领域 / 反转术式 / 黑闪 一并保留，召唤时可继续使用
       flag:u.flag||null,flags:(u.flags||[]).slice(),techName:u.techName||'',
@@ -3659,6 +4028,15 @@ class BattleEngine{
       snap.id='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
       P.absorbed.push(snap);
       ev.push({type:'skill',text:`【${_sc?'咒灵操术':'降灵术'}】吸收了被击溃的【${snap.name}】（数值固定，日后可召唤为式神）。`});
+    }
+    // 无为转变：取走敌人的灵魂——灵魂只保留「纯净度」（由敌人评级换算），不继承它的术式
+    const _it=P&&Player.hasTech(P,'idleTrans');
+    if(u.side==='enemy'&&!u.summonTag&&killer&&killer.side==='ally'&&P&&_it){
+      P.soulBank=Array.isArray(P.soulBank)?P.soulBank:[];
+      const purity=rollSoulPurity(u.li);
+      P.soulBank.push({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+        name:u.name,li:u.li,purity:purity});
+      ev.push({type:'skill',text:`【无为转变】你取走了被击溃的【${u.name}】的灵魂（纯净度 ${purity.toFixed(1)}%）——灵魂只保留纯净度，不继承它的术式。`});
     }
   }
   pickEnemyTarget(){
@@ -3698,7 +4076,7 @@ class BattleEngine{
     // 特殊蓄力技：五条悟虚式茈 / 宿傩空间斩
     if(this.npcChargeSkill(u,ev))return;
     // 极之番：残血（<40%）且蓝够半管时，一场一次的终极爆发
-    if(u.canUlt&&!u.ultUsed&&u.hp<u.maxHp*0.40&&((u.skills&&u.skills.sixEyes)||u.cp>=u.maxCp*0.5)){if(this.castUltimate(u,ev))return;}
+    if(u.canUlt&&!u.ultUsed&&u.hp<u.maxHp*0.40&&!(u.buff&&u.buff.domainSeal)&&((u.skills&&u.skills.sixEyes)||u.cp>=u.maxCp*0.5)){if(this.castUltimate(u,ev))return;}
     if(u.canDomain&&(u.domainCd||0)<=0
        &&((u.skills&&u.skills.sixEyes)||(u.buff&&u.buff.blueMoon>0)||u.cp>=Math.round((u.maxCp||0)*0.30))){
       let want=false;
@@ -3721,7 +4099,8 @@ class BattleEngine{
     if(!target){ev.push({type:'info',text:`${u.name} 失去目标。`});return;}
     // 与该招式档位一致的咒力比例（快速 5% / 连击 7% / 咏唱 10% / 结印 18% / 广域 22%）
     const _tcfg0=(u.flag&&(TECH_MOVE[u.flag]||[]).length)?skillTierOf(u.flag,u._queuedMove||(TECH_MOVE[u.flag]||[])[0]):NPC_GENERIC_TECH;
-    const cost=Math.max(1,Math.round((u.maxCp||0)*(_tcfg0.cost!=null?_tcfg0.cost:0.03)));
+    let cost=Math.max(1,Math.round((u.maxCp||0)*(_tcfg0.cost!=null?_tcfg0.cost:0.03)));
+    if(u.buff&&u.buff.cpTax)cost=Math.round(cost*(u.buff.cpTax.v||2));   // 极之番·夺咒
     const allyMult=u.side==='ally'?(1+(this.cfg.player.allyBoost||0)):1;
     // 万里锁：持有者的攻击对敌方全体生效（天逆鉾破免疫在 performStrike 内处理）
     const chain=u.skills&&u.skills.tools&&u.skills.tools.chain;
@@ -4844,10 +5223,11 @@ const BattleUI={
     }else if(dom2){dom2.style.display='none';}
     const ultBtn=$('actUlt');
     if(ultBtn){
-      const ultOk=p.canUlt&&!p.ultUsed&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.5);
-      ultBtn.style.display=p.canUlt&&!p.ultUsed?'':'none';
+      const _ultLeft=(p.ultUses==null?1:p.ultUses);
+      const ultOk=p.canUlt&&_ultLeft>0&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.25);
+      ultBtn.style.display=p.canUlt&&_ultLeft>0?'':'none';
       ultBtn.disabled=!(canInput&&ultOk);
-      ultBtn.textContent=p.ultUsed?'极之番·已用':'极 之 番（耗半蓝·回满血）';
+      ultBtn.textContent=_ultLeft>0?('极之番（剩 '+_ultLeft+' 次）'):'极之番·已用尽';
     }
     const cost=eng.techCost(p);
     $('actTech').textContent=`咒 力 术 式（耗${cost}）`;
@@ -5025,6 +5405,7 @@ const BattleUI={
     const cost=(sk.ap&&sk.ap[0])||0;
     if(cost>p.ap)return false;
     if(sk.once&&p['_used_'+sk.id])return false;
+    if(sk.special==='ult'&&(p.ultUses||0)<=0)return false;
     if(this.eng&&this.eng.ampActive(this.eng.player)&&this.eng.ampBlocks(sk))return false;
     if(sk.special==='domain'){const d=(p.techDomains||[])[sk.domainIdx||0];if(d&&d.used)return false;}
     if(sk.special==='domain'&&!(p.techDomains||[]).some(d=>!d.used))return false;
@@ -5053,7 +5434,7 @@ const BattleUI={
         const id=chip.getAttribute('data-for'),st=+chip.getAttribute('data-stage');
         const sk=(p.skillBar||[]).find(x=>x.id===id);if(!sk)return;
         const cc=eng.skillCpCost(sk,p);
-        const na=((sk.ap[st]||0)>p.ap)||(cc>0&&p.cp<cc)||(sk.once&&p['_used_'+sk.id]);
+        const na=((sk.ap[st]||0)>p.ap)||(cc>0&&p.cp<cc)||(sk.once&&p['_used_'+sk.id])||(sk.special==='ult'&&(p.ultUses||0)<=0);
         chip.classList.toggle('is-na',na);chip.disabled=!planning||na;
       });
     }
@@ -5100,6 +5481,7 @@ const BattleUI={
       if(r.shadowDive)this.appendLog({type:'skill',text:'【影潜】你潜入自己的影子——这一回合的攻击几乎都碰不到你（伤害 -95%），但你也无法再出手；你仍可以继续召唤式神。'});
       if(r.openHide)this.openHide();
       if(r.openPossess)this.openPossess();
+      if(r.openSoul)this.openSoul(r.openSoul);
     }else{
       this.appendLog({type:'info',text:'无法使用该技能：'+r.why});
     }
@@ -5145,7 +5527,7 @@ const BattleUI={
     this.selectedTargetIdx=eng.units.indexOf(tgt);
     const pick=(id,stage)=>{try{return eng.playerDeclare(id,stage,this.selectedTargetIdx).ok;}catch(e){return false;}};
     // 极之番：多敌或强敌时优先（一场一次）
-    if(p.canUlt&&!p.ultUsed&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.5)&&(es.length>=2||es.some(e=>e.li>=7)||tgt.hp>tgt.maxHp*0.5)){
+    if(p.canUlt&&(p.ultUses==null?1:p.ultUses)>0&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.25)&&(es.length>=2||es.some(e=>e.li>=7)||tgt.hp>tgt.maxHp*0.5)){
       if(pick('__ult',0))return true;
     }
     // 领域：前两回合展开收益最大（持续 5 回合）
@@ -5270,6 +5652,11 @@ const BattleUI={
     if(_hasSd)_notes.push('十影：召唤式神消耗咒力（越高等越贵），场上 2 只以上己方十影式神会自动融合为【嵌合兽】');
     if(_hasSc)_notes.push((eng.hasFlag(p,'spiritControl')?'咒灵操术':'降灵术')+'：召唤不消耗咒力，但召唤物战死会从库里永久消失');
     if(_hasSc&&!(p.absorbed&&p.absorbed.length))_notes.push((eng.hasFlag(p,'spiritControl')?'咒灵库':'亡灵名录')+'现在还是空的——去狩猎或击败咒灵，用咒灵操术把它们收进来');
+    if(eng.hasFlag(p,'idleTrans')){
+      const _sb=(eng.cfg&&eng.cfg.player&&eng.cfg.player.soulBank)||[];
+      const _best=_sb.slice().sort((a,b)=>b.purity-a.purity)[0];
+      _notes.push('无为转变·灵魂库：'+_sb.length+' 条灵魂'+(_best?('（最高纯净度 '+_best.purity.toFixed(1)+'%）'):'')+'　—— 用「单重魂·污体 / 多重魂·拨体 / 几魂异性体 / 遍杀即灵体」四张卡把灵魂造成改造人');
+    }
     $('bfSummonNote').textContent=_notes.join('　｜　')+'　｜　同一种召唤物同时只能存在一只。所有召唤物都不占行动点。';
     $('bfSummonList').innerHTML=html;
     $('bfSummonMask').classList.remove('hidden');
@@ -5358,6 +5745,46 @@ const BattleUI={
       +(eng.hiddenList().length?('　当前影中 '+eng.hiddenList().length+' 只，出手序 -'+eng.hiddenPenalty()+'%。'):''),items);
     $('bfPickCancel').onclick=()=>this.closePick();
   },
+  /** 无为转变 · 灵魂库面板：列出将要消耗的灵魂 / 已有库存，确认后召唤改造人 */
+  openSoul(formKey){
+    const eng=this.eng;if(!eng||eng.ended||eng.phase!=='plan')return;
+    const p=eng.player;
+    const form=soulFormOf(formKey);
+    const close=()=>{$('bfPickCancel').onclick=()=>this.closePick();};
+    if(!form){this.openPick('无为转变','没有这种改造人。',[]);close();return;}
+    const stt=eng.soulFormStatus(formKey);
+    const cost=form.ap||25;
+    if(!stt.ok){this.openPick('改造人 · '+form.key,stt.why+'　（'+form.desc+'）',[]);close();return;}
+    const li=soulFormLi(form,stt.avg);
+    const soulTxt=s=>s.name+'（纯净度 '+s.purity.toFixed(1)+'%）';
+    let note=form.desc+'　|　本次将产出：'+lvName(li)+' 的【改造人·'+form.key+'】';
+    if(stt.mode==='fuse')note+='　|　将消耗 '+stt.souls.length+' 条灵魂：'+stt.souls.map(soulTxt).join('、')+'（均值 '+stt.avg.toFixed(1)+'%——融合不可逆，以它们全部为代价）';
+    if(stt.mode==='stock')note+='　|　库存里的成品（均纯度 '+stt.avg.toFixed(1)+'%），本次召唤不消耗新灵魂';
+    const items=[];
+    const fire=(sid)=>{const r=eng.playerSoulSummon(form.key,sid);
+      if(!r.ok){this.appendLog({type:'info',text:'无法改造：'+r.why});return;}
+      this.closePick();this.render();this.eventsAnim(r.events||[],()=>this.refreshPlanUI());};
+    if(stt.mode==='single'){
+      const all=eng.soulBankInfo().souls;
+      note+='　|　选一条灵魂做成改造人：灵魂仍留在库里，只有它战死才会永久消失。';
+      all.forEach(s=>{
+        const sli=soulFormLi(form,s.purity);
+        items.push({label:'用【'+s.name+'】做改造人（'+lvName(sli)+'）',
+          meta:'纯净度 '+s.purity.toFixed(1)+'%　·　原本是 '+lvName(s.li||0),
+          cost:'耗 '+cost+' 行动点',
+          disabled:p.ap<cost,
+          onPick:()=>fire(s.id)});
+      });
+    }else{
+      items.push({label:(stt.mode==='fuse'?'举 行 融 合':'召 唤 库 存')+'　·　'+form.card,
+        meta:(stt.mode==='fuse'?('消耗 '+stt.souls.length+' 条灵魂，融合后不可分离'):'使用库存里的那只，不消耗灵魂'),
+        cost:'耗 '+cost+' 行动点',
+        disabled:p.ap<cost,
+        onPick:()=>fire(null)});
+    }
+    this.openPick('无为转变 · '+form.key,note,items);
+    close();
+  },
   /** 式神附体面板：借已调服式神的术式上身 */
   openPossess(){
     const eng=this.eng;if(!eng||eng.ended||eng.phase!=='plan')return;
@@ -5398,7 +5825,7 @@ const BattleUI={
     if(dom2){dom2.style.display=hasExtra?'':'none';dom2.disabled=!(hasExtra&&!p.extraDomainUsed);
       if(hasExtra)dom2.textContent=p.extraDomainUsed?'副领域·已展开':`领域·副｜${p.extraTech.domain}`;}
     const ultBtn=$('actUlt');
-    if(ultBtn){const ultOk=p.canUlt&&!p.ultUsed&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.5);ultBtn.style.display=p.canUlt&&!p.ultUsed?'':'none';ultBtn.disabled=!ultOk;}
+    if(ultBtn){const _ul=(p.ultUses==null?1:p.ultUses);const ultOk=p.canUlt&&_ul>0&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.25);ultBtn.style.display=p.canUlt&&_ul>0?'':'none';ultBtn.disabled=!ultOk;}
     $('bfTip').textContent=this.auto?'自动战斗中……（也可手动点指令接管）':'轮到你的行动——选择指令（可点击敌方头像切换目标）';
     if(this.auto)this.scheduleAuto();
   },
@@ -5411,7 +5838,7 @@ const BattleUI={
     this.selectedTargetIdx=this.eng.units.indexOf(target);
     const cost=this.eng.techCost(p);
     // 极之番：已学会、本场未用、蓝够半管，且多敌/强敌/敌方血线高时优先释放（一场仅一次）
-    if(p.canUlt&&!p.ultUsed&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.5)&&(es.length>=2||es.some(e=>e.li>=7)||target.hp>target.maxHp*0.5))return'ult';
+    if(p.canUlt&&(p.ultUses==null?1:p.ultUses)>0&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.25)&&(es.length>=2||es.some(e=>e.li>=7)||target.hp>target.maxHp*0.5))return'ult';
     // 领域：可开且（多敌 / 强敌 / 敌方血线高）；双领域时主已用则自动开副领域
     if(p.canDomain&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.30)&&(es.length>=2||es.some(e=>e.li>=7)||target.hp>target.maxHp*0.6)){
       if(!p.domainUsed)return'domain';
@@ -6896,7 +7323,12 @@ const Game={
     (P.extraTechs||[]).forEach((t,i)=>sk.push(`★ 额外术式${i+1}：${t.name}（领域：${t.domain}，多术式被动叠加、多领域可依次展开）`));
     if(P.extraTech)sk.push(`★ 第二术式：${P.extraTech.name}（领域：${P.extraTech.domain}，多术式被动叠加、多领域可依次展开）`);
     (P.stolenTechs||[]).forEach(t=>sk.push(`夺取术式：${t.name}（熟练度${Math.round(t.prof)}%${t.domain?'，领域：'+t.domain:''}）`));
-    const _mke=Object.keys(P.makoraEffectCounters||{});
+    if(Player.hasTech(P,'idleTrans')){
+    const _sb=(P.soulBank||[]),_sf=(P.soulFusions||[]);
+    const _bp=_sb.slice().sort((a,b)=>b.purity-a.purity)[0];
+    sk.push('★ 无为转变·灵魂库：'+_sb.length+' 条灵魂'+(_bp?('（最高纯净度 '+_bp.purity.toFixed(1)+'%）'):'')+'；改造人库存 '+(_sf.length?_sf.map(f=>f.name+'（'+lvName(f.li)+'）').join('、'):'空'));
+  }
+  const _mke=Object.keys(P.makoraEffectCounters||{});
   if(_mke.length)sk.push('★ 魔虚罗已解析的「效果类」能力（你的任何技能都无视它们）：'+_mke.map(id=>(MAKORA_EFFECT_ADAPT.find(x=>x.id===id)||{}).name||id).join('、'));
   const _mk=Object.keys(P.makoraCounters||{});
     if(_mk.length)sk.push('★ 魔虚罗已解析反制术式（你对这些术式100%免伤）：'+_mk.join('、'));
@@ -6910,6 +7342,7 @@ const Game={
       $('nextEvent').innerHTML=`距下一剧情事件还有 <b style="color:var(--gold)">${nextD-this.day}</b> 天｜第${nextD}天【${node.title}】`;
     }else{$('nextEvent').innerHTML=isKai?'怀玉篇剧情已全部触发，终局将近。':isFuture?'未来篇剧情已全部触发，终局将近。':'所有主线剧情已落幕。';}
     const _tb=$('btnTame');if(_tb)_tb.style.display=this.hasShadow()?'':'none';
+    const _ub=$('btnUlt');if(_ub)_ub.style.display=(this.player&&this.player.ultimateLearned)?'':'none';
   },
   showDetail(){
     const P=this.player;
@@ -7110,9 +7543,8 @@ const Game={
       // 数量奖励：每多 2 只追加一次战胜奖励（1→1 次、3→2 次、5→3 次、7→4 次、9→5 次、10→5 次）
       const reps=1+Math.floor((n-1)/2);
       P.huntCount++;P.killCount+=n;
-      let t='';
-      for(let i=0;i<reps;i++)t=Player.reward(P,pick.tier);
-      this.addLog('lgreen',`狩猎成功！击溃 ${n} 只咒灵。${t}${reps>1?('（数量奖励 ×'+reps+'）'):''}`);
+      const t=Player.reward(P,pick.tier,true,reps);   // 倍率并进一次结算（数值与日志一致）
+      this.addLog('lgreen',`狩猎成功！击溃 ${n} 只咒灵。${t}`);
     }
     else if(BattleUI.lastResult==='flee'){this.addLog('lg','你主动脱离了狩猎，安全返回，未获收益。');}
     else if(P.isVillain){this.addLog('lgold','【反派路线】你从狩猎中脱身，未致死亡。');}
@@ -7332,7 +7764,8 @@ const Game={
     document.querySelectorAll('section.ending-screen').forEach(n=>n.remove());
     hideAllScreens();
     this.player=st.player;
-    Player.applyBarrierMaster(this.player);   // 超级结界术：读档时补齐 500% 结界术熟练度
+    Player.applyBarrierMaster(this.player);
+    Player.syncUlt(this.player);   // 极之番流派：旧存档补默认「常规」   // 超级结界术：读档时补齐 500% 结界术熟练度
     Player.syncDomain(this.player);   // 旧存档没有结界术熟练度：按新规则重算领域资格
     this.day=st.day||0;
     // 旧存档没有这个字段：当作「今天刚开始」，下次点击推进到第二天
@@ -7485,6 +7918,146 @@ const Game={
       +'<div class="save-list" style="margin-top:12px">'+rows+'</div>'
       +'<div class="center" style="margin-top:16px"><button class="btn ghost" id="npcClose">关 闭</button></div>');
     $('npcClose').onclick=()=>closeModal();
+  },
+  /* ==================== 极之番 · 本地传承模板（localStorage） ====================
+   *  「自己建立的极之番」按【术式】存进本地：日后抽到同一门术式的穿越者可以直接调用这个模板。
+   *  结构：{ [术式flag]: [{type,id,name,uses,author,ts,count}] }；同一模板（类型+效果）只累加次数与时间。
+   *  只存「模板引用」不存数值——以后调平衡时所有模板一起生效。 */
+  loadUltTemplates(){
+    try{const raw=localStorage.getItem('jjk_ult_templates');return raw?JSON.parse(raw):{};}catch(e){return {};}
+  },
+  writeUltTemplates(db){
+    try{localStorage.setItem('jjk_ult_templates',JSON.stringify(db));}catch(e){}
+  },
+  /** 当前术式可用的传承模板（最近建立的在前） */
+  ultTemplatesFor(flag){
+    if(!flag)return [];
+    const db=this.loadUltTemplates();
+    return (db[flag]||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  },
+  /** 把手动建立的极之番按术式存入本地；返回这条记录 */
+  saveUltTemplate(flag,art){
+    if(!flag||!art||!art.id)return null;
+    const db=this.loadUltTemplates();
+    const list=db[flag]=db[flag]||[];
+    const P=this.player||{};
+    const author=(P.identity||'穿越者')+'·'+(P.eraLabel||'——')+'（'+(P.age||'?')+'岁·'+((P.technique&&P.technique.name)||'')+'）';
+    let rec=list.find(x=>x.type===art.type&&x.id===art.id);
+    if(rec){rec.count=(rec.count||1)+1;rec.ts=Date.now();rec.author=author;}
+    else{rec={type:art.type,id:art.id,name:art.name||'',uses:art.uses||1,author:author,ts:Date.now(),count:1};list.push(rec);}
+    // 上限：每门术式 30 条、总量 300 条（超了淘汰最旧）
+    if(list.length>30)list.sort((a,b)=>(b.ts||0)-(a.ts||0)).splice(30);
+    const all=[];Object.keys(db).forEach(k=>{db[k].forEach(x=>all.push({k:k,x:x}));});
+    if(all.length>300){all.sort((a,b)=>(a.x.ts||0)-(b.x.ts||0));for(let i=0;i<all.length-300;i++){const k=all[i].k;db[k]=db[k].filter(y=>y!==all[i].x);}}
+    this.writeUltTemplates(db);
+    return rec;
+  },
+  /* ==================== 极之番 · 流派 ==================== */
+  /** 极之番面板：常规 / 术式自带 / 轮盘自建 / 调用本地传承模板 */
+  showUltPanel(){
+    const P=this.player;if(!P||!P.ultimateLearned)return;
+    Player.syncUlt(P);
+    const cur=ultArtResolve(P);
+    const flag=(P.technique||{}).flag, tname=(P.technique||{}).name||'本命术式';
+    const tech=ultTechOf(flag);
+    const tpls=this.ultTemplatesFor(flag);
+    const row=(name,tag,txt,btn)=>'<div class="save-card"><div class="save-head"><b>'+name+'</b>'
+      +'<span style="color:'+tag.color+'">'+tag.text+'</span></div><div class="save-meta">'+txt+'</div>'+(btn||'')+'</div>';
+    let html='';
+    html+=row(ultArtLabel(cur),{text:'当前流派',color:'#7fe0a0'},
+      '类型：'+(cur.mode==='normal'?'常规':(cur.mode==='tech'?'术式自带':(ultTypeOf(cur.type)||{}).name||'自建'))
+      +'　一局可用 '+cur.uses+' 次　'+(cur.desc||'耗 25% 咒力上限，对敌全体造成 2400% 效率伤害并回满自身。'),'');
+    html+='<div class="summon-group">可选的流派</div>';
+    html+=row('常规极之番',{text:cur.mode==='normal'?'使用中':'',color:'var(--gold)'},
+      '耗 25% 咒力上限 → 敌全体 2400% 效率伤害 + 回满自身。一局 1 次，稳、通用。',
+      '<div class="save-actions"><button class="btn small" data-ult="normal">选 用 常 规</button></div>');
+    if(tech){
+      html+=row('术式自带 · 极之番·'+tech.name,{text:cur.mode==='tech'?'使用中':'',color:'var(--gold)'},
+        tech.desc+'　一局 '+tech.uses+' 次（本命术式【'+tname+'】专属形态）。',
+        '<div class="save-actions"><button class="btn small" data-ult="tech">使 用 术 式 自 带</button></div>');
+    }else{
+      html+=row('术式自带',{text:'本术式没有',color:'var(--txt3)'},
+        '本命术式【'+tname+'】没有自带的极之番形态——可以走常规，或者自己摇一个。','');
+    }
+    html+=row('通过轮盘建立极之番',{text:'',color:'var(--txt3)'},
+      '先抽「极之番为什么类型」（攻击类／增幅类／防御类／规则类，各自特性不同），再抽该类里的具体形态。'
+      +'建立后会按【'+(flag||'')+'】这个术式存进本地——日后再抽到同一门术式的穿越者可以直接调用它。',
+      '<div class="save-actions"><button class="btn small" data-ult="roll">走 轮 盘 建 立</button></div>');
+    if(tpls.length){
+      html+='<div class="summon-group">本地传承模板（术式：'+tname+'）</div>';
+      tpls.forEach((t,i)=>{
+        const art=ultArtOf(t.id);
+        html+=row('极之番·'+(t.name||(art?art.name:t.id)),{text:'被建立过 '+t.count+' 次',color:'var(--txt3)'},
+          (art?art.desc:'')+'　一局 '+t.uses+' 次　|　留下者：'+(t.author||'某位穿越者'),
+          '<div class="save-actions"><button class="btn small" data-tpl="'+i+'">调 用 此 模 板</button></div>');
+      });
+    }else{
+      html+=row('本地传承模板',{text:'还是空的',color:'var(--txt3)'},
+        '还没有人用【'+tname+'】建立过极之番——你建立的第一个会成为后人的模板。','');
+    }
+    showModal('<h2>极 之 番 · 流 派</h2>'
+      +'<p style="line-height:1.8;color:var(--txt2);font-size:13px">极之番不再是一招吃遍天下：可以沿用常规版，'
+      +'也可以走本命术式自带的形态，或者自己摇一个——每一种的用法与每局次数都不一样。<br>'
+      +'流派随时可以在这里更换（次数是每局独立的，换了不会多打）。</p>'
+      +'<div class="save-list" style="margin-top:12px">'+html+'</div>'
+      +'<div class="center" style="margin-top:16px"><button class="btn ghost" id="ultClose">关 闭</button></div>');
+    $('ultClose').onclick=()=>closeModal();
+    const box=$('modalBox');
+    box.querySelectorAll('[data-ult]').forEach(b=>{
+      b.onclick=()=>{
+        const k=b.getAttribute('data-ult');
+        if(k==='normal'){
+          P.ultArt={mode:'normal'};
+          this.addLog('lgold','【极之番】流派改为「常规」——耗 25% 咒力上限，敌全体 2400% 并回满自身（一局 1 次）。');
+          closeModal();this.showUltPanel();
+        }else if(k==='tech'){
+          P.ultArt={mode:'tech'};
+          this.addLog('lgold','【极之番】流派改为「术式自带 · 极之番·'+tech.name+'」（一局 '+tech.uses+' 次）。');
+          P.notes.push('极之番的流派定为术式自带【极之番·'+tech.name+'】');
+          closeModal();this.showUltPanel();
+        }else if(k==='roll'){
+          closeModal();this.drawUltArt();
+        }
+      };
+    });
+    box.querySelectorAll('[data-tpl]').forEach(b=>{
+      b.onclick=()=>{
+        const t=tpls[+b.getAttribute('data-tpl')];
+        if(!t)return;
+        P.ultArt={mode:'custom',type:t.type,id:t.id};
+        const art=ultArtOf(t.id);
+        P.notes.push('沿用了前人留下的极之番模板：极之番·'+(t.name||t.id)+'（留下者：'+(t.author||'某位穿越者')+'）');
+        this.addLog('lgold','【极之番 · 传承】你沿用了前人留下的模板【极之番·'+(t.name||t.id)+'】——'+(art?art.desc:''));
+        closeModal();this.showUltPanel();
+      };
+    });
+  },
+  /** 轮盘建立极之番：先「什么类型」，再该类里的具体形态；建完按术式存进本地传承库 */
+  async drawUltArt(){
+    const P=this.player;if(!P)return;
+    const typeItems=ULT_TYPES.map(t=>({label:t.name,weight:1,desc:t.desc,tag:t.tag,key:t.key}));
+    const tp=await openWheelModal({title:'极之番为什么类型？',items:typeItems});
+    const type=ULT_TYPES.find(t=>t.key===tp.key);
+    if(!type)return;
+    const pool=ULT_ARTS.filter(a=>a.type===type.key);
+    const items=pool.map(a=>({label:a.name,weight:1,desc:a.desc+'（一局 '+a.uses+' 次）',id:a.id}));
+    const pick=await openWheelModal({title:'极之番 · '+type.name+'（'+type.tag+'）——抽一个形态',items:items});
+    const art=pool.find(a=>a.id===pick.id);
+    if(!art)return;
+    P.ultArt={mode:'custom',type:art.type,id:art.id};
+    Player.syncUlt(P);
+    const flag=(P.technique||{}).flag, tname=(P.technique||{}).name||'';
+    const rec=this.saveUltTemplate(flag,art);
+    P.notes.push('通过轮盘建立了自己的极之番：极之番·'+art.name+'（'+type.name+'，一局 '+art.uses+' 次）');
+    await this.storyModal('极之番 · '+art.name,
+      '命轮的指针先落在【'+type.name+'】——'+type.desc
+      +'\n\n再转一次，它停在了【'+art.name+'】：'+art.desc
+      +'\n\n这一式一局可以用 '+art.uses+' 次。它已经被记进你灵魂的形状里——'
+      +'而且因为你是用【'+tname+'】建立的，它会作为模板留在本地：以后再有人抽到【'+tname+'】，可以直接调用这一式。',
+      '极之番 · '+type.name);
+    this.addLog('lgold','★ 你建立了【极之番·'+art.name+'】（'+type.name+'，一局 '+art.uses+' 次）——并已存入本地传承库（术式：'+tname+'）。');
+    if(rec&&rec.count>1)this.addLog('lg','（这个模板此前被建立过 '+(rec.count-1)+' 次——你又一次走到了同一条路上。）');
+    this.render();
   },
   /* ================= 十种影法术 · 调服与融合 ================= */
   hasShadow(){return Player.hasTech(this.player,'shadows');},
@@ -7759,6 +8332,7 @@ const Game={
 $('btnStart').onclick=()=>Game.startCreate();
 $('btnNpc').onclick=()=>{SFX.click();Game.showNpcLedger();};
 $('btnTame').onclick=()=>{SFX.click();Game.showTamePanel();};
+$('btnUlt').onclick=()=>{SFX.click();Game.showUltPanel();};
 $('btnContinue').onclick=()=>{SFX.click();const r=Game.loadSave('auto');if(!r.ok)alert(r.msg);};
 $('btnSaveArchive').onclick=()=>{SFX.click();Game.openSavePanel(false,'');};
 $('btnSaveGame').onclick=()=>{SFX.click();Game.openSavePanel(true,'');};
