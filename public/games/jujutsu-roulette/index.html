@@ -828,9 +828,12 @@ function specStat(i,kind,curse){
 }
 function specMid(i,kind,curse){
   const r=specStat(i,kind,curse);
-  if(kind==='cp'||kind==='ctl')return Math.round(r);
-  if(kind==='hp')return Math.round((r[0]+r[1])/2);
-  return r;
+  // dmg 保持返回区间（战斗时在区间里随机）；其余一律取「一个数」
+  if(kind==='dmg')return r;
+  // {f:固定值} → 标量，直接用（旧写法会算 (1900000+undefined)/2 = NaN）
+  if(typeof r==='number')return Math.max(0,Math.round(r));
+  // 档位区间的中值
+  return Math.round((r[0]+r[1])/2);
 }
 /** 由曲线生成四张档位表 */
 function buildTierTables(){
@@ -1546,13 +1549,13 @@ const SHADOW_BASE_MULT=3.0;
 /** 式神附体：可选附体（需要该式神已调服）。
  *  kind=atk 攻击倍率 / pierce 攻击倍率+无视免疫 / heal 挨打没死就回 75% / wheel 挂起魔虚罗的法轮由自己适应 */
 const SHADOW_POSSESSION=[
-  {shadow:'円鹿',    name:'円鹿 · 超高能反转', kind:'heal',   rounds:3, cost:0.08,
+  {id:'deer',  shadow:'円鹿',    name:'円鹿 · 超高能反转', kind:'heal',   rounds:3, cost:0.08,
    desc:'借円鹿的高速反转上身：3 回合内，只要没被打死就立刻回满 75% 生命（附体者即本体，不封顶；円鹿在影中为你治疗时才受「一回合 75% 额度」限制）。'},
-  {shadow:'魔虚罗',  name:'魔虚罗 · 法轮',     kind:'wheel',  rounds:99, cost:0.12,
+  {id:'wheel', shadow:'魔虚罗',  name:'魔虚罗 · 法轮',     kind:'wheel',  rounds:99, cost:0.12,
    desc:'挂起魔虚罗的适应法轮、由你替它受击：此后你受到的每一招都会被「适应」，重复挨打越来越轻（5 转之后彻底免疫）。'},
-  {shadow:'玉犬·黑', name:'犬颚爪 · 咬碾',     kind:'atk',    rounds:3, mult:1.6, cost:0.08,
+  {id:'fang',  shadow:'玉犬·黑', name:'犬颚爪 · 咬碾',     kind:'atk',    rounds:3, mult:1.6, cost:0.08,
    desc:'（续作·乙骨忧花开发的式神附体术式）咒力裹出犬颚虚影，3 回合内你的攻击 +60%。'},
-  {shadow:'満象',    name:'満象 · 穿血',       kind:'pierce', rounds:3, mult:2.2, cost:0.10,
+  {id:'pierce',shadow:'満象',    name:'満象 · 穿血',       kind:'pierce', rounds:3, mult:2.2, cost:0.10,
    desc:'（宿傩自赤血操术改良）以満象的巨躯压出高速水刃，3 回合内攻击 +120% 且无视术式免疫与闪避。'},
   /* 其余式神（玉犬·白 / 脱兔 / 蝦蟇 / 鵺 / 大蛇 / 貫牛 / 虎葬 / 嵌合兽）走「基础附体」：
      不占上身位，直接把那只式神的独有术式当自己的一次行动打出去 —— 见 possessOptions 里的 kind:'skill' */
@@ -2630,7 +2633,8 @@ class BattleEngine{
       const o=SHADOW_POSSESSION.find(x=>x.shadow===name);
       if(o){
         out.push(Object.assign({},o,{slot:true,isFusion:!!isFusion,
-          active:!!(active&&active.id===o.id&&active.left>0),
+          // 按式神名比对：只要 id 缺失也不会把「四门都判成上身中」
+          active:!!(active&&active.shadow===o.shadow&&active.left>0),
           cp:Math.max(1,Math.round((P.maxCp||0)*o.cost)),ap:40}));
         return;
       }
@@ -2699,6 +2703,11 @@ class BattleEngine{
     P.possessRoundThis=(this.round||0);
     const ev=[];
     const prev=P.possess;
+    // 切换上身：把上一门的残留状态收掉（例如从法轮切走时，法轮挂在身上的适应系统要一起收）
+    if(prev&&prev.kind==='wheel'&&o.kind!=='wheel'){
+      p.makora=false;p.makoraSeen={};p.makoraAdapt={};
+      ev.push({type:'info',text:'（【魔虚罗·法轮】从你身上退去——适应系统的状态清空，但已解析出的反制术式仍永久保留。）'});
+    }
     if(o.kind==='wheel'){
       P.possess={id:o.id,shadow:o.shadow,kind:'wheel',name:o.name,left:o.rounds||99};
       p.possess=P.possess;   // ★ 结算读的是战场单位
