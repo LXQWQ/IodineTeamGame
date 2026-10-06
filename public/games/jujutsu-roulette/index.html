@@ -791,7 +791,9 @@ const POWER_STEP=5;      // 一个大级 = 战力 ×5
 const EFF_ANCHOR=700;    // 锚点：S=3.8333（特别一级）时的术式伤害中值
 const ANCHOR_S=3.8333;
 const HP_RATIO=100;      // 生命 = 术式伤害中值 ×100（同级对拼 6~8 回合）
-const CP_RATIO=12;       // 咒力 = 术式伤害中值 ×12
+const CP_RATIO=60;       // 咒力 = 术式伤害中值 ×60（×5 版：弱特级约 8.9 万，标准特级约 12.3 万）
+/** 每回合基础回蓝（占上限比例）：默认 0 = 不回蓝（现状）；觉得还是紧就调到 0.05~0.10 */
+let CP_REGEN_PER_ROUND=0;
 const CTL_RATIO=0.06;    // 操控 = 术式伤害中值 ×0.06
 const BAND=0.18;         // 每档上下浮动 ±18%（小级之间只差 1.38 倍，浮动太宽会让相邻档位分不清）
 /** 大级区段 [起始档位, 结束档位)，与 LEVELS 的顺序一一对应 */
@@ -1440,19 +1442,19 @@ const AP_PER_ROUND=60;
 const SKILL_TIERS={
   basic:{tier:'basic',label:'咒力打击',cast:[0],cd:0,mult:[1.0],scope:'one',cost:0,chargeable:false,kind:'melee',
          ap:[15],spd:[10]},
-  fast :{label:'瞬发术式',cast:[0],cd:0,mult:[1.5],scope:'one',cost:0.05,chargeable:false,kind:'tech',
+  fast :{label:'瞬发术式',cast:[0],cd:0,mult:[1.5],scope:'one',cost:0.02,chargeable:false,kind:'tech',
          ap:[12],spd:[14]},
-  swift:{label:'连击术式',cast:[0],cd:0,mult:[2.6],scope:'one',cost:0.07,chargeable:false,kind:'tech',
+  swift:{label:'连击术式',cast:[0],cd:0,mult:[2.6],scope:'one',cost:0.03,chargeable:false,kind:'tech',
          ap:[20],spd:[11]},
-  mid  :{label:'咏唱术式',cast:[0,0.9],cd:0,mult:[3.0,5.2,7.8],scope:'one',cost:0.10,chargeable:true,kind:'tech',
+  mid  :{label:'咏唱术式',cast:[0,0.9],cd:0,mult:[3.0,5.2,7.8],scope:'one',cost:0.04,chargeable:true,kind:'tech',
          ap:[24,39,58],spd:[8,5,2]},
-  heavy:{label:'结印术式',cast:[0,1.0,2.7],cd:0,mult:[3.5,6.5,9.0],scope:'one',cost:0.18,chargeable:true,kind:'tech',
+  heavy:{label:'结印术式',cast:[0,1.0,2.7],cd:0,mult:[3.5,6.5,9.0],scope:'one',cost:0.05,chargeable:true,kind:'tech',
          ap:[25,40,60],spd:[5,3,1.5]},
-  wide :{label:'广域术式',cast:[0,1.1,3.0],cd:0,mult:[2.2,4.0,6.5],scope:'all',cost:0.22,chargeable:true,kind:'tech',
+  wide :{label:'广域术式',cast:[0,1.1,3.0],cd:0,mult:[2.2,4.0,6.5],scope:'all',cost:0.06,chargeable:true,kind:'tech',
          ap:[25,40,60],spd:[5,3,1.5]},
-  ult  :{label:'极之番',cast:[0,1.4,3.6],cd:0,mult:[3.0,4.0,5.0],scope:'all',cost:0.50,chargeable:false,kind:'tech',
+  ult  :{label:'极之番',cast:[0,1.4,3.6],cd:0,mult:[3.0,4.0,5.0],scope:'all',cost:0.25,chargeable:false,kind:'tech',
          ap:[60],spd:[2],once:true},
-  domain:{label:'领域展开',cast:[0],cd:0,mult:[1,1,1],scope:'all',cost:0.30,chargeable:false,kind:'tech',
+  domain:{label:'领域展开',cast:[0],cd:0,mult:[1,1,1],scope:'all',cost:0.15,chargeable:false,kind:'tech',
          ap:[60],spd:[16]}
 };
 /** 黑闪概率：原作里黑闪是千分之几的奇迹，所以这里给得很低——普通 1%、传奇黑闪王 3%、敌人 1%
@@ -1500,7 +1502,7 @@ const NPC_ACT={
 };
 /** 没有生得术式表的敌人（泛用咒术师路人）的通用术式动作：
  *  20 点行动点、2.5 倍档位 —— 与玩家的咏唱术式每点行动点输出持平（×2.0×2.5÷20 = 0.25 效率/点） */
-const NPC_GENERIC_TECH={tier:'mid',label:'咒力术式',cast:[0],cd:0,mult:[2.5],scope:'one',cost:0.05,
+const NPC_GENERIC_TECH={tier:'mid',label:'咒力术式',cast:[0],cd:0,mult:[2.5],scope:'one',cost:0.03,
   chargeable:false,kind:'tech',ap:[20],spd:[11]};
 /** 招式 → 档位。未列出的走 defaultTier 规则 */
 const MOVE_TIER={
@@ -1549,14 +1551,14 @@ const SHADOW_BASE_MULT=3.0;
 /** 式神附体：可选附体（需要该式神已调服）。
  *  kind=atk 攻击倍率 / pierce 攻击倍率+无视免疫 / heal 挨打没死就回 75% / wheel 挂起魔虚罗的法轮由自己适应 */
 const SHADOW_POSSESSION=[
-  {id:'deer',  shadow:'円鹿',    name:'円鹿 · 超高能反转', kind:'heal',   rounds:3, cost:0.08,
+  {id:'deer',  shadow:'円鹿',    name:'円鹿 · 超高能反转', kind:'heal',   rounds:3, cost:0.04,
    desc:'借円鹿的高速反转上身：3 回合内，只要没被打死就立刻回满 75% 生命（附体者即本体，不封顶；円鹿在影中为你治疗时才受「一回合 75% 额度」限制）。'},
-  {id:'wheel', shadow:'魔虚罗',  name:'魔虚罗 · 法轮',     kind:'wheel',  rounds:99, cost:0.12,
+  {id:'wheel', shadow:'魔虚罗',  name:'魔虚罗 · 法轮',     kind:'wheel',  rounds:99, cost:0.06,
    desc:'挂起魔虚罗的适应法轮、由你替它受击：此后你受到的每一招都会被「适应」，重复挨打越来越轻（5 转之后彻底免疫）。'},
-  {id:'fang',  shadow:'玉犬·黑', name:'犬颚爪 · 咬碾',     kind:'atk',    rounds:3, mult:1.6, cost:0.08,
+  {id:'fang',  shadow:'玉犬·黑', name:'犬颚爪 · 咬碾',     kind:'atk',    rounds:3, mult:1.6, cost:0.04,
    desc:'（续作·乙骨忧花开发的式神附体术式）咒力裹出犬颚虚影，3 回合内你的攻击 +60%。'},
-  {id:'pierce',shadow:'満象',    name:'満象 · 穿血',       kind:'pierce', rounds:3, mult:2.2, cost:0.10,
-   desc:'（宿傩自赤血操术改良）以満象的巨躯压出高速水刃，3 回合内攻击 +120% 且无视术式免疫与闪避。'},
+  {id:'pierce',shadow:'満象',    name:'満象 · 穿血',       kind:'pierce', rounds:3, mult:2.2, cost:0.05,
+   desc:'（宿傩自赤血操术改良的奥义）以満象的巨躯压出高速水刃，3 回合内你的攻击 +120%。属于纯粹的伤害奥义——照常受术式免疫、减伤与「适应」影响。'},
   /* 其余式神（玉犬·白 / 脱兔 / 蝦蟇 / 鵺 / 大蛇 / 貫牛 / 虎葬 / 嵌合兽）走「基础附体」：
      不占上身位，直接把那只式神的独有术式当自己的一次行动打出去 —— 见 possessOptions 里的 kind:'skill' */
 ];
@@ -1612,17 +1614,17 @@ const SHADOW_POWER=1.0;
  *  （被集火一两轮就没，而战死是永久损失），所以血量单独乘这个系数 */
 const SHADOW_HP_MULT=2.2;
 const SHADOW_TABLE=[
-  ['玉犬·黑', .65, null, '初始式神。术士踏上影法之路时便相伴的黑犬。', .06],
-  ['玉犬·白', .65, null, '初始式神。与玉犬·黑成对的忠犬。', .06],
-  ['脱兔',    .40, 1,   '影之兔群。单只渺小，成群时能以身体替同伴挡下伤害。', .04],
-  ['蝦蟇',    .80, 2,   '巨蛙。以吞食与束缚见长。', .10],
-  ['鵺',      .90, 3,   '怪鸟。自空中降下雷击。', .14],
-  ['大蛇',   1.00, 4,   '巨蛇。缠绕绞杀的长躯。', .18],
-  ['円鹿',   1.00, 4,   '鹿形。具备反转术式的治疗之力。', .22],
-  ['貫牛',   1.20, 6,   '巨牛。以正面冲撞碾碎一切。', .30],
-  ['虎葬',   1.30, 6,   '虎形。十种影法术的第九只。', .34],
-  ['満象',   1.50, 7,   '巨象。影法中最沉重的一击。', .40],
-  ['魔虚罗', 2.50, 12,  '十种影法术的第十只。历代无人调服成功——不是影法术不许，而是从没有人强到能赢它。', .90]
+  ['玉犬·黑', .65, null, '初始式神。术士踏上影法之路时便相伴的黑犬。', .03],
+  ['玉犬·白', .65, null, '初始式神。与玉犬·黑成对的忠犬。', .03],
+  ['脱兔',    .40, 1,   '影之兔群。单只渺小，成群时能以身体替同伴挡下伤害。', .02],
+  ['蝦蟇',    .80, 2,   '巨蛙。以吞食与束缚见长。', .05],
+  ['鵺',      .90, 3,   '怪鸟。自空中降下雷击。', .06],
+  ['大蛇',   1.00, 4,   '巨蛇。缠绕绞杀的长躯。', .08],
+  ['円鹿',   1.00, 4,   '鹿形。具备反转术式的治疗之力。', .09],
+  ['貫牛',   1.20, 6,   '巨牛。以正面冲撞碾碎一切。', .12],
+  ['虎葬',   1.30, 6,   '虎形。十种影法术的第九只。', .14],
+  ['満象',   1.50, 7,   '巨象。影法中最沉重的一击。', .16],
+  ['魔虚罗', 2.50, 12,  '十种影法术的第十只。历代无人调服成功——不是影法术不许，而是从没有人强到能赢它。', .35]
 ];
 /** 魔虚罗：历代无人调服成功——说的是没人强到能赢它，不是影法术禁止调服
  *  （它现在是调服名单里的最后一只，也是全游戏最难的一场调服战） */
@@ -1631,9 +1633,9 @@ const SHADOW_MAHORAGA={name:'魔虚罗',desc:'十种影法术的第十只。历�
  *  need = 需要已有多少只 from 中的式神战死 */
 /* ratio = 继承自身总属性的比例（决定强度）；cp = 召唤消耗的咒力上限占比（省略时与 ratio 同号） */
 const SHADOW_FUSIONS=[
-  {key:'玉犬·渾', from:['玉犬·黑','玉犬·白'], need:1, ratio:1.30, cp:.16,
+  {key:'玉犬·渾', from:['玉犬·黑','玉犬·白'], need:1, ratio:1.30, cp:.08,
    desc:'两只玉犬之力合一。任一只玉犬战死，另一只便可继承其力，化为玉犬·渾。'},
-  {key:'顎吐',    from:['大蛇','虎葬','円鹿','鵺'], need:4, ratio:6.00, cp:.95,
+  {key:'顎吐',    from:['大蛇','虎葬','円鹿','鵺'], need:4, ratio:6.00, cp:.30,
    desc:'大蛇、虎葬、円鹿、鵺 四只式神融合而成的嵌合兽，聚合四者之力。'}
 ];
 /** 十种影法术 · 每只式神的独有术式
@@ -1665,9 +1667,27 @@ const SHADOW_SKILLS={
   // 虎葬：原作没有交代它的能力，所以不设独有术式，走普通攻击
 };
 /** 魔虚罗·适应：每 MAKORA_WHEEL_EVERY 回合转一次「适应轮盘」，从本场见过的术式里抽一项加一转 */
+/** 魔虚罗会适应的「效果类」能力：免疫 / 锁血 / 闪避 / 减伤。
+ *  这一轨不看是否被再次打中——只要在场上见识过，就每回合必定 +1 转（高速适应）：
+ *  4 转 → 魔虚罗自己完全无视该效果；5 转 → 主人的任何技能都无视该效果。 */
+const MAKORA_EFFECT_ADAPT=[
+  {id:'limitless',   name:'无下限·不可侵'},
+  {id:'blueMoon',    name:'苍月·天上天下唯我独尊'},
+  {id:'requiem',     name:'黄金体验镇魂曲'},
+  {id:'swap',        name:'不义游戏·强制换位'},
+  {id:'sky',         name:'天空术式'},
+  {id:'foresight',   name:'念写·未来视'},
+  {id:'ironBody',    name:'钢铁之躯'},
+  {id:'ironWall',    name:'铁壁'},
+  {id:'spaceDevour', name:'空间吞噬'}
+];
+function makoraEffName(id){const e=MAKORA_EFFECT_ADAPT.find(x=>x.id===id);return e?e.name:id;}
 const MAKORA_WHEEL_EVERY=2;
 /** 适应转数对应的减伤：0转0% / 1转25% / 2转50% / 3转75% / 4转100% / 5转（反制术式，主人也免疫） */
 const MAKORA_ADAPT_REDUCE=[0,0.25,0.50,0.75,1.0,1.0];
+/** 规则级 / 打断级手段（天逆鉾·空间斩·茈·元气弹·星之怒）的适应减伤上限：最多 -75%，不会被完全看破
+ *  （它们仍然进适应表、仍然吃减伤，只是永远留得住 25% 的伤害，也就始终是「破法」） */
+const MAKORA_RULE_CAP=0.75;
 /** 每个术式对应的领域名（取自 WHEEL_TECHNIQUE.domain） */
 const TECH_DOMAIN={};WHEEL_TECHNIQUE.forEach(t=>TECH_DOMAIN[t.flag]=t.domain);
 /** 咒灵可随机获得的术式池：剔除无解（无下限/万象虚无）、召唤类（会递归膨胀）、跨界与复活类 */
@@ -1841,8 +1861,8 @@ class BattleEngine{
     }
     if(u.name&&u.name.indexOf('魔虚罗')>=0){
       u.makora=true;u.makoraSeen=u.makoraSeen||{};u.makoraAdapt=u.makoraAdapt||{};
-      // 它自己的反转术式与円鹿同档（挨打没死立刻回 75%、不封顶），但**外放不出来**——治不了别人
-      u.deerAura=true;u.deerSelfOnly=true;
+      // 反转自愈：每次受击回 1/8 生命（比円鹿那档弱得多），同样外放不出来——治不了别人
+      u.deerAura=true;u.deerSelfOnly=true;u.reverseHealRatio=0.125;
     }
     u.buff={defend:false,vuln:0,stun:0,seal:0,ssj:5,actCount:0,miracle:0,saved:false,
             bind:0,           // 影缚：下回合行动点被扣掉 bind*20
@@ -2006,10 +2026,11 @@ class BattleEngine{
     if(tar.deerAura){
       const cost=Math.round((tar.maxCp||0)*0.02);
       if(tar.cp<cost)return;
-      const heal=Math.min(tar.maxHp-tar.hp,Math.round(tar.maxHp*0.75));
+      const ratio=(tar.reverseHealRatio!=null?tar.reverseHealRatio:0.75);
+      const heal=Math.min(tar.maxHp-tar.hp,Math.round(tar.maxHp*ratio));
       if(heal<=0)return;
       tar.cp-=cost;tar.hp+=heal;
-      ev.push({type:'heal',from:tar.name,text:'【超高能反转】'+tar.name+' 的高速反转术式瞬间补上——'+who+' 恢复 75% 生命（+'+heal+'）（本体自愈，不封顶）。',heal});
+      ev.push({type:'heal',from:tar.name,text:'【反转自愈】'+tar.name+' 的反转术式立刻补上——'+who+' 恢复 '+Math.round(ratio*100)+'% 生命（+'+heal+'）（本体自愈，不封顶）。',heal});
       return;
     }
     // ② 外放：只能由「能把反转放出去」的持有者来（円鹿 / 顎吐）——魔虚罗外放不出来，所以不在此列
@@ -2033,29 +2054,100 @@ class BattleEngine{
     deer.cp-=cost;tar.hp+=heal;
     ev.push({type:'heal',from:deer.name,text:'【超高能反转】'+(deer.name)+' 的高速反转术式瞬间补上——'+who+' 恢复 '+(tar===deer?'75%':Math.round(heal/tar.maxHp*100)+'%')+' 生命（+'+heal+'）'+note+'。',heal});
   }
-  /** 魔虚罗·适应轮盘：每 MAKORA_WHEEL_EVERY 回合从「本场见过的术式」里抽一项，加一转 */
+  /** 魔虚罗·适应法盘（重做版）：回合伤害结算结束后转动一次。
+ *  攻击轨：① 表里的每一门术式按「隔一回合适应一次」的节奏推进（MAKORA_WHEEL_EVERY 默认 2 回合）
+ *          ② 本回合被这一招打过 → 无论是否轮到它，本次结算都推进一转（加速适应）
+ *  效果轨：见识过的「效果类」能力每回合必定 +1 转（4 转自己无视、5 转传授给主人） */
   makoraWheel(u,ev){
     if(!u||!u.makora||!u.alive)return;
-    if(this.round%MAKORA_WHEEL_EVERY!==0)return;
-    const seen=Object.keys(u.makoraSeen||{});
-    if(!seen.length)return;
-    const pool=seen.filter(k=>(u.makoraAdapt[k]||0)<5);
-    if(!pool.length){
-      ev.push({type:'skill',text:`【适应轮盘】${u.name} 已经把见过的术式全部解析完毕。`});
+    // --- 攻击轨：隔一回合推进；本回合被这一招打过则加速 ---
+    const table=u.makoraAdapt||{};
+    const keys=Object.keys(table);
+    const hit=u.makoraHitRound||{};
+    u.makoraLast=u.makoraLast||{};
+    const advanced=[];
+    keys.forEach(k=>{
+      const lv=table[k]||0;if(lv>=5)return;
+      const wasHit=(hit[k]===this.round);
+      const last=(u.makoraLast[k]!=null?u.makoraLast[k]:-99);
+      const due=((this.round-last)>=MAKORA_WHEEL_EVERY);
+      if(!wasHit&&!due)return;
+      table[k]=lv+1;u.makoraLast[k]=this.round;
+      const cut=MAKORA_ADAPT_REDUCE[Math.min(table[k],MAKORA_ADAPT_REDUCE.length-1)]||0;
+      advanced.push({k:k,lv:table[k],cut:cut,fast:wasHit});
+      if(table[k]>=5)this.makoraGrant(u,k,ev);
+    });
+    // --- 效果轨：见识过的效果类能力每回合必定 +1 转 ---
+    const eff=u.makoraEffAdapt||{};
+    const effDone=[];
+    Object.keys(eff).forEach(id=>{
+      const lv=eff[id]||0;if(lv>=5)return;
+      eff[id]=lv+1;
+      effDone.push({id:id,lv:eff[id]});
+      if(eff[id]===4){
+        ev.push({type:'skillcut',actorName:u.name,side:u.side,isPlayer:u.isPlayer,text:'效果解析 · '+makoraEffName(id)});
+        ev.push({type:'skill',text:`【效果解析】${u.name} 已经完全看破【${makoraEffName(id)}】——这个效果对它本人不再生效。`});
+      }
+      if(eff[id]>=5)this.makoraGrantEffect(u,id,ev);
+    });
+    if(!advanced.length&&!effDone.length){
+      if(keys.length&&!u._wheelIdleNoted){u._wheelIdleNoted=true;ev.push({type:'skill',text:`【适应法盘】${u.name} 转动法盘——在册的 ${keys.length} 门术式都还没到结算节奏。`});}
       return;
     }
-    const pick=pool[rand(0,pool.length-1)];
-    u.makoraAdapt[pick]=(u.makoraAdapt[pick]||0)+1;
-    const lv=u.makoraAdapt[pick];
-    const cut=MAKORA_ADAPT_REDUCE[Math.min(lv,MAKORA_ADAPT_REDUCE.length-1)];
-    ev.push({type:'domain',domainName:'适 应 轮 盘',actorName:u.name,side:u.side,isPlayer:u.isPlayer,
-      text:`✦ 魔虚罗转动适应轮盘——命中的是【${pick}】 ✦`});
-    ev.push({type:'skill',text:`【适应轮盘】候选：${pool.join('、')}　→　本轮抽中【${pick}】，适应升至 ${lv} 转（减伤 ${Math.round(cut*100)}%）。`});
-    if(lv>=5)this.makoraGrant(u,pick,ev);
+    ev.push({type:'skillcut',actorName:u.name,side:u.side,isPlayer:u.isPlayer,text:'适 应 法 盘'});
+    if(advanced.length)ev.push({type:'skill',text:'【适应法盘】'+advanced.map(d=>`【${d.k}】→ ${d.lv} 转（减伤 ${Math.round(d.cut*100)}%${d.fast?'，因本回合再次受击而加速':''}）`).join('；')+'。'});
+    if(effDone.length)ev.push({type:'skill',text:'【效果解析】'+effDone.map(d=>`【${makoraEffName(d.id)}】→ ${d.lv} 转`).join('；')+'（效果类每回合必定推进一转）。'});
+  }
+  /** 效果类能力被魔虚罗见识到：场上所有魔虚罗立刻入表（此后每回合必定 +1 转） */
+  makoraNoteEffect(id,ev){
+    if(!id)return;
+    this.units.forEach(u=>{
+      if(!u.alive||!u.makora)return;
+      u.makoraEffAdapt=u.makoraEffAdapt||{};
+      if(u.makoraEffAdapt[id]!=null)return;
+      u.makoraEffAdapt[id]=0;
+      if(ev)ev.push({type:'skill',text:`【适应·效果】${u.name} 见识到了【${makoraEffName(id)}】——这类效果会被高速解析（每回合必定推进一转：4 转自己无视、5 转传授给主人）。`});
+    });
+  }
+  /** 魔虚罗对效果类能力的适应是否已生效：
+   *  · 魔虚罗本人（含玩家附体法轮）：4 转起无视
+   *  · 玩家：被传授过（5 转）→ 任何技能都无视 */
+  makoraBypass(att,id){
+    if(!att||!id)return false;
+    const e=att.makoraEffAdapt||null;
+    if(att.makora&&e&&(e[id]||0)>=4)return true;
+    const P=this.cfg&&this.cfg.player;
+    if(P&&P.makoraEffectCounters&&P.makoraEffectCounters[id]&&(att.isPlayer||(this.player&&att===this.player)))return true;
+    return false;
+  }
+  /** 五转效果：把「无视该效果」永久传授给主人（规则与反制术式一致：只认自己召唤的魔虚罗 / 法轮） */
+  makoraGrantEffect(u,id,ev){
+    const mine=(u.isPlayer)||(u.shadowSource==='魔虚罗'&&this.player&&u.ownerName===this.player.name);
+    if(!mine||(this.player&&u.side!==this.player.side)){
+      ev.push({type:'skill',text:`【效果解析】${u.name} 已经彻底看破【${makoraEffName(id)}】，这个效果再也护不住谁。`});
+      return;
+    }
+    const P=this.cfg&&this.cfg.player;
+    if(!P)return;
+    P.makoraEffectCounters=P.makoraEffectCounters||{};
+    if(P.makoraEffectCounters[id]){ev.push({type:'skill',text:`【效果解析】${makoraEffName(id)} 早就解析完成（已传授给你）。`});return;}
+    P.makoraEffectCounters[id]=true;
+    if(this.player)this.player.makoraEffectCounters=P.makoraEffectCounters;
+    P.notes=P.notes||[];
+    P.notes.push(`魔虚罗把【${makoraEffName(id)}】解析到五转并传授给你——从此你的任何技能都无视这个效果`);
+    ev.push({type:'domain',domainName:'效 果 解 析 · 传 授',actorName:u.name,side:u.side,isPlayer:u.isPlayer,
+      text:`✦✦ 魔虚罗彻底解析了【${makoraEffName(id)}】并传授给你——从此你的任何技能都无视这个效果！ ✦✦`});
   }
   /** 五转：魔虚罗研究出反制术式。若是己方的魔虚罗，就永久传授给主人（主人对该术式 100% 免伤） */
   makoraGrant(u,key,ev){
-    if(this.player&&u.side!==this.player.side){
+    // 只有「你自己召唤的魔虚罗」或「你附体的法轮」才把反制术式传授给你；
+    // 友军的魔虚罗（如乙骨犹花那只）不再白送——否则会把「体术／咒力术式」这种超宽键的永久免伤送你
+    if(!key||key==='未知术式'){
+      ev.push({type:'skill',text:'【适应完成】'+u.name+' 解析完了一套无名术式（没有可传授的反制对象）。'});
+      return;
+    }
+    const mine=(u.isPlayer)||(u.shadowSource==='魔虚罗'&&this.player&&u.ownerName===this.player.name);
+    if(!mine||(this.player&&u.side!==this.player.side)){
       ev.push({type:'skill',text:`【适应完成】${u.name} 已经彻底看破【${key}】，这一招再也伤不到它。`});
       return;
     }
@@ -2215,6 +2307,8 @@ class BattleEngine{
       if(u.buff){u.buff.bind=0;u.buff.rabbit=0;u.buff.defend=false;u.buff.shadowDive=false;}
       u._diveNoted=false;
       u.planned=[];
+      // 基础回蓝（旋钮，默认 0）：调大就是每回合自动回一点蓝
+      if(CP_REGEN_PER_ROUND>0)u.cp=Math.min(u.maxCp,u.cp+Math.round(u.maxCp*CP_REGEN_PER_ROUND));
       if(_bind>0)ev.push({type:'info',text:`${u.isPlayer?'你':u.name} 仍被【影缚】缠着——本回合行动点只剩 ${u.ap}。`});
       this.actionsTotal++;
       if(u.buff)u.buff.actCount=(u.buff.actCount||0)+1;
@@ -2236,8 +2330,7 @@ class BattleEngine{
     ev.push({type:'info',text:`　——　第 ${this.round} 回合　——　`});
     this.checkEnd(ev);
     if(this.ended)return ev;
-    // 魔虚罗：每 MAKORA_WHEEL_EVERY 回合转一次适应轮盘
-    this.units.forEach(u=>{if(u.alive&&u.makora){try{this.makoraWheel(u,ev);}catch(e){console&&console.error&&console.error('适应轮盘异常:',e);}}});
+    // 魔虚罗的适应法盘改到「回合伤害结算结束后」转动，见 endRound()
     // AI 先声明，玩家可以看到「敌方意图」后再排自己的行动
     this.units.forEach(u=>{if(u.alive&&!u.isPlayer&&!u.hidden){try{this.npcDeclare(u,ev);}catch(e){console&&console.error&&console.error('AI规划异常:',e);}}});
     return ev;
@@ -2506,6 +2599,8 @@ class BattleEngine{
         ev.push({type:'info',text:f.squeezed?`✦ 【${f.name}】的结界被开放式领域从外侧挤碎，领域崩解。✦`:`【${f.name}】展开到极限，领域消散。`});}
       else ev.push({type:'info',text:`【${f.name}】仍在展开——剩余 ${f.roundsLeft} 回合。`});
     });
+    // ※ 魔虚罗：本回合伤害全部结算结束之后 → 转动法盘 → 一次转轮适应
+    this.units.forEach(u=>{if(u.alive&&u.makora){try{this.makoraWheel(u,ev);}catch(e){console&&console.error&&console.error('适应法盘异常:',e);}}});
     this.exhaustSweep(ev);
     this.checkEnd(ev);
     return ev;
@@ -2645,7 +2740,7 @@ class BattleEngine{
         name:name+' · '+(nm||'巨躯冲撞'),
         desc:nm?('基础附体 —— 直接使用它的术式【'+nm+'】：本回合以你自己的属性打出这一击，不占上身位。')
                :'基础附体 —— 以它的巨躯撞过去：本回合打出一记重击，不占上身位。',
-        cp:Math.max(1,Math.round((P.maxCp||0)*0.06)),ap:25});
+        cp:Math.max(1,Math.round((P.maxCp||0)*0.03)),ap:25});
     };
     SHADOW_TABLE.forEach(t=>{const n=t[0];if(tamed[n]&&!dead[n])add(n,false);});
     SHADOW_FUSIONS.forEach(f=>{if(fused[f.key])add(f.key,true);});
@@ -2674,7 +2769,7 @@ class BattleEngine{
       if(bad)return {ok:false,why:bad};
       const used=this.possessRoundUsed(P);
       if(used)return {ok:false,why:'式神附体每回合只能用一次（本回合已经借过术式了）'};
-      const cp=Math.max(1,Math.round((p.maxCp||0)*0.06));
+      const cp=Math.max(1,Math.round((p.maxCp||0)*0.03));
       if(p.cp<cp)return {ok:false,why:'咒力不足（需要 '+cp+' 点）'};
       p.cp-=cp;
       P.possessRoundThis=(this.round||0);
@@ -3157,10 +3252,10 @@ class BattleEngine{
     if(kind==='tech'&&this.hasFlag(att,'blood')&&!(att.buff.blueMoon>0)){const c=Math.round(att.maxHp*.10);att.hp-=c;ev.push({type:'hit',text:`【赤血操术】以血为武，消耗自身10%生命（-${c}）。`,dmg:c});}
     if(this.hasFlag(att,'amber')&&!(att.buff.blueMoon>0)){const c=Math.round(att.maxHp*.20);att.hp-=c;amberBonus=c;ev.push({type:'hit',text:`【幻兽琥珀】燃烧20%生命（-${c}）化作雷击附加。`,dmg:c});}
     // —— 式神附体：犬颚爪/雷装/穿血等把式神的术式挂在自己身上 ——
-    let _possPierce=false;
     if(att.possess){
-      if(att.possess.kind==='atk')mult*=att.possess.mult||1;
-      else if(att.possess.kind==='pierce'){mult*=att.possess.mult||1;_possPierce=true;}
+      // 犬颚爪 / 穿血 都是单纯的攻击加成（穿血虽是赤血操术的奥义，但仍属普通伤害——
+      // 不享受 «无视术式免疫与适应» 的规则级通道）
+      if(att.possess.kind==='atk'||att.possess.kind==='pierce')mult*=att.possess.mult||1;
     }
     // —— 黑闪 ——（玩家需学会；NPC 需 bf；alwaysFlash=每发必黑闪，如未来篇68岁虎杖）
     // 魔虚罗自带咒具·退魔之剑：剑上注入反转术式的正能量，对咒灵造成的伤害 +500%
@@ -3180,12 +3275,12 @@ class BattleEngine{
     let flash=false;const flashP=_bfBase*(this.hasFlag(att,'ratio')?BLACK_FLASH_P_RATIO:1);
     if((att.skills&&att.skills.alwaysFlash)||(flashP>0&&Math.random()<flashP)){mult*=10;flash=true;}
     // 天逆鉾：持有者攻击强制穿透一切术式免疫（破无下限/镇魂曲/不义游戏/天空）
-    const bypassTool=(((att.skills&&att.skills.tools&&att.skills.tools.ama)?true:false)||_possPierce)?true:false;
+    const bypassTool=(att.skills&&att.skills.tools&&att.skills.tools.ama)?true:false;
     const dmg=this.dealDamage(att,target,base,mult,kind,ev,label,flash,bypassTool);
     // —— 附加伤害（命中后追加，不再触发叠层/即死递归）——
     if(target.alive&&dmg>0){
       const bonus=(kind==='melee'?this.meleeBonus(att):0)+(kind==='tech'?this.techBonus(att):0)+amberBonus;
-      if(bonus>0)this.dealDamage(att,target,Math.round(bonus),1,kind,ev,att.techName+'·附加',false,true);
+      if(bonus>0)this.dealDamage(att,target,Math.round(bonus),1,kind,ev,att.techName+'·附加',false,false);
       // 质量术式·星之怒：tech 时与目标同归于尽的毁灭一击（自身承受50%当前血）
       if(kind==='tech'&&this.hasFlag(att,'mass')){const sd=Math.round((att.eff[0]+att.eff[1])*3);this.dealDamage(att,target,sd,1,'tech',ev,'质量术式·星之怒',false,true);}
     }
@@ -3229,7 +3324,7 @@ class BattleEngine{
     if(this.hasFlag(att,'idleTrans'))return rand(att.melee[0],att.melee[1])*1.0;
     return 0;
   }
-  afterStrike(ev){this._ampHit=null;this.checkEnd(ev);}
+  afterStrike(ev){this._ampHit=null;this._hitKey=null;this.checkEnd(ev);}
   pickMove(flag){const arr=TECH_MOVE[flag];return arr?arr[rand(0,arr.length-1)]:'咒力打击';}
   castDomain(att,ev,domainIdx,prepaid){
     if(!att.canDomain)return false;
@@ -3253,10 +3348,10 @@ class BattleEngine{
       return false;
     }
     // prepaid=true 表示队列的声明阶段已经扣过咒力（playerDeclare），这里不能再扣第二次
-    const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.30);
+    const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.15);
     // ★ 先查咒力再标记领域：否则展开失败时这门领域会被白白消耗掉
     if(!prepaid&&att.cp<cost){
-      ev.push({type:'info',text:att.isPlayer?'咒力不足以展开领域（需30%咒力上限）。':`【${doms[idx].name}】展开失败——${att.name} 的咒力不足以维持领域。`});
+      ev.push({type:'info',text:att.isPlayer?'咒力不足以展开领域（需15%咒力上限）。':`【${doms[idx].name}】展开失败——${att.name} 的咒力不足以维持领域。`});
       return false;
     }
     doms[idx].used=true;
@@ -3370,9 +3465,9 @@ class BattleEngine{
   /** 极之番（生得术式终极奥义，熟练度300%领悟）：耗50%咒力上限，对敌全体造成效率2400%伤害，释放后回满自身血；一场一次 */
   castUltimate(att,ev,prepaid){
     if(!att.canUlt||att.ultUsed)return false;
-    const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.50);
+    const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.25);
     if(!prepaid){
-      if(att.cp<cost){if(att.isPlayer)ev.push({type:'info',text:'咒力不足以释放极之番（需50%咒力上限）。'});return false;}
+      if(att.cp<cost){if(att.isPlayer)ev.push({type:'info',text:'咒力不足以释放极之番（需25%咒力上限）。'});return false;}
       att.cp-=cost;
     }
     att.ultUsed=true;
@@ -3389,6 +3484,7 @@ class BattleEngine{
   dealDamage(att,tar,base,mult,kind,ev,label,flash,ignoreImmune){
     if(!tar.alive)return 0;
     if(tar.hidden)return 0;   // 影中的式神完全免伤
+    if(tar.makora)tar._makoraNoKill=false;   // 只有走完适应判定的那一击才可能置真（ignoreImmune 通道不受保护）
     let dmg=base*mult*randF(0.9,1.1)*COMBAT_SCALE;
     dmg*=(1+0.05*Math.min(10,Math.floor(this.actionsTotal/15))); // 战意升温：每 15 次行动 +5%，封顶 ×1.5
     // —— 影潜：潜入影子，本回合受到的一切伤害 -95% ——
@@ -3410,38 +3506,61 @@ class BattleEngine{
       if(!tar._sdNoted){tar._sdNoted=true;ev.push({type:'skill',text:'【简易领域】你在身周张起一圈小小的屏障——领域的必中伤害被挡掉了大半（未展开领域时有效）。'});}
     }
     // —— 苍月：锁定生命期间，任何来源的伤害都无法扣血（含领域/真伤）——
-    if((tar.buff.blueMoon||0)>0){ev.push({type:'skill',text:`${tar.name}【苍月·天上天下唯我独尊】生命被锁定，${label} 无法造成损伤。`});return 0;}
+    if((tar.buff.blueMoon||0)>0){
+      if(this.makoraBypass(att,'blueMoon')){ev.push({type:'skill',text:`【效果解析】${att.name} 已经完全看破【苍月·天上天下唯我独尊】——锁血被直接穿过，${label} 照常造成损伤。`});}
+      else{this.makoraNoteEffect('blueMoon',ev);ev.push({type:'skill',text:`${tar.name}【苍月·天上天下唯我独尊】生命被锁定，${label} 无法造成损伤。`});return 0;}
+    }
     // —— 术式免疫 / 闪避（领域与空间斩无视）——
     if(!ignoreImmune&&(kind!=='domain'||this.sureHitOff)){
       const _attAmp=(this._ampHit!==null&&this._ampHit!==undefined)?!!this._ampHit:this.ampActive(att);
-      if(this.hasFlag(tar,'limitless')&&!_attAmp){ev.push({type:'skill',text:`${tar.name} 的【无下限·无穷】将 ${label} 完全化解（免疫非领域攻击）。`});return 0;}
+      if(this.hasFlag(tar,'limitless')&&!_attAmp){
+        if(this.makoraBypass(att,'limitless')){ev.push({type:'skill',text:`【效果解析】${att.name} 已经完全看破【无下限·不可侵】——${label} 直接穿过了那层无穷。`});}
+        else{this.makoraNoteEffect('limitless',ev);ev.push({type:'skill',text:`${tar.name} 的【无下限·无穷】将 ${label} 完全化解（免疫非领域攻击）。`});return 0;}
+      }
       if(this.hasFlag(tar,'limitless')&&_attAmp)ev.push({type:'skill',text:'【领域展延】把无下限的不可侵卷入你的微型领域——攻击穿透了那层无穷。'});
-      if(this.hasFlag(tar,'requiem')){ev.push({type:'skill',text:`${tar.name} 的【黄金体验镇魂曲】令 ${label} 归零无效。`});return 0;}
-      if(this.hasFlag(tar,'swap')&&tar.ctl>att.ctl){ev.push({type:'skill',text:`${tar.name}【不义游戏】操控占优，闪避了 ${label}！`});return 0;}
-      if(this.hasFlag(tar,'sky')&&kind==='melee'){ev.push({type:'skill',text:`${tar.name}【天空术式】扭曲空间，${label}（近战）伤害为0。`});return 0;}
+      if(this.hasFlag(tar,'requiem')&&!this.makoraBypass(att,'requiem')){this.makoraNoteEffect('requiem',ev);ev.push({type:'skill',text:`${tar.name} 的【黄金体验镇魂曲】令 ${label} 归零无效。`});return 0;}
+      if(this.hasFlag(tar,'swap')&&tar.ctl>att.ctl&&!this.makoraBypass(att,'swap')){this.makoraNoteEffect('swap',ev);ev.push({type:'skill',text:`${tar.name}【不义游戏】操控占优，闪避了 ${label}！`});return 0;}
+      if(this.hasFlag(tar,'sky')&&kind==='melee'&&!this.makoraBypass(att,'sky')){this.makoraNoteEffect('sky',ev);ev.push({type:'skill',text:`${tar.name}【天空术式】扭曲空间，${label}（近战）伤害为0。`});return 0;}
       // 念写：30%概率完全闪避，闪避后下次攻击必暴击
-      if(this.hasFlag(tar,'foresight')&&Math.random()<0.30){tar.buff.foresightCrit=true;ev.push({type:'skill',text:`${tar.name}【念写·未来视】预判了 ${label}，完全闪避！下次攻击必暴击。`});return 0;}
+      if(this.hasFlag(tar,'foresight')&&Math.random()<0.30&&!this.makoraBypass(att,'foresight')){this.makoraNoteEffect('foresight',ev);tar.buff.foresightCrit=true;ev.push({type:'skill',text:`${tar.name}【念写·未来视】预判了 ${label}，完全闪避！下次攻击必暴击。`});return 0;}
     }
     // —— 减伤类（钢铁之躯-40%；铁壁按血量比例；命之契防御契约-30%）——
-    if(this.hasFlag(tar,'ironBody'))dmg*=0.60;
-    if(this.hasFlag(tar,'ironWall')){const ratio=Math.max(0,tar.hp/tar.maxHp);dmg*=(1-0.50*ratio);} // 满血-50%，空血-0%
+    if(this.hasFlag(tar,'ironBody')&&!this.makoraBypass(att,'ironBody')){this.makoraNoteEffect('ironBody',ev);dmg*=0.60;}
+    if(this.hasFlag(tar,'ironWall')&&!this.makoraBypass(att,'ironWall')){this.makoraNoteEffect('ironWall',ev);const ratio=Math.max(0,tar.hp/tar.maxHp);dmg*=(1-0.50*ratio);} // 满血-50%，空血-0%
     if(tar.buff.fateType==='def')dmg*=0.70;
     // —— 魔虚罗·适应：按「术式」逐项适应。见过的就记下来，减伤看适应转数
     //    1转25% / 2转50% / 3转75% / 4转100%，5转时研究出反制术式（主人的话会永久获得免疫）——
-    if(tar.makora&&!ignoreImmune){
-      const key=this._hitKey||'未知术式';
+    if(tar.makora){
+      // ★ 规则级/打断级手段（天逆鉾·空间斩·茈·元气弹·星之怒）也走这里：同样进表、同样吃减伤，
+      //   只是它们的减伤封顶 75%（见下面的 cut 处理）。
+      // 优先用显式传入的招名；领域结算/极之番/专属技/落星这些不走 performStrike 的路径
+      // 就用它们自己的 label（「领域【X】」「极之番·X」…），不再读到上一次出手的陈旧招名
+      const key=this._hitKey||label||'未知术式';
+      const table=tar.makoraAdapt=tar.makoraAdapt||{};
       tar.makoraSeen=tar.makoraSeen||{};
-      tar.makoraSeen[key]=true;   // 这一招没能杀死它，从此被它记下
-      const lv=(tar.makoraAdapt&&tar.makoraAdapt[key])||0;
-      const cut=MAKORA_ADAPT_REDUCE[Math.min(lv,MAKORA_ADAPT_REDUCE.length-1)]||0;
+      tar.makoraSeen[key]=true;
+      // 本次攻击「结束后」立刻结算：第一次见 → 记进法盘（适应 0）；见过 → 次数不变，只标记本回合被它打过
+      (tar.makoraHitRound=tar.makoraHitRound||{})[key]=this.round;
+      if(table[key]==null){
+        table[key]=0;
+        ev.push({type:'skill',text:'【适应·初识】'+tar.name+' 被【'+key+'】打中——这一招被记进法盘，适应自 0 开始（此后隔一回合推进一转；若再次受此招攻击则当回合加速）。'});
+      }
+      const lv=table[key];
+      let cut=MAKORA_ADAPT_REDUCE[Math.min(lv,MAKORA_ADAPT_REDUCE.length-1)]||0;
+      // 规则级 / 打断级手段（天逆鉾·空间斩·茈·元气弹·星之怒）：吃减伤，但最多 -75%，不会被完全看破
+      if(ignoreImmune&&cut>MAKORA_RULE_CAP)cut=MAKORA_RULE_CAP;
       if(cut>=1){
         ev.push({type:'skill',text:tar.name+'【适应·'+key+'】已经完成——这一击被彻底看破，伤害归零。'});
         return 0;
       }
       if(cut>0){
         dmg*=Math.max(0,1-cut);
-        ev.push({type:'skill',text:tar.name+'【适应·'+key+'】'+lv+' 转，本次伤害 -'+Math.round(cut*100)+'%。'});
+        ev.push({type:'skill',text:tar.name+'【适应·'+key+'】'+lv+' 转，本次伤害 -'+Math.round(cut*100)+'%'
+          +(ignoreImmune?'（规则级手段最多 -'+Math.round(MAKORA_RULE_CAP*100)+'%）':'')+'。'});
       }
+      // 已经适应过至少一次的招式：再高的伤害也杀不死它（最多剩 1 点生命）
+      // —— 但规则级手段不受这条保护，它们仍是适应完毕后唯一能击杀它的手段
+      if(lv>=1&&!ignoreImmune)tar._makoraNoKill=true;
     }
     // —— 魔虚罗的反制术式已传授给主人：主人对这套术式 100% 免伤 ——
     if(!ignoreImmune&&tar.isPlayer&&tar.makoraCounters&&tar.makoraCounters[this._hitKey]){
@@ -3449,7 +3568,8 @@ class BattleEngine{
       return 0;
     }
     // —— 空间吞噬：承受50%伤害，另50%被吞噬转化为自身生命恢复（需有咒力维持）——
-    if(this.hasFlag(tar,'spaceDevour')&&tar.cp>0){
+    if(this.hasFlag(tar,'spaceDevour')&&tar.cp>0&&!this.makoraBypass(att,'spaceDevour')){
+      this.makoraNoteEffect('spaceDevour',ev);
       const swallowed=Math.round(dmg*0.5);dmg=Math.max(1,dmg-swallowed);
       const heal=Math.min(swallowed,tar.maxHp-tar.hp);
       if(heal>0){tar.hp+=heal;ev.push({type:'heal',from:tar.name,text:`【空间吞噬】${tar.name} 吞噬 ${swallowed} 点攻击伤害并转化为生命（+${heal}）。`,heal});}
@@ -3477,6 +3597,11 @@ class BattleEngine{
         _barTxt=`　结界术熟练度 +${BARRIER_FLASH_GAIN}%（现 ${Math.round(P.barrierProf||0)}%）${_ms?('；'+_ms):''}`;
       }
       ev.push({type:'flash',text:`★ 黑 闪 ★ 空间被一击扭曲！本次伤害×10${att.isPlayer?'，且你全属性永久+10%':''}！${_barTxt}`});
+    }
+    // ※ 魔虚罗：已经适应过（>=1 转）的招式杀不死它——最多打到只剩 1 点生命
+    if(tar.makora&&tar._makoraNoKill&&dmg>=tar.hp){
+      dmg=Math.max(0,tar.hp-1);
+      ev.push({type:'skill',text:`【适应】${tar.name} 对这一招已经有了耐性——这一击最多把它打到只剩 1 点生命。`});
     }
     tar.hp-=dmg;
     ev.push({type:flash?'flash':'hit',from:att.name,to:tar.name,text:`${label} → 命中 ${tar.name}，造成 ${dmg} 点伤害。`,dmg});
@@ -3596,7 +3721,7 @@ class BattleEngine{
     if(!target){ev.push({type:'info',text:`${u.name} 失去目标。`});return;}
     // 与该招式档位一致的咒力比例（快速 5% / 连击 7% / 咏唱 10% / 结印 18% / 广域 22%）
     const _tcfg0=(u.flag&&(TECH_MOVE[u.flag]||[]).length)?skillTierOf(u.flag,u._queuedMove||(TECH_MOVE[u.flag]||[])[0]):NPC_GENERIC_TECH;
-    const cost=Math.max(1,Math.round((u.maxCp||0)*(_tcfg0.cost!=null?_tcfg0.cost:0.05)));
+    const cost=Math.max(1,Math.round((u.maxCp||0)*(_tcfg0.cost!=null?_tcfg0.cost:0.03)));
     const allyMult=u.side==='ally'?(1+(this.cfg.player.allyBoost||0)):1;
     // 万里锁：持有者的攻击对敌方全体生效（天逆鉾破免疫在 performStrike 内处理）
     const chain=u.skills&&u.skills.tools&&u.skills.tools.chain;
@@ -3784,7 +3909,10 @@ const NPC_CHARS={
  '胀相#9':[9,7,9,8,7,'blood',{rev:1,bf:0,dom:0}],
  '羂索#10':[10,8,9,9,10,'spiritControl',{rev:1,bf:0,dom:1}],
  '蝗虫#8':[7,8,7,7,7,null,{rev:1,bf:0,dom:0}],
- '魔虚罗#10':[10,9,10,4,4,null,{rev:1,bf:0,dom:0,adapt:1,regen:0.9}],
+ // 回血口径与召唤体一致：不再有每回合 90% 的超高速再生，只靠「每次受击回 1/8」（reverseHealRatio）
+ '魔虚罗#10':[10,9,10,4,4,null,{rev:1,bf:0,dom:0,adapt:1}],
+ // 调服仪式那只（li=12）：与剧情版同一套面板——原本没写这一行，导致仪式版反而没有超高速再生
+ '魔虚罗#12':[12,11,12,5,5,null,{rev:1,bf:0,dom:1,adapt:1}],
  '16指宿傩#10':[10,10,10,10,10,'cleave',{rev:1,bf:0,dom:1}],
  '陀艮#8':[8,7,8,7,8,'cannon',{rev:1,bf:0,dom:1}],
  '禅院家主#6':[7,6,6,5,6,'projection',{rev:0,bf:0,dom:0}],
@@ -6768,7 +6896,9 @@ const Game={
     (P.extraTechs||[]).forEach((t,i)=>sk.push(`★ 额外术式${i+1}：${t.name}（领域：${t.domain}，多术式被动叠加、多领域可依次展开）`));
     if(P.extraTech)sk.push(`★ 第二术式：${P.extraTech.name}（领域：${P.extraTech.domain}，多术式被动叠加、多领域可依次展开）`);
     (P.stolenTechs||[]).forEach(t=>sk.push(`夺取术式：${t.name}（熟练度${Math.round(t.prof)}%${t.domain?'，领域：'+t.domain:''}）`));
-    const _mk=Object.keys(P.makoraCounters||{});
+    const _mke=Object.keys(P.makoraEffectCounters||{});
+  if(_mke.length)sk.push('★ 魔虚罗已解析的「效果类」能力（你的任何技能都无视它们）：'+_mke.map(id=>(MAKORA_EFFECT_ADAPT.find(x=>x.id===id)||{}).name||id).join('、'));
+  const _mk=Object.keys(P.makoraCounters||{});
     if(_mk.length)sk.push('★ 魔虚罗已解析反制术式（你对这些术式100%免伤）：'+_mk.join('、'));
     // 高级技巧
     const advList=P.adv?Object.keys(P.adv):[];
@@ -6844,7 +6974,12 @@ const Game={
     this.render();
     $('btnActionWheel').disabled=false;
   },
-  afterBattleRecover(){const P=this.player;P.hp=P.maxHp;P.cp=P.maxCp;},
+  afterBattleRecover(){
+    const P=this.player;P.hp=P.maxHp;P.cp=P.maxCp;
+    // 式神附体（含魔虚罗·法轮）是「场内架势」，战斗结束就退场——否则会常驻存档、
+    // 附体面板此后一直显示「上身中」，切换附体时还会误报「法轮从你身上退去」
+    if(P&&P.possess){P.possess=null;delete P.possessRoundThis;}
+  },
   /** 当前所处时间线的剧情表与事件日：怀玉独立时间线用 KAI_STORY，转入主线后用 STORY */
   currentStory(){if(!this.player)return STORY;if(this.player.arc==='kaigyo')return KAI_STORY;if(this.player.arc==='future')return FUTURE_STORY;return STORY;},
   currentEventDays(){if(!this.player)return EVENT_DAYS;if(this.player.arc==='kaigyo')return KAI_EVENT_DAYS;if(this.player.arc==='future')return FUTURE_EVENT_DAYS;return EVENT_DAYS;},
