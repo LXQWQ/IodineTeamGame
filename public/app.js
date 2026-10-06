@@ -180,7 +180,9 @@
             { id:7, name:"化境争霸", emoji:"⚔️⚗️", tag:"领地争夺", desc:"化学主题六边形棋盘领地争夺战！酸碱中和、电化学、元素争霸三模式，支持双人对战和人机AI，通过化学反应摧毁敌方单位！", link:"games/chem-territory/", newWindow:false },
             { id:9, name:"化学海龟汤", emoji:"🐢", tag:"推理猜谜", desc:"化学版海龟汤！根据谜面推理化学物质/反应/现象，AI主持人月见八千代出题，沉浸式悬疑推理体验。手机电脑均可畅玩！", link:"games/chem-turtle-soup/", newWindow:false },
             { id:10, name:"元素大战僵尸·经典版", emoji:"🧟⚗️", tag:"经典塔防", desc:"经典PvZ式元素塔防！部署碳、镁、钠等元素守卫实验室，重温最初的元素战争。", link:"evz.html", newWindow:false },
-            { id:11, name:"化境争霸 · 战争卡牌", emoji:"⚔️🧪", tag:"氧化还原对战", desc:"全新重制的红蓝卡牌战争！50名军团角色（氧化剂vs还原剂）、10种技能（护盾/连击/剧毒/自爆…）、14张反应卡。三线战场，支持人机对战与同屏双人热座PvP！", link:"games/chem-territory-v2/", newWindow:false }
+            { id:11, name:"化境争霸 · 战争卡牌", emoji:"⚔️🧪", tag:"氧化还原对战", desc:"全新重制的红蓝卡牌战争！50名军团角色（氧化剂vs还原剂）、10种技能（护盾/连击/剧毒/自爆…）、14张反应卡。三线战场，支持人机对战与同屏双人热座PvP！", link:"games/chem-territory-v2/", newWindow:false },
+            { id:12, name:"咒术回战 · 轮回转盘", emoji:"🎡", tag:"穿越生存", desc:"12 连抽定出身，怀玉/宿傩等时间线开局！回合制术式对战：全员先声明术式，再按「使用者速度+技能速度」统一排序结算，行动点决定一回合出手次数；修炼狩猎成长，剧情战败即死。52 种术式含领域展开与极之番，怀玉篇通关可得六眼或甚尔道具，最终新宿决战定结局。支持本地双人对战、存档库与自动 5 倍速。", link:"games/jujutsu-roulette/", newWindow:false }
+
         ];
                 const iodineDevGames = [
             { id:4, name:"碳链工坊", emoji:"🧬⛓", tag:"3D分子工坊", desc:"有机合成策略，构建分子结构，探索化学反应！—— 预计下个大版本重构", link:"games/chain-craft/", newWindow:false },
@@ -425,6 +427,44 @@
 <circle r="4.8" fill="#67e8f9" opacity=".9" filter="url(#hjBlur)"><animateMotion dur="2.4s" repeatCount="indefinite" path="M88 70 Q60 30 32 70"/></circle>
 <circle r="3.2" fill="#f0fdff"><animateMotion dur="2.4s" repeatCount="indefinite" path="M88 70 Q60 30 32 70"/></circle>
 <circle cx="32" cy="70" r="15" fill="none" stroke="#a5f3fc" stroke-width="2.4" opacity="0"><animate attributeName="opacity" values="0;0;.95;0;0" keyTimes="0;.86;.92;1;1" dur="2.4s" repeatCount="indefinite"/><animate attributeName="r" values="15;15;26;30;30" keyTimes="0;.86;.92;1;1" dur="2.4s" repeatCount="indefinite"/></circle>
+</svg></div>`,
+            12: `<div class="gi gi-lunhui"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="lhGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#a855f7" stop-opacity=".75"/><stop offset="60%" stop-color="#7b2ff7" stop-opacity=".28"/><stop offset="100%" stop-color="#7b2ff7" stop-opacity="0"/></radialGradient>
+<linearGradient id="lhS0" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b31ff"/><stop offset="100%" stop-color="#5a12c9"/></linearGradient>
+<linearGradient id="lhS1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c1121f"/><stop offset="100%" stop-color="#7d0a14"/></linearGradient>
+<linearGradient id="lhS2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#b06bff"/><stop offset="100%" stop-color="#6b21a8"/></linearGradient>
+<linearGradient id="lhS3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff4d5e"/><stop offset="100%" stop-color="#8c1020"/></linearGradient>
+<radialGradient id="lhHub" cx="38%" cy="32%" r="72%"><stop offset="0%" stop-color="#fff6d8"/><stop offset="45%" stop-color="#ffd166"/><stop offset="100%" stop-color="#8a5a12"/></radialGradient>
+<linearGradient id="lhRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffd166"/><stop offset="50%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#ffd166"/></linearGradient>
+<filter id="lhBlur" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3"/></filter>
+</defs>
+<g transform="translate(60 62)"><g><animateTransform attributeName="transform" type="scale" values="1;1.12;1" dur="3.4s" repeatCount="indefinite"/><circle r="44" fill="url(#lhGlow)"/></g></g>
+<g><animateTransform attributeName="transform" type="rotate" from="0 60 62" to="360 60 62" dur="16s" repeatCount="indefinite"/>
+<path d="M60.0 62.0 L60.0 24.0 A38.0 38.0 0 0 1 86.9 35.1 Z" fill="url(#lhS0)" stroke="rgba(255,215,120,.35)" stroke-width="0.8"/>
+<path d="M60.0 62.0 L86.9 35.1 A38.0 38.0 0 0 1 98.0 62.0 Z" fill="url(#lhS1)" stroke="rgba(255,215,120,.35)" stroke-width="0.8"/>
+<path d="M60.0 62.0 L98.0 62.0 A38.0 38.0 0 0 1 86.9 88.9 Z" fill="url(#lhS2)" stroke="rgba(255,215,120,.35)" stroke-width="0.8"/>
+<path d="M60.0 62.0 L86.9 88.9 A38.0 38.0 0 0 1 60.0 100.0 Z" fill="url(#lhS3)" stroke="rgba(255,215,120,.35)" stroke-width="0.8"/>
+<path d="M60.0 62.0 L60.0 100.0 A38.0 38.0 0 0 1 33.1 88.9 Z" fill="url(#lhS0)" stroke="rgba(255,215,120,.35)" stroke-width="0.8"/>
+<path d="M60.0 62.0 L33.1 88.9 A38.0 38.0 0 0 1 22.0 62.0 Z" fill="url(#lhS1)" stroke="rgba(255,215,120,.35)" stroke-width="0.8"/>
+<path d="M60.0 62.0 L22.0 62.0 A38.0 38.0 0 0 1 33.1 35.1 Z" fill="url(#lhS2)" stroke="rgba(255,215,120,.35)" stroke-width="0.8"/>
+<path d="M60.0 62.0 L33.1 35.1 A38.0 38.0 0 0 1 60.0 24.0 Z" fill="url(#lhS3)" stroke="rgba(255,215,120,.35)" stroke-width="0.8"/>
+<circle cx="60" cy="62" r="38" fill="none" stroke="url(#lhRing)" stroke-width="2.4" opacity=".9"/>
+<rect x="59.20" y="18.50" width="1.6" height="5" rx="0.8" fill="#ffd166" opacity=".8" transform="rotate(-90 60.0 62.0)"/>
+<rect x="59.20" y="18.50" width="1.6" height="5" rx="0.8" fill="#ffd166" opacity=".8" transform="rotate(-45 60.0 62.0)"/>
+<rect x="59.20" y="18.50" width="1.6" height="5" rx="0.8" fill="#ffd166" opacity=".8" transform="rotate(0 60.0 62.0)"/>
+<rect x="59.20" y="18.50" width="1.6" height="5" rx="0.8" fill="#ffd166" opacity=".8" transform="rotate(45 60.0 62.0)"/>
+<rect x="59.20" y="18.50" width="1.6" height="5" rx="0.8" fill="#ffd166" opacity=".8" transform="rotate(90 60.0 62.0)"/>
+<rect x="59.20" y="18.50" width="1.6" height="5" rx="0.8" fill="#ffd166" opacity=".8" transform="rotate(135 60.0 62.0)"/>
+<rect x="59.20" y="18.50" width="1.6" height="5" rx="0.8" fill="#ffd166" opacity=".8" transform="rotate(180 60.0 62.0)"/>
+<rect x="59.20" y="18.50" width="1.6" height="5" rx="0.8" fill="#ffd166" opacity=".8" transform="rotate(225 60.0 62.0)"/>
+</g>
+<circle cx="60" cy="62" r="10" fill="url(#lhHub)"/>
+<circle cx="60" cy="62" r="10" fill="none" stroke="#5a12c9" stroke-width="1.4"/>
+<path d="M60 10 l8.5 14 h-17 z" fill="#ffd166" stroke="#8a5a12" stroke-width="1"/>
+<circle cx="26" cy="34" r="2.4" fill="#e01e37" opacity="0"><animate attributeName="opacity" values="0;.95;0" dur="2.2s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;-7 -9" dur="2.2s" repeatCount="indefinite"/></circle>
+<circle cx="96" cy="88" r="2.2" fill="#a855f7" opacity="0"><animate attributeName="opacity" values="0;.9;0" dur="2.6s" begin=".9s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;7 9" dur="2.6s" begin=".9s" repeatCount="indefinite"/></circle>
+<circle cx="98" cy="32" r="1.8" fill="#ffd166" opacity="0"><animate attributeName="opacity" values="0;.85;0" dur="3s" begin="1.6s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;6 -8" dur="3s" begin="1.6s" repeatCount="indefinite"/></circle>
 </svg></div>`
         };
 
