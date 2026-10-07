@@ -259,6 +259,45 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
   35%{transform:scale(1.12) skewX(-6deg);opacity:.95}
   100%{transform:scale(1.4) skewX(10deg);opacity:0;filter:blur(6px)}}
 /* 时间线跳转全屏大字 */
+  /* 开放式冒险：右上角小地图 + 大地图 */
+  .mini-map{position:fixed;top:56px;right:16px;z-index:900;width:106px;padding:4px;cursor:pointer;
+    border:1px solid rgba(150,140,190,.55);border-radius:10px;
+    background:linear-gradient(180deg,rgba(18,16,30,.94),rgba(8,7,14,.82));
+    box-shadow:0 0 12px rgba(90,60,160,.35)}
+  .mini-map.hidden{display:none}
+  .mini-map .mm-cap{font-size:10px;color:#bda7ff;text-align:center;letter-spacing:1px}
+  .mini-map .mm-body{position:relative;height:58px;margin-top:3px;border-radius:6px;overflow:hidden;
+    background:repeating-linear-gradient(0deg,rgba(150,140,190,.12) 0 1px,transparent 1px 14px),
+      repeating-linear-gradient(90deg,rgba(150,140,190,.12) 0 1px,transparent 1px 14px),rgba(6,5,12,.75)}
+  .mini-map .mm-dot{position:absolute;width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:50%;
+    background:#ff6f8a;box-shadow:0 0 6px rgba(255,111,138,.85)}
+  .mini-map .mm-dot.done{background:#5ad48a;box-shadow:0 0 6px rgba(90,212,138,.85)}
+  .adv-map{position:relative;width:100%;height:min(46vh,330px);margin-top:10px;border-radius:12px;
+    border:1px solid rgba(150,140,190,.45);overflow:hidden;
+    background:repeating-linear-gradient(0deg,rgba(150,140,190,.10) 0 1px,transparent 1px 34px),
+      repeating-linear-gradient(90deg,rgba(150,140,190,.10) 0 1px,transparent 1px 34px),rgba(8,7,16,.72);
+    box-shadow:inset 0 0 26px rgba(0,0,0,.55)}
+  .adv-node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:transparent;border:0;cursor:pointer;color:#e8dcff;font-size:11.5px;padding:2px 4px;white-space:nowrap}
+  .adv-node .dot{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+    background:rgba(255,111,138,.18);border:1px solid rgba(255,111,138,.7);color:#ff8fa3;font-size:12px}
+  .adv-node .nm{text-shadow:0 0 6px rgba(0,0,0,.9)}
+  .adv-node:hover .dot{background:rgba(255,111,138,.38)}
+  .adv-node.done{color:#9fe8bd;cursor:default}
+  .adv-node.done .dot{background:rgba(90,212,138,.18);border-color:rgba(90,212,138,.7);color:#7fe0a0}
+  /* —— 涩谷事变：分层地图与小地图标记 —— */
+  .adv-map.shibuya{background:radial-gradient(circle at 34% 42%,rgba(150,60,70,.26),rgba(10,8,18,.74) 62%),
+    repeating-linear-gradient(0deg,rgba(150,140,190,.10) 0 1px,transparent 1px 34px),
+    repeating-linear-gradient(90deg,rgba(150,140,190,.10) 0 1px,transparent 1px 34px),rgba(8,7,16,.74)}
+  .adv-node.zone .dot{width:18px;height:18px;font-size:10px;background:rgba(150,140,190,.16);
+    border-color:rgba(150,140,190,.65);color:#cfc2ff}
+  .adv-node.zone.here .dot{background:rgba(255,200,60,.22);border-color:rgba(255,200,60,.9);color:#ffd24a}
+  .adv-node.zone.heal .dot{background:rgba(90,212,138,.18);border-color:rgba(90,212,138,.7);color:#7fe0a0}
+  .adv-node.field .dot{width:20px;height:20px;font-size:10px}
+  .mm-dot.here{width:9px;height:9px;background:#ffd24a;box-shadow:0 0 8px rgba(255,210,74,.9)}
+  .mm-dot.heal{background:#5ad48a;box-shadow:0 0 6px rgba(90,212,138,.8)}
+  .mm-dot.f{width:5px;height:5px;margin:-2px 0 0 -2px;background:#ff6f8a;box-shadow:0 0 4px rgba(255,111,138,.7)}
+  .mm-dot.f.done{background:#5ad48a;box-shadow:0 0 4px rgba(90,212,138,.7)}
 .era-banner{position:fixed;inset:0;z-index:3200;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(circle at center,rgba(20,8,40,.85) 0%,rgba(0,0,0,.97) 100%);pointer-events:none}
 .era-banner.hidden{display:none}
@@ -418,6 +457,7 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
 <body>
 
 <!-- 全局悬浮控件：全屏 / 音效开关 -->
+<div class="mini-map hidden" id="miniMap" title="点击查看战场地图"><div class="mm-cap">0 / 0</div><div class="mm-body"></div></div>
 <div class="global-ctl">
   <button class="gctl-btn" id="btnSound" title="开关全部音效与语音">🔊 音效开</button>
   <button class="gctl-btn" id="btnVoice" title="单独开关领域/极之番的语音念诵（不影响大字特效）">🗣 语音开</button>
@@ -1180,6 +1220,8 @@ const Player={
       stolen:[], // 死而替生夺取的术式名（兼容）
       stolenTechs:[], // 死而替生夺取的完整术式 {name,flag,domain,prof}，各自独立熟练度
       absorbed:[], // 咒灵操术/降灵术永久吸收的敌人快照（数值固定不成长）
+      openAdv:null, // 开放式冒险（多战场章节）：{day,colony,done:[]}——跟存档走，换机器也能接着支援
+      shibuya:null, // 涩谷事变·开放冒险：{on,day,zone,dist,trainDay}——连续战斗 / 街道巡视 / 地图推进
       soulBank:[], // 无为转变·灵魂库：{id,name,li,purity} 只保留纯净度（0~100%，1 位小数），不继承术式
       soulFusions:[], // 无为转变·改造人库存：{id,form,name,li,purityAvg,souls:[id]}（融合不可逆）
       extracted:[], // 术式提取：从「极之番·漩涡」融入的咒灵身上拆下来的术式（一次性，用掉即消失）{id,flag,name,prof,from,li}
@@ -1374,16 +1416,21 @@ const Player={
     return pool;
   },
   /** 战后成长奖励（按敌方最高等级） */
+  /** 战后成长奖励（按敌方最高等级）——**每一场战斗都要留下属性收益**：
+   *  战胜给全额；苦战 / 撤退 / 倒下但没死，给 REWARD_LOSS_MULT 那一份（默认四成）。
+   *  唯一的例外是「主动撤退」那条路（狩猎里点了撤退）：那是自己选择不打的，不给。 */
   reward(P,enemyLi,victory=true,mult=1){
-    if(!victory)return '';
-    const M=Math.max(1,Math.round(mult||1));   // 数量奖励倍率（1 次结算里直接乘进去，别在调用处循环）
+    const M=Math.max(1,Math.round(mult||1));   // 数量奖励倍率（整数；1 次结算里直接乘进去，别在调用处循环）
+    const lose=!victory;
+    // ★ 苦战收益：不是把整数倍率取整（那会被 max(1,…) 吃掉），而是把倍率乘在每一项收益上
+    const K=M*(lose?(typeof REWARD_LOSS_MULT==='number'?REWARD_LOSS_MULT:0.4):1);
     const ageK=(1+(P.ageGrowthBonus||0));
-    const profGain=Math.max(1,6+enemyLi)*M;
+    const profGain=Math.max(1,Math.round((6+enemyLi)*K));
     const k=P.growthMult*ageK;
-    const cpAdd=fixedGain('cp',enemyLi,k*0.6*genderGainMult(P.gender,'cp'))*M;
-    const hpAdd=fixedGain('hp',enemyLi,k*0.6*genderGainMult(P.gender,'hp'))*M;
-    const dHi=fixedGain('dmg',enemyLi,k*0.6*genderGainMult(P.gender,'eff'))*M,dLo=Math.max(1,Math.round(dHi*0.6));
-    const ctlAdd=fixedGain('ctl',enemyLi,k*0.5*genderGainMult(P.gender,'ctl'))*M;
+    const cpAdd=Math.max(1,Math.round(fixedGain('cp',enemyLi,k*0.6*genderGainMult(P.gender,'cp'))*K));
+    const hpAdd=Math.max(1,Math.round(fixedGain('hp',enemyLi,k*0.6*genderGainMult(P.gender,'hp'))*K));
+    const dHi=Math.max(1,Math.round(fixedGain('dmg',enemyLi,k*0.6*genderGainMult(P.gender,'eff'))*K)),dLo=Math.max(1,Math.round(dHi*0.6));
+    const ctlAdd=Math.max(1,Math.round(fixedGain('ctl',enemyLi,k*0.5*genderGainMult(P.gender,'ctl'))*K));
     P.maxCp+=cpAdd;P.cp=P.maxCp;
     P.maxHp+=hpAdd;P.hp=P.maxHp;
     P.eff[0]+=dLo;P.eff[1]+=dHi;
@@ -1391,7 +1438,10 @@ const Player={
     P.ctl+=ctlAdd;
     Player.gainProf(P,profGain);
     const old=P.levelIndex;P.levelIndex=Player.evalLevel(P);
-    let t=`战胜奖励（固定）：咒力+${cpAdd}、生命+${hpAdd}、术式伤害+${dLo}~${dHi}、减免+${ctlAdd}、熟练度+${profGain}%`+(M>1?('　★ 数量奖励 ×'+M+' 已计入上述数值'):'');
+    let t=(lose?'苦战收益（未胜）：':'战胜奖励（固定）：')
+      +`咒力+${cpAdd}、生命+${hpAdd}、术式伤害+${dLo}~${dHi}、减免+${ctlAdd}、熟练度+${profGain}%`
+      +(lose?'　（苦战只按四成结算，但经验照样留下）':'')
+      +(mult>1?('　★ 数量奖励 ×'+Math.max(1,Math.round(mult||1))+' 已计入上述数值'):'');
     if(P.levelIndex>old)t+=`；综合评级提升至【${lvName(P.levelIndex)}】`;
     return t;
   }
@@ -1523,6 +1573,14 @@ const TECH_MOVE={
 /* ==================== 战斗改造 · 技能档位数据 ==================== */
 /** 全局战斗节奏系数：实测战斗时长偏离目标时，只调这一个数（回合制实测标定：镜像对拼下 1.0 正好落在 3~5 回合） */
 const COMBAT_SCALE=1.4;
+/** 力竭侵蚀：战斗拖到 120 次行动之后，双方每回合按最大生命吃递增的侵蚀伤害（4% 起、封顶 60%）。
+ *  ——**已按玩家要求关闭**（「打架时间太长导致自身力竭被侵蚀」太憋屈，想要战斗爽）。
+ *  想恢复就把这里改成 true；关掉之后长时间僵持由下面的「回复衰减」兜底（见 reverseHeal / 再生）。 */
+const EXHAUST_EROSION=false;
+/** 苦战收益：没打赢（撤退 / 倒下但没死 / 连战败北）时按这个倍率结算——每一场战斗都要留下属性收益 */
+const REWARD_LOSS_MULT=0.4;
+/** 毒伤：每层每回合扣「上限」的比例（旧值 5% / 10% 是按老血量标定的，节奏变快后太致命） */
+const POISON_PER_STACK=0.02, GU_PER_STACK=0.04;
 /** 普攻「咒力打击」的固有间隔（秒）：由速度决定 */
 function attackInterval(speed){return Math.max(0.7,2.4-Math.min(1.4,(speed||6)*0.04));}
 /** 敌人出手间隔：比玩家略慢，给玩家操作留优势 */
@@ -2263,9 +2321,10 @@ class BattleEngine{
       }
       case 'heal':{
         // 円鹿·超高能反转：以高速反转术式治愈全体同伴
-        const cost=Math.round(u.maxCp*0.10);
-        if(u.cp<cost)return false;
-        u.cp-=cost;
+        // ★ 咒力价码只对「円鹿自己出手」生效；附体借来的（u._possessFree）只花行动点
+        const cost=u._possessFree?0:Math.round(u.maxCp*0.10);
+        if(cost>0&&u.cp<cost)return false;
+        if(cost>0)u.cp-=cost;
         ev.push({type:'skillcut',actorName:u.name,text:ss.name});
         const rs=mates.map(m=>({m:m,heal:Math.round(m.maxHp*(m===u?0.40:0.25))}));
         rs.forEach(r=>{r.m.hp=Math.min(r.m.maxHp,r.m.hp+r.heal);});
@@ -2448,7 +2507,7 @@ class BattleEngine{
     if(this.player)this.player.makoraEffectCounters=P.makoraEffectCounters;
     P.notes=P.notes||[];
     P.notes.push(`魔虚罗把【${makoraEffName(id)}】解析到五转并传授给你——从此你的任何技能都无视这个效果`);
-    ev.push({type:'domain',domainName:'效 果 解 析 · 传 授',actorName:u.name,side:u.side,isPlayer:u.isPlayer,
+    ev.push({type:'skillcut',domainName:'效 果 解 析 · 传 授',actorName:u.name,side:u.side,isPlayer:u.isPlayer,
       text:`✦✦ 魔虚罗彻底解析了【${makoraEffName(id)}】并传授给你——从此你的任何技能都无视这个效果！ ✦✦`});
   }
   /** 五转：魔虚罗研究出反制术式。若是己方的魔虚罗，就永久传授给主人（主人对该术式 100% 免伤） */
@@ -2475,7 +2534,7 @@ class BattleEngine{
     if(this.player)this.player.makoraCounters=P.makoraCounters;
     P.notes=P.notes||[];
     P.notes.push(`魔虚罗把【${key}】适应到五转，研究出反制术式并传授给你——从此你对${key}100%免伤`);
-    ev.push({type:'domain',domainName:'反 制 术 式 · 传 授',actorName:u.name,side:u.side,isPlayer:u.isPlayer,
+    ev.push({type:'skillcut',domainName:'反 制 术 式 · 传 授',actorName:u.name,side:u.side,isPlayer:u.isPlayer,
       text:`✦✦ 魔虚罗研究出【${key}】的反制术式，并永久传授给主人——从此这个术式对你完全无效！ ✦✦`});
   }
   /** 十种影法术式神表：[名称, 继承总属性比例]（比例越高越高等） */
@@ -3017,6 +3076,7 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     if(a.special==='shadowCast'){
       const r=this.playerCastShadowSkill(u,a.shadowName,a.shadowIdx);
       if(r&&r.events&&r.events.length)ev.push(...r.events);
+      if(r&&r.ok===false)ev.push({type:'info',text:'【式神附体·'+(a.shadowName||'')+'】这一手没能发动（条件不满足）——行动点已经花掉了。'});
       this.afterAction(u,ev,true,true);
       return;
     }
@@ -3059,7 +3119,7 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     }
     this.afterAction(p,ev,true,true);
   }
-  /** 回合结束：领域按回合结算 → 力竭收敛 → 胜负判定 */
+  /** 回合结束：领域按回合结算 → （力竭侵蚀·已关闭）→ 胜负判定 */
   endRound(){
     const ev=[];
     if(this.ended)return ev;
@@ -3210,9 +3270,12 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     const defs=(Array.isArray(sk)?sk:[sk]).map(d=>Object.assign({},d,{chance:1}));
     // idx：黑影框里点的是这一只式神的哪一门招式（不给就随机抽一门——嵌合兽的老行为）
     u.shadowSkill=(idx!=null&&defs[idx])?defs[idx]:(defs.length===1?defs[0]:defs);
+    // ★ 附体借来的招式：只花行动点，不再按「式神自己出手」的价码扣咒力（円鹿那招原本要 10% 上限）
+    const _possessBorrow=(idx!=null);
+    if(_possessBorrow)u._possessFree=true;
     let ok=false;
     try{ok=this.shadowSkillAct(u,ev);}catch(e){ok=false;}
-    finally{u.shadowSkill=raw||null;this._ampHit=null;}
+    finally{if(_possessBorrow)delete u._possessFree;u.shadowSkill=raw||null;this._ampHit=null;}
     return {ok:ok,events:ev};
   }
   /** 可用的式神附体清单：附体后它的术式进入下方「黑影框」，用你自己的行动点打出
@@ -3495,14 +3558,21 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
   }
   /** 回合开始：DOT结算 / 反转 / 无下限耗蓝 / 再生回血 / 行动召唤 */
   onTurnStart(actor,ev){
-    // 1. 毒素 / 蛊毒结算（每层扣当前血量上限的比例）
-    if(actor.buff.poison>0){const d=Math.round(actor.maxHp*0.05*actor.buff.poison);this.loseHp(actor,d,ev,'淀月毒素');}
-    if(actor.buff.gu>0){const d=Math.round(actor.maxHp*0.10*actor.buff.gu);this.loseHp(actor,d,ev,'蛊毒');}
+    // 1. 毒素 / 蛊毒结算（每层扣上限的比例，走伤害管线：适应减伤 / 钢铁之躯·铁壁 照常算，免疫与闪避不判）
+    //    旧值 5%/层、10%/层 是按老血量标定的（改数值时忘了同步），现在降到 2% / 4%
+    if(actor.buff.poison>0){
+      const d=Math.max(1,Math.round(actor.maxHp*POISON_PER_STACK*actor.buff.poison));
+      this.dealDamage(actor.buff.poisonFrom||actor,actor,Math.max(1,Math.round(d/COMBAT_SCALE)),1,'tech',ev,'淀月毒素',false,false,true);
+    }
+    if(actor.buff.gu>0){
+      const d=Math.max(1,Math.round(actor.maxHp*GU_PER_STACK*actor.buff.gu));
+      this.dealDamage(actor.buff.guFrom||actor,actor,Math.max(1,Math.round(d/COMBAT_SCALE)),1,'tech',ev,'蛊毒',false,false,true);
+    }
     if(!actor.alive)return;
     // 2. 反转术式已改为「每次攻击之后立即回血」，见 reverseHeal()——不再在回合开始结算
     // 3. 超高速再生（魔虚罗：每回合回90%；未来篇适应体：回100%并按 regenCap 提升血量上限）
     if(actor.skills.regen){
-      const rf=this.actionsTotal>120?0.25:1; // 力竭阶段回复衰减，保证僵持必分胜负
+      const rf=this.actionsTotal>120?0.25:1; // 僵持保底：打太久（>120 行动）后再生衰减到 25%（力竭侵蚀已关闭，这条是剩下的兜底）
       if(actor.skills.regenCap&&rf===1){const inc=Math.round(actor.maxHp*actor.skills.regenCap);actor.maxHp+=inc;actor.hp+=inc;}
       const h=Math.round(actor.maxHp*actor.skills.regen*rf);actor.hp=Math.min(actor.maxHp,actor.hp+h);
       ev.push({type:'heal',text:`${actor.name}【${actor.skills.regenCap?'适应再生':'超高速再生'}】，恢复${Math.round(actor.skills.regen*rf*100)}%生命${actor.skills.regenCap&&rf===1?'并提升血量上限':''}（+${h}）。`,heal:h});
@@ -3563,7 +3633,7 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     if(actor.hp>=actor.maxHp)return;
     const cost=(actor.skills&&actor.skills.sixEyes)?0:Math.round((actor.maxCp||0)*REVERSE_COST_PER_ACT);
     if(actor.cp<cost)return;
-    const hf=this.actionsTotal>120?0.25:1; // 力竭阶段回复衰减，保证僵持必分胜负
+    const hf=this.actionsTotal>120?0.25:1; // 僵持保底：打太久后反转治疗衰减到 25%（不会掉血，只是让僵持能收场）
     const gojoMult=actor.name==='五条悟'?2:1; // 五条悟反转治愈2倍
     const heal=Math.round(actor.maxHp*REVERSE_HEAL_PER_ACT*hf*gojoMult);
     if(heal<=0)return;
@@ -3580,8 +3650,10 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
       });
     }
   }
-  /** 力竭收敛：行动超过120次后（如双方互相免疫/打不动），全体每回合受最大生命4%的力竭伤害，保证战斗必然分出胜负 */
+  /** 力竭侵蚀：行动超过120次后（如双方互相免疫/打不动），全体每回合受递增的力竭伤害。
+   *  ★ 现已按玩家要求关闭（EXHAUST_EROSION=false）——长时间战斗不再自伤，留着的只是防僵持的「回复衰减」 */
   exhaustSweep(ev){
+    if(!EXHAUST_EROSION)return;
     if(!(this.actionsTotal>120))return;
     const over=this.actionsTotal-120;
     const pct=Math.min(0.60,0.04+Math.floor(over/6)*0.05); // 递增侵蚀：4%起每6行动+5%，封顶60%（必压过再生/反转）
@@ -3746,7 +3818,7 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     // 混沌与调和：自身咒力总量高于目标时，任何攻击（近战/咒术）都将其直接抹杀
     if(this.hasFlag(att,'chaosHarmony')&&att.maxCp>target.maxCp&&!(target.buff.blueMoon>0)){
       ev.push({type:'skillcut',actorName:att.name,text:'混沌与调和 · 咒力抹杀'});
-      ev.push({type:'domain',text:`【混沌与调和】${att.isPlayer?'你':att.name} 的咒力总量绝对压制 ${target.name}，一击将其存在抹杀（秒杀）！`});
+      ev.push({type:'skillcut',text:`【混沌与调和】${att.isPlayer?'你':att.name} 的咒力总量绝对压制 ${target.name}，一击将其存在抹杀（秒杀）！`});
       this.kill(target,ev,att);this.afterStrike(ev);return;
     }
     // —— 即死类（tech）——
@@ -3756,14 +3828,14 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
         ev.push({type:'skillcut',actorName:att.name,text:'白金之星 · 世界'});
         if(!(att.buff.blueMoon>0))att.cp=0;
         att.buff.zaWorld=5;att.buff.zaWorldOpened=true;att.buff.zaWorldCd=3;
-        ev.push({type:'domain',text:`✦ ${att.isPlayer?'你':att.name} 发动【世界·时间暂停】——接下来将连续行动5次，期间敌我行动值全部冻结！ ✦`});
+        ev.push({type:'skillcut',text:`✦ ${att.isPlayer?'你':att.name} 发动【世界·时间暂停】——接下来将连续行动5次，期间敌我行动值全部冻结！ ✦`});
         this.afterStrike(ev);return;
       }
       // 苍月：开启后锁定自身生命与咒力10次行动，每场一次
       if(this.hasFlag(att,'blueMoon')&&!att.buff.blueMoonUsed){
         att.buff.blueMoonUsed=true;att.buff.blueMoon=10;att.buff.blueMoonOpened=true;
         ev.push({type:'skillcut',actorName:att.name,text:'苍月 · 天上天下唯我独尊'});
-        ev.push({type:'domain',text:`✦ ${att.isPlayer?'你':att.name} 展开【苍月】——未来10次自身行动内，生命与咒力被牢牢锁定，不掉血、不耗蓝！ ✦`});
+        ev.push({type:'skillcut',text:`✦ ${att.isPlayer?'你':att.name} 展开【苍月】——未来10次自身行动内，生命与咒力被牢牢锁定，不掉血、不耗蓝！ ✦`});
         this.afterStrike(ev);return;
       }
       // 单独禁区（主动）：耗1000咒力，全体队友全属性+20%，可叠加
@@ -3787,13 +3859,13 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
         foes.forEach(t=>{if(t.alive)this.dealDamage(att,t,dmg,1,'tech',ev,'落星术式·陨石轰击',false,false);});
         this.afterStrike(ev);return;
       }
-      if(this.hasFlag(att,'jacob')&&(target.type==='受肉体'||target.name.includes('受肉'))){ev.push({type:'domain',text:`【雅各布天梯】圣光剥离受肉灵魂，${target.name} 被瞬间抹除！`});this.kill(target,ev,att);this.afterStrike(ev);return;}
+      if(this.hasFlag(att,'jacob')&&(target.type==='受肉体'||target.name.includes('受肉'))){ev.push({type:'skillcut',text:`【雅各布天梯】圣光剥离受肉灵魂，${target.name} 被瞬间抹除！`});this.kill(target,ev,att);this.afterStrike(ev);return;}
       // 天之锁：无视血量与一切术式防御，斩杀“咒灵/受肉体”（直接抹除，不经免伤判定）
       if(this.hasFlag(att,'enkidu')&&(target.type==='咒灵'||target.type==='受肉体'||target.name.includes('咒灵')||target.name.includes('受肉'))){
         ev.push({type:'skillcut',actorName:att.name,text:'天之锁 · 锁神之链'});
-        ev.push({type:'domain',text:`【天之锁】神罚锁链贯穿 ${target.name}——无视其血量与一切术式防御，将其当场斩杀！`});this.kill(target,ev,att);this.afterStrike(ev);return;}
-      if(this.hasFlag(att,'judge')&&(target.type==='式神'||target.summonTag==='式神'||target.name.includes('式神'))){ev.push({type:'domain',text:`【判决术式】定罪完成，式神 ${target.name} 被处刑抹除！`});this.kill(target,ev,att);this.afterStrike(ev);return;}
-      if(this.hasFlag(att,'negate')&&target.maxCp<att.maxCp){ev.push({type:'domain',text:`【万象拒绝】${att.name} 否定了咒力更低的 ${target.name}，将其存在直接拒绝（秒杀）！`});this.kill(target,ev,att);this.afterStrike(ev);return;}
+        ev.push({type:'skillcut',text:`【天之锁】神罚锁链贯穿 ${target.name}——无视其血量与一切术式防御，将其当场斩杀！`});this.kill(target,ev,att);this.afterStrike(ev);return;}
+      if(this.hasFlag(att,'judge')&&(target.type==='式神'||target.summonTag==='式神'||target.name.includes('式神'))){ev.push({type:'skillcut',text:`【判决术式】定罪完成，式神 ${target.name} 被处刑抹除！`});this.kill(target,ev,att);this.afterStrike(ev);return;}
+      if(this.hasFlag(att,'negate')&&target.maxCp<att.maxCp){ev.push({type:'skillcut',text:`【万象拒绝】${att.name} 否定了咒力更低的 ${target.name}，将其存在直接拒绝（秒杀）！`});this.kill(target,ev,att);this.afterStrike(ev);return;}
       // 咒言：控制目标下回合无法行动，消耗随对方实力提高（苍月锁蓝时不耗）
       if(this.hasFlag(att,'cursedSpeech')){const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.05+target.maxCp*0.02);if(att.cp>=cost){att.cp-=cost;target.buff.stun=Math.max(target.buff.stun,1);ev.push({type:'skill',text:`【咒言】强制命令 ${target.name}，其下回合无法行动（耗咒力${cost}）。`});} }
     }
@@ -3889,8 +3961,8 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     }
     // —— 命中后叠层 / 蚀烂降上限 / 冰灵减速 ——
     if(target.alive&&dmg>0){
-      if(this.hasFlag(att,'moon')){target.buff.poison++;ev.push({type:'skill',text:`${target.name} 中了【淀月】毒素（当前${target.buff.poison}层）。`});}
-      if(this.hasFlag(att,'gu')){target.buff.gu++;ev.push({type:'skill',text:`${target.name} 中了【蛊毒】（当前${target.buff.gu}层）。`});}
+      if(this.hasFlag(att,'moon')){target.buff.poison++;target.buff.poisonFrom=att;ev.push({type:'skill',text:`${target.name} 中了【淀月】毒素（当前${target.buff.poison}层）。`});}
+      if(this.hasFlag(att,'gu')){target.buff.gu++;target.buff.guFrom=att;ev.push({type:'skill',text:`${target.name} 中了【蛊毒】（当前${target.buff.gu}层）。`});}
       if(this.hasFlag(att,'rot')){target.maxHp=Math.max(1,target.maxHp-dmg);if(target.hp>target.maxHp)target.hp=target.maxHp;ev.push({type:'skill',text:`【蚀烂腐术】腐蚀肉体，${target.name} 血量上限被削减 ${dmg}。`});}
     }
     // 冰灵咒法：命中即对敌方全体叠减速（即便本次击杀了主目标，其余敌人仍被寒霜波及）
@@ -3984,9 +4056,10 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     const foeSide=att.side==='enemy'?'ally':'enemy';
     const ama=this.alive(foeSide).find(x=>x.skills&&x.skills.tools&&x.skills.tools.ama);
     if(ama){
-      ev.push({type:'domain',domainName:dName,actorName:att.name,side:att.side,isPlayer:att.isPlayer,text:`✦✦ ${att.name} 展开${dLabel}—— ✦✦`});
+      // ★ 领域被当场无效化：这里**不再播「领域展开」全屏大字**（原来还推了一条 open 事件，
+      //   于是广播里既有「领域被天逆鉾打断」又有一条假的「领域展开·领域 敌方」）
       ev.push({type:'skillcut',actorName:ama.name,text:'领域被天逆鉾破坏了'});
-      ev.push({type:'domain',text:`【领域被天逆鉾破坏了】${ama.name} 手中的天逆鉾强制无效化术式，${att.name} 的领域未能造成任何伤害！`});
+      ev.push({type:'info',text:`【领域被天逆鉾破坏了】${ama.name} 手中的天逆鉾强制无效化术式，${att.name} 的${dLabel}未能造成任何伤害！`});
       this.checkEnd(ev);return true;
     }
     ev.push({type:'domain',domainName:dName,actorName:att.name,side:att.side,isPlayer:att.isPlayer,
@@ -4214,7 +4287,7 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     this.checkEnd(ev);
     return true;
   }
-  dealDamage(att,tar,base,mult,kind,ev,label,flash,ignoreImmune){
+  dealDamage(att,tar,base,mult,kind,ev,label,flash,ignoreImmune,isDot){
     if(!tar.alive)return 0;
     if(tar.hidden)return 0;   // 影中的式神完全免伤
     if(tar.makora)tar._makoraNoKill=false;   // 只有走完适应判定的那一击才可能置真（ignoreImmune 通道不受保护）
@@ -4251,7 +4324,9 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
       else{this.makoraNoteEffect('blueMoon',ev);ev.push({type:'skill',text:`${tar.name}【苍月·天上天下唯我独尊】生命被锁定，${label} 无法造成损伤。`});return 0;}
     }
     // —— 术式免疫 / 闪避（领域与空间斩无视）——
-    if(!ignoreImmune&&(kind!=='domain'||this.sureHitOff)){
+    // ★ isDot（毒/蛊这类「已经在体内」的持续伤害）：不吃免疫/闪避判定——不可侵挡不住已经入体的毒，
+    //   但下面的减伤（钢铁之躯/铁壁）与魔虚罗适应照常结算，这才是玩家要的「毒伤也要被减免」
+    if(!ignoreImmune&&!isDot&&(kind!=='domain'||this.sureHitOff)){
       const _attAmp=(this._ampHit!==null&&this._ampHit!==undefined)?!!this._ampHit:this.ampActive(att);
       if(this.hasFlag(tar,'limitless')&&!_attAmp){
         if(this.makoraBypass(att,'limitless')){ev.push({type:'skill',text:`【效果解析】${att.name} 已经完全看破【无下限·不可侵】——${label} 直接穿过了那层无穷。`});}
@@ -4354,8 +4429,8 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     }
     if(tar.hp<=0&&tar.isPlayer)this.guardPlayerDeath(ev); // 死而替生/奇迹等：致死瞬间先尝试守护，避免被直接 kill
     if(tar.hp<=0)this.kill(tar,ev,att);
-    if(tar.alive)this.deerAura(tar,ev);   // 円鹿：没被打死就立刻回 75%
-    if(tar.alive&&tar.possess&&tar.possess.kind==='heal'&&tar.hp<tar.maxHp){
+    if(tar.alive&&!isDot)this.deerAura(tar,ev);   // 円鹿：没被打死就立刻回 75%（毒跳不算「受击」，否则毒会被自愈完全抹掉）
+    if(!isDot&&tar.alive&&tar.possess&&tar.possess.kind==='heal'&&tar.hp<tar.maxHp){
       // 附体是「你自己身上挂着这套反转」，所以你就是本体：每次挨打没死就回 75%，不封顶
       const h=Math.min(tar.maxHp-tar.hp,Math.round(tar.maxHp*0.75));
       if(h>0){tar.hp+=h;ev.push({type:'heal',from:tar.name,text:'【附体·円鹿·超高能反转】高速反转在你体内流转——'+(tar.isPlayer?'你':tar.name)+' 恢复 75% 生命（+'+h+'）（附体者即本体，不封顶）。',heal:h});}
@@ -4844,6 +4919,98 @@ const ADV_BASE=[
 ];
 function advById(id){return ADV_TECHS.find(t=>t.id===id)||ADV_BASE.find(t=>t.id===id)||null;}
 const E=(name,li,type)=>({name,li,type:type||'咒灵'});
+/* ==================== 涩谷事变 · 开放冒险（连续战斗 / 街道巡视 / 地图推进） ==================== */
+/** 涩谷·连续战斗：一场打完只回这么一点（有反转术式的话回得更多）——想回满只能去外围找硝子 */
+const SHIBUYA_REST_HP=0.08, SHIBUYA_REST_CAP_HP=0.20, SHIBUYA_REST_CP=0.08;
+/** 涩谷·行进：每累积这么多「距离」就强制触发一次大街巡视（打赢才能落地到目标区域） */
+const SHIBUYA_PATROL_EVERY=2;
+/** 涩谷·每天只能修炼一次 */
+const SHIBUYA_TRAIN_PER_DAY=1;
+/** 涩谷大结界内的区域：从外到内（depth 越大越靠里、街上的怪越强）
+ *  dist = 从「前一个区域」走到这里的距离；heal = 只有这里能找硝子治疗 */
+const SHIBUYA_ZONES=[
+  {id:'out',   name:'涩谷结界外围',      depth:0, pos:[12,54], dist:0, heal:true,
+   note:'硝子的临时急救所设在这里——整个涩谷只有这一处能把你治好。'},
+  {id:'st',    name:'涩谷站·地面出口',   depth:1, pos:[32,30], dist:2,
+   note:'站前的自动扶梯停了，人流堵在闸机前。'},
+  {id:'cross', name:'スクランブル交差点', depth:1, pos:[50,24], dist:1,
+   note:'信号灯全灭，斑马线上倒着几个说不出话的人。'},
+  {id:'miyuki',name:'宫益坂',            depth:2, pos:[70,32], dist:2,
+   note:'坡道两侧的店铺全黑了，卷帘门后有人在敲。'},
+  {id:'center',name:'涩谷中心街',        depth:2, pos:[76,54], dist:1,
+   note:'霓虹只剩一半在闪，街口堆着被撕开的护栏。'},
+  {id:'ug',    name:'涩谷站·地下街',     depth:3, pos:[58,66], dist:2,
+   note:'地下街的广播还在循环播放避难通知。'},
+  {id:'b3',    name:'地铁站·地下三层',   depth:3, pos:[40,74], dist:2,
+   note:'你被丢下来的地方——站台深处传来贴着地面爬行的呼吸声。'},
+  {id:'b5',    name:'地铁站·地下五层',   depth:4, pos:[22,84], dist:3,
+   note:'越往下越安静，安静得能听见自己的心跳。'}
+];
+/** 涩谷大街巡视：按区域深度抽怪。咒灵的牌面等级虚高一档（CURSE_GRADE_GAP=1），
+ *  诅咒师不降——所以同样是「一级」，诅咒师实际比咒灵强约一个大级（五倍）。
+ *  curse/sorcerer = 抽级区间；n = 一次遭遇几只；w = 出诅咒师（而不是咒灵）的概率 */
+const SHIBUYA_SPAWN=[
+  {d:0, curse:[0,2], sorcerer:[3,3], n:[1,2], w:0.30},   // 外围：四级~准二级咒灵 / 二级诅咒师
+  {d:1, curse:[1,3], sorcerer:[3,4], n:[1,2], w:0.40},
+  {d:2, curse:[2,4], sorcerer:[4,4], n:[1,3], w:0.45},   // 中层：二级~准一级咒灵 / 准一级诅咒师
+  {d:3, curse:[3,5], sorcerer:[4,5], n:[1,3], w:0.50},
+  {d:4, curse:[4,5], sorcerer:[5,5], n:[2,3], w:0.55}    // 最内侧：准一级~一级咒灵 / 一级诅咒师
+];
+/** 涩谷·指定战场：前四处是按原著补的外层/中层杂兵战场，后面 8 处直接**引用**第 90 天
+ *  「涩谷八方战场」的原始配置（ref=那份清单里的下标）——不重复写一遍战斗数据 */
+const SHIBUYA_FIELDS=[
+  {label:'涩谷站·咒灵潮',   zone:'st',    pos:[30,24], tier:1,
+   battle:{enemies:[E('四级咒灵',0),E('三级咒灵',1),E('准二级咒灵',2)],lose:'continue',
+     intro:'涩谷站地面：一层咒灵顺着人流爬上来——先把出口清开。'}},
+  {label:'宫益坂·诅咒师小队',zone:'miyuki',pos:[72,28], tier:2,
+   battle:{enemies:[E('二级诅咒师',3),E('准一级诅咒师',4)],lose:'continue',
+     intro:'宫益坂：两个诅咒师堵住坡道，把逃难的人往火里赶。'}},
+  {label:'中心街·改造人',   zone:'center',pos:[78,50], tier:2,
+   battle:{enemies:[E('改造人·甲',4),E('改造人·乙',4)],lose:'continue',
+     intro:'中心街：被改造过的躯体在霓虹下抽搐——它们曾经是人。'}},
+  {label:'地下五层·受肉体', zone:'b5',    pos:[24,88], tier:4,
+   battle:{enemies:[E('受肉体·虎杖',7,'受肉体'),E('改造人·丙',5)],lose:'die',
+     intro:'地下五层：站台尽头有个人影在跟什么东西缠斗——那是虎杖。'}},
+  /* —— 以下 8 处沿用第 90 天「涩谷八方战场」的原始配置 —— */
+  {ref:0, zone:'center',pos:[74,48], tier:2},   // 蝗虫战场
+  {ref:1, zone:'center',pos:[80,56], tier:3},   // 真人战场
+  {ref:2, zone:'b5',    pos:[26,80], tier:4},   // 魔虚罗战场
+  {ref:3, zone:'ug',    pos:[60,64], tier:2},   // 陀艮战场
+  {ref:4, zone:'b3',    pos:[42,72], tier:4},   // 漏壶宿傩战场
+  {ref:5, zone:'b3',    pos:[36,76], tier:3},   // 羂索里梅战场
+  {ref:6, zone:'b3',    pos:[44,78], tier:3},   // 胀相虎杖战场
+  {ref:7, zone:'center',pos:[70,58], tier:3}    // 伏黑父子对决战场
+];
+/** 取涩谷区域（按 id） */
+function shibuyaZone(id){return SHIBUYA_ZONES.find(z=>z.id===id)||SHIBUYA_ZONES[SHIBUYA_ZONES.length-1];}
+/** 展开指定战场清单：ref 的那几条把第 90 天节点的 label/battle 取过来（战斗配置只有一份） */
+function shibuyaFieldList(){
+  const src=((STORY[90]||{}).wheel||{}).items||[];
+  return SHIBUYA_FIELDS.map((f,i)=>{
+    if(f.ref!=null){
+      const it=src[f.ref];
+      if(!it)return null;
+      return {i:i,label:f.label||it.label,zone:f.zone,pos:f.pos,tier:f.tier||2,
+        battle:it.battle,intro:(it.battle&&it.battle.intro)||''};
+    }
+    return {i:i,label:f.label,zone:f.zone,pos:f.pos,tier:f.tier||1,
+      battle:f.battle,intro:(f.battle&&f.battle.intro)||''};
+  }).filter(Boolean);
+}
+/** 涩谷大街巡视：按区域深度抽一批敌人（咒灵 / 诅咒师） */
+function shibuyaRollRoster(depth){
+  const row=SHIBUYA_SPAWN[clamp(depth,0,SHIBUYA_SPAWN.length-1)];
+  const n=rand(row.n[0],row.n[1]);
+  const list=[];
+  for(let i=0;i<n;i++){
+    const sorc=Math.random()<row.w;
+    const li=sorc?rand(row.sorcerer[0],row.sorcerer[1]):rand(row.curse[0],row.curse[1]);
+    list.push({name:(n>1?(ORDINAL[i]||'')+'·':'')+lvName(li)+(sorc?'诅咒师':'咒灵'),
+      li:li,type:sorc?'诅咒师':'咒灵',wild:true});
+  }
+  return list;
+}
+
 const STORY={
  3:{chapter:'宿傩受肉虎杖篇',title:'第3天 · 诅咒初现',
     intro:'你穿越后的第3天，异样的咒力气息在夜色中弥漫。一只咒灵拦住了去路——而更深处，寄宿于少年体内的古老诅咒，正在苏醒……',
@@ -4889,11 +5056,11 @@ const STORY={
       {enemies:[E('花御',9)],allies:[E('五条悟',11,'咒术师')],lose:'continue',
        intro:'最终战：五条悟亲自下场——在最强面前，花御已无胜算。'}]},
  78:{chapter:'八十八桥篇',title:'第78天 · 八十八桥',
-    intro:'八十八桥下埋藏着咒物的气息。进入战场前，先抽取你将被分配到的战场。',
-    wheel:{title:'战场转盘',items:[
-      {label:'咒胎战场',battle:{enemies:[E('咒胎怠天',7)],allies:[E('伏黑惠',4,'咒术师')],lose:'die',
+    intro:'八十八桥下埋藏着咒物的气息。两处战场同时开打——你可以自由决定先支援哪一处，打完还能赶去另一处。',
+    wheel:{title:'战场地图 · 八十八桥',open:true,items:[
+      {label:'咒胎战场',pos:[26,64],battle:{enemies:[E('咒胎怠天',7)],allies:[E('伏黑惠',4,'咒术师')],lose:'die',
         intro:'咒胎战场：你与准一级咒术师伏黑惠一同面对咒胎怠天。'}},
-      {label:'血涂与坏相战场',battle:{enemies:[E('血涂',8,'受肉体'),E('坏相',8,'受肉体')],allies:[E('虎杖悠仁',6,'咒术师'),E('钉崎野蔷薇',4,'咒术师')],lose:'die',
+      {label:'血涂与坏相战场',pos:[74,34],battle:{enemies:[E('血涂',8,'受肉体'),E('坏相',8,'受肉体')],allies:[E('虎杖悠仁',6,'咒术师'),E('钉崎野蔷薇',4,'咒术师')],lose:'die',
         intro:'血涂与坏相战场：九相图的兄弟二人拦路，特别一级的虎杖与准一级的钉崎与你并肩！'}}]}},
  88:{chapter:'涩谷事变',title:'第88天 · 最前线的抉择',
     intro:'10月31日，涩谷。结界内人间地狱。是否与五条悟一起前往最前线？',
@@ -4902,23 +5069,23 @@ const STORY={
         intro:'你选择追随五条悟突入最前线——漏壶、花御、胀相、羂索四大强敌同时现身！'}},
       {label:'否（70%）',weight:70,skipText:'你被分配到后方战线，第88天的最前线激战与你擦肩而过（涩谷的天空传来震耳欲聋的轰鸣）。'}]}},
  90:{chapter:'涩谷事变',title:'第90天 · 涩谷八方战场',
-    intro:'涩谷全面混战，你被随机分配到八处战场之一。转动转盘决定你的战场。',
-    wheel:{title:'第90天战场转盘',items:[
-      {label:'蝗虫战场',battle:{enemies:[E('蝗虫',8)],allies:[E('虎杖悠仁',6,'咒术师')],lose:'die',intro:'蝗虫战场：你与特别一级咒术师虎杖悠仁对战弱特级咒灵蝗虫。'}},
-      {label:'真人战场',battle:{enemies:[E('真人',9)],allies:[E('虎杖悠仁',6,'咒术师'),E('东堂葵',6,'咒术师')],lose:'die',intro:'真人战场：你与虎杖、东堂联手对战标准特级的真人。'}},
-      {label:'魔虚罗战场',battle:{enemies:[E('魔虚罗',10,'式神')],allies:[E('16指宿傩',10,'受肉体')],lose:'die',intro:'魔虚罗战场：强特级式神魔虚罗降临，与你并肩的是强特级受肉体【16指宿傩】。'}},
-      {label:'陀艮战场',battle:{enemies:[E('陀艮',8)],allies:[E('伏黑惠',4,'咒术师'),E('七海建人',6,'咒术师'),E('禅院家主',6,'咒术师'),E('真希',4,'咒术师'),E('伏黑甚尔',8,'人类')],lose:'die',intro:'陀艮战场：伏黑惠、七海建人、禅院家主、真希与伏黑甚尔齐聚，围攻弱特级咒灵陀艮。'}},
-      {label:'漏壶宿傩战场',battle:{enemies:[E('漏壶',10)],allies:[E('16指宿傩',10,'受肉体')],lose:'die',intro:'漏壶宿傩战场：16指宿傩与你一同迎战强特级咒灵漏壶。'}},
-      {label:'羂索里梅战场',battle:{enemies:[E('羂索',10,'诅咒师'),E('里梅',8,'受肉体')],allies:[E('九十九由基',9,'咒术师')],lose:'continue',intro:'羂索里梅战场：标准特级咒术师九十九由基与你对战羂索与里梅，此战败北也不会死亡。'}},
-      {label:'胀相虎杖战场',battle:{enemies:[E('胀相',9,'受肉体')],allies:[E('虎杖悠仁',6,'咒术师')],lose:'continue',intro:'胀相虎杖战场：兄弟相残之战，你协助虎杖对战标准特级受肉体胀相，败北不死。'}},
-      {label:'伏黑父子对决战场',battle:{enemies:[E('伏黑甚尔',8,'人类')],allies:[E('伏黑惠',4,'咒术师')],lose:'continue',intro:'伏黑父子对决战场：你协助伏黑惠对战其生父——弱特级人类伏黑甚尔，败北不死。'}}]}},
+    intro:'涩谷全面混战，八处战场同时告急——地图在你手边，想支援哪一处、要不要赶场，都由你决定。',
+    wheel:{title:'战场地图 · 涩谷',open:true,items:[
+      {label:'蝗虫战场',pos:[18,22],battle:{enemies:[E('蝗虫',8)],allies:[E('虎杖悠仁',6,'咒术师')],lose:'die',intro:'蝗虫战场：你与特别一级咒术师虎杖悠仁对战弱特级咒灵蝗虫。'}},
+      {label:'真人战场',pos:[50,16],battle:{enemies:[E('真人',9)],allies:[E('虎杖悠仁',6,'咒术师'),E('东堂葵',6,'咒术师')],lose:'die',intro:'真人战场：你与虎杖、东堂联手对战标准特级的真人。'}},
+      {label:'魔虚罗战场',pos:[82,24],battle:{enemies:[E('魔虚罗',10,'式神')],allies:[E('16指宿傩',10,'受肉体')],lose:'die',intro:'魔虚罗战场：强特级式神魔虚罗降临，与你并肩的是强特级受肉体【16指宿傩】。'}},
+      {label:'陀艮战场',pos:[28,52],battle:{enemies:[E('陀艮',8)],allies:[E('伏黑惠',4,'咒术师'),E('七海建人',6,'咒术师'),E('禅院家主',6,'咒术师'),E('真希',4,'咒术师'),E('伏黑甚尔',8,'人类')],lose:'die',intro:'陀艮战场：伏黑惠、七海建人、禅院家主、真希与伏黑甚尔齐聚，围攻弱特级咒灵陀艮。'}},
+      {label:'漏壶宿傩战场',pos:[62,48],battle:{enemies:[E('漏壶',10)],allies:[E('16指宿傩',10,'受肉体')],lose:'die',intro:'漏壶宿傩战场：16指宿傩与你一同迎战强特级咒灵漏壶。'}},
+      {label:'羂索里梅战场',pos:[16,80],battle:{enemies:[E('羂索',10,'诅咒师'),E('里梅',8,'受肉体')],allies:[E('九十九由基',9,'咒术师')],lose:'continue',intro:'羂索里梅战场：标准特级咒术师九十九由基与你对战羂索与里梅，此战败北也不会死亡。'}},
+      {label:'胀相虎杖战场',pos:[48,80],battle:{enemies:[E('胀相',9,'受肉体')],allies:[E('虎杖悠仁',6,'咒术师')],lose:'continue',intro:'胀相虎杖战场：兄弟相残之战，你协助虎杖对战标准特级受肉体胀相，败北不死。'}},
+      {label:'伏黑父子对决战场',pos:[82,74],battle:{enemies:[E('伏黑甚尔',8,'人类')],allies:[E('伏黑惠',4,'咒术师')],lose:'continue',intro:'伏黑父子对决战场：你协助伏黑惠对战其生父——弱特级人类伏黑甚尔，败北不死。'}}]}},
  105:{chapter:'死灭回游',title:'第105天 · 死灭回游四战场',
-    intro:'死灭回游的杀阵开启，泳者们在各地厮杀。转动转盘，决定你被投入哪处战场。',
-    wheel:{title:'死灭回游战场转盘',items:[
-      {label:'仙台战场',battle:{enemies:[E('多鲁布',7,'诅咒师'),E('黑沐死',8),E('乌璐亨子',8,'受肉体'),E('石流龙',9,'受肉体')],allies:[E('乙骨忧太',10,'咒术师')],lose:'die',intro:'仙台战场：四泳者围城！强特级咒术师乙骨忧太与你共战多鲁布、黑沐死、乌璐亨子、石流龙。'}},
-      {label:'新宿战场',battle:{enemies:[E('日车宽见',8,'咒灵')],allies:[E('虎杖悠仁',7,'咒术师')],lose:'continue',intro:'新宿战场：你与准特级咒术师虎杖悠仁对战弱特级的日车宽见，败北不会死亡。'}},
-      {label:'涩谷战场',battle:{enemies:[E('鹿紫云一',9,'受肉体')],allies:[E('秤金次',8,'咒术师')],lose:'die',intro:'涩谷战场：弱特级咒术师秤金次与你对战标准特级受肉体鹿紫云一。'}},
-      {label:'樱岛战场',battle:{enemies:[E('禅院直哉',9)],allies:[E('禅院真希·天裕暴君',8,'人类'),E('加茂宪纪',5,'咒术师')],lose:'die',intro:'樱岛战场：天与暴君之姿的禅院真希与一级咒术师加茂宪纪，同你对战标准特级咒灵禅院直哉。'}}]}},
+    intro:'死灭回游的杀阵开启，泳者们在各地厮杀。**先选一处结界加入**——加入之后，你只在这处结界里行动；结界内有多处战场，打完可以赶场，也可以等事件结束。',
+    wheel:{title:'选择要加入的结界',colony:true,open:true,items:[
+      {label:'仙台结界',pos:[74,26],battle:{enemies:[E('多鲁布',7,'诅咒师'),E('黑沐死',8),E('乌璐亨子',8,'受肉体'),E('石流龙',9,'受肉体')],allies:[E('乙骨忧太',10,'咒术师')],lose:'die',intro:'仙台战场：四泳者围城！强特级咒术师乙骨忧太与你共战多鲁布、黑沐死、乌璐亨子、石流龙。'}},
+      {label:'新宿结界',pos:[52,58],battle:{enemies:[E('日车宽见',8,'咒灵')],allies:[E('虎杖悠仁',7,'咒术师')],lose:'continue',intro:'新宿战场：你与准特级咒术师虎杖悠仁对战弱特级的日车宽见，败北不会死亡。'}},
+      {label:'涩谷结界',pos:[40,64],battle:{enemies:[E('鹿紫云一',9,'受肉体')],allies:[E('秤金次',8,'咒术师')],lose:'die',intro:'涩谷战场：弱特级咒术师秤金次与你对战标准特级受肉体鹿紫云一。'}},
+      {label:'樱岛结界',pos:[16,84],battle:{enemies:[E('禅院直哉',9)],allies:[E('禅院真希·天裕暴君',8,'人类'),E('加茂宪纪',5,'咒术师')],lose:'die',intro:'樱岛战场：天与暴君之姿的禅院真希与一级咒术师加茂宪纪，同你对战标准特级咒灵禅院直哉。'}}]}},
  120:{chapter:'新宿决战',title:'第120天 · 新宿决战（六连战）',
     intro:'最终决战。两面宿傩以十影术式之姿君临新宿。这是人类与诅咒的最后战场——败而不馁，连战不息，直至最后一人。',
     final:true,
@@ -7830,12 +7997,13 @@ const Game={
     if(_ib){
       const left=ACTIONS_PER_DAY-(this.dayActions|0);
       const _nxtDay=(this.currentEventDays()||[]).find(d=>d>this.day);
-      _ib.textContent='🛌 无所事事地度过这一天'+(left>0?('（放弃剩余 '+left+' 次行动）'):('（推进到第 '+(this.day+1)+' 天）'))
+      const _sh=this.shibuyaOn();
+      _ib.textContent=(_sh?'🛌 在藏身处熬到天亮':'🛌 无所事事地度过这一天')+(left>0?('（放弃剩余 '+left+' 次行动）'):('（推进到第 '+(this.day+1)+' 天）'))
         +(_nxtDay?('　下一剧情：第 '+_nxtDay+' 天'):'');
     }
     const T=this.currentStory(),ED=this.currentEventDays(),isKai=P.arc==='kaigyo',isFuture=P.arc==='future';
     const arcLabel=isKai?('怀玉篇 · '+kaiEraOfDay(this.day)):isFuture?('未来篇 · '+futureEraOfDay(this.day)):eraOfDay(this.day);
-    $('dayNum').textContent=this.day;$('dayEra').textContent=arcLabel;
+    $('dayNum').textContent=this.day;$('dayEra').textContent=arcLabel+(this.shibuyaOn()?('　·　涩谷：'+shibuyaZone(this.shibuyaState().zone).name):'');
     const nextD=ED.find(d=>d>this.day);
     $('chapterTag').textContent=nextD?`下一剧情：第${nextD}天 · ${T[nextD].chapter}`:(isKai?'怀玉篇终局将近':isFuture?'未来篇终局将近':'终局将近');
     $('playerCard').innerHTML=`
@@ -7903,6 +8071,18 @@ const Game={
       const node=T[nextD];
       $('nextEvent').innerHTML=`距下一剧情事件还有 <b style="color:var(--gold)">${nextD-this.day}</b> 天｜第${nextD}天【${node.title}】`;
     }else{$('nextEvent').innerHTML=isKai?'怀玉篇剧情已全部触发，终局将近。':isFuture?'未来篇剧情已全部触发，终局将近。':'所有主线剧情已落幕。';}
+    // 开放式冒险：右上角小地图（战斗里只当 HUD——不可点，免得顶掉战斗界面）
+    const _mm=$('miniMap');
+    if(_mm){
+      if(P&&(P.openAdv||this.shibuyaOn())){
+        const _ib=this.inBattleNow();
+        _mm.classList.remove('hidden');
+        _mm.innerHTML=this.shibuyaOn()?this.shibuyaMiniHtml():this.miniMapHtml();
+        _mm.style.opacity=_ib?'0.45':'1';
+        _mm.style.pointerEvents=_ib?'none':'auto';
+        _mm.onclick=()=>{if(this.inBattleNow())return;try{SFX.click();}catch(e){}if(this.shibuyaOn())this.openShibuyaMap();else this.openAdvMap();};
+      }else{_mm.classList.add('hidden');_mm.innerHTML='';_mm.onclick=null;}
+    }
     const _tb=$('btnTame');if(_tb)_tb.style.display=this.hasShadow()?'':'none';
     const _ub=$('btnUlt');if(_ub)_ub.style.display=(this.player&&this.player.ultimateLearned)?'':'none';
   },
@@ -7950,7 +8130,14 @@ const Game={
       return true;
     }
     const T=this.currentStory();
-    if(T[this.day]&&this.day>=this.player.startDay){
+    // 涩谷期间：第 90 天那份「八方战场」已经并进涩谷地图（不弹转盘）；其余剧情日照常，并从它开始收束涩谷
+    const _shibAbsorb=(this.shibuyaOn()&&this.day===90);
+    if(this.shibuyaOn()&&this.day>90)this.shibuyaLeave();
+    if(_shibAbsorb){
+      await this.storyModal('涩谷事变 · 八处战场告急',
+        '街上到处在喊人——八处战场都已经标在涩谷地图上了。\n\n按你的节奏打：先救哪一处、要不要往更深处推进，都由你定。','涩谷事变');
+      this.addLog('lgold',`◆ 剧情之后，这一天还有 ${ACTIONS_PER_DAY} 次行动。`);
+    }else if(T[this.day]&&this.day>=this.player.startDay){
       this.render();this.addLog('lred',`◆ 第${this.day}天——剧情事件【${T[this.day].title}】触发！`);
       try{await this.triggerEvent(this.day);}
       catch(err){console&&console.error&&console.error('剧情推进异常:',err);this.addLog('lred','剧情推进出现异常，已安全收尾。');
@@ -7991,9 +8178,13 @@ const Game={
     await this.advanceDay();
     if(this.over)return;
     const n=(this.dayActions|0)+1;
-    const pick=await openWheelModal({title:`第 ${this.day} 天 · 行动转盘（本日第 ${n} / ${ACTIONS_PER_DAY} 次）`,items:WHEEL_DAILY});
-    if(pick.act==='hunt'){await this.hunt();}
-    else{const txt=Player.train(this.player,pick.act);this.addLog('lcyan',`【${pick.label}】${txt}`);}
+    if(this.shibuyaOn()){
+      await this.shibuyaDaily();   // 涩谷：每天只能修炼一次，其余时间上街巡视 / 推进战场 / 找硝子
+    }else{
+      const pick=await openWheelModal({title:`第 ${this.day} 天 · 行动转盘（本日第 ${n} / ${ACTIONS_PER_DAY} 次）`,items:WHEEL_DAILY});
+      if(pick.act==='hunt'){await this.hunt();}
+      else{const txt=Player.train(this.player,pick.act);this.addLog('lcyan',`【${pick.label}】${txt}`);}
+    }
     this.dayActions=(this.dayActions|0)+1;
     if(this.over)return; // 狩猎战死已触发结局
     this.render();
@@ -8139,25 +8330,426 @@ const Game={
       this.addLog('lgreen',`狩猎成功！击溃 ${n} 只咒灵。${t}`);
     }
     else if(BattleUI.lastResult==='flee'){this.addLog('lg','你主动脱离了狩猎，安全返回，未获收益。');}
-    else if(P.isVillain){this.addLog('lgold','【反派路线】你从狩猎中脱身，未致死亡。');}
+    else if(P.isVillain){this.addLog('lgold','【反派路线】你从狩猎中脱身，未致死亡。');this.lossReward(enemies);}
     else{this.ending('death',{title:'狩猎咒灵'});}
   },
   /* ---------- 剧情事件 ---------- */
+  /* ==================== 开放式冒险（多战场章节） ==================== */
+  /** 现在是不是正在战斗（小地图在战斗里只做 HUD，不可点，避免顶掉战斗界面） */
+  inBattleNow(){
+    try{return !!(typeof BattleUI!=='undefined'&&BattleUI.eng&&!BattleUI._finished&&BattleUI.eng.phase!==undefined&&!BattleUI.eng.ended);}
+    catch(e){return false;}
+  },
+  /** 这一章是不是「多战场同时开打」的开放式章节（数据里 wheel.open=true） */
+  openChapter(day){
+    const node=this.currentStory()[day];
+    return (node&&node.wheel&&node.wheel.open)?node:null;
+  },
+  /** 冒险的战场清单：死灭回游那类先选一处结界（colony），之后只在这处结界里行动
+   *  条目可以是 {label,battle,intro,pos}，也可以是 {label,nodes:[…]}（留给后续细化） */
+  openAdvEntries(){
+    const P=this.player,adv=P&&P.openAdv;if(!adv)return[];
+    const node=this.currentStory()[adv.day];if(!node||!node.wheel)return[];
+    const items=(node.wheel.items||[]).filter(it=>it&&!it.skipText&&(it.battle||it.nodes));
+    // 死灭回游这类：还没加入结界之前，什么都还不能打（先选一处结界）
+    if(node.wheel.colony&&!(adv.colony!=null&&adv.colony>=0))return [];
+    if(adv.colony!=null&&adv.colony>=0){
+      const col=items[adv.colony];if(!col)return[];
+      const sub=(col.nodes&&col.nodes.length)?col.nodes:[col];
+      return sub.filter(n=>n&&n.battle).map(n=>({label:n.label||col.label,battle:n.battle,
+        intro:n.intro||(n.battle&&n.battle.intro)||'',pos:n.pos||col.pos||null}));
+    }
+    return items.map(it=>({label:it.label,battle:it.battle,
+      intro:it.intro||(it.battle&&it.battle.intro)||'',pos:it.pos||null}));
+  },
+  /** 大地图的标题（含已加入的结界名） */
+  openAdvTitle(){
+    const P=this.player,adv=P&&P.openAdv;if(!adv)return'战场地图';
+    const node=this.currentStory()[adv.day];if(!node)return'战场地图';
+    const items=(node.wheel&&node.wheel.items)||[];
+    const col=(adv.colony!=null&&adv.colony>=0)?items[adv.colony]:null;
+    const base=(node.wheel&&node.wheel.colony)?(node.chapter||'战场地图'):((node.wheel&&node.wheel.title)||'战场地图');
+    return base+(col?('　·　'+col.label):'');
+  },
+  openAdvDone(){const P=this.player,adv=P&&P.openAdv;return (adv&&adv.done)||[];},
+  openAdvLeft(){const done=this.openAdvDone();return this.openAdvEntries().filter((_,i)=>done.indexOf(i)<0);},
+  /** 开场：进入开放式章节（死灭回游先选结界），然后直接摊开大地图 */
+  async openAdvStart(day,node){
+    const P=this.player;
+    const items=((node.wheel&&node.wheel.items)||[]).filter(it=>it&&!it.skipText&&(it.battle||it.nodes));
+    if(node.wheel&&node.wheel.colony){
+      const pick=await openWheelModal({title:node.wheel.title||'选择要加入的结界',items:items});
+      const ci=items.indexOf(pick);
+      P.openAdv={day:day,colony:(ci<0?0:ci),done:[]};
+      this.addLog('lgold','【死灭回游】你加入了【'+pick.label+'】——此后只在这一处结界里行动。');
+      await this.storyModal(node.title+' · '+pick.label,(pick.intro||(pick.battle&&pick.battle.intro)||''),node.chapter);
+    }else{
+      P.openAdv={day:day,colony:null,done:[]};
+      this.addLog('lgold','【'+(node.chapter||'')+'】多处战场同时开打——点右上角的小地图，想去哪一处支援都由你定。');
+    }
+    this.render();
+    return this.openAdvMap();
+  },
+  /** 大地图：这一章的每处战场（打过的打勾）；点未打的即前往支援 */
+  openAdvMap(){
+    const P=this.player,adv=P&&P.openAdv;if(!adv)return Promise.resolve();
+    const node=this.currentStory()[adv.day];
+    // 异常/旧档：结界章还没选结界 → 先走一遍选择（选完会重新摊开地图）
+    if(node&&node.wheel&&node.wheel.colony&&!(adv.colony!=null&&adv.colony>=0))return this.openAdvStart(adv.day,node);
+    return new Promise(res=>{
+      const list=this.openAdvEntries(),done=this.openAdvDone();
+      const total=list.length,cleared=list.filter((_,i)=>done.indexOf(i)>=0).length;
+      let marks='';
+      list.forEach((nd,i)=>{
+        const isDone=done.indexOf(i)>=0;
+        const pos=nd.pos||[20+((i%4)*20),25+(Math.floor(i/4)*22)];
+        marks+='<button class="adv-node'+(isDone?' done':'')+'" data-adv="'+i+'" style="left:'+pos[0]+'%;top:'+pos[1]+'%"'
+          +(isDone?' disabled':'')+'>'
+          +'<span class="dot">'+(isDone?'✔':'!')+'</span><span class="nm">'+this.escHtml(nd.label)+'</span></button>';
+      });
+      const left=total-cleared;
+      showModal('<h2>'+this.escHtml(this.openAdvTitle())+'</h2>'
+        +'<p style="line-height:1.8;color:var(--txt2);font-size:13px">'
+        +'每处战场都能自由支援：点地图上的标记就出发。打完一处，可以<b>火速赶往</b>下一处，也可以<b>等待事件结束</b>。</p>'
+        +'<div class="adv-map">'+marks+'</div>'
+        +'<div class="save-meta" style="text-align:center;margin-top:8px">已支援 '+cleared+' / '+total+' 处战场'
+        +(left?('　剩余 '+left+' 处'):'　——全部支援完毕')+'</div>'
+        +'<div class="center" style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
+        +'<button class="btn small ghost" id="advWait">等 待 事 件 结 束</button>'
+        +'<button class="btn small ghost" id="advClose">关 闭</button></div>');
+      $('modalBox').querySelectorAll('[data-adv]').forEach(b=>{
+        b.onclick=()=>{const i=+b.getAttribute('data-adv');closeModal();res(this.openAdvFight(i));};
+      });
+      const w=$('advWait');if(w)w.onclick=()=>{closeModal();this.openAdvFinish();res();};
+      const c=$('advClose');if(c)c.onclick=()=>{closeModal();res();};
+    });
+  },
+  /** 前往某处战场：剧情 intro → 战斗（复用 runBattleCfg）→ 记战绩 → 战后选择 */
+  async openAdvFight(i){
+    const P=this.player,adv=P&&P.openAdv;if(!adv)return;
+    if(this.openAdvDone().indexOf(i)>=0)return;
+    const day=adv.day,node=this.currentStory()[day];
+    const nd=this.openAdvEntries()[i];if(!nd||!nd.battle)return;
+    await this.storyModal(node.title+' · '+nd.label,nd.intro||'',node.chapter);
+    if(this.over)return;
+    await this.runBattleCfg(day,nd.battle,{title:node.title+' · '+nd.label,final:false,scenePrefix:node.scenePrefix},nd.label);
+    if(this.over)return;
+    adv.done=adv.done||[];
+    if(adv.done.indexOf(i)<0)adv.done.push(i);
+    this.render();
+    if(!this.openAdvLeft().length){
+      this.addLog('lgold','★ 这一章的战场全部支援完毕——'+(node.chapter||'')+'的事件就此收束。');
+      this.openAdvClose();
+      return;
+    }
+    return this.openAdvAfter();
+  },
+  /** 战后选择：火速赶往下一处 / 等待事件结束 */
+  openAdvAfter(){
+    return new Promise(res=>{
+      const left=this.openAdvLeft();
+      showModal('<h2>战 后</h2>'
+        +'<p style="line-height:2">这一处战场已经稳住了。\n\n还有 <b style="color:var(--gold)">'+left.length+'</b> 处战场在告急——'
+        +'你是<b>火速赶往</b>下一处，还是<b>等待事件结束</b>？</p>'
+        +'<div style="display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap">'
+        +'<button class="btn" id="advGo">火 速 赶 往 下 一 处</button>'
+        +'<button class="btn ghost" id="advRest">等 待 事 件 结 束</button></div>');
+      $('advGo').onclick=()=>{closeModal();res(this.openAdvMap());};
+      $('advRest').onclick=()=>{closeModal();this.openAdvFinish();res();};
+    });
+  },
+  /** 等待事件结束（或全部打完）：结算这一章，收工 */
+  openAdvFinish(){
+    const P=this.player,adv=P&&P.openAdv;if(!adv)return this.openAdvClose();
+    const node=this.currentStory()[adv.day];
+    const list=this.openAdvEntries(),done=this.openAdvDone();
+    this.addLog('lgold','【'+((node&&node.chapter)||'战场')+'】事件结束——你支援了 '+done.length+' / '+list.length+' 处战场。'
+      +(done.length<list.length?('（未支援：'+list.filter((_,i)=>done.indexOf(i)<0).map(n=>n.label).join('、')+'）')
+        :'　★ 每一处战场都由你亲手稳住。'));
+    this.openAdvClose();
+  },
+  openAdvClose(){
+    const P=this.player;if(P)P.openAdv=null;
+    this.render();
+  },
+  /** 小地图内容：这一章的战场点位（打过的变绿） */
+  miniMapHtml(){
+    const list=this.openAdvEntries(),done=this.openAdvDone();
+    let marks='';
+    list.forEach((nd,i)=>{
+      const isDone=done.indexOf(i)>=0;
+      const pos=nd.pos||[20+((i%4)*20),25+(Math.floor(i/4)*22)];
+      marks+='<i class="mm-dot'+(isDone?' done':'')+'" style="left:'+pos[0]+'%;top:'+pos[1]+'%"></i>';
+    });
+    return '<div class="mm-cap">'+done.length+' / '+list.length+'</div><div class="mm-body">'+marks+'</div>';
+  },
+  /** 涩谷地图：从外到内的分层布局 + 指定战场 + 「你在这里」 + 硝子急救所
+   *  · 点区域 = 行进（不花行动点，但路上会被迫打巡视遭遇）
+   *  · 点战场 = 走过去并开打（一次行动；不在同区会先赶路）
+   *  · 点硝子 = 治疗（只有身在结界外围才行；走不过去就会先赶路） */
+  openShibuyaMap(){
+    const P=this.player,st=this.shibuyaState();
+    if(!P||!st)return Promise.resolve();
+    return new Promise(res=>{
+      const zone=shibuyaZone(st.zone);
+      const fields=shibuyaFieldList();
+      let marks='';
+      SHIBUYA_ZONES.forEach(z=>{
+        const here=z.id===st.zone;
+        marks+='<button class="adv-node zone'+(here?' here':'')+(z.heal?' heal':'')+'" data-sbz="'+z.id
+          +'" style="left:'+z.pos[0]+'%;top:'+z.pos[1]+'%" title="'+this.escHtml(z.note||'')+'">'
+          +'<span class="dot">'+(here?'你':(z.heal?'✚':(z.depth+1)))+'</span><span class="nm">'+this.escHtml(z.name)+'</span></button>';
+      });
+      fields.forEach(f=>{
+        const done=(st.done||[]).indexOf(f.i)>=0;
+        marks+='<button class="adv-node field'+(done?' done':'')+'" data-sbf="'+f.i+'" style="left:'+f.pos[0]+'%;top:'+f.pos[1]+'%"'
+          +(done?' disabled':'')+'><span class="dot">'+(done?'✔':'T'+f.tier)+'</span><span class="nm">'+this.escHtml(f.label)+'</span></button>';
+      });
+      const left=Math.max(0,ACTIONS_PER_DAY-(this.dayActions|0));
+      const trained=((st.trainDay|0)===this.day);
+      showModal('<h2>涩谷事变 · 结界地图</h2>'
+        +'<p style="line-height:1.8;color:var(--txt2);font-size:13px">'
+        +'从外到内：<b>结界外围</b>（硝子急救所）→ 地面 → 中心街 → <b>地下</b>——越往内侧，街上的东西越强。<br>'
+        +'点<b>区域</b>＝行进（不花行动点，但路上会被迫打巡视遭遇，打赢才能落地）；'
+        +'点<b>战场</b>＝赶路并开打（一次行动）；点外围的<b>✚</b>＝找硝子治疗。</p>'
+        +'<div class="adv-map shibuya">'+marks+'</div>'
+        +'<div class="save-meta" style="text-align:center;margin-top:8px">当前：<b style="color:var(--gold)">'+this.escHtml(zone.name)+'</b>'
+        +'　·　剩余行动 '+left+' / '+ACTIONS_PER_DAY+'　·　今日修炼：'+(trained?'已用':'未用')
+        +'　·　战场已稳住 '+((st.done||[]).length)+' / '+fields.length+'</div>'
+        +'<div class="center" style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
+        +'<button class="btn small" id="sbHeal">找 硝 子 治 疗（1 行动）</button>'
+        +'<button class="btn small ghost" id="sbClose">关 闭</button></div>');
+      $('modalBox').querySelectorAll('[data-sbz]').forEach(b=>{
+        b.onclick=()=>{const zid=b.getAttribute('data-sbz');closeModal();res(this.shibuyaMove(zid).then(()=>this.openShibuyaMap()));};
+      });
+      $('modalBox').querySelectorAll('[data-sbf]').forEach(b=>{
+        b.onclick=()=>{const fi=+b.getAttribute('data-sbf');closeModal();res(this.shibuyaFight(fi).then(()=>this.openShibuyaMap()));};
+      });
+      const hb=$('sbHeal');
+      if(hb)hb.onclick=()=>{
+        if(!shibuyaZone(this.shibuyaState().zone).heal){this.addLog('lg','硝子的急救所在【涩谷结界外围】——想治伤得先走过去（点地图最外圈那一处）。');}
+        else if(!this.shibuyaSpend()){this.addLog('lg','今天的力气用完了——先歇一晚。');}
+        else{P.hp=P.maxHp;P.cp=P.maxCp;this.addLog('lgold','【硝子 · 反转术式外放】她把手按在你背上，正向能量整条灌进来——生命与咒力都接回去了。');}
+        closeModal();res(this.openShibuyaMap());
+      };
+      const c=$('sbClose');if(c)c.onclick=()=>{closeModal();res();};
+    });
+  },
+  /** 小地图（涩谷模式）：区域环 + 你在这里 + 已稳住的战场 */
+  shibuyaMiniHtml(){
+    const st=this.shibuyaState();if(!st)return'';
+    const fields=shibuyaFieldList();
+    let marks='',fdone=0;
+    SHIBUYA_ZONES.forEach(z=>{
+      const here=(z.id===st.zone);
+      marks+='<i class="mm-dot'+(here?' here':(z.heal?' heal':''))+'" style="left:'+z.pos[0]+'%;top:'+z.pos[1]+'%"></i>';
+    });
+    fields.forEach(f=>{
+      const done=(st.done||[]).indexOf(f.i)>=0;if(done)fdone++;
+      marks+='<i class="mm-dot f'+(done?' done':'')+'" style="left:'+f.pos[0]+'%;top:'+f.pos[1]+'%"></i>';
+    });
+    return '<div class="mm-cap">'+fdone+' / '+fields.length+'</div><div class="mm-body">'+marks+'</div>';
+  },
+  /* ==================== 涩谷事变 · 开放冒险 ==================== */
+  /** 现在是不是在涩谷（连续战斗 / 街道巡视 / 地图推进） */
+  shibuyaOn(){const P=this.player;return !!(P&&P.shibuya&&P.shibuya.on);},
+  shibuyaState(){const P=this.player;if(!P)return null;if(!P.shibuya||!P.shibuya.on)return null;return P.shibuya;},
+  /** 花掉一次行动（涩谷里：巡视 / 战场 / 移动中撞上的遭遇都算一件事）；行动用尽就只能歇到天亮 */
+  shibuyaSpend(){
+    if((this.dayActions|0)>=ACTIONS_PER_DAY)return false;
+    this.dayActions=(this.dayActions|0)+1;
+    this.render();
+    return true;
+  },
+  /** 进入涩谷：序章团战之后落地地下三层（「是」「否」两个分支都会走到这里） */
+  async shibuyaEnter(){
+    const P=this.player;if(!P)return;
+    P.hp=P.maxHp;P.cp=P.maxCp;   // 序章整理：进冒险前回满一次，之后就是连续战斗了
+    P.shibuya={on:true,day:this.day,zone:'b3',dist:0,trainDay:-1,done:[]};
+    this.addLog('lred','◆ 涩谷事变：你被丢在地铁站地下三层——从这里开始，直到这一夜结束。');
+    this.addLog('lgold','【涩谷规则】① 所有战斗都是连续的：打完一场不回血回蓝，只会稍微缓一点（会反转术式的话缓得多些）；'
+      +'② 「一场一次」的东西（极之番 / 领域…）不受影响，每场照样能用；'
+      +'③ 要回血只能走到【涩谷结界外围】找硝子；④ 每天只能修炼一次，其余时间都得上街。');
+    this.render();
+    await this.storyModal('涩谷事变 · 开场',
+      '「十点三十一分，涩谷——」\n\n'
+      +'塌落的站台把你甩到了地下三层。头顶还在掉灰，广播一遍遍念着避难通知，没有一条是给术师的。\n\n'
+      +'从这里往上是地面，往更深处是没人去过的地方。街上到处是咒灵，也有别的东西在走动。\n\n'
+      +'——打到这一夜结束为止，都别指望有人来接你。','涩谷事变');
+    await this.openShibuyaMap();
+  },
+  /** 离开涩谷（下一个剧情日接管时） */
+  shibuyaLeave(){
+    const P=this.player;if(!P||!P.shibuya)return;
+    P.shibuya=null;
+    this.addLog('lgold','◆ 涩谷的这一夜收束了——街上的嘶吼渐渐停下来，你从结界里走出来。');
+    this.render();
+  },
+  /** 涩谷的每日行动（替代行动轮盘：修炼每日一次，其余上街） */
+  async shibuyaDaily(){
+    const P=this.player,st=this.shibuyaState();
+    if(!P||!st)return;
+    const zone=shibuyaZone(st.zone);
+    const items=[];
+    if((st.trainDay|0)!==this.day)items.push({label:'在涩谷修炼一次（今日限一次）',act:'train',
+      desc:'这一天唯一的一次正经修炼——之后就得上街了。'});
+    items.push({label:'上街巡视',act:'patrol',
+      desc:'沿当前区域走一圈，把撞上的东西清掉（咒灵 / 诅咒师，越往内侧越强）。'});
+    if(zone.heal)items.push({label:'找硝子治疗（全额回满）',act:'heal',
+      desc:'硝子的急救所就在外围：她用反转术式把整条命接回来。'});
+    const pick=await openWheelModal({title:`第 ${this.day} 天 · 涩谷事变（当前：${zone.name}｜地图在右上角）`,items:items});
+    const act=pick.act;
+    if(act==='train'){
+      const t=await openWheelModal({title:'在涩谷修炼（今日限一次）',items:WHEEL_DAILY.filter(it=>it.act&&it.act!=='hunt')});
+      st.trainDay=this.day;
+      this.addLog('lcyan','【涩谷·'+t.label+'】'+Player.train(P,t.act));
+      this.render();return;
+    }
+    if(act==='heal'){
+      P.hp=P.maxHp;P.cp=P.maxCp;
+      this.addLog('lgold','【硝子 · 反转术式外放】她把手按在你背上，正向能量整条灌进来——生命与咒力都接回去了。'
+        +'（「外伤我治。命，你自己留着。」）');
+      this.render();return;
+    }
+    if(act==='map'){await this.openShibuyaMap();return;}
+    if(act==='patrol'){await this.shibuyaPatrol('上街巡视');return;}
+  },
+  /** 上街巡视 / 路上被拦住：按当前区域深度抽一批敌人 */
+  async shibuyaPatrol(tag){
+    const P=this.player,st=this.shibuyaState();
+    if(!P||!st)return false;
+    const zone=shibuyaZone(st.zone);
+    const roster=shibuyaRollRoster(zone.depth);
+    this.addLog('lg',(tag?('【'+tag+'】'):'【涩谷大街】')+zone.name+' 的街上，'+roster.map(e=>e.name).join('、')+' 挡在面前。');
+    let win=false;
+    try{win=await BattleUI.run({title:'涩谷大街巡视 · '+zone.name,player:P,enemies:roster,allies:[],hunt:true});}
+    catch(err){console&&console.error&&console.error('涩谷巡视异常:',err);win=false;this.addLog('lred','巡视遭遇出现异常，已按撤退安全结算。');}
+    P.battleCount++;
+    this.afterShibuyaFight(win,roster||null);   // 赢了全额、输了四成（afterShibuyaFight 内部分派）
+    if(!win)this.addLog('lred','你被挡了回去——退回上一处落脚点，缓一口气（没死，但也没走成）。');
+    return win;
+  },
+  /** 涩谷·连续战斗结算：把战场上的残血残蓝接回角色身上（只缓一点点），不调用 afterBattleRecover */
+  afterShibuyaFight(win,roster){
+    const P=this.player;if(!P)return;
+    const u=(typeof BattleUI!=='undefined'&&BattleUI.eng)?BattleUI.eng.player:null;
+    const hpr=u?Math.max(0,Math.min(1,(u.hp||0)/Math.max(1,u.maxHp||1))):1;
+    const cpr=u?Math.max(0,Math.min(1,(u.cp||0)/Math.max(1,u.maxCp||1))):1;
+    if(win&&roster&&roster.length){
+      const li=Math.max.apply(null,roster.map(e=>e.li||0));
+      const rw=Player.reward(P,li);   // 会给成长（并顺手把血蓝写满——下面立刻覆写回残血）
+      this.addLog('lgreen','✔ 清掉了 '+roster.map(e=>e.name).join('、')+'。'+rw);
+    }else if(roster&&roster.length){
+      // ★ 「每一场战斗都应当带来属性收益」：被击退 / 没守住也算打过——按四成结算苦战收益
+      const li=Math.max.apply(null,roster.map(e=>e.li||0));
+      const rw=Player.reward(P,li,false);
+      this.addLog('lgold','【苦战收益】'+rw);
+    }
+    // ★ 连续战斗：血蓝只按「上一场剩下的 + 一点喘息」接手，绝不回满
+    const restHp=SHIBUYA_REST_HP+(P.reverse?SHIBUYA_REST_CAP_HP:0);
+    P.hp=Math.max(1,Math.min(P.maxHp,Math.round(P.maxHp*hpr+P.maxHp*restHp)));
+    P.cp=Math.max(0,Math.min(P.maxCp,Math.round(P.maxCp*cpr+P.maxCp*SHIBUYA_REST_CP)));
+    if(P.possess){P.possess=null;delete P.possessRoundThis;}   // 附体是场内架势，出了这一场就散
+    this.addLog('lg','【连续战斗】你带着上一场的伤往下走：生命 '+Math.round(P.hp)+' / '+P.maxHp
+      +'，咒力 '+Math.round(P.cp)+' / '+P.maxCp+(P.reverse?'（反转术式替你压住了大半伤口）':'（没有反转术式，只能靠这点喘息）'));
+    this.render();
+  },
+  /** 行进：移动到另一个区域——按区域距离累积，每满 SHIBUYA_PATROL_EVERY 就强制打一场巡视
+   *  打赢才落地到目标区域；被击退就停在原地（不死）。没行动了就明天再说。 */
+  async shibuyaMove(zoneId){
+    const P=this.player,st=this.shibuyaState();
+    if(!P||!st)return false;
+    const to=shibuyaZone(zoneId);
+    if(to.id===st.zone)return true;
+    let need=Math.max(1,Math.round(to.dist||1));
+    st.dist=(st.dist||0)+need;
+    this.addLog('lg','【行进】你把方向对准【'+to.name+'】（距离 +'+need+'）。');
+    while(st.dist>=SHIBUYA_PATROL_EVERY){
+      st.dist-=SHIBUYA_PATROL_EVERY;
+      if(!this.shibuyaSpend()){st.dist+=SHIBUYA_PATROL_EVERY;this.addLog('lg','今天的力气用完了——先找个地方熬到天亮。');this.render();return false;}
+      const ok=await this.shibuyaPatrol('路上');
+      if(this.over)return false;
+      if(!ok){this.render();return false;}
+    }
+    st.zone=to.id;
+    this.addLog('lgold','你推进到了【'+to.name+'】。'+(to.note||''));
+    this.render();
+    return true;
+  },
+  /** 指定战场：不在该区域就先走过去（路上照样会被拦住），再花一次行动开打 */
+  async shibuyaFight(i){
+    const P=this.player,st=this.shibuyaState();
+    const list=shibuyaFieldList(),f=list[i];
+    if(!P||!st||!f)return;
+    if((st.done||[]).indexOf(i)>=0)return;
+    if(f.zone!==st.zone){
+      const moved=await this.shibuyaMove(f.zone);
+      if(this.over||!moved)return;
+    }
+    if(!this.shibuyaSpend()){this.addLog('lg','今天的力气用完了——先歇一晚。');return;}
+    const sides=this.flipSides(f.battle.enemies||[],f.battle.allies||[],f.battle.noFlip);
+    if(!sides.enemies.length){this.addLog('lgold','此处无敌对目标，你顺势接管了这片街区。');st.done.push(i);this.render();return;}
+    await this.storyModal('涩谷事变 · '+f.label,f.intro||'','涩谷事变');
+    if(this.over)return;
+    let win=false;
+    try{win=await BattleUI.run({title:'涩谷事变 · '+f.label,player:P,enemies:sides.enemies,allies:sides.allies,
+      villain:sides.villain,scene:'s90_'+i});}
+    catch(err){console&&console.error&&console.error('涩谷战场异常:',err);win=false;}
+    P.battleCount++;
+    if(win)P.killCount+=sides.enemies.length;
+    this.afterShibuyaFight(win,sides.enemies||null);
+    if(this.over)return;
+    if(win){
+      st.done=st.done||[];if(st.done.indexOf(i)<0)st.done.push(i);
+      this.addLog('lgold','★ 稳住了【'+f.label+'】。（涩谷还剩 '+(list.length-st.done.length)+' 处战场点）');
+      (sides.allies||[]).forEach(a=>{if(typeof NPC_PROFILES!=='undefined'&&NPC_PROFILES[a.name]){this.addAffinity(a.name,1);}});
+      this.render();
+    }else if(f.battle.lose==='continue'){
+      this.addLog('lred','你在【'+f.label+'】倒下了，但同伴把你拖了出来——没有死，只是这一处没守住。');
+      this.lossReward(sides.enemies);   // 没守住也算打过一场：苦战收益照给
+      this.render();
+    }else{
+      this.ending('death',{title:'涩谷事变 · '+f.label});
+    }
+  },
   async triggerEvent(day){
     const node=this.currentStory()[day],P=this.player;
     await this.storyModal(node.title,node.intro,node.chapter);
     await this.npcScene(day);   // 剧情日的角色对话与羁绊
     if(node.wheel){
+      // ★ 开放式章节（多战场同时开打）：不抽签，直接摊开大地图自由支援
+      if(node.wheel.open)return this.openAdvStart(day,node);
       const pick=await openWheelModal({title:node.wheel.title,items:node.wheel.items});
-      if(pick.skipText){this.addLog('lg',pick.skipText);return;}
+      if(pick.skipText){
+        this.addLog('lg',pick.skipText);
+        // 涩谷冒险：两个分支都会落到地下三层——后方战线也会被结界塌进来的那一波拖进地铁
+        if(day===88&&!this.over){
+          await this.storyModal('涩谷事变 · 后方战线',
+            '你被安排在后方接应。\n\n然后地面塌了。\n\n结界从中间翻了个个儿，你连同整段站台一起被甩到了地下——'
+            +'再睁眼时，脚下是地铁站的地下三层。\n\n没有人来。连广播都只剩一句循环的避难通知。','涩谷事变');
+          await this.shibuyaEnter();
+        }
+        return;
+      }
       const b=pick.battle;
       await this.storyModal(node.title+' · '+pick.label,b.intro);
       await this.runBattleCfg(day,b,node,pick.label);
       // 未来篇第30天：三战场转盘战结束后，若未触发结局，衔接最终连战（地狱·真人）
       if(!this.over&&node.stages&&node.stages.length){await this.runStage(day,node,0);}
+      // 涩谷事变：跟着五条打完那场团战之后，你被留在最深处的地铁站——开放冒险从这里开始
+      if(day===88&&!this.over)await this.shibuyaEnter();
     }else{
       await this.runStage(day,node,0);
     }
+  },
+  /** 苦战收益：没打赢也该长点东西——「每一场战斗都应当带来属性收益」 */
+  lossReward(sides){
+    const P=this.player;if(!P)return;
+    const list=(Array.isArray(sides)?sides:[]).filter(e=>e&&e.li!=null);
+    if(!list.length)return;
+    const li=Math.max.apply(null,list.map(e=>e.li||0));
+    const t=Player.reward(P,li,false);
+    if(t)this.addLog('lgold','【苦战收益】'+t);
   },
   runStage(day,node,si){
     const stage=node.stages[si];
@@ -8220,12 +8812,14 @@ const Game={
         const ns=node.stages[si+1];
         if(!ns){this.addLog('lg','同伴们完成了收尾。');return;}
         this.addLog('lred','本场败北，战局进入下一阶段……');
+        this.lossReward(sides.enemies);
         return this.runStage(day,node,si+1);
       }
       // 反派普通剧情战：战败一律安全撤退、不死亡（高容错，避免前中期被五条悟等高墙堵死）
       // 唯一例外：怀玉篇最终战(gotoMain)反派战败必须死亡结算，否则会卡在怀玉篇无限转盘（node.final 已在 villainFinal 分支拦截）
       if(sides.villain&&!stage.gotoMain){
         this.addLog('lgold','【反派路线】你从容撤退保住性命，剧情继续推进。');
+        this.lossReward(sides.enemies);
         return;
       }
       if(stage.lose==='die'){
@@ -8234,6 +8828,7 @@ const Game={
       }
       if(stage.lose==='continue'){
         this.addLog('lred','你在本场战斗中倒下，但剧情并未因此终结——同伴接住了战局。');
+        this.lossReward(sides.enemies);
         return;
       }
     })();
@@ -8256,8 +8851,8 @@ const Game={
         if(NPC_PROFILES[a.name]){this.addAffinity(a.name,1);this.addLog('lgold','并肩作战后，【'+a.name+'】对你的好感 +1（'+this.affinityOf(a.name)+'）');}
       });
     }else{
-      if(sides.villain&&!node.final){this.addLog('lgold','【反派路线】你从容撤退保住性命，剧情继续推进。');}
-      else if(b.lose==='continue'){this.addLog('lred','你在本场战斗中倒下，但同伴掩护你撤出，未致死亡。');}
+      if(sides.villain&&!node.final){this.addLog('lgold','【反派路线】你从容撤退保住性命，剧情继续推进。');this.lossReward(sides.enemies);}
+      else if(b.lose==='continue'){this.addLog('lred','你在本场战斗中倒下，但同伴掩护你撤出，未致死亡。');this.lossReward(sides.enemies);}
       else if(node.final){this.ending('loseFinal',node);}
       else{this.ending('death',node);}
     }
