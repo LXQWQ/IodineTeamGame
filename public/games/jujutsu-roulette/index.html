@@ -354,6 +354,14 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
   .summon-item.is-picked{border-color:var(--gold);background:rgba(255,210,74,.16);box-shadow:0 0 0 1px rgba(255,210,74,.35) inset}
   /* —— 回合制技能栏 / 行动点条 —— */
   .rt-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+  /* 术式释放：金框里放「借来的术式」的招式（不与自己的招式混在一起） */
+  .rt-borrow{margin-top:8px;padding:8px 10px 10px;border:1px solid rgba(255,200,60,.65);border-radius:12px;
+    background:linear-gradient(180deg,rgba(255,200,60,.10),rgba(255,200,60,.03));box-shadow:0 0 12px rgba(255,200,60,.15)}
+  .rt-borrow.hidden{display:none}
+  .rt-borrow-head{font-size:12px;color:#ffd24a;letter-spacing:.5px;margin-bottom:6px;text-align:center}
+  .rt-borrow-body{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .rt-borrow .rt-skill{border-color:rgba(255,200,60,.55)}
+  .rt-borrow .rt-skill .nm{color:#ffe08a}
   .rt-skill{position:relative;min-width:112px;padding:8px 10px;border:1px solid rgba(160,120,255,.45);border-radius:10px;
     background:rgba(120,90,220,.14);color:inherit;font:inherit;cursor:pointer;text-align:left;overflow:hidden;user-select:none;touch-action:none}
   .rt-skill:hover{border-color:rgba(255,210,74,.6)}
@@ -626,6 +634,7 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
       <div class="next-event" id="nextEvent"></div>
       <div class="action-row">
         <button class="btn" id="btnActionWheel">转 动 行 动 轮 盘</button>
+        <button class="btn ghost" id="btnIdle">🛌 无所事事地度过这一天</button>
         <button class="btn ghost" id="btnShowAttr">查 看 详 细 属 性</button>
         <button class="btn ghost" id="btnSaveGame">💾 存 档</button>
         <button class="btn ghost" id="btnLoadGame">📂 读 档</button>
@@ -793,9 +802,52 @@ const EFF_ANCHOR=700;    // 锚点：S=3.8333（特别一级）时的术式伤�
 const ANCHOR_S=3.8333;
 const HP_RATIO=100;      // 生命 = 术式伤害中值 ×100（同级对拼 6~8 回合）
 const CP_RATIO=60;       // 咒力 = 术式伤害中值 ×60（×5 版：弱特级约 8.9 万，标准特级约 12.3 万）
-/** 每回合基础回蓝（占上限比例）：现在默认 5%（每回合自动回一点蓝，双方一致）
- *  想更宽松就调大（0.10 = 每回合回 10%），想关掉就改成 0 */
+/** 每回合基础回蓝：回当前上限的 5%——与「咒力总量」成正比（总量越高，每回合回的绝对值越多），
+ *  这和新的咒力经济是同一套逻辑：**总量是资产、操控是单次开销**。想更宽松就调大（0.10 = 10%）。 */
 let CP_REGEN_PER_ROUND=0.05;
+/** ==================== 咒力经济（绝对值版） ====================
+ *  「咒力总量」必须真的有价值——所以消耗不再是「上限的百分之几」，而是**具体数字**：
+ *    ① 理论咒力消耗 = 该手段的「账面收益」× 你自己的术式效率中值
+ *       （伤害类：收益 = 这一档的术式倍率；召唤/附体：收益 = 原百分比列 × CP_RATIO）
+ *    ② 实际咒力消耗 = max(1, 理论消耗 − 咒力操控 × CTL_CUT)
+ *  于是：咒力总量翻倍 → 能打的次数翻倍；咒力操控翻倍 → 每一次都更便宜。
+ *  标定：基准角色（一级：效率中值 409 / 操控 25 / 上限 24,565）咏唱 = 3×409 − 250 = 977，
+ *  与旧版「上限的 4%」= 982 几乎一致——基线续航不变，改的是「总量不再抵消收益」。 */
+const CTL_CUT=10;                 // 每 1 点咒力操控抵扣 10 点理论消耗（基准角色省约 20%）
+/** 单次咒力消耗的封顶：一次最多吃掉咒力上限的 30%。
+ *  「术式效率」与「咒力上限」是两个独立抽取/成长的属性——抽到「术式特级、总量四级」的角色时，
+ *  按收益算出的报价会超过他全部家当（放不出任何术式）。封顶既是保底（放得出招），
+ *  也是约束（储备不够，爆发就被压住，不能拿几百点咒力无限放特级伤害）。
+ *  平衡角色（咒力 = 效率 ×60）的单次消耗都在 4%~24%，永远碰不到这道线。 */
+const CP_COST_CAP=0.30;
+/** 一个单位的「术式效率中值」＝术式伤害区间 (eff) 的中值 */
+function effMidOf(u){
+  if(!u)return 0;
+  const e=u.eff;
+  if(typeof e==="number")return e;
+  if(Array.isArray(e))return ((e[0]||0)+(e[1]||0))/2;
+  return 0;
+}
+/** 一个单位的「咒力操控」（消耗减免）——具名面板偶尔给的是 {f:值}，这里统一成标量 */
+function ctlOf(u){
+  if(!u)return 0;
+  const c=u.ctl;
+  if(typeof c==="number")return Math.max(0,c);
+  if(Array.isArray(c))return Math.max(0,((c[0]||0)+(c[1]||0))/2);
+  if(c&&typeof c==="object"&&typeof c.f==="number")return Math.max(0,c.f);
+  return 0;
+}
+/** 收益 → 实际咒力消耗（至少 1 点；收益 ≤0 = 不耗咒力） */
+function cpPrice(p,gain){
+  if(!p||!(gain>0))return 0;
+  const theory=gain*effMidOf(p);
+  let c=Math.max(1,Math.round(theory-ctlOf(p)*CTL_CUT));
+  const mc=(typeof p.maxCp==="number")?p.maxCp:0;
+  if(mc>0){const cap=Math.max(1,Math.round(mc*CP_COST_CAP));if(c>cap)c=cap;}   // 单次封顶：不超过上限的 30%
+  return c;
+}
+/** 召唤 / 附体的账面收益 = 原百分比列 × CP_RATIO（实际消耗再减咒力操控减免） */
+function summonPrice(p,ratio){return cpPrice(p,(ratio||0)*CP_RATIO);}
 const CTL_RATIO=0.06;    // 操控 = 术式伤害中值 ×0.06
 const BAND=0.18;         // 每档上下浮动 ±18%（小级之间只差 1.38 倍，浮动太宽会让相邻档位分不清）
 /** 大级区段 [起始档位, 结束档位)，与 LEVELS 的顺序一一对应 */
@@ -1108,7 +1160,8 @@ const Player={
       adv:(draws.adv||{}), // 创建时抽到的高级技巧
       domainLearned:false, // 领域展开
       ultimateLearned:false, // 极之番（熟练度300%）
-      ultArt:{mode:'normal'}, // 极之番流派：normal 常规 / tech 术式自带 / custom 自建（主界面「极之番」面板可随时更换）
+      ultArts:{}, // 极之番流派：**按术式分别记录** {flag:{mode:'normal'|'tech'|'custom',...}}（本命与槽位扩张的每一门各有一套）
+      ultArt:{mode:'normal'}, // （镜像）本命术式的流派；旧存档兼容用，实际读取走 ultArts
       sixEyes:false, // 六眼（怀玉篇反派战胜觉醒五条悟获得：所有咒力消耗为0）
       jinTools:null, // 伏黑甚尔四件道具（怀玉篇正派战胜甚尔获得：天逆鉾/释魂刀/游云/万里锁）
       statBoost:1.0, // 黑闪累计永久倍率
@@ -1117,6 +1170,7 @@ const Player={
       absorbed:[], // 咒灵操术/降灵术永久吸收的敌人快照（数值固定不成长）
       soulBank:[], // 无为转变·灵魂库：{id,name,li,purity} 只保留纯净度（0~100%，1 位小数），不继承术式
       soulFusions:[], // 无为转变·改造人库存：{id,form,name,li,purityAvg,souls:[id]}（融合不可逆）
+      extracted:[], // 术式提取：从「极之番·漩涡」融入的咒灵身上拆下来的术式（一次性，用掉即消失）{id,flag,name,prof,from,li}
       flashCount:0,battleCount:0,huntCount:0,killCount:0,
       eventsDone:[], // 已完成的剧情节点
       notes:[], // 后日谈用关键记录
@@ -1218,13 +1272,39 @@ const Player={
   },
   /** 把 domainLearned / ultimateLearned 这两个旧字段与新规则同步
    *  （结局文案、makePlayerUnit 都还在读它们，这里统一维护，避免满地改判断） */
-  /** 极之番流派：旧存档没有该字段时补默认「常规」 */
+  /** 玩家拥有的术式 flag 列表：本命 + 第二术式 + 槽位扩张 + 死而替生夺取（顺序稳定、去重） */
+  techFlags(P){
+    if(!P)return [];
+    const out=[],seen={};
+    const add=t=>{if(t&&t.flag&&!seen[t.flag]){seen[t.flag]=1;out.push(t.flag);}};
+    add(P.technique);add(P.extraTech);
+    (P.extraTechs||[]).forEach(add);
+    (P.stolenTechs||[]).forEach(add);
+    return out;
+  },
+  /** 某门术式的名字（面板与技能卡上用来区分） */
+  techNameOf(P,flag){
+    if(!P||!flag)return "本命术式";
+    if((P.technique||{}).flag===flag)return (P.technique||{}).name||"本命术式";
+    let hit=null;
+    [P.extraTech].concat(P.extraTechs||[],P.stolenTechs||[]).forEach(t=>{if(t&&t.flag===flag&&!hit)hit=t;});
+    return hit?(hit.name||flag):flag;
+  },
+  /** 极之番流派：**按术式**分别记录；旧存档只有单个 P.ultArt → 归到本命术式名下
+   *  P.ultArt 继续作为「本命术式」的镜像，旧代码读到也不会出错 */
   syncUlt(P){
     if(!P)return P;
-    if(!P.ultArt||typeof P.ultArt!=='object')P.ultArt={mode:'normal'};
-    if(!P.ultArt.mode)P.ultArt.mode='normal';
-    if(P.ultArt.mode==='custom'&&!P.ultArt.id)P.ultArt={mode:'normal'};
-    return P.ultArt;
+    P.ultArts=(P.ultArts&&typeof P.ultArts==="object")?P.ultArts:{};
+    const main=(P.technique||{}).flag||"";
+    if(P.ultArt&&typeof P.ultArt==="object"&&!P.ultArts[main])P.ultArts[main]=Object.assign({},P.ultArt);
+    Player.techFlags(P).forEach(f=>{
+      const a=P.ultArts[f];
+      if(!a||typeof a!=="object"){P.ultArts[f]={mode:"normal"};return;}
+      if(!a.mode)a.mode="normal";
+      if(a.mode==="custom"&&!a.id)P.ultArts[f]={mode:"normal"};
+    });
+    P.ultArt=Object.assign({mode:"normal"},P.ultArts[main]||{});
+    return P.ultArts;
   },
   syncDomain(P){
     if(!P)return 0;
@@ -1415,7 +1495,7 @@ class WheelView{
 const TECH_MOVE={
  limitless:['苍·引力坍缩','赫·斥力爆散','茈·虚式轰击'],shadows:['影潜','影藏','式神附体'],
  cleave:['解·无形斩','捌·必中斩','开·火焰','灶·炎灾'],straw:['刍灵共鸣','簪·钉子贯魂'],ratio:['十划·7:3弱点必破'],
- cursedSpeech:['咒言·爆裂吧','咒言·停下','咒言·睡吧'],spiritControl:['驱使吸收咒灵群袭'],idleTrans:['无为转变·灵魂改写','单重魂·污体','多重魂·拨体','多重魂·几魂异性体','无为转变·遍杀即灵体'],
+ cursedSpeech:['咒言·爆裂吧','咒言·停下','咒言·睡吧'],spiritControl:['驱使吸收咒灵群袭','术式释放'],idleTrans:['无为转变·灵魂改写','单重魂·污体','多重魂·拨体','多重魂·几魂异性体','无为转变·遍杀即灵体'],
  swap:['不义游戏·强制换位'],blood:['赤血·穿刺血弹','赤血·超新星','赤血·血刃斩'],crows:['黑鸟群·共享视野突袭'],
  projection:['投射咒法·24帧位移斩'],construct:['构筑术式·咒具具现'],puppet:['傀儡操术·人偶强袭'],
  moon:['淀月·毒触手侵蚀'],rot:['蚀烂腐术·腐血侵入'],miracle:['奇迹·伤害转化再生'],jacob:['雅各布天梯·圣光剥离'],
@@ -1453,22 +1533,25 @@ function npcAttackInterval(speed){return Math.max(0.8,2.6-Math.min(1.6,(speed||6
 /** 一天可以做的事（行动轮盘抽几次） */
 const ACTIONS_PER_DAY=3;
 const AP_PER_ROUND=60;
+/** 档位表：mult = 伤害倍率（结算用）；gain = 「账面收益」（**只作咒力报价的公式输入**）。
+ *  咒力报价 = gain(或这一档的 mult) × 自己的术式效率中值 − 咒力操控×CTL_CUT ——见 cpPrice()。
+ *  所以「这一招大概能打出多少伤害，就收多少咒力」；gain:0 的档位（体术）不耗咒力。 */
 const SKILL_TIERS={
-  basic:{tier:'basic',label:'咒力打击',cast:[0],cd:0,mult:[1.0],scope:'one',cost:0,chargeable:false,kind:'melee',
+  basic:{tier:'basic',label:'咒力打击',cast:[0],cd:0,mult:[1.0],scope:'one',gain:0,chargeable:false,kind:'melee',
          ap:[15],spd:[10]},
-  fast :{label:'瞬发术式',cast:[0],cd:0,mult:[1.5],scope:'one',cost:0.02,chargeable:false,kind:'tech',
+  fast :{label:'瞬发术式',cast:[0],cd:0,mult:[1.5],scope:'one',gain:1.5,chargeable:false,kind:'tech',
          ap:[12],spd:[14]},
-  swift:{label:'连击术式',cast:[0],cd:0,mult:[2.6],scope:'one',cost:0.03,chargeable:false,kind:'tech',
+  swift:{label:'连击术式',cast:[0],cd:0,mult:[2.6],scope:'one',gain:2.6,chargeable:false,kind:'tech',
          ap:[20],spd:[11]},
-  mid  :{label:'咏唱术式',cast:[0,0.9],cd:0,mult:[3.0,5.2,7.8],scope:'one',cost:0.04,chargeable:true,kind:'tech',
+  mid  :{label:'咏唱术式',cast:[0,0.9],cd:0,mult:[3.0,5.2,7.8],scope:'one',gain:3.0,chargeable:true,kind:'tech',
          ap:[24,39,58],spd:[8,5,2]},
-  heavy:{label:'结印术式',cast:[0,1.0,2.7],cd:0,mult:[3.5,6.5,9.0],scope:'one',cost:0.05,chargeable:true,kind:'tech',
+  heavy:{label:'结印术式',cast:[0,1.0,2.7],cd:0,mult:[3.5,6.5,9.0],scope:'one',gain:3.5,chargeable:true,kind:'tech',
          ap:[25,40,60],spd:[5,3,1.5]},
-  wide :{label:'广域术式',cast:[0,1.1,3.0],cd:0,mult:[2.2,4.0,6.5],scope:'all',cost:0.06,chargeable:true,kind:'tech',
+  wide :{label:'广域术式',cast:[0,1.1,3.0],cd:0,mult:[2.2,4.0,6.5],scope:'all',gain:2.2,chargeable:true,kind:'tech',
          ap:[25,40,60],spd:[5,3,1.5]},
-  ult  :{label:'极之番',cast:[0,1.4,3.6],cd:0,mult:[3.0,4.0,5.0],scope:'all',cost:0.25,chargeable:false,kind:'tech',
+  ult  :{label:'极之番',cast:[0,1.4,3.6],cd:0,mult:[3.0,4.0,5.0],scope:'all',gain:15,chargeable:false,kind:'tech',
          ap:[60],spd:[2],once:true},
-  domain:{label:'领域展开',cast:[0],cd:0,mult:[1,1,1],scope:'all',cost:0.15,chargeable:false,kind:'tech',
+  domain:{label:'领域展开',cast:[0],cd:0,mult:[1,1,1],scope:'all',gain:9,chargeable:false,kind:'tech',
          ap:[60],spd:[16]}
 };
 /** 黑闪概率：原作里黑闪是千分之几的奇迹，所以这里给得很低——普通 1%、传奇黑闪王 3%、敌人 1%
@@ -1516,7 +1599,7 @@ const NPC_ACT={
 };
 /** 没有生得术式表的敌人（泛用咒术师路人）的通用术式动作：
  *  20 点行动点、2.5 倍档位 —— 与玩家的咏唱术式每点行动点输出持平（×2.0×2.5÷20 = 0.25 效率/点） */
-const NPC_GENERIC_TECH={tier:'mid',label:'咒力术式',cast:[0],cd:0,mult:[2.5],scope:'one',cost:0.03,
+const NPC_GENERIC_TECH={tier:'mid',label:'咒力术式',cast:[0],cd:0,mult:[2.5],scope:'one',gain:2.5,
   chargeable:false,kind:'tech',ap:[20],spd:[11]};
 /** 招式 → 档位。未列出的走 defaultTier 规则 */
 const MOVE_TIER={
@@ -1549,11 +1632,11 @@ const MOVE_TIER={
 /* ==================== 十种影法术 · 专属招式（第三版） ==================== */
 /** 十影专属招式：不走档位倍率，各自有独立效果（见 playerDeclare / playerHideToggle / playerPossess） */
 const SHADOW_MOVES={
-  '影潜':   {special:'shadowDive', ap:[60], spd:[12], cast:[0], cd:0, kind:'melee', mult:[1], scope:'self', cost:0, chargeable:false,
+  '影潜':   {special:'shadowDive', ap:[60], spd:[12], cast:[0], cd:0, kind:'melee', mult:[1], scope:'self', gain:0, chargeable:false,
              desc:'潜入影子：消耗全部行动点、本回合无法再行动，但受到的一切伤害降低 95%，且仍然可以召唤式神。'},
-  '影藏':   {special:'shadowHide', ap:[25], spd:[13], cast:[0], cd:0, kind:'melee', mult:[1], scope:'self', cost:0, chargeable:false,
+  '影藏':   {special:'shadowHide', ap:[25], spd:[13], cast:[0], cd:0, kind:'melee', mult:[1], scope:'self', gain:0, chargeable:false,
              desc:'把一只式神藏进影子（完全免伤，仍能发挥治疗类术式），或把影中的式神放出来。影中的式神越多，你的速度越慢。'},
-  '式神附体':{special:'possession', ap:[0], spd:[11], cast:[0], cd:0, kind:'tech', mult:[1], scope:'self', cost:0, chargeable:false,
+  '式神附体':{special:'possession', ap:[0], spd:[11], cast:[0], cd:0, kind:'tech', mult:[1], scope:'self', gain:0, chargeable:false,
              desc:'不消耗行动点：借式神的术式上身或直接打出它的术式，选完立刻生效（每回合一次，代价是咒力）。点名四门（円鹿/魔虚罗/玉犬·黑/満象）占唯一上身位，其余式神不占位。'}
 };
 /* ==================== 极之番 · 流派（四种类型 + 自建效果 + 术式签名） ==================== */
@@ -1585,7 +1668,7 @@ function ultTypeOf(key){return ULT_TYPES.find(t=>t.key===key)||null;}
 function ultArtOf(id){return ULT_ARTS.find(a=>a.id===id)||null;}
 /** 术式签名极之番：抽到这些术式的人可以在面板里选「术式自带」 */
 const ULT_TECH={
-  'spiritControl':{name:'漩涡', uses:5, kind:'vortex', desc:'把咒灵库里收录的咒灵全部卷进漩涡轰出去：敌全体伤害 = 2000% + 每条咒灵 200%（上限 6000%）。'},
+  'spiritControl':{name:'漩涡', uses:5, kind:'vortex', pick:true, desc:'自选咒灵库里的咒灵卷进漩涡轰出去：敌全体伤害 = 融入咒灵的总生命值；每融入 1 只，这一式就更慢一点；融入的咒灵视为战死（永久从库里消失），但它们的生得术式会被「术式提取」拆下来存进术式库。'},
   'fire':{name:'陨', uses:2, kind:'dmg', scope:'all', mult:35, burn:0.08, desc:'敌全体 3500% 效率伤害，并附加灼烧（每回合 8% 生命，持续 3 回合）。'},
   'seance':{name:'万灵归位', uses:1, kind:'summon', n:3, desc:'不耗咒力，立刻把亡灵名录里的 3 个存在唤到场上（当回合即可行动）。'},
   'shadows':{name:'嵌合暗翳庭', uses:1, kind:'shadows', desc:'不耗咒力，立刻把全部已调服的式神唤到场上，并让它们本回合就能出手。'},
@@ -1597,21 +1680,22 @@ const ULT_TECH={
   'idleTrans':{name:'魂之奔流', uses:2, kind:'soul', souls:3, scope:'all', mult:25, desc:'消耗 3 条灵魂，用它们奔涌的魂力轰击敌全体（2500% 效率伤害）。'}
 };
 function ultTechOf(flag){return flag?(ULT_TECH[flag]||null):null;}
-/** 解析出当前角色实际可用的极之番形态（常规 / 术式自带 / 自建） */
-function ultArtResolve(P){
-  const a=(P&&P.ultArt)||null;
-  if(!a||a.mode==='normal')return {mode:'normal',name:'',uses:1,kind:'normal'};
-  if(a.mode==='tech'){
-    const t=ultTechOf(((P.technique)||{}).flag);
-    if(t)return Object.assign({mode:'tech'},t);
-    return {mode:'normal',name:'',uses:1,kind:'normal'};
+/** 解析出角色某门术式实际可用的极之番形态（常规 / 术式自带 / 自建）；flag 省略 = 本命术式 */
+function ultArtResolve(P,flag){
+  const f=flag||((P&&P.technique)||{}).flag||"";
+  const a=(P&&P.ultArts&&P.ultArts[f])||null;
+  if(!a||a.mode==="normal")return {mode:"normal",name:"",uses:1,kind:"normal",flag:f};
+  if(a.mode==="tech"){
+    const t=ultTechOf(f);
+    if(t)return Object.assign({mode:"tech",flag:f},t);
+    return {mode:"normal",name:"",uses:1,kind:"normal",flag:f};
   }
-  if(a.mode==='custom'){
-    const f=ultArtOf(a.id);
-    if(f)return Object.assign({mode:'custom',id:a.id},f);
-    return {mode:'normal',name:'',uses:1,kind:'normal'};
+  if(a.mode==="custom"){
+    const x=ultArtOf(a.id);
+    if(x)return Object.assign({mode:"custom",id:a.id,flag:f},x);
+    return {mode:"normal",name:"",uses:1,kind:"normal",flag:f};
   }
-  return {mode:'normal',name:'',uses:1,kind:'normal'};
+  return {mode:"normal",name:"",uses:1,kind:"normal",flag:f};
 }
 /** 面板与技能卡上显示的完整名字 */
 function ultArtLabel(res){
@@ -1622,24 +1706,39 @@ function ultArtLabel(res){
 /** 无为转变的四张召唤卡：与十影专属招式同一套机制（只开面板，选完才扣点数）
  *  special:'soulPanel' + soulForm 指向 SOUL_FORMS 的 key */
 const SOUL_MOVES={
-  '单重魂·污体':        {special:'soulPanel',soulForm:'污体',        ap:[25],spd:[12],cast:[0],cd:0,kind:'melee',mult:[1],scope:'self',cost:0,chargeable:false,
+  '单重魂·污体':        {special:'soulPanel',soulForm:'污体',        ap:[25],spd:[12],cast:[0],cd:0,kind:'melee',mult:[1],scope:'self',gain:0,chargeable:false,
                         desc:'从灵魂库里挑一条灵魂，做出最粗糙的改造人（强度四级~二级，按纯净度换算）。不耗咒力。'},
-  '多重魂·拨体':        {special:'soulPanel',soulForm:'拨体',        ap:[40],spd:[12],cast:[0],cd:0,kind:'melee',mult:[1],scope:'self',cost:0,chargeable:false,
+  '多重魂·拨体':        {special:'soulPanel',soulForm:'拨体',        ap:[40],spd:[12],cast:[0],cd:0,kind:'melee',mult:[1],scope:'self',gain:0,chargeable:false,
                         desc:'3 条纯净度超过 80% 的灵魂融合成「拨体」：速度更高、攻防俱佳（二级~标准一级）。融合不可逆。'},
-  '多重魂·几魂异性体':  {special:'soulPanel',soulForm:'几魂异性体',  ap:[40],spd:[12],cast:[0],cd:0,kind:'melee',mult:[1],scope:'self',cost:0,chargeable:false,
+  '多重魂·几魂异性体':  {special:'soulPanel',soulForm:'几魂异性体',  ap:[40],spd:[12],cast:[0],cd:0,kind:'melee',mult:[1],scope:'self',gain:0,chargeable:false,
                         desc:'5 条纯净度超过 90% 的灵魂融合成「几魂异性体」：防御偏薄，攻击与速度大幅提高（一级~弱特级）。融合不可逆。'},
-  '无为转变·遍杀即灵体':{special:'soulPanel',soulForm:'遍杀即灵体',  ap:[60],spd:[11],cast:[0],cd:0,kind:'tech',mult:[1],scope:'self',cost:0,chargeable:false,
+  '无为转变·遍杀即灵体':{special:'soulPanel',soulForm:'遍杀即灵体',  ap:[60],spd:[11],cast:[0],cd:0,kind:'tech',mult:[1],scope:'self',gain:0,chargeable:false,
                         desc:'8 条纯净度超过 95% 的灵魂融合成「遍杀即灵体」：攻防速全面暴涨（标准特级~弱龙级）。融合不可逆。'}
 };
-/** 招式解锁节点覆盖（默认把 300% 均分给各招；十影按设定：影潜 0% / 影藏 100% / 式神附体 300%） */
-const MOVE_NODE_OVERRIDE={shadows:[0,100,300],idleTrans:[0,0,100,200,300]};
+/** 咒灵操术·术式释放：熟练度 300% 解锁——从「术式库」里取出一份提取来的术式，本回合当自己的术式用
+ *  （用掉一次就少一份；取出的招式单独显示在技能栏下方的金色框里，不与自己的招式混在一起） */
+const SPIRIT_MOVES={
+  '术式释放':{special:'extractPanel', ap:[0], spd:[13], cast:[0], cd:0, kind:'tech', mult:[1], scope:'self', gain:0, chargeable:false,
+    desc:'从术式库里选一份提取来的术式：本回合你可以像用自己的术式一样使用它（能用几招看提取时的熟练度）。不消耗行动点、选完立刻生效；用掉才消耗那一份，选错了可以随时撤回。'
+  }
+};/** 招式解锁节点覆盖（默认把 300% 均分给各招；十影按设定：影潜 0% / 影藏 100% / 式神附体 300%） */
+const MOVE_NODE_OVERRIDE={shadows:[0,100,300],idleTrans:[0,0,100,200,300],spiritControl:[0,300]};   // 术式释放：熟练度 300% 解锁
 /* 无为转变：灵魂改写与单重魂一开局就有（核心玩法），拨体/几魂异性体/遍杀即灵体 依次 100/200/300% 解锁 */
-/** 影藏：影中每「1.0 继承比例」降低多少出手序（按比例算：円鹿 1.0 → -15%、満象 1.5 → -22.5%、魔虚罗 2.5 → -37.5%，最多 -85%） */
+/** 极之番·漩涡：伤害 = 融入咒灵的总生命 × 这个系数；每融入 1 只，这一式的出手序再慢 VORTEX_SPD_PER */
+const VORTEX_HP_MULT=1.0;
+const VORTEX_SPD_PER=0.25;
+/** 术式提取：拆下来的术式熟练度 = BASE + 咒灵评级 × PER_LI（封顶 = 全部招式可用）
+ *  ——「能用几招」看的是从那只咒灵身上拆下来多少（招式节点见 moveNodesOf） */
+const EXTRACT_PROF_BASE=100, EXTRACT_PROF_PER_LI=30, EXTRACT_PROF_CAP=300;
+function extractProfOf(li){return clamp(EXTRACT_PROF_BASE+Math.max(0,li|0)*EXTRACT_PROF_PER_LI,0,Math.min(EXTRACT_PROF_CAP,PROF_CAP));}/** 影藏：影中每「1.0 继承比例」降低多少出手序（按比例算：円鹿 1.0 → -15%、満象 1.5 → -22.5%、
+ *  魔虚罗 7.0 → -105% 但封顶 -85%——藏起魔虚罗几乎等于这一回合不出手） */
 const SHADOW_HIDE_SPD=0.15;
 /** 基础附体：没有独有术式的式神（虎葬）直接以巨躯冲撞时的倍率 */
 const SHADOW_BASE_MULT=3.0;
 /** 式神附体：可选附体（需要该式神已调服）。
  *  kind=atk 攻击倍率 / pierce 攻击倍率+无视免疫 / heal 挨打没死就回 75% / wheel 挂起魔虚罗的法轮由自己适应 */
+/* cost = 上身的「账面收益」占比（×CP_RATIO 得账面收益；实际消耗 = 收益×你的效率中值 − 操控×10）。
+ *  cost:0 表示不耗咒力（如影中免伤的被动上身）。 */
 const SHADOW_POSSESSION=[
   {id:'deer',  shadow:'円鹿',    name:'円鹿 · 超高能反转', kind:'heal',   rounds:3, cost:0.04,
    desc:'借円鹿的高速反转上身：3 回合内，只要没被打死就立刻回满 75% 生命（附体者即本体，不封顶；円鹿在影中为你治疗时才受「一回合 75% 额度」限制）。'},
@@ -1682,11 +1781,11 @@ function buildSkillBar(flag,prof){
   idx.slice(0,6).forEach((mv,i)=>{
     if(prof!=null&&(prof||0)<(nodes[i]||0))return;
     // 十影专属招式：直接挂上各自的 special，不查档位表
-    const sp=(flag==='shadows')?SHADOW_MOVES[mv]:(SOUL_MOVES[mv]||null);
+    const sp=(flag==='shadows')?SHADOW_MOVES[mv]:(SOUL_MOVES[mv]||SPIRIT_MOVES[mv]||null);
     if(sp){bar.push({id:flag+':sp:'+mv,name:mv,tier:'basic',node:nodes[i]||0,shadowMove:true,...sp});return;}
     const cfg=skillTierOf(flag,mv);
     bar.push({id:flag+':'+i,name:mv,tier:cfg.tier,cast:cfg.cast,cd:cfg.cd,mult:cfg.mult,
-      scope:cfg.scope,cost:cfg.cost,chargeable:cfg.chargeable,kind:cfg.kind,
+      scope:cfg.scope,gain:cfg.gain,chargeable:cfg.chargeable,kind:cfg.kind,
       ap:cfg.ap,spd:cfg.spd,once:cfg.once,node:nodes[i]||0});
   });
   return bar;
@@ -1695,7 +1794,8 @@ function buildSkillBar(flag,prof){
 /** [名称, 继承总属性比例, 调服难度(评级；null=初始自带), 说明] */
 /* [名称, 继承自身总属性的比例, 调服难度(评级；null=初始自带), 说明, 召唤咒力占比(省略则同继承)]
  * 战斗强度按「继承比例」走，咒力消耗单独一列——式神是独立战斗单位，不是按咒力买伤害。
- * 标定基准：玉犬系 ≈ 主人的 2/3，中阶式神 ≈ 主人本人，満象 / 玉犬·渾 这些明显强过主人。
+ * 标定基准：玉犬系 ≈ 主人的 2/3，中阶式神 ≈ 主人本人，満象 / 玉犬·渾 这些明显强过主人，
+ * 嵌合兽·顎吐 ≈ 主人的六倍，**魔虚罗是主人的七倍**（设定上它比顎吐强得多——加上法轮适应，实战差距还要更大）。
  * 咒力占比沿用原设计（很便宜），但**式神一旦战死就是永久损失**，这才是真正的代价。 */
 /** 式神整体强度倍数：表里的继承比例会乘上这个数（咒力消耗不受影响）。
  *  想让式神更凶就往上调（1.5 = 再强一半），调 0.5 就是回到旧版的弱势手感 */
@@ -1714,14 +1814,15 @@ const SHADOW_TABLE=[
   ['貫牛',   1.20, 6,   '巨牛。以正面冲撞碾碎一切。', .12],
   ['虎葬',   1.30, 6,   '虎形。十种影法术的第九只。', .14],
   ['満象',   1.50, 7,   '巨象。影法中最沉重的一击。', .16],
-  ['魔虚罗', 2.50, 12,  '十种影法术的第十只。历代无人调服成功——不是影法术不许，而是从没有人强到能赢它。', .35]
+  ['魔虚罗', 7.00, 12,  '十种影法术的第十只。历代无人调服成功——不是影法术不许，而是从没有人强到能赢它。', .35]
 ];
 /** 魔虚罗：历代无人调服成功——说的是没人强到能赢它，不是影法术禁止调服
  *  （它现在是调服名单里的最后一只，也是全游戏最难的一场调服战） */
 const SHADOW_MAHORAGA={name:'魔虚罗',desc:'十种影法术的第十只。历代无人调服成功——不是影法术不许，而是从没有人强到能赢它。'};
 /** 嵌合兽：由已战死的式神融合而成（原作共两只）
  *  need = 需要已有多少只 from 中的式神战死 */
-/* ratio = 继承自身总属性的比例（决定强度）；cp = 召唤消耗的咒力上限占比（省略时与 ratio 同号） */
+/* ratio = 继承自身总属性的比例（决定强度）；cp = 召唤的「账面收益」占比
+ *  （实际咒力 = cp×CP_RATIO×你的效率中值 − 咒力操控×10；省略时与 ratio 同号） */
 const SHADOW_FUSIONS=[
   {key:'玉犬·渾', from:['玉犬·黑','玉犬·白'], need:1, ratio:1.30, cp:.08,
    desc:'两只玉犬之力合一。任一只玉犬战死，另一只便可继承其力，化为玉犬·渾。'},
@@ -2048,6 +2149,7 @@ class BattleEngine{
       maxHp,hp:maxHp,maxCp,cp:maxCp,melee,eff,ctl,atb:clamp(owner.atb+randF(0,10),0,99),
       speed:owner.speed*randF(0.95,1.05),reverse:false,canDomain:false,domainUsed:0,
       flag:null,flags:[],techName:tag,domainName:'',alive:true});
+    if(u.makora&&this.player&&u.side===this.player.side&&u.ownerName===this.player.name)this.makoraLoad(u);   // 你的魔虚罗：继承上一场留下的适应进度
     this.units.push(u);return u;
   }
   /* ==================== 十种影法术 · 式神独有术式 ==================== */
@@ -2185,6 +2287,33 @@ class BattleEngine{
  *  攻击轨：① 表里的每一门术式按「隔一回合适应一次」的节奏推进（MAKORA_WHEEL_EVERY 默认 2 回合）
  *          ② 本回合被这一招打过 → 无论是否轮到它，本次结算都推进一转（加速适应）
  *  效果轨：见识过的「效果类」能力每回合必定 +1 转（4 转自己无视、5 转传授给主人） */
+  /** 这只魔虚罗是不是「你的」（含你自己挂着的法轮）——只有你的才会把解析进度写进存档 */
+  makoraMine(u){
+    if(!u||!u.makora)return false;
+    if(u.isPlayer)return true;
+    const p=this.player;
+    return !!(p&&u.side===p.side&&(u.ownerName===p.name||u.shadowSource==="魔虚罗"));
+  }
+  /** 入场 / 上身：读取跨战斗保留的适应进度
+   *  只读「转数」，不读节拍——「间隔回合」的计时从这一刻重新起算（否则新对局第一回合会白送一转） */
+  makoraLoad(u){
+    const P=this.cfg&&this.cfg.player;
+    if(!u||!P)return;
+    u.makoraAdapt=Object.assign({},P.makoraAdapt||{});
+    u.makoraEffAdapt=Object.assign({},P.makoraEffAdapt||{});
+    u.makoraSeen=Object.assign({},P.makoraSeen||{});
+    u.makoraHitRound={};
+    u.makoraLast={};
+    Object.keys(u.makoraAdapt).forEach(k=>{u.makoraLast[k]=this.round||0;});
+  }
+  /** 每次转动法盘之后写档：适应是跨战斗保留的 */
+  makoraSave(u){
+    if(!this.makoraMine(u))return;
+    const P=this.cfg&&this.cfg.player;if(!P)return;
+    P.makoraAdapt=Object.assign({},u.makoraAdapt||{});
+    P.makoraEffAdapt=Object.assign({},u.makoraEffAdapt||{});
+    P.makoraSeen=Object.assign({},u.makoraSeen||{});
+  }
   makoraWheel(u,ev){
     if(!u||!u.makora||!u.alive)return;
     // --- 攻击轨：隔一回合推进；本回合被这一招打过则加速 ---
@@ -2217,6 +2346,7 @@ class BattleEngine{
       }
       if(eff[id]>=5)this.makoraGrantEffect(u,id,ev);
     });
+    this.makoraSave(u);   // ★ 适应跨战斗保留：每次转完法盘就把进度写进存档（只有你自己的魔虚罗 / 法轮）
     if(!advanced.length&&!effDone.length){
       if(keys.length&&!u._wheelIdleNoted){u._wheelIdleNoted=true;ev.push({type:'skill',text:`【适应法盘】${u.name} 转动法盘——在册的 ${keys.length} 门术式都还没到结算节奏。`});}
       return;
@@ -2315,14 +2445,14 @@ class BattleEngine{
         if(st.dead[name])return;            // 已战死：不可再次召唤，只能用于融合
         if(!st.tamed[name])return;          // 未调服
         out.push({key:'shadow:'+name,name:name,group:'十种影法术（消耗咒力）',ratio:ratio,
-          cp:Math.max(1,Math.round(p.maxCp*cpR)),
+          cp:summonPrice(p,cpR),        // 收益 = 原百分比 × CP_RATIO；再减咒力操控减免
           onField:this.units.some(u=>u.alive&&!u.recalled&&u.shadow===true&&u.shadowSource===name),
           desc:'继承自身总属性 '+Math.round(ratio*100)+'%'});
       });
       SHADOW_FUSIONS.forEach(f=>{
         if(!st.fused[f.key])return;
         out.push({key:'shadow:'+f.key,name:f.key,group:'嵌合兽（消耗咒力）',ratio:f.ratio,
-          cp:Math.max(1,Math.round(p.maxCp*(f.cp!=null?f.cp:f.ratio))),
+          cp:summonPrice(p,(f.cp!=null?f.cp:f.ratio)),
           onField:this.units.some(u=>u.alive&&!u.recalled&&u.shadow===true&&u.shadowSource===f.key),
           desc:'嵌合兽 · 继承自身总属性 '+Math.round(f.ratio*100)+'%'});
       });
@@ -2396,10 +2526,10 @@ class BattleEngine{
           const _tp=(t.prof!=null?t.prof:(this.cfg.player.prof||0));
           buildSkillBar(t.flag,_tp).forEach((sk,i)=>{if(i===0)return;bar.push(sk);});
         });
-        bar.push({id:'__defend',name:'防 御',tier:'basic',cd:0,mult:[1],scope:'one',cost:0,
+        bar.push({id:'__defend',name:'防 御',tier:'basic',cd:0,mult:[1],scope:'one',gain:0,
           chargeable:false,kind:'melee',ap:[15],spd:[10],special:'defend'});
         // 收尾一击：行动点不足一手时，把剩下的点数按比例打成一记咒力打击（与敌人的收尾规则一致）
-        bar.push({id:'__filler',name:'咒力打击·收尾',tier:'basic',cd:0,mult:[1],scope:'one',cost:0,
+        bar.push({id:'__filler',name:'咒力打击·收尾',tier:'basic',cd:0,mult:[1],scope:'one',gain:0,
           chargeable:false,kind:'melee',ap:[15],spd:[10],special:'filler'});
         // 领域：行动点最高但出手最快（原作只需结个印）；极之番：行动点最高且出手最慢
         // 术式槽位扩张后会有多个领域，每个领域单独一张卡
@@ -2409,18 +2539,25 @@ class BattleEngine{
             const bar_dt=DOMAIN_TIERS[clamp((u.domainTier||3),1,4)-1];
             bar.push({id:'__domain:'+i,domainIdx:i,
               name:'领域·'+domainTag(u.domainTier)+'｜'+d.name,tier:'domain',special:'domain',
-              cd:0,mult:[1],scope:'all',cost:0.30,chargeable:false,kind:'tech',
+              cd:0,mult:[1],scope:'all',gain:SKILL_TIERS.domain.gain,cpGain:SKILL_TIERS.domain.gain,chargeable:false,kind:'tech',
               ap:SKILL_TIERS.domain.ap,spd:SKILL_TIERS.domain.spd});
           });
         }
         if(u.canUlt){
-          const _ures=(u.isPlayer)?ultArtResolve(this.cfg.player):{mode:'normal',name:'',uses:1,kind:'normal'};
-          if(u.isPlayer)u.ultUses=(_ures.uses||1);   // 每局可用次数（按流派）
-          bar.push({id:'__ult',name:ultArtLabel(_ures),tier:'ult',special:'ult',
-            cd:0,mult:[1],scope:'all',cost:0.25,chargeable:false,kind:'tech',
-            ap:SKILL_TIERS.ult.ap,spd:SKILL_TIERS.ult.spd,
-            ultUses:(_ures.uses||1),ultLabel:ultArtLabel(_ures),
-            ultDesc:(_ures.desc||'耗 25% 咒力上限，对敌全体造成 2400% 效率伤害并回满自身。')});
+          // ★ 极之番按术式分卡：本命与每一门额外术式各有各的形态、各自的每局次数（__ult:<flag>）
+          const _P=this.cfg.player,_flags=Player.techFlags(_P);
+          u.ultUses={};
+          (_flags.length?_flags:[((_P.technique||{}).flag||"")]).forEach(_f=>{
+            const _ures=ultArtResolve(_P,_f);
+            const _tn=Player.techNameOf(_P,_f);
+            const _many=(_flags.length>1);
+            u.ultUses[_f]=(_ures.uses||1);   // 每门术式各自的每局可用次数
+            bar.push({id:"__ult:"+_f,flag:_f,name:ultArtLabel(_ures)+(_many?("（"+_tn+"）"):""),tier:"ult",special:"ult",
+              cd:0,mult:[1],scope:"all",gain:SKILL_TIERS.ult.gain,cpGain:SKILL_TIERS.ult.gain,chargeable:false,kind:"tech",
+              ap:SKILL_TIERS.ult.ap,spd:SKILL_TIERS.ult.spd,
+              ultLabel:ultArtLabel(_ures),ultTechName:_tn,
+              ultDesc:(_ures.desc||("耗 "+this.ultCost(u)+" 咒力（随你的术式效率提高、随咒力操控降低），对敌全体造成 2400% 效率伤害并回满自身。"))});
+          });
         }
 
         u.skillBar=bar;
@@ -2487,13 +2624,12 @@ class BattleEngine{
     const plan=[];let ap=u.ap;
     const full=AP_PER_ROUND;
     // 1) 极之番：残血（<40%）且咒力够半管时，一场一次的终极爆发（出手最慢）
-    if(u.canUlt&&!u.ultUsed&&u.hp<u.maxHp*0.40&&!(u.buff&&u.buff.domainSeal)&&((u.skills&&u.skills.sixEyes)||u.cp>=u.maxCp*0.5)&&ap>=full){
-      plan.push({name:'极之番',spd:SKILL_TIERS.ult.spd[0],ap:full,special:'ult'});ap-=full;
+    if(u.canUlt&&!u.ultUsed&&u.hp<u.maxHp*0.40&&!(u.buff&&u.buff.domainSeal)&&u.cp>=this.ultCost(u)&&ap>=full){
     }
     // 2) 领域展开：占满整回合（结印即开，出手最快）
-    // 咒力不够 30% 就别规划领域（否则整回合白给，看起来像在无限开领域）
-    const _domCp=Math.round((u.maxCp||0)*0.30);
-    const _domAffordable=(u.skills&&u.skills.sixEyes)||(u.buff&&u.buff.blueMoon>0)||(u.cp>=_domCp);
+    // 咒力不够开领域就别规划（否则整回合白给，看起来像在无限开领域）——判定用真实报价
+    const _domCp=this.domainCost(u);
+    const _domAffordable=(u.cp>=_domCp);   // 六眼/苍月锁蓝在 domainCost() 里已经算成 0
     if(!plan.length&&u.canDomain&&(u.domainCd||0)<=0&&ap>=full&&_domAffordable&&!(u.buff&&u.buff.domainSeal)&&this.npcWantsDomain(u)){
       const _dlist=u.techDomains||[{name:u.domainName||'领域',used:!!u.domainUsed}];
       const _di=Math.max(0,_dlist.findIndex(d=>!d.used));
@@ -2539,12 +2675,139 @@ class BattleEngine{
     u.planned=plan;u.ap=ap;
     return plan;
   }
-  /** 技能的实际咒力消耗：按上限取整、至少 1 点（咒力池极小的角色也不至于完全用不出术式） */
-  skillCpCost(sk,p){
-    if(!sk||!sk.cost||sk.cost<=0)return 0;
-    let c=p.maxCp||0;
-    if(p.buff&&p.buff.cpTax)c*=(p.buff.cpTax.v||2);   // 极之番·夺咒：咒力消耗翻倍
-    return Math.max(1,Math.round(c*sk.cost));
+    /** 这张卡「这一档」的账面收益：伤害类 = 这一档的术式倍率（能打多少，就收多少钱）；
+   *  领域（9）/ 极之番（15）这类不靠倍率结算的特殊卡，用卡上写死的 cpGain */
+  cardGain(sk,stage){
+    if(!sk)return 0;
+    if(sk.cpGain!=null)return sk.cpGain;
+    const arr=(sk.mult&&sk.mult.length)?sk.mult:null;
+    if(arr)return arr[Math.max(0,Math.min(stage||0,arr.length-1))]||0;
+    return sk.gain||0;
+  }
+  /** 术式库（提取来的术式）：按「术式 + 熟练度」归并，同样的术式可以重复提取、各占一份 */
+  extractPool(){
+    const P=this.cfg&&this.cfg.player;
+    const list=(P&&Array.isArray(P.extracted))?P.extracted:[];
+    const map={},out=[];
+    list.forEach(r=>{
+      const k=r.flag+"@"+r.prof;
+      if(map[k]){map[k].n++;map[k].ids.push(r.id);return;}
+      const rec={key:k,id:r.id,ids:[r.id],flag:r.flag,name:r.name,prof:r.prof,n:1,from:r.from||"",li:r.li||0};
+      const nd=moveNodesOf(r.flag)||[];
+      rec.moves=(TECH_MOVE[r.flag]||[]).filter((m2,i2)=>(nd[i2]||0)<=r.prof);
+      map[k]=rec;out.push(rec);
+    });
+    return out;
+  }
+  /** 取出的术式 → 技能卡（id 前缀 bx，不与自己的招式撞车；这些卡只在本回合有效） */
+  extractCards(rec){
+    if(!rec)return [];
+    const base=buildSkillBar(rec.flag,rec.prof);
+    return base.filter(sk=>sk.id!=="basic").map((sk,i)=>Object.assign({},sk,{
+      id:"bx"+rec.id+":"+i, borrowed:true, extractId:rec.id, extractRec:rec,
+      name:sk.name, srcName:rec.name+(rec.from?("（取自 "+rec.from+"）"):"")
+    }));
+  }
+  /** 术式释放：把库里的一份提取术式取出来（扣行动点），本回合当自己的术式用 */
+  playerExtractPick(id){
+    const p=this.player,P=this.cfg&&this.cfg.player;
+    if(!p||!P||this.ended)return {ok:false,why:"战斗已经结束"};
+    if(this.phase!=="plan")return {ok:false,why:"结算阶段无法再排行动"};
+    if(!this.hasFlag(p,"spiritControl"))return {ok:false,why:"只有咒灵操术能用「术式释放」"};
+    const rec=this.extractPool().find(r=>r.id===id);
+    if(!rec)return {ok:false,why:"术式库里已经没有这一份了"};
+    const prev=p.borrow?p.borrow.name:null;
+    // 不消耗行动点：取出只是「把它摊开」，用掉那一手才消耗（选错了随时能撤回）
+    p.borrow={id:rec.id,flag:rec.flag,name:rec.name,prof:rec.prof,from:rec.from,rec:rec,round:this.round};
+    const cards=this.extractCards(rec);
+    p.skillBar=(p.skillBar||[]).filter(sk=>!sk.borrowed).concat(cards);
+    const ev=[];
+    if(prev&&prev!==rec.name)ev.push({type:"info",text:"（换了一份：【"+prev+"】放回术式库，什么都没消耗。）"});
+    ev.push({type:"skill",text:"【术式释放】你摊开术式库里【"+rec.name+"】的刻痕——本回合可以像用自己的术式一样使用它（熟练度 "+rec.prof+"% → "+rec.moves.length+" 招）；用掉那一手才会消耗，选错了可以撤回。"});
+    return {ok:true,events:ev,cards:cards.length};
+  }
+  /** 撤回取出的术式：取出本身什么都没消耗，放回去就行（选错了随时撤） */
+  playerExtractClear(){
+    const p=this.player;
+    if(!p||!p.borrow)return {ok:false,why:"现在没有取出的术式"};
+    const nm=p.borrow.name;
+    this.clearBorrow();
+    return {ok:true,name:nm,events:[{type:"info",text:"【术式释放】你把取出的【"+nm+"】放回了术式库——没有消耗，随时可以重新取。"}]};
+  }  /** 回合结束：取出的术式只在本回合有效（金色框消失、卡从技能栏撤掉） */
+  clearBorrow(){
+    const p=this.player;if(!p)return;
+    if(p.borrow){p.borrow=null;}
+    p.skillBar=(p.skillBar||[]).filter(sk=>!sk.borrowed);
+  }  /** 这门术式的极之番是不是「漩涡」（要开面板自选咒灵的那种） */
+  isVortexArt(flag){
+    const P=this.cfg&&this.cfg.player;
+    if(!P||!this.hasFlag(this.player,"spiritControl"))return false;
+    const a=ultArtResolve(P,flag);
+    return !!(a&&a.kind==="vortex");
+  }
+  /** 极之番·漩涡：可融入的咒灵清单（已经在场上作战的那只不算——它正忙着打） */
+  vortexOptions(){
+    const P=this.cfg&&this.cfg.player;if(!P)return [];
+    const list=Array.isArray(P.absorbed)?P.absorbed:[];
+    const onField=this.units.filter(u=>u.alive&&u.spiritRef);
+    return list.filter(sp=>!onField.some(u=>u.spiritRef===sp)).map(sp=>({
+      id:sp.id||"",name:sp.name,li:sp.li||0,maxHp:sp.maxHp||0,
+      techName:sp.techName||"",flag:sp.flag||null,
+      extract:!!(sp.flag&&(TECH_MOVE[sp.flag]||[]).length),
+      prof:extractProfOf(sp.li||0)
+    }));
+  }
+  /** 声明极之番·漩涡：自选咒灵卷入（扣咒力 / 全部行动点 / 一次极之番次数）
+   *  伤害与「术式提取」在**结算**时落地——a.vortex 里记着这一式卷了谁 */
+  playerVortexDeclare(ids,flag){
+    const p=this.player,P=this.cfg&&this.cfg.player;
+    if(!p||!P||this.ended)return {ok:false,why:"战斗已经结束"};
+    if(this.phase!=="plan")return {ok:false,why:"结算阶段无法再排行动"};
+    if(this.ampActive(p))return {ok:false,why:"【领域展延】开启期间无法使用生得术式"};
+    const _f=flag||((P.technique||{}).flag||"");
+    const art=ultArtResolve(P,_f);
+    if(!art||art.kind!=="vortex")return {ok:false,why:"这门术式的极之番不是漩涡"};
+    const opts=this.vortexOptions();
+    const picked=(ids||[]).map(id=>opts.find(o=>o.id===id)).filter(Boolean);
+    if(!picked.length)return {ok:false,why:"至少要卷入一只咒灵"};
+    if(this.ultLeft(p,_f)<=0)return {ok:false,why:"【极之番·漩涡】本局的次数已经用尽"};
+    const cost=this.ultCost(p);
+    if(cost>0&&p.cp<cost)return {ok:false,why:"咒力不足（需要 "+cost+" 点）"};
+    const ap=SKILL_TIERS.ult.ap[0];
+    if(p.ap<ap)return {ok:false,why:"行动点不足（极之番需要 "+ap+" 点）"};
+    const hp=picked.reduce((a,o)=>a+(o.maxHp||0),0);
+    const spd=Math.max(0,SKILL_TIERS.ult.spd[0]-VORTEX_SPD_PER*picked.length);
+    if(cost)p.cp-=cost;
+    p.ap-=ap;
+    if(!p.ultUses||typeof p.ultUses!=="object")p.ultUses={};
+    p.ultUses[_f]=this.ultLeft(p,_f)-1;
+    p.planned.push({skillId:"__ult:"+_f,stage:0,targetIdx:-1,ap:ap,cp:cost,spd:spd,name:"极之番·漩涡",kind:"tech",
+      special:"ult",forceExtra:false,domainIdx:0,amp:this.ampActive(p),flag:_f,
+      art:Object.assign({},art,{noUse:true,vortex:{ids:picked.map(o=>o.id),n:picked.length,hp:hp}}),
+      vortex:{ids:picked.map(o=>o.id),n:picked.length,hp:hp}});
+    const ev=[];
+    ev.push({type:"skill",text:"【极之番·漩涡】你把 "+picked.length+" 只咒灵卷进漩涡（总生命 "+hp+"）——它们已被送进术式的核心，无论这一击是否落地都回不来了。"});
+    ev.push({type:"info",text:"卷入的咒灵越多，这一式越迟缓：出手 −"+(Math.round(VORTEX_SPD_PER*picked.length*100)/100)+"（出手序 "+(Math.round(spd*10)/10)+"）。"});
+    const ex=picked.filter(o=>o.extract);
+    if(ex.length)ev.push({type:"info",text:"【术式提取】漩涡正在撕开它们的术式——"+ex.map(o=>o.techName+"（"+lvName(o.li)+"·熟练度 "+o.prof+"%）").join("、")+"，结算后并入术式库。"});
+    else ev.push({type:"info",text:"（卷入的咒灵没有可提取的生得术式。）"});
+    return {ok:true,events:ev,spd:spd};
+  }  /** 某门术式还剩几次极之番（p.ultUses 现在是 {flag:n}；从没初始化过的旧单位按 1 次算）
+   *  flag 省略 = 取所有术式里的最大值（旧界面按钮只显示一个数） */
+  ultLeft(p,flag){
+    const m=(p&&p.ultUses)||null;
+    if(!m)return 1;
+    if(typeof m==="number")return m;
+    if(flag==null||flag===""){let mx=0;Object.keys(m).forEach(k=>{mx=Math.max(mx,m[k]||0);});return mx;}
+    return (m[flag]==null?0:m[flag]);
+  }  /** 技能的实际咒力消耗：收益 × 自己的术式效率中值 − 咒力操控减免（至少 1 点）
+   *  —— 咒力总量高 = 能打更多次；咒力操控高 = 每一次都更便宜（两者各有各的收益）。
+   *  卡面 gain:0 的（体术 / 防御 / 收尾 / 面板类）不耗咒力。 */
+  skillCpCost(sk,p,stage){
+    if(!sk||!p||!(sk.gain>0))return 0;
+    let c=cpPrice(p,this.cardGain(sk,stage));
+    if(c>0&&p.buff&&p.buff.cpTax)c=Math.max(1,Math.round(c*(p.buff.cpTax.v||2)));   // 极之番·夺咒：咒力消耗翻倍
+    return c;
   }
   /** 玩家声明一次行动：扣行动点并入队；返回 {ok, why} */
   playerDeclare(skillId,stage,targetIdx){
@@ -2559,6 +2822,9 @@ class BattleEngine{
     if(sk.special==='shadowHide')return {ok:true,openHide:true};
     if(sk.special==='possession')return {ok:true,openPossess:true};
     if(sk.special==='soulPanel')return {ok:true,openSoul:sk.soulForm};
+    if(sk.special==='ult'&&this.isVortexArt(sk.flag))return {ok:true,openVortex:sk.flag};   // 漩涡：先开面板自选咒灵
+    if(sk.special==='extractPanel')return {ok:true,openExtract:true};   // 术式释放：先开面板从术式库里挑一份
+    if(sk.special==='extractPanel')return {ok:true,openExtract:true};   // 术式释放：先开面板从术式库里挑一份
     const st=Math.max(0,Math.min(stage,(sk.ap||[0]).length-1));
     // 收尾一击：吃掉全部剩余行动点（伤害按 剩余/15 的比例）
     const _filler=sk.special==='filler';
@@ -2566,8 +2832,21 @@ class BattleEngine{
     const cost=_filler?p.ap:((sk.ap&&sk.ap[st])||0);
     if(cost>p.ap)return {ok:false,why:'行动点不足'};
     if(sk.once&&p['_used_'+skillId])return {ok:false,why:'本场已经使用过'};
-    if(sk.special==='ult'&&(p.ultUses||0)<=0)return {ok:false,why:'【'+(sk.ultLabel||'极之番')+'】本局的次数已经用尽'};
-    const cpCost=this.skillCpCost(sk,p);
+    if(sk.special==='ult'&&this.ultLeft(p,sk.flag)<=0)return {ok:false,why:'【'+(sk.ultLabel||'极之番')+'】本局的次数已经用尽'};
+
+    // ★ 取出的术式（术式释放）：声明即消耗——这一份提取从术式库里消失
+    if(sk.borrowed){
+      const P=this.cfg&&this.cfg.player;
+      if(P&&Array.isArray(P.extracted)){
+        const i2=P.extracted.findIndex(x=>x&&x.id===sk.extractId);
+        if(i2<0)return {ok:false,why:"这份提取来的术式已经用掉了"};
+        sk.extractRec=P.extracted.splice(i2,1)[0];
+        // 一份提取只够出一次手：同一份的其余招式卡一起撤掉（金色框随之消失）
+        p.skillBar=(p.skillBar||[]).filter(x=>!x.borrowed||x.extractId!==sk.extractId);
+        if(p.borrow&&p.borrow.id===sk.extractId)p.borrow=null;
+      }
+    }
+    const cpCost=this.skillCpCost(sk,p,st);
     if(cpCost>0&&p.cp<cpCost)return {ok:false,why:'咒力不足'};
     if(cpCost)p.cp-=cpCost;
     if(sk.once)p['_used_'+skillId]=true;
@@ -2585,6 +2864,8 @@ class BattleEngine{
       spd:(sk.spd&&sk.spd[st])||((sk.spd&&sk.spd[0])||10),name:sk.name,kind:sk.kind||'tech',
       special:sk.special||null,forceExtra:false,domainIdx:(sk.domainIdx||0),
       amp:this.ampActive(p),              // ★「展延」词条：这一手是开着展延打出去的
+extractId:(sk.borrowed?(sk.extractId||null):null),   // 借来的术式：撤销时要把这份提取放回术式库
+extractRec:(sk.borrowed?(sk.extractRec||null):null),
       frac:(_filler?(cost/15):null)});
     return {ok:true};
   }
@@ -2610,7 +2891,13 @@ class BattleEngine{
     if(!a)return false;
     p.ap+=a.ap||0;
     if(a.cp)p.cp=Math.min(p.maxCp,p.cp+a.cp);
-    if(a.special==='ult')p['_used_'+a.skillId]=false;
+    if(a.special==="ult")p["_used_"+a.skillId]=false;
+    if(a.extractRec){   // 撤销：把那份提取来的术式放回术式库，并把卡片挂回去
+      const P=this.cfg&&this.cfg.player;
+      if(P){P.extracted=Array.isArray(P.extracted)?P.extracted:[];if(!P.extracted.some(x=>x&&x.id===a.extractRec.id))P.extracted.push(a.extractRec);}
+      p.skillBar=(p.skillBar||[]).filter(sk=>!sk.borrowed).concat(this.extractCards(a.extractRec));
+      p.borrow={id:a.extractRec.id,flag:a.extractRec.flag,name:a.extractRec.name,prof:a.extractRec.prof,from:a.extractRec.from,round:this.round};
+    }
     return true;
   }
   /** 玩家立即召唤（不占行动点，规划阶段随时可做）：返回 {ok, events} */
@@ -2658,7 +2945,7 @@ class BattleEngine{
   /** 执行一次已声明的行动 */
   _execAction(u,a,ev){
     if(a.special==='domain'){this.castDomain(u,ev,(a.domainIdx!=null?a.domainIdx:a.forceExtra),(a.cp||0)>0);this.afterAction(u,ev,true,true);return;}
-    if(a.special==='ult'){this.castUltimate(u,ev,(a.cp||0)>0);this.afterAction(u,ev,true,true);return;}
+    if(a.special==='ult'){this.castUltimate(u,ev,(a.cp||0)>0,a.art,a.flag);this.afterAction(u,ev,true,true);return;}
     if(a.special==='charge'){if(!this.npcChargeSkill(u,ev))this.npcAct(u,ev,a.kind,'queue');return;}
     // 专属招式：沿用原生招式实现，力竭已由回合结束统一结算，这里不重复扣
     if(a.special==='sig'){
@@ -2742,6 +3029,7 @@ class BattleEngine{
     });
     // ※ 魔虚罗：本回合伤害全部结算结束之后 → 转动法盘 → 一次转轮适应
     this.units.forEach(u=>{if(u.alive&&u.makora){try{this.makoraWheel(u,ev);}catch(e){console&&console.error&&console.error('适应法盘异常:',e);}}});
+    this.clearBorrow();   // 取出的术式只在本回合有效
     this.exhaustSweep(ev);
     this.checkEnd(ev);
     return ev;
@@ -2826,6 +3114,9 @@ class BattleEngine{
     if(!u.hidden){
       u.hidden=true;u.planned=[];u.ap=0;
       ev.push({type:'skill',text:'【影藏】你把【'+u.name+'】收进了自己的影子——它在影中完全免伤，仍能发挥治疗类术式。'});
+      // 魔虚罗的适应不会因为躲进影子而停下：没人打得到它 → 只有「间隔回合」那一档（每 
+      // MAKORA_WHEEL_EVERY 回合），效果类（不可侵这类高速适应）照样每回合 +1 转
+      if(u.makora)ev.push({type:'info',text:'（魔虚罗在影中依旧转动法盘：它在影里挨不到打，所以只按「间隔回合」推进——每 '+MAKORA_WHEEL_EVERY+' 回合 +1 转；【不可侵】这类效果类是高速适应，照样每回合 +1 转。）'});
       ev.push({type:'info',text:'影中现在藏着 '+this.hiddenList().length+' 只式神，这份重量由你承担：你的出手序 -'+this.hiddenPenalty()+'%。'});
     }else{
       u.hidden=false;u.ap=AP_PER_ROUND;
@@ -2871,7 +3162,7 @@ class BattleEngine{
         out.push(Object.assign({},o,{slot:true,isFusion:!!isFusion,
           // 按式神名比对：只要 id 缺失也不会把「四门都判成上身中」
           active:!!(active&&active.shadow===o.shadow&&active.left>0),
-          cp:Math.max(1,Math.round((P.maxCp||0)*o.cost)),ap:40}));
+          cp:summonPrice(P,o.cost),ap:40}));
         return;
       }
       // 基础附体：直接把它的术式当自己的一次行动打出去（不占上身位）
@@ -2881,7 +3172,7 @@ class BattleEngine{
         name:name+' · '+(nm||'巨躯冲撞'),
         desc:nm?('基础附体 —— 直接使用它的术式【'+nm+'】：本回合以你自己的属性打出这一击，不占上身位。')
                :'基础附体 —— 以它的巨躯撞过去：本回合打出一记重击，不占上身位。',
-        cp:Math.max(1,Math.round((P.maxCp||0)*0.03)),ap:25});
+        cp:summonPrice(P,0.03),ap:25});
     };
     SHADOW_TABLE.forEach(t=>{const n=t[0];if(tamed[n]&&!dead[n])add(n,false);});
     SHADOW_FUSIONS.forEach(f=>{if(fused[f.key])add(f.key,true);});
@@ -2910,7 +3201,7 @@ class BattleEngine{
       if(bad)return {ok:false,why:bad};
       const used=this.possessRoundUsed(P);
       if(used)return {ok:false,why:'式神附体每回合只能用一次（本回合已经借过术式了）'};
-      const cp=Math.max(1,Math.round((p.maxCp||0)*0.03));
+      const cp=summonPrice(p,0.03);
       if(p.cp<cp)return {ok:false,why:'咒力不足（需要 '+cp+' 点）'};
       p.cp-=cp;
       P.possessRoundThis=(this.round||0);
@@ -2933,7 +3224,7 @@ class BattleEngine{
     if(bad)return {ok:false,why:bad};
     const used=this.possessRoundUsed(P);
     if(used)return {ok:false,why:'式神附体每回合只能用一次（本回合已经借过术式了）'};
-    const cp=Math.max(1,Math.round((p.maxCp||0)*o.cost));
+    const cp=summonPrice(p,o.cost);
     if(p.cp<cp)return {ok:false,why:'咒力不足（需要 '+cp+' 点）'};
     p.cp-=cp;
     P.possessRoundThis=(this.round||0);
@@ -2947,7 +3238,7 @@ class BattleEngine{
     if(o.kind==='wheel'){
       P.possess={id:o.id,shadow:o.shadow,kind:'wheel',name:o.name,left:o.rounds||99};
       p.possess=P.possess;   // ★ 结算读的是战场单位
-      p.makora=true;p.makoraSeen=p.makoraSeen||{};p.makoraAdapt=p.makoraAdapt||{};
+      p.makora=true;this.makoraLoad(p);   // 法轮就是魔虚罗的适应系统：接着上一场已解析的进度往下转
       ev.push({type:'skillcut',actorName:'你',text:'式神附体 · 魔虚罗法轮'});
       if(prev)ev.push({type:'info',text:'（上身位只有一个——覆盖了之前的【'+prev.name+'】）'});
       ev.push({type:'skill',text:'你挂起了魔虚罗的适应法轮——从这一刻起，对方的每一招都由你替它挨下，法轮会替你「适应」这套术式：重复挨打会越来越轻，五转之后彻底无效。'});
@@ -3372,12 +3663,21 @@ class BattleEngine{
     this.afterAction(p,ev,true,this._skipExhaustOnce);
     return {events:ev,ended:this.ended,result:this.result,needInput:false};
   }
-  techCost(u){
-    if(u.skills&&u.skills.sixEyes)return 0; // 六眼：咒力消耗为0
-    let c=Math.max(1,Math.round(u.eff[1]*0.08)-u.ctl);
-    if(u.buff&&u.buff.cpTax)c=Math.round(c*(u.buff.cpTax.v||2));   // 极之番·夺咒
+  /** 特殊招式（领域 / 极之番 / 旧界面的术式键）的统一报价：
+   *  六眼与苍月锁蓝时免费；否则＝收益 × 自己的效率中值 − 操控减免（夺咒翻倍）。 */
+  specialCp(att,gain){
+    if(!att)return 0;
+    if((att.skills&&att.skills.sixEyes)||(att.buff&&att.buff.blueMoon>0))return 0;
+    let c=cpPrice(att,gain);
+    if(c>0&&att.buff&&att.buff.cpTax)c=Math.max(1,Math.round(c*(att.buff.cpTax.v||2)));   // 极之番·夺咒：咒力消耗翻倍
     return c;
   }
+  /** 领域展开的咒力消耗（账面收益 9） */
+  domainCost(att){return this.specialCp(att,SKILL_TIERS.domain.gain);}
+  /** 极之番的咒力消耗（账面收益 15） */
+  ultCost(att){return this.specialCp(att,SKILL_TIERS.ult.gain);}
+  /** 单次「咒力术式」的报价（旧界面键与自动战斗用）：与技能栏同一把尺子——收益取咏唱档 3.0 */
+  techCost(u){return this.specialCp(u,SKILL_TIERS.mid.gain);}
   /** 统一出手（玩家/NPC 共用），kind=melee|tech */
   performStrike(att,target,kind,ev,hitKey,ampTag){
     if(!target||!target.alive)return;
@@ -3593,10 +3893,11 @@ class BattleEngine{
       return false;
     }
     // prepaid=true 表示队列的声明阶段已经扣过咒力（playerDeclare），这里不能再扣第二次
-    const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.15*((att.buff&&att.buff.cpTax)?(att.buff.cpTax.v||2):1));
+    // 领域不再按「上限的 15%」收费：账面收益 9 × 自己的效率中值 − 操控减免（六眼/苍月锁蓝时免费）
+    const cost=this.domainCost(att);
     // ★ 先查咒力再标记领域：否则展开失败时这门领域会被白白消耗掉
     if(!prepaid&&att.cp<cost){
-      ev.push({type:'info',text:att.isPlayer?'咒力不足以展开领域（需15%咒力上限）。':`【${doms[idx].name}】展开失败——${att.name} 的咒力不足以维持领域。`});
+      ev.push({type:'info',text:att.isPlayer?('咒力不足以展开领域（需要 '+cost+' 点）。'):`【${doms[idx].name}】展开失败——${att.name} 的咒力不足以维持领域。`});
       return false;
     }
     doms[idx].used=true;
@@ -3707,36 +4008,28 @@ class BattleEngine{
       });
     });
   }
-  /** 极之番（生得术式终极奥义，熟练度300%领悟）：耗50%咒力上限，对敌全体造成效率2400%伤害，释放后回满自身血；一场一次 */
+  /** 极之番（生得术式终极奥义，熟练度300%领悟）：咒力消耗见 ultCost()（收益 15 × 效率 − 操控减免），对敌全体造成效率2400%伤害，释放后回满自身血；一场一次 */
   /** 极之番：按「流派」结算（NPC 走常规）
-   *  常规：耗 25% 咒力上限 → 敌全体 2400% + 回满自身（一局一次）
+   *  常规：耗「收益 15 × 自身效率 − 操控减免」咒力 → 敌全体 2400% + 回满自身（一局一次）
    *  术式自带（ULT_TECH）/ 轮盘自建（ULT_ARTS）：各自的形态与每局次数
    *  次数记在 att.ultUses（initTurn 按流派重置）；NPC 仍用 ultUsed 的「一场一次」。 */
-  castUltimate(att,ev,prepaid,art){
-    if(att.buff&&att.buff.domainSeal){if(att.isPlayer)ev.push({type:'info',text:'【极之番·封域】你的极之番正被封着——先用别的手段。'});return false;}
+  castUltimate(att,ev,prepaid,art,flag){
+    if(att.buff&&att.buff.domainSeal){if(att.isPlayer)ev.push({type:"info",text:"【极之番·封域】你的极之番正被封着——先用别的手段。"});return false;}
     if(!att.canUlt)return false;
     const P=this.cfg&&this.cfg.player;
-    const res=(att.isPlayer&&P)?(art||ultArtResolve(P)):{mode:'normal',name:'',uses:1,kind:'normal'};
+    const res=(att.isPlayer&&P)?(art||ultArtResolve(P,flag)):{mode:"normal",name:"",uses:1,kind:"normal"};
     const label=ultArtLabel(res);
+    const _key=res.flag||flag||"";
     if(att.isPlayer){
-      if(att.ultUses==null)att.ultUses=res.uses||1;
-      if(att.ultUses<=0){ev.push({type:'info',text:'【'+label+'】本局的次数已经用尽。'});return false;}
+      if(!att.ultUses||typeof att.ultUses!=="object")att.ultUses={};
+      if(att.ultUses[_key]==null)att.ultUses[_key]=res.uses||1;
+      if(!res.noUse&&att.ultUses[_key]<=0){ev.push({type:"info",text:"【"+label+"】本局的次数已经用尽。"});return false;}
     }else{
       if(att.ultUsed)return false;
     }
-    if(res.kind==='soul'){
-      const need=res.souls||3;
-      const bank=(P&&Array.isArray(P.soulBank))?P.soulBank:[];
-      if(bank.length<need){if(att.isPlayer)ev.push({type:'info',text:'【'+label+'】需要 '+need+' 条灵魂（现在只有 '+bank.length+' 条）。'});return false;}
-    }
-    const cost=(att.skills&&att.skills.sixEyes||att.buff.blueMoon>0)?0:Math.round(att.maxCp*0.25);
-    if(!prepaid){
-      if(att.cp<cost){if(att.isPlayer)ev.push({type:'info',text:'咒力不足以释放极之番（需25%咒力上限）。'});return false;}
-      att.cp-=cost;
-    }
-    if(att.isPlayer)att.ultUses=att.ultUses-1; else att.ultUsed=true;
+    if(att.isPlayer){if(!res.noUse)att.ultUses[_key]=att.ultUses[_key]-1;}else att.ultUsed=true;   // 漩涡在声明时已经扣过次数（res.noUse）
     const avg=Math.round((att.eff[0]+att.eff[1])/2);
-    const tName=att.techName||att.name;
+    const tName=(att.isPlayer&&P&&res.flag)?Player.techNameOf(P,res.flag):(att.techName||att.name);
     ev.push({type:'ultcut',actorName:att.isPlayer?'你':att.name,text:label+(tName?('　·　'+tName):'')});
     const foeSide=att.side==='enemy'?'ally':'enemy';
     const foes=()=>this.alive(foeSide);
@@ -3745,11 +4038,31 @@ class BattleEngine{
       let base=Math.round(avg*24);
       if(K==='dmg')base=Math.round(avg*(res.mult||24));
       if(K==='soul')base=Math.round(avg*(res.mult||25));
-      if(K==='vortex'){
-        const n=(P&&Array.isArray(P.absorbed))?P.absorbed.length:0;
-        const mul=Math.min(60,20+n*2);
-        base=Math.round(avg*mul);
-        ev.push({type:'skill',text:'【极之番·漩涡】卷入了 '+n+' 只收录的咒灵——伤害倍率 '+mul+'%。'});
+      if(K==="vortex"){
+        // 漩涡：把声明时选中的咒灵熔进术式核心——伤害 = 它们的总生命 × VORTEX_HP_MULT
+        const v=(res&&res.vortex)||null;
+        const lib=(P&&Array.isArray(P.absorbed))?P.absorbed:[];
+        const eaten=[];
+        if(v&&v.ids)v.ids.forEach(id=>{const i2=lib.findIndex(s2=>s2&&s2.id===id);if(i2>=0)eaten.push(lib.splice(i2,1)[0]);});
+        const sumHp=eaten.reduce((a,s2)=>a+(s2.maxHp||0),0);
+        base=Math.round(sumHp*VORTEX_HP_MULT);
+        if(!eaten.length){base=Math.round(avg*4);ev.push({type:"info",text:"（咒灵库里已没有可卷入的咒灵——漩涡只剩术式本身的底力。）"});}
+        ev.push({type:"skill",text:"【极之番·漩涡】"+eaten.length+" 只咒灵熔进漩涡核心（总生命 "+sumHp+"）——高密度咒力轰然炸开！"});
+        if(eaten.length&&P){
+          P.extracted=Array.isArray(P.extracted)?P.extracted:[];
+          const got=[];
+          eaten.forEach(s2=>{
+            if(!s2.flag||!(TECH_MOVE[s2.flag]||[]).length)return;
+            const rec={id:"x"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+              flag:s2.flag,name:s2.techName||s2.flag,prof:extractProfOf(s2.li||0),from:s2.name,li:s2.li||0};
+            P.extracted.push(rec);got.push(rec);
+          });
+          if(got.length){
+            const useN=r=>{const mv=TECH_MOVE[r.flag]||[],nd=moveNodesOf(r.flag);return mv.filter((m2,i2)=>(nd[i2]||0)<=r.prof).length;};
+            ev.push({type:"skill",text:"【术式提取】漩涡撕开了它们的术式："+got.map(r=>r.name+"（熟练度 "+r.prof+"% → 可用 "+useN(r)+" 招）").join("、")+"——已存入术式库，用「术式释放」取出来用（用一次就没了）。"});
+          }else ev.push({type:"info",text:"【术式提取】这些咒灵没有可提取的生得术式——什么都没拆下来。"});
+        }
+        if(eaten.length)ev.push({type:"info",text:"卷入的咒灵已随漩涡一同消散——咒灵库里再无它们。"});
       }
       if(res.flash)base*=10;
       if(res.pierce)ev.push({type:'skill',text:'【'+label+'】走的是规则级通道——术式免疫与闪避都挡不住。'});
@@ -4076,7 +4389,7 @@ class BattleEngine{
     // 特殊蓄力技：五条悟虚式茈 / 宿傩空间斩
     if(this.npcChargeSkill(u,ev))return;
     // 极之番：残血（<40%）且蓝够半管时，一场一次的终极爆发
-    if(u.canUlt&&!u.ultUsed&&u.hp<u.maxHp*0.40&&!(u.buff&&u.buff.domainSeal)&&((u.skills&&u.skills.sixEyes)||u.cp>=u.maxCp*0.5)){if(this.castUltimate(u,ev))return;}
+    if(u.canUlt&&!u.ultUsed&&u.hp<u.maxHp*0.40&&!(u.buff&&u.buff.domainSeal)&&u.cp>=this.ultCost(u)){if(this.castUltimate(u,ev))return;}
     if(u.canDomain&&(u.domainCd||0)<=0
        &&((u.skills&&u.skills.sixEyes)||(u.buff&&u.buff.blueMoon>0)||u.cp>=Math.round((u.maxCp||0)*0.30))){
       let want=false;
@@ -4085,7 +4398,7 @@ class BattleEngine{
         // 敌方领域欲望：第二次自身行动起即积极展开（不再要求残血才开），血线越低越坚决，行动越多次越必开
         if(ac>=1){const drive=u.hp<u.maxHp*0.5?0.95:(ac>=3?0.9:0.6);want=Math.random()<drive;}
       }else want=(u.buff.actCount>=2);
-      if(want){
+      if(want&&u.cp>=this.domainCost(u)){   // 蓝不够就不再空开领域（白给一整回合）
         // AI 双领域：主领域已展开且副领域可用时，改开副领域，避免主领域按钮点空
         const hasExtra=!!(u.extraTech&&u.extraTech.domain);
         const useExtra=!!(u.domainUsed&&hasExtra&&!u.extraDomainUsed);
@@ -4097,10 +4410,10 @@ class BattleEngine{
     if(this.npcSignatureSkill(u,ev))return;
     const target=u.side==='enemy'?this.pickAllyTarget():this.pickEnemyTarget();
     if(!target){ev.push({type:'info',text:`${u.name} 失去目标。`});return;}
-    // 与该招式档位一致的咒力比例（快速 5% / 连击 7% / 咏唱 10% / 结印 18% / 广域 22%）
+    // 与玩家同一把尺子：这一招的「账面收益」（档位倍率）× 自己的效率中值 − 咒力操控减免
     const _tcfg0=(u.flag&&(TECH_MOVE[u.flag]||[]).length)?skillTierOf(u.flag,u._queuedMove||(TECH_MOVE[u.flag]||[])[0]):NPC_GENERIC_TECH;
-    let cost=Math.max(1,Math.round((u.maxCp||0)*(_tcfg0.cost!=null?_tcfg0.cost:0.03)));
-    if(u.buff&&u.buff.cpTax)cost=Math.round(cost*(u.buff.cpTax.v||2));   // 极之番·夺咒
+    let cost=cpPrice(u,(_tcfg0.gain!=null?_tcfg0.gain:2.5));
+    if(u.buff&&u.buff.cpTax)cost=Math.max(1,Math.round(cost*(u.buff.cpTax.v||2)));   // 极之番·夺咒
     const allyMult=u.side==='ally'?(1+(this.cfg.player.allyBoost||0)):1;
     // 万里锁：持有者的攻击对敌方全体生效（天逆鉾破免疫在 performStrike 内处理）
     const chain=u.skills&&u.skills.tools&&u.skills.tools.chain;
@@ -5017,6 +5330,7 @@ const BattleUI={
           <button class="btn small" id="rtEnd">结 束 回 合</button>
         </div>
         <div class="rt-bar" id="rtBar"></div>
+        <div class="rt-borrow hidden" id="rtBorrow"></div>
         <div class="summon-mask hidden" id="bfSummonMask">
           <div class="summon-box">
             <h3 id="bfSummonHeading">召 唤</h3>
@@ -5223,8 +5537,8 @@ const BattleUI={
     }else if(dom2){dom2.style.display='none';}
     const ultBtn=$('actUlt');
     if(ultBtn){
-      const _ultLeft=(p.ultUses==null?1:p.ultUses);
-      const ultOk=p.canUlt&&_ultLeft>0&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.25);
+      const _ultLeft=this.eng.ultLeft(p,null);   // 多术式时显示剩得最多的那一门（技能栏里每门各有一张卡）
+      const ultOk=p.canUlt&&_ultLeft>0&&p.cp>=this.eng.ultCost(p);
       ultBtn.style.display=p.canUlt&&_ultLeft>0?'':'none';
       ultBtn.disabled=!(canInput&&ultOk);
       ultBtn.textContent=_ultLeft>0?('极之番（剩 '+_ultLeft+' 次）'):'极之番·已用尽';
@@ -5368,7 +5682,7 @@ const BattleUI={
   renderSkillBar(){
     const eng=this.eng;if(!eng||!eng.player)return;
     const box=$('rtBar');if(!box)return;
-    const p=eng.player,bar=(p.skillBar||[]).filter(sk=>sk.special!=='summon');
+    const p=eng.player,bar=(p.skillBar||[]).filter(sk=>sk.special!=='summon'&&!sk.borrowed);   // 借来的术式不进主栏
     box.innerHTML=bar.map(sk=>{
       const apArr=(sk.ap&&sk.ap.length)?sk.ap:[15];
       const spdArr=(sk.spd&&sk.spd.length)?sk.spd:[10];
@@ -5376,7 +5690,13 @@ const BattleUI={
       const chips=multi?('<div class="rt-stages">'+apArr.map((a,i)=>
         '<button class="rt-stage" data-stage="'+i+'" data-for="'+sk.id+'"></button>').join('')+'</div>'):'';
       const once=sk.once?'<em class="rt-once">一场一次</em>':'';
-      const cp=sk.cost>0?(' · 咒力 '+Math.round(sk.cost*100)+'%'):'';
+      // 咒力消耗显示**实际数字**（已按你的术式效率与咒力操控算好）；多段技能显示从头到尾的区间
+      let cp='';
+      if(sk.gain>0){
+        const c0=eng.skillCpCost(sk,p,0);
+        const cn=apArr.length>1?eng.skillCpCost(sk,p,apArr.length-1):c0;
+        cp=(cn!==c0)?(' · 咒力 '+c0+'~'+cn):(' · 咒力 '+c0);
+      }
       return '<div class="rt-skill" data-rt="'+sk.id+'">'
         +'<div class="nm">'+sk.name+once+'</div>'
         +'<div class="meta">行动点 '+apArr.join('/')+' · 出手 '+spdArr.join('/')+cp+'</div>'
@@ -5386,7 +5706,7 @@ const BattleUI={
     box.querySelectorAll('.rt-stage').forEach(chip=>{
       const id=chip.getAttribute('data-for'),st=+chip.getAttribute('data-stage');
       const sk=bar.find(x=>x.id===id);if(!sk)return;
-      chip.textContent=(CAST_STAGE_NAMES[st]||('第'+(st+1)+'段'))+' '+(sk.ap[st]||0)+'点·速'+(sk.spd[st]||10);
+      chip.textContent=(CAST_STAGE_NAMES[st]||('第'+(st+1)+'段'))+' '+(sk.ap[st]||0)+'点·速'+(sk.spd[st]||10)+((sk.gain>0)?('·咒'+eng.skillCpCost(sk,p,st)):'');
       chip.onclick=(e)=>{e.stopPropagation();this.doDeclare(id,st);};
     });
     box.querySelectorAll('.rt-skill').forEach(card=>{
@@ -5395,22 +5715,57 @@ const BattleUI={
       if((sk.ap||[0]).length>1)return;   // 多段技能只能点上面的段位按钮
       card.onclick=()=>this.doDeclare(id,0);
     });
+    this.renderBorrowBar();
     this.refreshPlanUI();
   },
+  /** 术式释放：金色框——本回合借来的那门术式可用的招式（用完/回合结束就消失） */
+  renderBorrowBar(){
+    const box=$("rtBorrow");if(!box)return;
+    const eng=this.eng,p=eng&&eng.player;
+    const cards=p?((p.skillBar||[]).filter(sk=>sk.borrowed)):[];
+    if(!cards.length){box.classList.add("hidden");box.innerHTML="";return;}
+    const b=p.borrow||{};
+    box.classList.remove("hidden");
+    const planning=eng.phase==="plan"&&!eng.ended&&!this._resolveBusy;
+    box.innerHTML='<div class="rt-borrow-head">✦ 术式释放　·　'+(b.name||"")+(b.from?('（取自 '+b.from+'）'):"")
+      +'　熟练度 '+(b.prof||0)+'%　—　只在本回合有效 · 用掉才消耗 · 随时可撤回</div>'
+      +'<div class="center" style="margin:2px 0 6px"><button class="btn small ghost" id="rtBorrowClear">撤 回 取 用</button></div>'
+      +'<div class="rt-borrow-body">'+cards.map(sk=>{
+        const ap=(sk.ap&&sk.ap[0])||0,cc=eng.skillCpCost(sk,p,0);
+        const na=!planning||(ap>p.ap)||(cc>0&&p.cp<cc);
+        return '<button class="rt-skill bx'+(na?" is-na":"")+'" data-bx="'+sk.id+'"'+(na?" disabled":"")+'>'
+          +'<div class="nm">'+sk.name+'</div>'
+          +'<div class="meta">行动点 '+ap+' · 出手 '+((sk.spd&&sk.spd[0])||10)+(cc>0?(' · 咒力 '+cc):"")+'</div></button>';
+      }).join("")+'</div>';
+    box.querySelectorAll("[data-bx]").forEach(btn=>{
+      btn.onclick=()=>this.doDeclare(btn.getAttribute("data-bx"),0);
+    });
+    const _cl=$("rtBorrowClear");
+    if(_cl){
+      _cl.disabled=!planning;
+      _cl.onclick=()=>{
+        const r=eng.playerExtractClear();
+        if(!r.ok)return;
+        this.appendLog({type:"info",text:"【术式释放】你把取出的【"+(r.name||"")+"】放回了术式库——没有消耗，随时可以重新取。"});
+        this.renderSkillBar();this.refreshPlanUI();
+      };
+    }
+  },
   /** 技能卡当前是否负担得起（用于置灰） */
-  _canAfford(sk,p){
+  _canAfford(sk,p,stage){
     // 收尾一击要放在最前：它吃的是「全部剩余行动点」，不能按卡面的 15 点去比
     if(sk.special==='filler')return p.ap>0&&p.ap<15;
     if(sk.special==='shadowDive'&&p.buff&&p.buff.shadowDive)return false;
     const cost=(sk.ap&&sk.ap[0])||0;
     if(cost>p.ap)return false;
     if(sk.once&&p['_used_'+sk.id])return false;
-    if(sk.special==='ult'&&(p.ultUses||0)<=0)return false;
+    if(sk.special==='ult'&&this.eng.ultLeft(p,sk.flag)<=0)return false;
     if(this.eng&&this.eng.ampActive(this.eng.player)&&this.eng.ampBlocks(sk))return false;
     if(sk.special==='domain'){const d=(p.techDomains||[])[sk.domainIdx||0];if(d&&d.used)return false;}
     if(sk.special==='domain'&&!(p.techDomains||[]).some(d=>!d.used))return false;
-    const cc=this.eng.skillCpCost(sk,p);
+    const cc=this.eng.skillCpCost(sk,p,stage);
     if(cc>0&&p.cp<cc)return false;
+    return true;
     return true;
   },
   /** 刷新行动点条 / 技能卡可用状态 / 结束回合按钮 / 提示语 */
@@ -5418,6 +5773,7 @@ const BattleUI={
     const eng=this.eng;if(!eng||!eng.player)return;
     const p=eng.player;
     const planning=eng.phase==='plan'&&!eng.ended&&!this._resolveBusy;
+    this.renderBorrowBar();   // 借来的招式用完就立刻把金色框收掉
     const tot=(typeof AP_PER_ROUND!=='undefined')?AP_PER_ROUND:60;
     const apTxt=$('rtApTxt'),apFill=$('rtApFill');
     if(apTxt)apTxt.textContent='行动点 '+Math.round(p.ap)+' / '+tot;
@@ -5433,8 +5789,8 @@ const BattleUI={
       box.querySelectorAll('.rt-stage').forEach(chip=>{
         const id=chip.getAttribute('data-for'),st=+chip.getAttribute('data-stage');
         const sk=(p.skillBar||[]).find(x=>x.id===id);if(!sk)return;
-        const cc=eng.skillCpCost(sk,p);
-        const na=((sk.ap[st]||0)>p.ap)||(cc>0&&p.cp<cc)||(sk.once&&p['_used_'+sk.id])||(sk.special==='ult'&&(p.ultUses||0)<=0);
+        const cc=eng.skillCpCost(sk,p,st);
+        const na=((sk.ap[st]||0)>p.ap)||(cc>0&&p.cp<cc)||(sk.once&&p['_used_'+sk.id])||(sk.special==='ult'&&eng.ultLeft(p,sk.flag)<=0);
         chip.classList.toggle('is-na',na);chip.disabled=!planning||na;
       });
     }
@@ -5482,6 +5838,9 @@ const BattleUI={
       if(r.openHide)this.openHide();
       if(r.openPossess)this.openPossess();
       if(r.openSoul)this.openSoul(r.openSoul);
+      if(r.openVortex)this.openVortex(r.openVortex);
+      if(r.openExtract)this.openExtract();
+      if(r.openExtract)this.openExtract();
     }else{
       this.appendLog({type:'info',text:'无法使用该技能：'+r.why});
     }
@@ -5527,11 +5886,13 @@ const BattleUI={
     this.selectedTargetIdx=eng.units.indexOf(tgt);
     const pick=(id,stage)=>{try{return eng.playerDeclare(id,stage,this.selectedTargetIdx).ok;}catch(e){return false;}};
     // 极之番：多敌或强敌时优先（一场一次）
-    if(p.canUlt&&(p.ultUses==null?1:p.ultUses)>0&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.25)&&(es.length>=2||es.some(e=>e.li>=7)||tgt.hp>tgt.maxHp*0.5)){
-      if(pick('__ult',0))return true;
+    // 自动战斗不会替你烧咒灵库：漩涡型极之番不入选（要自己开面板选咒灵）
+    const _uc=(p.skillBar||[]).find(x=>x.special==="ult"&&!eng.isVortexArt(x.flag)&&eng.ultLeft(p,x.flag)>0&&p.cp>=eng.ultCost(p));
+    if(p.canUlt&&_uc&&(es.length>=2||es.some(e=>e.li>=7)||tgt.hp>tgt.maxHp*0.5)){
+      if(pick(_uc.id,0))return true;
     }
     // 领域：前两回合展开收益最大（持续 5 回合）
-    if(p.canDomain&&!p.domainUsed&&eng.round<=2&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.30)){
+    if(p.canDomain&&!p.domainUsed&&eng.round<=2&&p.cp>=eng.domainCost(p)){
       if(pick('__domain',0))return true;
     }
     // 其余：在负担得起的打法里挑性价比最高的（倍率 ÷ 行动点）
@@ -5541,14 +5902,17 @@ const BattleUI={
       const arr=sk.ap||[0];
       for(let st=0;st<arr.length;st++){
         if(arr[st]>p.ap)continue;
-        const cc=eng.skillCpCost(sk,p);
+        const cc=eng.skillCpCost(sk,p,st);
         if(cc>0&&p.cp<cc)continue;
         if(sk.once&&p['_used_'+sk.id])continue;
         const m=(sk.mult&&sk.mult[st])||1;
         // 体术档吃体术区间、术式档吃咒力效率（performStrike 对术式另有 ×2 的固有倍率）
         const stat=(sk.kind==='melee')?((p.melee[0]+p.melee[1])/2):((p.eff[0]+p.eff[1])/2*2);
         const score=(m*Math.max(1,stat))/((arr[st]||15)/15);
-        if(!best||score>best.score)best={id:sk.id,stage:st,score:score};
+        // 咒力也是资源：一手要吃掉一大块蓝就降权——蓝少时自动改用便宜的档位（别把池子一把掏空）
+        const share=(cc>0)?(cc/Math.max(1,p.cp)):0;
+        const score2=score/(1+Math.max(0,share-0.15)*3);
+        if(!best||score2>best.score)best={id:sk.id,stage:st,score:score2};
       }
     });
     if(best&&pick(best.id,best.stage))return true;
@@ -5649,7 +6013,7 @@ const BattleUI={
     if(_hasSc)_titles.push(eng.hasFlag(p,'spiritControl')?'咒 灵 操 术':'降 灵 术');
     $('bfSummonHeading').textContent=(_titles.length?_titles.join(' ＋ '):'召 唤')+' · 召 唤';
     const _notes=[];
-    if(_hasSd)_notes.push('十影：召唤式神消耗咒力（越高等越贵），场上 2 只以上己方十影式神会自动融合为【嵌合兽】');
+    if(_hasSd)_notes.push('十影：召唤式神消耗咒力（按式神价值折算的具体点数，咒力操控能减），场上 2 只以上己方十影式神会自动融合为【嵌合兽】');
     if(_hasSc)_notes.push((eng.hasFlag(p,'spiritControl')?'咒灵操术':'降灵术')+'：召唤不消耗咒力，但召唤物战死会从库里永久消失');
     if(_hasSc&&!(p.absorbed&&p.absorbed.length))_notes.push((eng.hasFlag(p,'spiritControl')?'咒灵库':'亡灵名录')+'现在还是空的——去狩猎或击败咒灵，用咒灵操术把它们收进来');
     if(eng.hasFlag(p,'idleTrans')){
@@ -5717,6 +6081,90 @@ const BattleUI={
     });
     $('bfPickMask').classList.remove('hidden');
   },
+  /** 术式释放面板：从术式库里挑一份提取来的术式（本回合当自己的术式用，用掉一次就没了） */
+  openExtract(){
+    const eng=this.eng;if(!eng||eng.ended||eng.phase!=='plan')return;
+    const p=eng.player;
+    const pool=eng.extractPool();
+    if(!pool.length){
+      this.openPick('术式释放','术式库还是空的——用「极之番·漩涡」把咒灵卷进去，它们的术式就会被提取下来。',[]);
+      $('bfPickCancel').onclick=()=>this.closePick();
+      return;
+    }
+    const items=[];
+    if(p.borrow)items.push({
+      label:'撤 回 取 用 中 的【'+p.borrow.name+'】',
+      meta:'取出本身不消耗任何东西——撤回后它还在术式库里，可以换一份、或改用别的招。',
+      cost:'不耗点数',
+      disabled:false,
+      onPick:()=>{
+        const r=eng.playerExtractClear();
+        if(!r.ok)return;
+        this.closePick();this.renderSkillBar();this.refreshPlanUI();
+      }
+    });
+    pool.forEach(r=>{
+      items.push({
+        label:r.name+'（熟练度 '+r.prof+'%）'+(r.n>1?('　×'+r.n):'')+(p.borrow&&p.borrow.id===r.id?'　（取用中）':''),
+        meta:'可用招式：'+(r.moves.length?r.moves.join('、'):'（这份术式没有可用招式）')+(r.from?('　　取自 '+r.from):''),
+        cost:'不耗行动点',
+        disabled:!r.moves.length,
+        onPick:()=>{
+          const res=eng.playerExtractPick(r.id);
+          if(!res.ok){this.appendLog({type:'info',text:'无法释放：'+res.why});return;}
+          this.closePick();this.renderSkillBar();
+          this.eventsAnim(res.events||[],()=>this.refreshPlanUI());
+        }
+      });
+    });
+    this.openPick('术式释放 · 术式库','本回合你可以像用自己的术式一样使用取出的那一门（能用几招看提取时的熟练度）；用掉一次，那一份就从库里消失。取出的招式不会和自己的招式混在一起——它们显示在技能栏下方的金色框里。',items);
+    $('bfPickCancel').onclick=()=>this.closePick();
+  },
+  /** 极之番·漩涡面板：自选要卷进漩涡的咒灵（多选，实时显示总伤害与出手惩罚） */
+  openVortex(flag){
+    const eng=this.eng;if(!eng||eng.ended||eng.phase!=='plan')return;
+    const p=eng.player,opts=eng.vortexOptions();
+    if(!opts.length){
+      this.openPick('极之番 · 漩涡','咒灵库里没有可卷入的咒灵——先用咒灵操术收录几只（正在场上作战的那只不算）。',[]);
+      $('bfPickCancel').onclick=()=>this.closePick();
+      return;
+    }
+    $('bfSummonHeading').textContent='极 之 番 · 漩 涡';
+    const cost=eng.ultCost(p);
+    $('bfSummonNote').textContent='自选要融入的咒灵：伤害 = 融入咒灵的总生命值 ×'+VORTEX_HP_MULT
+      +'；每多融入 1 只，这一式的出手序再慢 '+VORTEX_SPD_PER+'；融入的咒灵视为战死（永久从咒灵库消失），'
+      +'但它们的生得术式会被「术式提取」拆进术式库（能用几招看咒灵评级）。本式消耗 '+cost+' 咒力 · '+SKILL_TIERS.ult.ap[0]
+      +' 行动点 · 本局还剩 '+eng.ultLeft(p,flag||'')+' 次。';
+    let html='';
+    opts.forEach(o=>{
+      html+='<button class="summon-item" data-vx="'+o.id+'">'
+        +'<div><div class="summon-name">'+o.name+'</div><div class="summon-meta">'+lvName(o.li)+'　生命 '+o.maxHp
+        +'　术式：'+(o.techName||'（无）')+(o.extract?('　提取熟练度 '+o.prof+'%'):'　（无可提取术式）')+'</div></div>'
+        +'<div class="summon-cost">+'+o.maxHp+' 伤害</div></button>';
+    });
+    $('bfSummonList').innerHTML=html;
+    $('bfSummonMask').classList.remove('hidden');
+    const sel=new Set();
+    const go=$('bfSummonGo');
+    const sync=()=>{
+      let dmg=0;sel.forEach(id=>{const o=opts.find(x=>x.id===id);if(o)dmg+=o.maxHp||0;});
+      $('bfSummonList').querySelectorAll('[data-vx]').forEach(b=>b.classList.toggle('is-picked',sel.has(b.getAttribute('data-vx'))));
+      const n=sel.size;
+      if(go){go.textContent=n?('卷 入 '+n+' 只（伤害 '+Math.round(dmg*VORTEX_HP_MULT)+' · 出手 −'+(Math.round(n*VORTEX_SPD_PER*100)/100)+'）'):'选择要卷入的咒灵';go.disabled=!n;}
+    };
+    $('bfSummonList').querySelectorAll('[data-vx]').forEach(b=>{
+      b.onclick=()=>{const k=b.getAttribute('data-vx');if(sel.has(k))sel.delete(k);else sel.add(k);sync();};
+    });
+    if(go)go.onclick=()=>{
+      const r=eng.playerVortexDeclare(Array.from(sel),flag);
+      if(!r.ok){this.appendLog({type:'info',text:'无法发动漩涡：'+r.why});return;}
+      this.closeVortex();this.render();
+      this.eventsAnim(r.events||[],()=>this.refreshPlanUI());
+    };
+    sync();
+    $('bfSummonCancel').onclick=()=>this.closeVortex();
+  },
+  closeVortex(){const m=$('bfSummonMask');if(m)m.classList.add('hidden');},
   /** 影藏面板：藏入影子 / 放出（放出后当回合即可行动） */
   openHide(){
     const eng=this.eng;if(!eng||eng.ended||eng.phase!=='plan')return;
@@ -5825,7 +6273,7 @@ const BattleUI={
     if(dom2){dom2.style.display=hasExtra?'':'none';dom2.disabled=!(hasExtra&&!p.extraDomainUsed);
       if(hasExtra)dom2.textContent=p.extraDomainUsed?'副领域·已展开':`领域·副｜${p.extraTech.domain}`;}
     const ultBtn=$('actUlt');
-    if(ultBtn){const _ul=(p.ultUses==null?1:p.ultUses);const ultOk=p.canUlt&&_ul>0&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.25);ultBtn.style.display=p.canUlt&&_ul>0?'':'none';ultBtn.disabled=!ultOk;}
+    if(ultBtn){const _ul=this.eng.ultLeft(p,null);const ultOk=p.canUlt&&_ul>0&&p.cp>=this.eng.ultCost(p);ultBtn.style.display=p.canUlt&&_ul>0?'':'none';ultBtn.disabled=!ultOk;}
     $('bfTip').textContent=this.auto?'自动战斗中……（也可手动点指令接管）':'轮到你的行动——选择指令（可点击敌方头像切换目标）';
     if(this.auto)this.scheduleAuto();
   },
@@ -5838,9 +6286,9 @@ const BattleUI={
     this.selectedTargetIdx=this.eng.units.indexOf(target);
     const cost=this.eng.techCost(p);
     // 极之番：已学会、本场未用、蓝够半管，且多敌/强敌/敌方血线高时优先释放（一场仅一次）
-    if(p.canUlt&&(p.ultUses==null?1:p.ultUses)>0&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.25)&&(es.length>=2||es.some(e=>e.li>=7)||target.hp>target.maxHp*0.5))return'ult';
+    if(p.canUlt&&this.eng.ultLeft(p,null)>0&&p.cp>=this.eng.ultCost(p)&&(es.length>=2||es.some(e=>e.li>=7)||target.hp>target.maxHp*0.5))return'ult';
     // 领域：可开且（多敌 / 强敌 / 敌方血线高）；双领域时主已用则自动开副领域
-    if(p.canDomain&&((p.skills&&p.skills.sixEyes)||p.cp>=p.maxCp*0.30)&&(es.length>=2||es.some(e=>e.li>=7)||target.hp>target.maxHp*0.6)){
+    if(p.canDomain&&p.cp>=this.eng.domainCost(p)&&(es.length>=2||es.some(e=>e.li>=7)||target.hp>target.maxHp*0.6)){
       if(!p.domainUsed)return'domain';
       if(p.extraTech&&p.extraTech.domain&&!p.extraDomainUsed)return'domain2';
     }
@@ -7029,7 +7477,7 @@ class VSHostBattle{
   _aiChoose(u){
     // 10秒未操作：自动选择输出最高的选项
     // 1. 极之番（2400%效率+回满血）：血量低且满足条件时最优先
-    if(u.canUlt&&!u.ultUsed&&((u.skills&&u.skills.sixEyes)||u.cp>=u.maxCp*0.5)&&u.hp<u.maxHp*0.5)return'ult';
+    if(u.canUlt&&!u.ultUsed&&u.cp>=this.eng.ultCost(u)&&u.hp<u.maxHp*0.5)return'ult';
     // 2. 蓄力中的虚式茈/空间斩：直接释放
     if(u.buff.charge){
       if(u.skills&&u.skills.chargeSlash)return'sig_sCharge';
@@ -7038,7 +7486,7 @@ class VSHostBattle{
     // 2.5 主动反转术式（本地对战）：残血且蓝够时优先保命
     if(u.reverse&&u.hp<u.maxHp*0.35&&u.hp<u.maxHp&&((u.skills&&u.skills.sixEyes)||u.cp>=u.maxCp*0.05))return'sig_reverse';
     // 3. 领域（没在冷却且咒力充足）
-    if(u.canDomain&&(u.domainCd||0)<=0&&u.cp>=u.maxCp*0.3)return'domain';
+    if(u.canDomain&&(u.domainCd||0)<=0&&u.cp>=this.eng.domainCost(u))return'domain';
     // 4. 专属技能（选伤害最高的）
     if(u.name==='五条悟')return'sig_ka'; // 赫单体2.0
     if(u.name.includes('宿傩'))return'sig_kamado'; // 灶单体2.5
@@ -7275,6 +7723,14 @@ const Game={
         ? `转 动 行 动 轮 盘（本日剩余 ${left} / ${ACTIONS_PER_DAY} 次）`
         : `转 动 行 动 轮 盘（推进到第 ${this.day+1} 天）`;
     }
+    // 无所事事：写清要放弃几次行动 / 是否已经是「推进到第二天」
+    const _ib=$('btnIdle');
+    if(_ib){
+      const left=ACTIONS_PER_DAY-(this.dayActions|0);
+      const _nxtDay=(this.currentEventDays()||[]).find(d=>d>this.day);
+      _ib.textContent='🛌 无所事事地度过这一天'+(left>0?('（放弃剩余 '+left+' 次行动）'):('（推进到第 '+(this.day+1)+' 天）'))
+        +(_nxtDay?('　下一剧情：第 '+_nxtDay+' 天'):'');
+    }
     const T=this.currentStory(),ED=this.currentEventDays(),isKai=P.arc==='kaigyo',isFuture=P.arc==='future';
     const arcLabel=isKai?('怀玉篇 · '+kaiEraOfDay(this.day)):isFuture?('未来篇 · '+futureEraOfDay(this.day)):eraOfDay(this.day);
     $('dayNum').textContent=this.day;$('dayEra').textContent=arcLabel;
@@ -7310,6 +7766,10 @@ const Game={
     });
     if(_dt)sk.push(`当前可展开：${domainNameOf(_dt)}（领域内自身全属性 ×1.2，出领域恢复）`);
     sk.push(P.ultimateLearned?'✔ 极之番（耗半蓝、敌全体2400%、回满血，每场一次）':'✘ 极之番（术式熟练度300%领悟终极奥义）');
+    if(P.extracted&&P.extracted.length){
+      const _ep=Player.techFlags(P).indexOf("spiritControl")>=0?(P.extracted.length+" 份"):(P.extracted.length+" 份（需咒灵操术才能释放）");
+      sk.push("术式库（极之番·漩涡提取）"+_ep+"："+P.extracted.slice(-6).map(x=>x.name+"·"+x.prof+"%").join("、")+(P.extracted.length>6?"…":""));
+    }
     sk.push(P.reverse?'✔ 反转术式（被动：回合耗5%咒力回20%血）':'✘ 反转术式（每场战斗5%几率领悟）');
     sk.push(P.blackFlash?'✔ 黑闪（1%触发，伤害×10+五维永久+10%）':'✘ 黑闪（战斗5%自行领悟，或战胜东堂葵学会）');
     if(P.sixEyes)sk.push('★ 六眼（怀玉篇奖励：所有咒力消耗为0）');
@@ -7368,35 +7828,65 @@ const Game={
     try{await this._dailyActionRaw();}
     finally{this.autoSave();}
   },
+  /** 日推进：日期 +1 并触发当天剧情（若有）——「行动轮盘」与「无所事事地度过这一天」共用
+   *  只有在今天行动用完之后（或今天还没开始）才该调用；返回是否真的翻了页 */
+  async advanceDay(){
+    if(this.over)return false;
+    if((this.dayActions|0)<ACTIONS_PER_DAY)return false;
+    this.dayActions=0;
+    this.day++;
+    // 怀玉篇兜底：超过30天未进入主线，自动跳转（防止任何残留bug导致无限转盘）
+    if(this.player.arc==='kaigyo'&&this.day>30){
+      this.addLog('lgold','怀玉篇已至终点，时间线自动推进至2018年主线……');
+      await this.enterMainArc();
+      return true;
+    }
+    // 未来篇兜底：超过60天仍未结束（正常应在第30天击败地狱·真人），直接结算未来篇结局，防止无限转盘
+    if(this.player.arc==='future'&&this.day>60){
+      this.addLog('lgold','未来篇已至终点，地狱·真人之乱终被平息……');
+      this.ending('futureWin');
+      return true;
+    }
+    const T=this.currentStory();
+    if(T[this.day]&&this.day>=this.player.startDay){
+      this.render();this.addLog('lred',`◆ 第${this.day}天——剧情事件【${T[this.day].title}】触发！`);
+      try{await this.triggerEvent(this.day);}
+      catch(err){console&&console.error&&console.error('剧情推进异常:',err);this.addLog('lred','剧情推进出现异常，已安全收尾。');
+        const _node=T[this.day];if(_node&&_node.final)return this.ending('loseFinal',_node);}
+      if(this.over)return true; // 剧情中已触发结局（战死/终局）
+      this.afterBattleRecover();
+      // 剧情日照样保留当天的行动次数：剧情 + 三次行动
+      this.addLog('lgold',`◆ 剧情之后，这一天还有 ${ACTIONS_PER_DAY} 次行动。`);
+    }
+    return true;
+  },
+  /** 「无所事事地度过这一天」：放弃今天剩下的行动，直接把这一天耗到日落（剧情日照常触发剧情）
+   *  ——给想快速推进天数的玩家一个不用连点轮盘的按钮；每次点击推进一天，结束后自动存档 */
+  async idleDay(){
+    const P=this.player;
+    if(!P||this.over)return;
+    const btn=$('btnIdle');
+    if(btn)btn.disabled=true;
+    try{
+      const dayBefore=this.day;
+      const skipped=Math.max(0,ACTIONS_PER_DAY-(this.dayActions|0));
+      this.dayActions=ACTIONS_PER_DAY;   // 今天的行动全部作废（下次点击就是要翻页）
+      await this.advanceDay();
+      if(this.over)return;
+      const nextD=(this.currentEventDays()||[]).find(d=>d>this.day);
+      const T=this.currentStory();
+      this.addLog('lcyan','【无所事事】第 '+dayBefore+' 天在发呆里过去了（放弃了 '+skipped+' 次行动）——时间照样往前走。'
+        +(nextD&&T[nextD]?('　下一剧情：第 '+nextD+' 天 · '+T[nextD].chapter):'　（后面没有更多剧情节点了）'));
+      this.render();
+    }finally{
+      if(btn)btn.disabled=false;
+      this.autoSave();
+    }
+  },
   async _dailyActionRaw(){
     if(this.over)return; // 结局已触发，彻底锁死日常推进
     $('btnActionWheel').disabled=true;
-    // 一天 ACTIONS_PER_DAY 次行动：用完了（或今天还没开始）才翻页
-    if((this.dayActions|0)>=ACTIONS_PER_DAY){
-      this.dayActions=0;
-      this.day++;
-      // 怀玉篇兜底：超过30天未进入主线，自动跳转（防止任何残留bug导致无限转盘）
-      if(this.player.arc==='kaigyo'&&this.day>30){
-        this.addLog('lgold','怀玉篇已至终点，时间线自动推进至2018年主线……');
-        return this.enterMainArc();
-      }
-      // 未来篇兜底：超过60天仍未结束（正常应在第30天击败地狱·真人），直接结算未来篇结局，防止无限转盘
-      if(this.player.arc==='future'&&this.day>60){
-        this.addLog('lgold','未来篇已至终点，地狱·真人之乱终被平息……');
-        return this.ending('futureWin');
-      }
-      const T=this.currentStory();
-      if(T[this.day]&&this.day>=this.player.startDay){
-        this.render();this.addLog('lred',`◆ 第${this.day}天——剧情事件【${T[this.day].title}】触发！`);
-        try{await this.triggerEvent(this.day);}
-        catch(err){console&&console.error&&console.error('剧情推进异常:',err);this.addLog('lred','剧情推进出现异常，已安全收尾。');
-          const _node=T[this.day];if(_node&&_node.final)return this.ending('loseFinal',_node);}
-        if(this.over)return; // 剧情中已触发结局（战死/终局），不再恢复按钮、不再render
-        this.afterBattleRecover();
-        // 剧情日照样保留当天的行动次数：剧情 + 三次行动
-        this.addLog('lgold',`◆ 剧情之后，这一天还有 ${ACTIONS_PER_DAY} 次行动。`);
-      }
-    }
+    await this.advanceDay();
     if(this.over)return;
     const n=(this.dayActions|0)+1;
     const pick=await openWheelModal({title:`第 ${this.day} 天 · 行动转盘（本日第 ${n} / ${ACTIONS_PER_DAY} 次）`,items:WHEEL_DAILY});
@@ -7954,89 +8444,99 @@ const Game={
   },
   /* ==================== 极之番 · 流派 ==================== */
   /** 极之番面板：常规 / 术式自带 / 轮盘自建 / 调用本地传承模板 */
+  /** 极之番面板：**按术式分组**——本命术式与槽位扩张的每一门都能各自选流派
+   *  （常规 / 术式自带 / 轮盘自建 / 调用本地传承模板），各有各的每局次数 */
   showUltPanel(){
     const P=this.player;if(!P||!P.ultimateLearned)return;
     Player.syncUlt(P);
-    const cur=ultArtResolve(P);
-    const flag=(P.technique||{}).flag, tname=(P.technique||{}).name||'本命术式';
-    const tech=ultTechOf(flag);
-    const tpls=this.ultTemplatesFor(flag);
+    const flags=Player.techFlags(P);
     const row=(name,tag,txt,btn)=>'<div class="save-card"><div class="save-head"><b>'+name+'</b>'
       +'<span style="color:'+tag.color+'">'+tag.text+'</span></div><div class="save-meta">'+txt+'</div>'+(btn||'')+'</div>';
+    const costTxt='耗 '+cpPrice(P,SKILL_TIERS.ult.gain)+' 咒力（＝收益 15 × 你的术式效率中值 − 咒力操控×10）';
     let html='';
-    html+=row(ultArtLabel(cur),{text:'当前流派',color:'#7fe0a0'},
-      '类型：'+(cur.mode==='normal'?'常规':(cur.mode==='tech'?'术式自带':(ultTypeOf(cur.type)||{}).name||'自建'))
-      +'　一局可用 '+cur.uses+' 次　'+(cur.desc||'耗 25% 咒力上限，对敌全体造成 2400% 效率伤害并回满自身。'),'');
-    html+='<div class="summon-group">可选的流派</div>';
-    html+=row('常规极之番',{text:cur.mode==='normal'?'使用中':'',color:'var(--gold)'},
-      '耗 25% 咒力上限 → 敌全体 2400% 效率伤害 + 回满自身。一局 1 次，稳、通用。',
-      '<div class="save-actions"><button class="btn small" data-ult="normal">选 用 常 规</button></div>');
-    if(tech){
-      html+=row('术式自带 · 极之番·'+tech.name,{text:cur.mode==='tech'?'使用中':'',color:'var(--gold)'},
-        tech.desc+'　一局 '+tech.uses+' 次（本命术式【'+tname+'】专属形态）。',
-        '<div class="save-actions"><button class="btn small" data-ult="tech">使 用 术 式 自 带</button></div>');
-    }else{
-      html+=row('术式自带',{text:'本术式没有',color:'var(--txt3)'},
-        '本命术式【'+tname+'】没有自带的极之番形态——可以走常规，或者自己摇一个。','');
-    }
-    html+=row('通过轮盘建立极之番',{text:'',color:'var(--txt3)'},
-      '先抽「极之番为什么类型」（攻击类／增幅类／防御类／规则类，各自特性不同），再抽该类里的具体形态。'
-      +'建立后会按【'+(flag||'')+'】这个术式存进本地——日后再抽到同一门术式的穿越者可以直接调用它。',
-      '<div class="save-actions"><button class="btn small" data-ult="roll">走 轮 盘 建 立</button></div>');
-    if(tpls.length){
-      html+='<div class="summon-group">本地传承模板（术式：'+tname+'）</div>';
-      tpls.forEach((t,i)=>{
-        const art=ultArtOf(t.id);
-        html+=row('极之番·'+(t.name||(art?art.name:t.id)),{text:'被建立过 '+t.count+' 次',color:'var(--txt3)'},
-          (art?art.desc:'')+'　一局 '+t.uses+' 次　|　留下者：'+(t.author||'某位穿越者'),
-          '<div class="save-actions"><button class="btn small" data-tpl="'+i+'">调 用 此 模 板</button></div>');
-      });
-    }else{
-      html+=row('本地传承模板',{text:'还是空的',color:'var(--txt3)'},
-        '还没有人用【'+tname+'】建立过极之番——你建立的第一个会成为后人的模板。','');
-    }
+    flags.forEach(f=>{
+      const cur=ultArtResolve(P,f),tech=ultTechOf(f),tname=Player.techNameOf(P,f),tpls=this.ultTemplatesFor(f);
+      const main=((P.technique||{}).flag)===f;
+      html+='<div class="summon-group">'+tname+(main?'（本命术式）':'（额外术式）')+'　→　'+ultArtLabel(cur)+'　·　一局 '+cur.uses+' 次</div>';
+      html+=row(ultArtLabel(cur),{text:'当前流派',color:'#7fe0a0'},
+        '类型：'+(cur.mode==='normal'?'常规':(cur.mode==='tech'?'术式自带':(ultTypeOf(cur.type)||{}).name||'自建'))
+        +'　一局可用 '+cur.uses+' 次　'+(cur.desc||(costTxt+'，对敌全体造成 2400% 效率伤害并回满自身。')),'');
+      html+=row('常规极之番',{text:cur.mode==='normal'?'使用中':'',color:'var(--gold)'},
+        costTxt+' → 敌全体 2400% 效率伤害 + 回满自身。一局 1 次，稳、通用。',
+        '<div class="save-actions"><button class="btn small" data-flag="'+f+'" data-ult="normal">选 用 常 规</button></div>');
+      if(tech){
+        html+=row('术式自带 · 极之番·'+tech.name,{text:cur.mode==='tech'?'使用中':'',color:'var(--gold)'},
+          tech.desc+'　一局 '+tech.uses+' 次（【'+tname+'】专属形态）。',
+          '<div class="save-actions"><button class="btn small" data-flag="'+f+'" data-ult="tech">使 用 术 式 自 带</button></div>');
+      }else{
+        html+=row('术式自带',{text:'本术式没有',color:'var(--txt3)'},
+          '【'+tname+'】没有自带的极之番形态——可以走常规，或者自己摇一个。','');
+      }
+      html+=row('通过轮盘建立极之番',{text:'',color:'var(--txt3)'},
+        '先抽「极之番为什么类型」（攻击类／增幅类／防御类／规则类，各自特性不同），再抽该类里的具体形态。'
+        +'建立后会按【'+f+'】这门术式存进本地——日后再抽到同一门术式的穿越者可以直接调用它。',
+        '<div class="save-actions"><button class="btn small" data-flag="'+f+'" data-ult="roll">走 轮 盘 建 立</button></div>');
+      if(tpls.length){
+        html+='<div class="summon-group">本地传承模板（术式：'+tname+'）</div>';
+        tpls.forEach((t,i)=>{
+          const art=ultArtOf(t.id);
+          html+=row('极之番·'+(t.name||(art?art.name:t.id)),{text:'被建立过 '+t.count+' 次',color:'var(--txt3)'},
+            (art?art.desc:'')+'　一局 '+t.uses+' 次　|　留下者：'+(t.author||'某位穿越者'),
+            '<div class="save-actions"><button class="btn small" data-tpl="'+i+'" data-tplflag="'+f+'">调 用 此 模 板</button></div>');
+        });
+      }else{
+        html+=row('本地传承模板',{text:'还是空的',color:'var(--txt3)'},
+          '还没有人用【'+tname+'】建立过极之番——你建立的第一个会成为后人的模板。','');
+      }
+    });
     showModal('<h2>极 之 番 · 流 派</h2>'
       +'<p style="line-height:1.8;color:var(--txt2);font-size:13px">极之番不再是一招吃遍天下：可以沿用常规版，'
-      +'也可以走本命术式自带的形态，或者自己摇一个——每一种的用法与每局次数都不一样。<br>'
-      +'流派随时可以在这里更换（次数是每局独立的，换了不会多打）。</p>'
+      +'也可以走术式自带的形态，或者自己摇一个——每一种的用法与每局次数都不一样。<br>'
+      +'<b>每一门术式各有一套</b>：本命与槽位扩张带来的额外术式都在下面（界面上也各自有一张极之番卡），各有各的每局次数。</p>'
       +'<div class="save-list" style="margin-top:12px">'+html+'</div>'
       +'<div class="center" style="margin-top:16px"><button class="btn ghost" id="ultClose">关 闭</button></div>');
     $('ultClose').onclick=()=>closeModal();
     const box=$('modalBox');
     box.querySelectorAll('[data-ult]').forEach(b=>{
       b.onclick=()=>{
-        const k=b.getAttribute('data-ult');
+        const k=b.getAttribute('data-ult'),f=b.getAttribute('data-flag')||((P.technique||{}).flag||'');
+        const tech=ultTechOf(f),tname=Player.techNameOf(P,f);
         if(k==='normal'){
-          P.ultArt={mode:'normal'};
-          this.addLog('lgold','【极之番】流派改为「常规」——耗 25% 咒力上限，敌全体 2400% 并回满自身（一局 1 次）。');
+          P.ultArts[f]={mode:'normal'};Player.syncUlt(P);
+          this.addLog('lgold','【极之番·'+tname+'】流派改为「常规」——'+costTxt+'，敌全体 2400% 并回满自身（一局 1 次）。');
           closeModal();this.showUltPanel();
         }else if(k==='tech'){
-          P.ultArt={mode:'tech'};
-          this.addLog('lgold','【极之番】流派改为「术式自带 · 极之番·'+tech.name+'」（一局 '+tech.uses+' 次）。');
-          P.notes.push('极之番的流派定为术式自带【极之番·'+tech.name+'】');
+          if(!tech)return;
+          P.ultArts[f]={mode:'tech'};Player.syncUlt(P);
+          this.addLog('lgold','【极之番·'+tname+'】流派改为「术式自带 · 极之番·'+tech.name+'」（一局 '+tech.uses+' 次）。');
+          P.notes.push('【'+tname+'】的极之番流派定为术式自带【极之番·'+tech.name+'】');
           closeModal();this.showUltPanel();
         }else if(k==='roll'){
-          closeModal();this.drawUltArt();
+          closeModal();this.drawUltArt(f);
         }
       };
     });
     box.querySelectorAll('[data-tpl]').forEach(b=>{
       b.onclick=()=>{
-        const t=tpls[+b.getAttribute('data-tpl')];
+        const f=b.getAttribute('data-tplflag')||((P.technique||{}).flag||'');
+        const t=this.ultTemplatesFor(f)[+b.getAttribute('data-tpl')];
         if(!t)return;
-        P.ultArt={mode:'custom',type:t.type,id:t.id};
+        P.ultArts[f]={mode:'custom',type:t.type,id:t.id};Player.syncUlt(P);
         const art=ultArtOf(t.id);
-        P.notes.push('沿用了前人留下的极之番模板：极之番·'+(t.name||t.id)+'（留下者：'+(t.author||'某位穿越者')+'）');
+        P.notes.push('沿用了前人留下的极之番模板：极之番·'+(t.name||t.id)+'（术式：'+Player.techNameOf(P,f)+'，留下者：'+(t.author||'某位穿越者')+'）');
         this.addLog('lgold','【极之番 · 传承】你沿用了前人留下的模板【极之番·'+(t.name||t.id)+'】——'+(art?art.desc:''));
         closeModal();this.showUltPanel();
       };
     });
   },
   /** 轮盘建立极之番：先「什么类型」，再该类里的具体形态；建完按术式存进本地传承库 */
-  async drawUltArt(){
+  async drawUltArt(flag){
     const P=this.player;if(!P)return;
+    Player.syncUlt(P);
+    const f=flag||((P.technique||{}).flag||'');
+    const tname=Player.techNameOf(P,f);
     const typeItems=ULT_TYPES.map(t=>({label:t.name,weight:1,desc:t.desc,tag:t.tag,key:t.key}));
-    const tp=await openWheelModal({title:'极之番为什么类型？',items:typeItems});
+    const tp=await openWheelModal({title:'【'+tname+'】的极之番为什么类型？',items:typeItems});
     const type=ULT_TYPES.find(t=>t.key===tp.key);
     if(!type)return;
     const pool=ULT_ARTS.filter(a=>a.type===type.key);
@@ -8044,11 +8544,10 @@ const Game={
     const pick=await openWheelModal({title:'极之番 · '+type.name+'（'+type.tag+'）——抽一个形态',items:items});
     const art=pool.find(a=>a.id===pick.id);
     if(!art)return;
-    P.ultArt={mode:'custom',type:art.type,id:art.id};
+    P.ultArts[f]={mode:'custom',type:art.type,id:art.id};
     Player.syncUlt(P);
-    const flag=(P.technique||{}).flag, tname=(P.technique||{}).name||'';
-    const rec=this.saveUltTemplate(flag,art);
-    P.notes.push('通过轮盘建立了自己的极之番：极之番·'+art.name+'（'+type.name+'，一局 '+art.uses+' 次）');
+    const rec=this.saveUltTemplate(f,art);
+    P.notes.push('通过轮盘建立了自己的极之番：极之番·'+art.name+'（'+type.name+'，一局 '+art.uses+' 次，术式：'+tname+'）');
     await this.storyModal('极之番 · '+art.name,
       '命轮的指针先落在【'+type.name+'】——'+type.desc
       +'\n\n再转一次，它停在了【'+art.name+'】：'+art.desc
@@ -8078,6 +8577,7 @@ const Game={
     // 已调服 / 未调服 / 已战死
     SHADOW_TABLE.forEach(t=>{
       const name=t[0],ratio=t[1],need=t[2],note=t[3],cpR=Math.round((t[4]!=null?t[4]:t[1])*100);
+      const cpReal=summonPrice(P,(t[4]!=null?t[4]:t[1]));   // 实际消耗（账面收益 × 效率中值 − 操控减免，封顶 30% 上限）
       const bonus=Math.round(ratio*100);
       if(st.dead[name]){
         html+=row(name,{text:'已战死',color:'#ff8a8a'},note+'　强度 '+bonus+'%',
@@ -8086,7 +8586,7 @@ const Game={
         // 已调服：可以召唤，也可以「自毁」——把它变成嵌合兽的材料（式神太强、打不死时的唯一出路）
         const isMat=SHADOW_FUSIONS.some(f=>f.from.indexOf(name)>=0);
         html+=row(name,{text:'已调服',color:'#7fe0a0'},note+'　强度 '+bonus+'%',
-          '<div class="save-meta" style="color:var(--txt3)">可在战斗中召唤（消耗咒力 '+cpR+'% 上限）。'
+          '<div class="save-meta" style="color:var(--txt3)">可在战斗中召唤（消耗 '+cpReal+' 咒力 ≈ 上限的 '+Math.min(30,cpR)+'% 以内）。'
           +(isMat?'　它是嵌合兽的材料之一。':'')+'</div>'
           +'<div class="save-actions"><button class="btn small ghost" data-selfdestruct="'+name+'">自 毁 仪 式</button></div>');
       }else{
@@ -8390,10 +8890,11 @@ $('btnSpin').onclick=()=>Game.doSpin();
 $('btnRedraw').onclick=()=>{if(Game.wheel&&Game.wheel.spinning)return;Game.doSpin();};
 $('btnNextWheel').onclick=()=>Game.nextStep();
 $('btnActionWheel').onclick=()=>Game.dailyAction();
+$('btnIdle').onclick=()=>Game.idleDay();
 $('btnShowAttr').onclick=()=>Game.showDetail();
 $('modalMask').addEventListener('click',e=>{/* 战斗/剧情模态禁止点遮罩关闭，防误触 */});
 // —— 抽取/开始按钮点击音 ——
-['btnStart','btnSpin','btnRedraw','btnNextWheel','btnActionWheel','btnShowAttr','btnRestartTitle'].forEach(id=>{const el=$(id);if(el)el.addEventListener('click',()=>SFX.click());});
+['btnStart','btnSpin','btnRedraw','btnNextWheel','btnActionWheel','btnIdle','btnShowAttr','btnRestartTitle'].forEach(id=>{const el=$(id);if(el)el.addEventListener('click',()=>SFX.click());});
 // —— 音效开关 ——
 (function(){const b=$('btnSound');if(!b)return;
   const sync=()=>{b.textContent=SFX.muted?'🔇 音效关':'🔊 音效开';b.classList.toggle('off',SFX.muted);};
