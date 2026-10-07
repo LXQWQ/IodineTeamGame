@@ -298,6 +298,38 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
   .mm-dot.heal{background:#5ad48a;box-shadow:0 0 6px rgba(90,212,138,.8)}
   .mm-dot.f{width:5px;height:5px;margin:-2px 0 0 -2px;background:#ff6f8a;box-shadow:0 0 4px rgba(255,111,138,.7)}
   .mm-dot.f.done{background:#5ad48a;box-shadow:0 0 4px rgba(90,212,138,.7)}
+/* 大地图：加高（少挤）+ 滚轮缩放 / 拖动平移（涩谷 & 死灭洄游共用） */
+.adv-map{height:min(62vh,440px);cursor:grab;touch-action:none}
+.adv-map.grabbing{cursor:grabbing}
+.adv-map .adv-zoom{position:absolute;inset:0;transform-origin:50% 50%}
+.adv-zoombar{display:flex;gap:6px;align-items:center;justify-content:center;margin:8px 0 2px;flex-wrap:wrap}
+.adv-zoombar .tips{font-size:11px;color:var(--txt3);margin-left:6px}
+.adv-node{z-index:1}
+.adv-node:hover{z-index:30}
+.adv-node .dot{z-index:3}
+.adv-node .nm{z-index:2;font-size:10px;white-space:nowrap;line-height:1.1}
+.adv-node:hover .dot{box-shadow:0 0 0 2px rgba(255,255,255,.35),0 0 10px rgba(255,210,74,.6)}
+/* 死灭洄游：结界地图 / 总则条文 / 泳者情报表 */
+.adv-map.cg{background:radial-gradient(circle at 50% 46%,rgba(120,60,150,.26),rgba(10,8,18,.76) 64%),
+  repeating-linear-gradient(0deg,rgba(150,140,190,.10) 0 1px,transparent 1px 34px),
+  repeating-linear-gradient(90deg,rgba(150,140,190,.10) 0 1px,transparent 1px 34px),rgba(8,7,16,.74)}
+.adv-node.colony .dot{width:20px;height:20px;font-size:10px;background:rgba(190,140,255,.16);border-color:rgba(190,140,255,.7);color:#dcc6ff}
+.adv-node.colony.here .dot{background:rgba(255,200,60,.22);border-color:rgba(255,200,60,.9);color:#ffd24a}
+.mm-dot.cg{width:6px;height:6px;margin:-3px 0 0 -3px;background:#ff6f8a;box-shadow:0 0 4px rgba(255,111,138,.7)}
+.mm-dot.cg.done{background:#5ad48a;box-shadow:0 0 4px rgba(90,212,138,.7)}
+.mm-dot.colony{width:8px;height:8px;margin:-4px 0 0 -4px;background:#c08bff;box-shadow:0 0 6px rgba(192,139,255,.8)}
+.mm-dot.colony.here{background:#ffd24a;box-shadow:0 0 8px rgba(255,210,74,.9)}
+.cg-rules{font-size:12px;line-height:1.9;color:var(--txt2);max-height:36vh;overflow:auto;padding:2px 4px}
+.cg-rule{padding:4px 0;border-bottom:1px dashed rgba(150,140,190,.18)}
+.cg-rule.off{color:var(--txt3);opacity:.55}
+.cg-table{font-size:12px;line-height:1.9}
+.cg-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:3px 4px;border-bottom:1px dashed rgba(150,140,190,.18)}
+.cg-row.me{background:rgba(255,200,60,.10);border-radius:6px}
+.cg-row .n{flex:1;color:var(--txt)}
+.cg-row .c{flex:1;color:var(--txt3);font-size:11px}
+.cg-row .s{color:var(--gold);min-width:48px;text-align:right}
+.cg-row .btns{display:flex;gap:6px}
+.btn.mini{padding:2px 8px;font-size:11px}
 .era-banner{position:fixed;inset:0;z-index:3200;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(circle at center,rgba(20,8,40,.85) 0%,rgba(0,0,0,.97) 100%);pointer-events:none}
 .era-banner.hidden{display:none}
@@ -1222,6 +1254,7 @@ const Player={
       absorbed:[], // 咒灵操术/降灵术永久吸收的敌人快照（数值固定不成长）
       openAdv:null, // 开放式冒险（多战场章节）：{day,colony,done:[]}——跟存档走，换机器也能接着支援
       shibuya:null, // 涩谷事变·开放冒险：{on,day,zone,dist,trainDay}——连续战斗 / 街道巡视 / 地图推进
+      cg:null, // 死灭洄游：{on,day,colony,trainDay,done,score,kills,spared,sealed,lastGainDay,rules}——总分则 / 泳者积分 / 结界内狩猎
       soulBank:[], // 无为转变·灵魂库：{id,name,li,purity} 只保留纯净度（0~100%，1 位小数），不继承术式
       soulFusions:[], // 无为转变·改造人库存：{id,form,name,li,purityAvg,souls:[id]}（融合不可逆）
       extracted:[], // 术式提取：从「极之番·漩涡」融入的咒灵身上拆下来的术式（一次性，用掉即消失）{id,flag,name,prof,from,li}
@@ -1319,6 +1352,7 @@ const Player={
    *  旧存档没有 barrierProf 时按 0 处理 */
   domainTier(P){
     if(!P)return 0;
+    if(P.techSealed)return 0;   // 死灭洄游·总则八：术式被剥夺——领域资格一并归零
     const tech=P.prof||0,bar=P.barrierProf||0;
     let lv=0;
     DOMAIN_TIERS.forEach(t=>{if(tech>=t.tech&&bar>=t.barrier)lv=Math.max(lv,t.lv);});
@@ -1329,6 +1363,7 @@ const Player={
   /** 玩家拥有的术式 flag 列表：本命 + 第二术式 + 槽位扩张 + 死而替生夺取（顺序稳定、去重） */
   techFlags(P){
     if(!P)return [];
+    if(P.techSealed)return [];   // 死灭洄游·总则八：术式被剥夺
     const out=[],seen={};
     const add=t=>{if(t&&t.flag&&!seen[t.flag]){seen[t.flag]=1;out.push(t.flag);}};
     add(P.technique);add(P.extraTech);
@@ -1372,6 +1407,7 @@ const Player={
    *     否则副术式形态下会出现「功能按钮不出现 / 功能不生效」 */
   hasTech(P,flag){
     if(!P||!flag)return false;
+    if(P.techSealed)return false;   // 死灭洄游·总则八：术式被剥夺——所有术式相关功能关闭
     const hit=t=>!!t&&(t.flag===flag||(t.flags||[]).includes(flag));
     if(hit(P.technique))return true;
     if(hit(P.extraTech))return true;
@@ -2079,13 +2115,15 @@ class BattleEngine{
   }
   hasFlag(u,f){return !!u&&(u.flag===f||(u.flags&&u.flags.includes(f)));}
   makePlayerUnit(P){
-    const flags=P.technique.flags?P.technique.flags.slice():[];
-    if(P.technique.flag)flags.unshift(P.technique.flag);
+    // ★ 死灭洄游·总则八：术式被剥夺 —— 不带任何术式 flag（技能栏只剩体术与道具），领域与极之番一并失效
+    const _sealed=!!P.techSealed;
+    const flags=_sealed?[]:(P.technique.flags?P.technique.flags.slice():[]);
+    if(!_sealed&&P.technique.flag)flags.unshift(P.technique.flag);
     // 死而替生夺取的术式：其 flag 一并并入，使多个术式效果在战斗中同时生效
     (P.stolenTechs||[]).forEach(t=>{if(t.flag)flags.push(t.flag);(t.flags||[]).forEach(f=>flags.push(f));});
     // 新宿后额外抽取的第二生得术式：被动 flag 并入、领域可单独展开
     if(P.extraTech&&P.extraTech.flag)flags.push(P.extraTech.flag);
-    (P.extraTechs||[]).forEach(t=>{if(t&&t.flag)flags.push(t.flag);});
+    if(!_sealed)(P.extraTechs||[]).forEach(t=>{if(t&&t.flag)flags.push(t.flag);});
     let pSpeed=(P.spd!=null?P.spd:(6+P.levelIndex*1.7+randF(0,1)));if(flags.includes('tsukumo'))pSpeed*=1.20;
     return this.decorate({
       name:'你',isPlayer:true,side:'ally',li:P.levelIndex,
@@ -2094,8 +2132,8 @@ class BattleEngine{
       atb:randF(0,6),speed:pSpeed,
       reverse:!!P.reverse,canDomain:Player.domainTier(P)>=1,domainTier:Player.domainTier(P)||3,domainUsed:0,domainCd:0,
       makoraCounters:(P.makoraCounters||{}),   // 魔虚罗解析完成的反制术式：主人对这些术式 100% 免伤
-      canUlt:!!P.ultimateLearned,ultUsed:false,
-      flag:P.technique.flag,flags:[...new Set(flags)],techName:P.technique.name,domainName:P.technique.domain||'领域',
+      canUlt:(!!P.ultimateLearned&&!_sealed),ultUsed:false,
+      flag:(_sealed?null:P.technique.flag),flags:[...new Set(flags)],techName:P.technique.name,domainName:P.technique.domain||'领域',
       extraTech:P.extraTech||null,extraDomainUsed:false,
       // 所有可用领域：主术式的 + 额外术式的（术式槽位扩张后可以有 3 个）
       techDomains:(function(){
@@ -2116,11 +2154,22 @@ class BattleEngine{
     let maxHp,maxCp,melee,eff,ctl,flag=null,flags=[],opt={},hpIdx;
     // 咒灵：实际取值比标称低一个大级（原作里咒灵的评级虚高一档）
     const isCurse=(type||'咒灵')==='咒灵';
+    // 非术师（死灭洄游里的普通人）：不是咒灵、没有术式、不会反击
+    const isMundane=(type==='非术师');
     if(spec){
       const[cp,me,hp,ct,ef,fl,o]=spec;opt=o||{};
       maxCp=specMid(cp,'cp',isCurse);melee=specMid(me,'dmg',isCurse);eff=specMid(ef,'dmg',isCurse);ctl=specMid(ct,'ctl',isCurse);
       maxHp=specMid(hp,'hp',isCurse);hpIdx=hp;flag=fl;if(o.flags)flags=o.flags.slice();
       if(fl)flags.unshift(fl);flags=[...new Set(flags)];
+    }else if(isMundane){
+      // 非术师：不入流的体魄（和「不入流」咒灵一档：个位数血量，挨任何一下即倒），没有术式 / 领域 / 反转——
+      // 但按总则第五条，他也是「泳者」，值 1 分
+      const B=statBandAt(-2);
+      const vary=v=>Math.round(v*randF(0.85,1.15));
+      maxHp=Math.max(1,Math.round(rand(B.hp[0],B.hp[1])));
+      maxCp=Math.max(1,Math.round(B.cp[0]));
+      melee=[0,Math.max(1,vary(1))];eff=[0,1];ctl=0;
+      opt.rev=0;opt.dom=0;opt.bf=0;
     }else{
       const B=statBandAt(levelScore(li)-(isCurse?CURSE_GRADE_GAP:0));
       const vary=v=>Math.round(v*randF(0.85,1.15));
@@ -2152,7 +2201,7 @@ class BattleEngine{
     // 仅五条悟、十影宿傩、羂索、九十九由基掌握极之番
     const canUlt=['五条悟','十影宿傩','羂索','九十九由基'].includes(name);
     const u=this.decorate({
-      name,li,type:type||'咒灵',side,isPlayer:false,wild:!!wild,
+      name,li,type:type||'咒灵',side,isPlayer:false,wild:!!wild,mundane:isMundane,
       maxHp,hp:maxHp,maxCp,cp:maxCp,melee,eff,ctl,
       atb:randF(0,8),speed,
       reverse:!!opt.rev,
@@ -2629,14 +2678,17 @@ class BattleEngine{
       u.planned=[];
       if(u.domainField===undefined)u.domainField=null;
       if(u.isPlayer){
-        const _mainFlag=(this.cfg.player.technique||{}).flag;
-        const bar=buildSkillBar(_mainFlag,(this.cfg.player.prof||0));
+        // ★ 死灭洄游·总则八：术式被剥夺 —— 技能栏只剩体术与道具（术式招式 / 召唤 / 领域 / 极之番一并从卡面消失）
+        const _sealed=!!(this.cfg.player&&this.cfg.player.techSealed);
+        const _mainFlag=_sealed?null:(this.cfg.player.technique||{}).flag;
+        const bar=buildSkillBar(_mainFlag,(_sealed?0:(this.cfg.player.prof||0)));
         // 多术式（术式槽位扩张 / 新宿决战奖励）：额外术式的招式一并进技能栏
         // —— 每门额外术式按自己的熟练度走同一套解锁节点（没有独立熟练度就跟随主术式），
         //    所以刚觉醒的额外术式只会第一招，要练才能解锁后面的
         const _extras=[].concat(this.cfg.player.extraTechs||[]);
         if(this.cfg.player.extraTech)_extras.push(this.cfg.player.extraTech);
         _extras.forEach(t=>{
+          if(_sealed)return;
           if(!t||!t.flag||t.flag===_mainFlag)return;
           const _tp=(t.prof!=null?t.prof:(this.cfg.player.prof||0));
           buildSkillBar(t.flag,_tp).forEach((sk,i)=>{if(i===0)return;bar.push(sk);});
@@ -2738,6 +2790,8 @@ class BattleEngine{
   }
   /** AI 声明本回合的全部行动：把行动点花光（领域/极之番/蓄力技占满整回合，其余按 15/20 点拆分） */
   npcDeclare(u,ev){
+    // 非术师（普通人）：不会战斗——干脆不规划任何行动（不占队列、不刷屏）
+    if(u&&u.mundane){u.ap=0;return;}
     const plan=[];let ap=u.ap;
     const full=AP_PER_ROUND;
     // 1) 极之番：残血（<40%）且咒力够半管时，一场一次的终极爆发（出手最慢）
@@ -4531,6 +4585,11 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
   /* ---------- NPC AI ---------- */
   npcAct(u,ev,forced,mode){
     this._actorLi=u.li;
+    // 非术师（普通人）：不会战斗——只会缩着发抖（死灭洄游里可以放走或就地杀死他们，但那不是「战斗」）
+    if(u.mundane){
+      if(u._cowerRound!==this.round){u._cowerRound=this.round;ev.push({type:'info',text:u.name+' 缩成一团，抱着头，连看都不敢看你。'});}
+      return;
+    }
     // mode==='queue'：本回合的行动已由 npcDeclare 规划完毕，这里只负责把规划好的那一手打出去
     // 十影式神：独有术式（按概率发动，没发动就走普通攻击）
     if(this.shadowSkillAct(u,ev))return;
@@ -4926,6 +4985,8 @@ const SHIBUYA_REST_HP=0.08, SHIBUYA_REST_CAP_HP=0.20, SHIBUYA_REST_CP=0.08;
 const SHIBUYA_PATROL_EVERY=2;
 /** 涩谷·每天只能修炼一次 */
 const SHIBUYA_TRAIN_PER_DAY=1;
+const SHIBUYA_ACTIONS=6;        // 涩谷里的每日行动点：比平时的 3 次多一倍——这一夜要从外圈一路打到最深处
+const SHIBUYA_END_DAY=105;      // 涩谷一直持续到死灭洄游开启（第 105 天）为止；期间状态栏显示「夜战第 N 阶段」
 /** 涩谷大结界内的区域：从外到内（depth 越大越靠里、街上的怪越强）
  *  dist = 从「前一个区域」走到这里的距离；heal = 只有这里能找硝子治疗 */
 const SHIBUYA_ZONES=[
@@ -4959,27 +5020,27 @@ const SHIBUYA_SPAWN=[
 /** 涩谷·指定战场：前四处是按原著补的外层/中层杂兵战场，后面 8 处直接**引用**第 90 天
  *  「涩谷八方战场」的原始配置（ref=那份清单里的下标）——不重复写一遍战斗数据 */
 const SHIBUYA_FIELDS=[
-  {label:'涩谷站·咒灵潮',   zone:'st',    pos:[30,24], tier:1,
+  {label:'涩谷站·咒灵潮',   zone:'st',    pos:[22,42], tier:1,
    battle:{enemies:[E('四级咒灵',0),E('三级咒灵',1),E('准二级咒灵',2)],lose:'continue',
      intro:'涩谷站地面：一层咒灵顺着人流爬上来——先把出口清开。'}},
-  {label:'宫益坂·诅咒师小队',zone:'miyuki',pos:[72,28], tier:2,
+  {label:'宫益坂·诅咒师小队',zone:'miyuki',pos:[82,24], tier:2,
    battle:{enemies:[E('二级诅咒师',3),E('准一级诅咒师',4)],lose:'continue',
      intro:'宫益坂：两个诅咒师堵住坡道，把逃难的人往火里赶。'}},
-  {label:'中心街·改造人',   zone:'center',pos:[78,50], tier:2,
+  {label:'中心街·改造人',   zone:'center',pos:[86,64], tier:2,
    battle:{enemies:[E('改造人·甲',4),E('改造人·乙',4)],lose:'continue',
      intro:'中心街：被改造过的躯体在霓虹下抽搐——它们曾经是人。'}},
-  {label:'地下五层·受肉体', zone:'b5',    pos:[24,88], tier:4,
+  {label:'地下五层·受肉体', zone:'b5',    pos:[10,92], tier:4,
    battle:{enemies:[E('受肉体·虎杖',7,'受肉体'),E('改造人·丙',5)],lose:'die',
      intro:'地下五层：站台尽头有个人影在跟什么东西缠斗——那是虎杖。'}},
   /* —— 以下 8 处沿用第 90 天「涩谷八方战场」的原始配置 —— */
-  {ref:0, zone:'center',pos:[74,48], tier:2},   // 蝗虫战场
-  {ref:1, zone:'center',pos:[80,56], tier:3},   // 真人战场
-  {ref:2, zone:'b5',    pos:[26,80], tier:4},   // 魔虚罗战场
-  {ref:3, zone:'ug',    pos:[60,64], tier:2},   // 陀艮战场
-  {ref:4, zone:'b3',    pos:[42,72], tier:4},   // 漏壶宿傩战场
-  {ref:5, zone:'b3',    pos:[36,76], tier:3},   // 羂索里梅战场
-  {ref:6, zone:'b3',    pos:[44,78], tier:3},   // 胀相虎杖战场
-  {ref:7, zone:'center',pos:[70,58], tier:3}    // 伏黑父子对决战场
+  {ref:0, zone:'center',pos:[66,50], tier:2},   // 蝗虫战场
+  {ref:1, zone:'center',pos:[84,44], tier:3},   // 真人战场
+  {ref:2, zone:'b5',    pos:[28,92], tier:4},   // 魔虚罗战场
+  {ref:3, zone:'ug',    pos:[64,80], tier:2},   // 陀艮战场
+  {ref:4, zone:'b3',    pos:[32,62], tier:4},   // 漏壶宿傩战场
+  {ref:5, zone:'b3',    pos:[46,88], tier:3},   // 羂索里梅战场
+  {ref:6, zone:'b3',    pos:[36,90], tier:3},   // 胀相虎杖战场
+  {ref:7, zone:'center',pos:[72,70], tier:3}    // 伏黑父子对决战场
 ];
 /** 取涩谷区域（按 id） */
 function shibuyaZone(id){return SHIBUYA_ZONES.find(z=>z.id===id)||SHIBUYA_ZONES[SHIBUYA_ZONES.length-1];}
@@ -5010,6 +5071,103 @@ function shibuyaRollRoster(depth){
   }
   return list;
 }
+
+/* ==================== 死灭洄游 · 总分则 / 泳者积分 / 结界内狩猎 ==================== */
+/** 原作总则（8 条）：加入结界时必须完整读过一遍、点「宣誓参加」才继续 */
+const CG_RULES=[
+ '一、泳者必须在得知术式以及参赛后的十九日内，在任意结界外宣誓，以宣誓参加『死灭洄游』。',
+ '二、违反前项的泳者将被剥夺术式。',
+ '三、非泳者在进入结界后自动成为泳者，视为已参加『死灭洄游』。在开始前就已经身处结界内的泳者，有一次退出『死灭洄游』的机会。',
+ '四、泳者可以通过杀死其他泳者获得点数。',
+ '五、点数是管理员设定的泳者生命的价值。原则上术师为 5 点，非术师为 1 点。',
+ '六、泳者可以使用出除自身生命点数之外的 100 点与管理员交涉，追加一条总则。',
+ '七、通过前项提出的追加项除非显著妨碍『死灭洄游』的永远存续，否则管理员必须认可。',
+ '八、若在宣誓参加或获得点数后，十九日内所获点数未见变动，则剥夺该泳者的术式。'
+];
+/** 追加总则：day = 进入死灭洄游后的第几天（加入那天 = 第 1 天） */
+const CG_RULES_ADD=[
+ {day:2,id:'transfer',who:'主角团合计提出',
+  text:'泳者之间可以自由转让分数。',
+  note:'用来应对「点数无变动即剥夺术式」的那一条。对有术式的人来说，被剥夺术式就等于被直接击杀——所以他们才想出互相倒分的办法。'},
+ {day:3,id:'public',who:'管理员（由东京第二结界的一名泳者达到 100 分触发）',
+  text:'公开所有参赛术士的情报——姓名、所属结界、总分值。',
+  note:'从此每个人的分数都摊在阳光下。杀没杀过非术者，看一眼分数就知道。'},
+ {day:6,id:'open',who:'主角团合计提出',
+  text:'所有泳者可以自由进出结界。',
+  note:'结界不再是牢笼。你可以走出自己选的这一处，去支援别的结界。'}
+];
+/** 死灭洄游旋钮 */
+const CG_REST_HP=0.08, CG_REST_CAP_HP=0.20, CG_REST_CP=0.08;  // 连续战斗：一场打完只回这么一点（有反转术式回得多）
+const CG_TRAIN_PER_DAY=1;      // 每天只能在结界内修炼一次（这次修炼会把血蓝全额接回——连续战斗下唯一的休整）
+const CG_DEPRIVE_DAYS=5;       // 原作是 19 日，这里缩短成 5 日：真的会触发（0 分也至少要拿到 5 分才安全）
+const CG_PUBLIC_DAY=3;         // 第几天公开泳者情报（同时开始「正义的术师」的追猎）
+const CG_TRANSFER_DAY=2;       // 第几天开放分数转让
+const CG_OPEN_DAY=6;           // 第几天可以自由进出结界
+const CG_JUSTICE_W=0.35;       // 分数不是 5 的倍数时，每次巡逻撞上「正义的术师」的概率
+const CG_MUNDANE_RATE=0.35;    // 巡逻遭遇里出现普通人的概率
+const CG_RESCUE_CIVILIAN=true; // 误杀普通人后是否给「救活放生」的机会
+/** 四个结界：tier 越高越凶；spawn 是「结界内狩猎」的刷怪池；fields[0] 恒为 {main:true}＝沿用第 105 天原有的核心战斗 */
+const CG_COLONIES=[
+ {id:'sendai', label:'仙台结界', pos:[74,26], tier:4,
+  spawn:{curse:[4,10], sorc:[5,11], w:0.55, n:[1,3]},
+  note:'乙骨忧太所在的结界——四名泳者围城，结界内的狩猎强度是四处里最高的。',
+  fields:[{main:true},
+    {label:'仙台·结界内的混战地带', pos:[62,14],
+     battle:{enemies:[E('一级咒灵',5),E('准一级咒灵',4),E('二级泳者·甲',3,'咒术师'),E('二级泳者·乙',3,'诅咒师')],lose:'continue',
+       intro:'仙台结界的内侧：泳者们为了分数在各个角落互相狩猎——你一脚踩进了他们的乱战。'}},
+    {label:'仙台·深处的猎场', pos:[86,32],
+     battle:{enemies:[E('强特级咒灵',10),E('一级受肉体',5,'受肉体')],lose:'die',
+       intro:'仙台结界深处：一头强特级咒灵盘踞在此，旁边还有一名受肉体的泳者。强档的猎物，当然也更值钱——咒灵除外。'}}]},
+ {id:'shinjuku', label:'新宿结界', pos:[52,58], tier:2,
+  spawn:{curse:[3,8], sorc:[3,9], w:0.45, n:[1,3]},
+  note:'虎杖悠仁所在的结界，泳者密度高但整体偏二级档——适合先在这里攒分。',
+  fields:[{main:true},
+    {label:'新宿·结界内的混战地带', pos:[44,48],
+     battle:{enemies:[E('三级咒灵',1),E('二级泳者·甲',3,'咒术师'),E('二级泳者·乙',3,'诅咒师')],lose:'continue',
+       intro:'新宿结界的街口：三名泳者正在为了一只咒灵互相提防——你来了，他们立刻改了目标。'}},
+    {label:'新宿·地下街的埋伏', pos:[62,68],
+     battle:{enemies:[E('准一级诅咒师',4,'诅咒师'),E('准一级咒灵',4)],lose:'continue',
+       intro:'新宿的地下街：有人在这里设了埋伏，等着落单的泳者走进来。'}}]},
+ {id:'shibuya', label:'涩谷结界', pos:[40,64], tier:3,
+  spawn:{curse:[3,9], sorc:[4,10], w:0.50, n:[1,3]},
+  note:'上一场灾厄留下的残骸还没清干净——结界里的咒灵比别处更凶。',
+  fields:[{main:true},
+    {label:'涩谷·结界内的残骸', pos:[32,54],
+     battle:{enemies:[E('准一级咒灵',4),E('一级咒灵',5),E('准特级受肉体',7,'受肉体')],lose:'continue',
+       intro:'涩谷结界的瓦砾堆里，还留着那一夜没散干净的东西。'}},
+    {label:'涩谷·狩猎者的空地', pos:[46,76],
+     battle:{enemies:[E('一级泳者',5,'咒术师'),E('一级诅咒师',5,'诅咒师')],lose:'die',
+       intro:'空地上有人先到了——两名一级档的泳者把这里当成了自己的猎场。'}}]},
+ {id:'sakurajima', label:'樱岛结界', pos:[16,84], tier:3,
+  spawn:{curse:[3,9], sorc:[4,10], w:0.50, n:[1,3]},
+  note:'火山灰遮着天。禅院直哉与真希都在这一处——泳者的强度参差，咒灵反而更直接。',
+  fields:[{main:true},
+    {label:'樱岛·火山灰下的混战', pos:[10,74],
+     battle:{enemies:[E('准一级咒灵',4),E('二级咒灵',3),E('二级泳者·甲',3,'诅咒师')],lose:'continue',
+       intro:'火山灰里看不清东西：咒灵与泳者混在一起，谁也顾不上谁。'}},
+    {label:'樱岛·海岸的伏击', pos:[28,92],
+     battle:{enemies:[E('一级咒灵',5),E('准特级受肉体',7,'受肉体')],lose:'continue',
+       intro:'海岸线上一片安静——安静得像是有人早就等在这里了。'}}]}
+];
+/** 泳者情报（第 3 日公开）：具名泳者的分数底表；分数 = v0 + 每日增速 ×（已过日数） */
+const CG_ROSTER=[
+ {name:'东京第二结界·某位泳者',colony:'东京第二结界',v0:20,g:40,lead:true},
+ {name:'日车宽见',colony:'东京第一结界',v0:55,g:9},
+ {name:'乙骨忧太',colony:'仙台结界',v0:48,g:12},
+ {name:'石流龙',colony:'仙台结界',v0:40,g:9},
+ {name:'多鲁布',colony:'仙台结界',v0:33,g:8},
+ {name:'黑沐死',colony:'仙台结界',v0:27,g:7},
+ {name:'乌璐亨子',colony:'仙台结界',v0:24,g:6},
+ {name:'鹿紫云一',colony:'涩谷结界',v0:42,g:9},
+ {name:'秤金次',colony:'涩谷结界',v0:26,g:8},
+ {name:'禅院直哉',colony:'樱岛结界',v0:35,g:9},
+ {name:'禅院真希',colony:'樱岛结界',v0:21,g:7},
+ {name:'加茂宪纪',colony:'樱岛结界',v0:16,g:6},
+ {name:'虎杖悠仁',colony:'新宿结界',v0:18,g:11},
+ {name:'伏黑惠',colony:'东京第一结界',v0:12,g:6}
+];
+/** 普通人（非术师）会用到的名字后缀 */
+const CG_MUNDANE_NAMES=['普通人','逃难者','上班族','学生','便利店员','巡夜人'];
 
 const STORY={
  3:{chapter:'宿傩受肉虎杖篇',title:'第3天 · 诅咒初现',
@@ -5080,8 +5238,8 @@ const STORY={
       {label:'胀相虎杖战场',pos:[48,80],battle:{enemies:[E('胀相',9,'受肉体')],allies:[E('虎杖悠仁',6,'咒术师')],lose:'continue',intro:'胀相虎杖战场：兄弟相残之战，你协助虎杖对战标准特级受肉体胀相，败北不死。'}},
       {label:'伏黑父子对决战场',pos:[82,74],battle:{enemies:[E('伏黑甚尔',8,'人类')],allies:[E('伏黑惠',4,'咒术师')],lose:'continue',intro:'伏黑父子对决战场：你协助伏黑惠对战其生父——弱特级人类伏黑甚尔，败北不死。'}}]}},
  105:{chapter:'死灭回游',title:'第105天 · 死灭回游四战场',
-    intro:'死灭回游的杀阵开启，泳者们在各地厮杀。**先选一处结界加入**——加入之后，你只在这处结界里行动；结界内有多处战场，打完可以赶场，也可以等事件结束。',
-    wheel:{title:'选择要加入的结界',colony:true,open:true,items:[
+    intro:'死灭回游的杀阵开启。管理员在结界外等你——先读完总则、宣誓参加，再选一处结界加入。从这一刻起，你的分数就是你的命：击杀术师 +5、击杀非术师 +1、咒灵不计分；每天只能在结界内修炼一次，其余时间都得上街狩猎。',
+    wheel:{title:'选择要加入的结界',culling:true,items:[
       {label:'仙台结界',pos:[74,26],battle:{enemies:[E('多鲁布',7,'诅咒师'),E('黑沐死',8),E('乌璐亨子',8,'受肉体'),E('石流龙',9,'受肉体')],allies:[E('乙骨忧太',10,'咒术师')],lose:'die',intro:'仙台战场：四泳者围城！强特级咒术师乙骨忧太与你共战多鲁布、黑沐死、乌璐亨子、石流龙。'}},
       {label:'新宿结界',pos:[52,58],battle:{enemies:[E('日车宽见',8,'咒灵')],allies:[E('虎杖悠仁',7,'咒术师')],lose:'continue',intro:'新宿战场：你与准特级咒术师虎杖悠仁对战弱特级的日车宽见，败北不会死亡。'}},
       {label:'涩谷结界',pos:[40,64],battle:{enemies:[E('鹿紫云一',9,'受肉体')],allies:[E('秤金次',8,'咒术师')],lose:'die',intro:'涩谷战场：弱特级咒术师秤金次与你对战标准特级受肉体鹿紫云一。'}},
@@ -7987,23 +8145,23 @@ const Game={
     // 行动按钮：写清本日还剩几次，用完了提示下一次点击会推进日期
     const _ab=$('btnActionWheel');
     if(_ab){
-      const left=ACTIONS_PER_DAY-(this.dayActions|0);
+      const left=this.actionCap()-(this.dayActions|0);
       _ab.textContent=left>0
-        ? `转 动 行 动 轮 盘（本日剩余 ${left} / ${ACTIONS_PER_DAY} 次）`
+        ? `转 动 行 动 轮 盘（本日剩余 ${left} / ${this.actionCap()} 次）`
         : `转 动 行 动 轮 盘（推进到第 ${this.day+1} 天）`;
     }
     // 无所事事：写清要放弃几次行动 / 是否已经是「推进到第二天」
     const _ib=$('btnIdle');
     if(_ib){
-      const left=ACTIONS_PER_DAY-(this.dayActions|0);
+      const left=this.actionCap()-(this.dayActions|0);
       const _nxtDay=(this.currentEventDays()||[]).find(d=>d>this.day);
       const _sh=this.shibuyaOn();
-      _ib.textContent=(_sh?'🛌 在藏身处熬到天亮':'🛌 无所事事地度过这一天')+(left>0?('（放弃剩余 '+left+' 次行动）'):('（推进到第 '+(this.day+1)+' 天）'))
+      _ib.textContent=(_sh?'🛌 在藏身处熬到天亮':(this.cgOn()?'🛌 在结界内蛰伏到天亮':'🛌 无所事事地度过这一天'))+(left>0?('（放弃剩余 '+left+' 次行动）'):('（推进到第 '+(this.day+1)+' 天）'))
         +(_nxtDay?('　下一剧情：第 '+_nxtDay+' 天'):'');
     }
     const T=this.currentStory(),ED=this.currentEventDays(),isKai=P.arc==='kaigyo',isFuture=P.arc==='future';
     const arcLabel=isKai?('怀玉篇 · '+kaiEraOfDay(this.day)):isFuture?('未来篇 · '+futureEraOfDay(this.day)):eraOfDay(this.day);
-    $('dayNum').textContent=this.day;$('dayEra').textContent=arcLabel+(this.shibuyaOn()?('　·　涩谷：'+shibuyaZone(this.shibuyaState().zone).name):'');
+    $('dayNum').textContent=this.day;$('dayEra').textContent=arcLabel+(this.shibuyaOn()?('　·　涩谷：'+shibuyaZone(this.shibuyaState().zone).name+' · 夜战第 '+Math.max(1,this.day-87)+' 阶段（每日 '+SHIBUYA_ACTIONS+' 次行动）'):'')+(this.cgOn()?('　·　死灭洄游：'+this.cgColony().label+'（积分 '+this.cgScore()+'）'+((this.cgState().public&&this.cgScore()%5!==0)?' ⚠ 非5倍数':'')):'');
     const nextD=ED.find(d=>d>this.day);
     $('chapterTag').textContent=nextD?`下一剧情：第${nextD}天 · ${T[nextD].chapter}`:(isKai?'怀玉篇终局将近':isFuture?'未来篇终局将近':'终局将近');
     $('playerCard').innerHTML=`
@@ -8043,6 +8201,7 @@ const Game={
     sk.push(P.reverse?'✔ 反转术式（被动：回合耗5%咒力回20%血）':'✘ 反转术式（每场战斗5%几率领悟）');
     sk.push(P.blackFlash?'✔ 黑闪（1%触发，伤害×10+五维永久+10%）':'✘ 黑闪（战斗5%自行领悟，或战胜东堂葵学会）');
     if(P.sixEyes)sk.push('★ 六眼（怀玉篇奖励：所有咒力消耗为0）');
+    if(P.techSealed)sk.push('⚠ 术式已被死灭洄游·总则八剥夺（属性 / 体术 / 道具仍在，本章结束前不恢复）');
     if(P.jinTools)sk.push('★ 伏黑甚尔四道具（怀玉篇奖励：天逆鉾破术式/吞领域、释魂刀+游云近战×1.8、万里锁攻击打全体）');
     sk.push(`主术式：${P.technique.name}（领域：${P.technique.domain}）`);
     const _mv=TECH_MOVE[P.technique.flag]||[];
@@ -8074,17 +8233,17 @@ const Game={
     // 开放式冒险：右上角小地图（战斗里只当 HUD——不可点，免得顶掉战斗界面）
     const _mm=$('miniMap');
     if(_mm){
-      if(P&&(P.openAdv||this.shibuyaOn())){
+      if(P&&(P.openAdv||this.shibuyaOn()||this.cgOn())){
         const _ib=this.inBattleNow();
         _mm.classList.remove('hidden');
-        _mm.innerHTML=this.shibuyaOn()?this.shibuyaMiniHtml():this.miniMapHtml();
+        _mm.innerHTML=this.cgOn()?this.cgMiniHtml():(this.shibuyaOn()?this.shibuyaMiniHtml():this.miniMapHtml());
         _mm.style.opacity=_ib?'0.45':'1';
         _mm.style.pointerEvents=_ib?'none':'auto';
-        _mm.onclick=()=>{if(this.inBattleNow())return;try{SFX.click();}catch(e){}if(this.shibuyaOn())this.openShibuyaMap();else this.openAdvMap();};
+        _mm.onclick=()=>{if(this.inBattleNow())return;try{SFX.click();}catch(e){}if(this.cgOn())this.openCgMap();else if(this.shibuyaOn())this.openShibuyaMap();else this.openAdvMap();};
       }else{_mm.classList.add('hidden');_mm.innerHTML='';_mm.onclick=null;}
     }
     const _tb=$('btnTame');if(_tb)_tb.style.display=this.hasShadow()?'':'none';
-    const _ub=$('btnUlt');if(_ub)_ub.style.display=(this.player&&this.player.ultimateLearned)?'':'none';
+    const _ub=$('btnUlt');if(_ub)_ub.style.display=(this.player&&this.player.ultimateLearned&&!this.player.techSealed)?'':'none';
   },
   showDetail(){
     const P=this.player;
@@ -8114,7 +8273,7 @@ const Game={
    *  只有在今天行动用完之后（或今天还没开始）才该调用；返回是否真的翻了页 */
   async advanceDay(){
     if(this.over)return false;
-    if((this.dayActions|0)<ACTIONS_PER_DAY)return false;
+    if((this.dayActions|0)<this.actionCap())return false;
     this.dayActions=0;
     this.day++;
     // 怀玉篇兜底：超过30天未进入主线，自动跳转（防止任何残留bug导致无限转盘）
@@ -8132,11 +8291,14 @@ const Game={
     const T=this.currentStory();
     // 涩谷期间：第 90 天那份「八方战场」已经并进涩谷地图（不弹转盘）；其余剧情日照常，并从它开始收束涩谷
     const _shibAbsorb=(this.shibuyaOn()&&this.day===90);
-    if(this.shibuyaOn()&&this.day>90)this.shibuyaLeave();
+    if(this.shibuyaOn()&&this.day>=SHIBUYA_END_DAY)this.shibuyaLeave();   // 一直打到第 105 天死灭洄游开启
+    // 死灭洄游：追加总则与「点数无变动」的倒计时跟着天数走；第 120 天新宿决战之前收束这一章
+    if(this.cgOn()&&this.day>=120)this.cgLeave();
+    if(this.cgOn()&&!this.over)await this.cgTickRules();
     if(_shibAbsorb){
       await this.storyModal('涩谷事变 · 八处战场告急',
         '街上到处在喊人——八处战场都已经标在涩谷地图上了。\n\n按你的节奏打：先救哪一处、要不要往更深处推进，都由你定。','涩谷事变');
-      this.addLog('lgold',`◆ 剧情之后，这一天还有 ${ACTIONS_PER_DAY} 次行动。`);
+      this.addLog('lgold',`◆ 剧情之后，这一天还有 ${this.actionCap()} 次行动。`);
     }else if(T[this.day]&&this.day>=this.player.startDay){
       this.render();this.addLog('lred',`◆ 第${this.day}天——剧情事件【${T[this.day].title}】触发！`);
       try{await this.triggerEvent(this.day);}
@@ -8145,7 +8307,7 @@ const Game={
       if(this.over)return true; // 剧情中已触发结局（战死/终局）
       this.afterBattleRecover();
       // 剧情日照样保留当天的行动次数：剧情 + 三次行动
-      this.addLog('lgold',`◆ 剧情之后，这一天还有 ${ACTIONS_PER_DAY} 次行动。`);
+      this.addLog('lgold',`◆ 剧情之后，这一天还有 ${this.actionCap()} 次行动。`);
     }
     return true;
   },
@@ -8158,8 +8320,8 @@ const Game={
     if(btn)btn.disabled=true;
     try{
       const dayBefore=this.day;
-      const skipped=Math.max(0,ACTIONS_PER_DAY-(this.dayActions|0));
-      this.dayActions=ACTIONS_PER_DAY;   // 今天的行动全部作废（下次点击就是要翻页）
+      const skipped=Math.max(0,this.actionCap()-(this.dayActions|0));
+      this.dayActions=this.actionCap();   // 今天的行动全部作废（下次点击就是要翻页）
       await this.advanceDay();
       if(this.over)return;
       const nextD=(this.currentEventDays()||[]).find(d=>d>this.day);
@@ -8180,8 +8342,10 @@ const Game={
     const n=(this.dayActions|0)+1;
     if(this.shibuyaOn()){
       await this.shibuyaDaily();   // 涩谷：每天只能修炼一次，其余时间上街巡视 / 推进战场 / 找硝子
+    }else if(this.cgOn()){
+      await this.cgDaily();        // 死灭洄游：每天只在结界内修炼一次，其余时间结界内狩猎 / 推战场 / 转让分数
     }else{
-      const pick=await openWheelModal({title:`第 ${this.day} 天 · 行动转盘（本日第 ${n} / ${ACTIONS_PER_DAY} 次）`,items:WHEEL_DAILY});
+      const pick=await openWheelModal({title:`第 ${this.day} 天 · 行动转盘（本日第 ${n} / ${this.actionCap()} 次）`,items:WHEEL_DAILY});
       if(pick.act==='hunt'){await this.hunt();}
       else{const txt=Player.train(this.player,pick.act);this.addLog('lcyan',`【${pick.label}】${txt}`);}
     }
@@ -8483,6 +8647,25 @@ const Game={
     });
     return '<div class="mm-cap">'+done.length+' / '+list.length+'</div><div class="mm-body">'+marks+'</div>';
   },
+  /** 大地图缩放/平移：滚轮缩放、拖空白处平移、＋/−/重置（涩谷与死灭洄游共用） */
+  bindMapZoom(){
+    const box=$('advZoomBox'),inner=$('advZoom');
+    if(!box||!inner)return;
+    let z=1,px=0,py=0,drag=null;
+    const apply=()=>{inner.style.transform='translate('+px+'px,'+py+'px) scale('+z+')';};
+    const setZ=nz=>{z=clamp(Math.round(nz*100)/100,1,2.8);apply();};
+    const zin=$('advZoomIn'),zout=$('advZoomOut'),zre=$('advZoomReset');
+    if(zin)zin.onclick=()=>setZ(z+0.25);
+    if(zout)zout.onclick=()=>setZ(z-0.25);
+    if(zre)zre.onclick=()=>{z=1;px=0;py=0;apply();};
+    box.onwheel=(e)=>{if(e.preventDefault)e.preventDefault();setZ(z+(e.deltaY<0?0.15:-0.15));};
+    box.onmousedown=(e)=>{if(e.target.closest('.adv-node'))return;drag={x:e.clientX-px,y:e.clientY-py};box.classList.add('grabbing');if(e.preventDefault)e.preventDefault();};
+    box.onmousemove=(e)=>{if(!drag)return;px=e.clientX-drag.x;py=e.clientY-drag.y;apply();};
+    box.onmouseup=()=>{drag=null;box.classList.remove('grabbing');};
+    box.onmouseleave=()=>{drag=null;box.classList.remove('grabbing');};
+    apply();
+  },
+
   /** 涩谷地图：从外到内的分层布局 + 指定战场 + 「你在这里」 + 硝子急救所
    *  · 点区域 = 行进（不花行动点，但路上会被迫打巡视遭遇）
    *  · 点战场 = 走过去并开打（一次行动；不在同区会先赶路）
@@ -8505,16 +8688,21 @@ const Game={
         marks+='<button class="adv-node field'+(done?' done':'')+'" data-sbf="'+f.i+'" style="left:'+f.pos[0]+'%;top:'+f.pos[1]+'%"'
           +(done?' disabled':'')+'><span class="dot">'+(done?'✔':'T'+f.tier)+'</span><span class="nm">'+this.escHtml(f.label)+'</span></button>';
       });
-      const left=Math.max(0,ACTIONS_PER_DAY-(this.dayActions|0));
+      const left=Math.max(0,this.actionCap()-(this.dayActions|0));
       const trained=((st.trainDay|0)===this.day);
       showModal('<h2>涩谷事变 · 结界地图</h2>'
         +'<p style="line-height:1.8;color:var(--txt2);font-size:13px">'
         +'从外到内：<b>结界外围</b>（硝子急救所）→ 地面 → 中心街 → <b>地下</b>——越往内侧，街上的东西越强。<br>'
         +'点<b>区域</b>＝行进（不花行动点，但路上会被迫打巡视遭遇，打赢才能落地）；'
         +'点<b>战场</b>＝赶路并开打（一次行动）；点外围的<b>✚</b>＝找硝子治疗。</p>'
-        +'<div class="adv-map shibuya">'+marks+'</div>'
+        +'<div class="adv-zoombar">'
+        +'<button class="btn mini ghost" id="advZoomOut">－ 缩小</button>'
+        +'<button class="btn mini ghost" id="advZoomIn">＋ 放大</button>'
+        +'<button class="btn mini ghost" id="advZoomReset">↺ 重置</button>'
+        +'<span class="tips">滚轮缩放 · 拖动空白处平移 · 点节点触发</span></div>'
+        +'<div class="adv-map shibuya" id="advZoomBox"><div class="adv-zoom" id="advZoom">'+marks+'</div></div>'
         +'<div class="save-meta" style="text-align:center;margin-top:8px">当前：<b style="color:var(--gold)">'+this.escHtml(zone.name)+'</b>'
-        +'　·　剩余行动 '+left+' / '+ACTIONS_PER_DAY+'　·　今日修炼：'+(trained?'已用':'未用')
+        +'　·　剩余行动 '+left+' / '+this.actionCap()+'（夜战第 '+Math.max(1,this.day-87)+' 阶段）'+'　·　今日修炼：'+(trained?'已用':'未用')
         +'　·　战场已稳住 '+((st.done||[]).length)+' / '+fields.length+'</div>'
         +'<div class="center" style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
         +'<button class="btn small" id="sbHeal">找 硝 子 治 疗（1 行动）</button>'
@@ -8533,6 +8721,7 @@ const Game={
         closeModal();res(this.openShibuyaMap());
       };
       const c=$('sbClose');if(c)c.onclick=()=>{closeModal();res();};
+      this.bindMapZoom();
     });
   },
   /** 小地图（涩谷模式）：区域环 + 你在这里 + 已稳住的战场 */
@@ -8552,11 +8741,13 @@ const Game={
   },
   /* ==================== 涩谷事变 · 开放冒险 ==================== */
   /** 现在是不是在涩谷（连续战斗 / 街道巡视 / 地图推进） */
+  /** 当天行动上限：涩谷事变期间按 SHIBUYA_ACTIONS 计（其余章节照旧 ACTIONS_PER_DAY） */
+  actionCap(){return this.shibuyaOn()?SHIBUYA_ACTIONS:ACTIONS_PER_DAY;},
   shibuyaOn(){const P=this.player;return !!(P&&P.shibuya&&P.shibuya.on);},
   shibuyaState(){const P=this.player;if(!P)return null;if(!P.shibuya||!P.shibuya.on)return null;return P.shibuya;},
   /** 花掉一次行动（涩谷里：巡视 / 战场 / 移动中撞上的遭遇都算一件事）；行动用尽就只能歇到天亮 */
   shibuyaSpend(){
-    if((this.dayActions|0)>=ACTIONS_PER_DAY)return false;
+    if((this.dayActions|0)>=this.actionCap())return false;
     this.dayActions=(this.dayActions|0)+1;
     this.render();
     return true;
@@ -8712,12 +8903,561 @@ const Game={
       this.ending('death',{title:'涩谷事变 · '+f.label});
     }
   },
+  /* ==================== 死灭洄游（总分则 / 泳者积分 / 结界内狩猎） ==================== */
+  cgOn(){const P=this.player;return !!(P&&P.cg&&P.cg.on);},
+  cgState(){const P=this.player;if(!P)return null;return (P.cg&&P.cg.on)?P.cg:null;},
+  cgColony(){const st=this.cgState();return CG_COLONIES[clamp((st?st.colony:0)|0,0,CG_COLONIES.length-1)];},
+  /** 进入死灭洄游后的第几天（加入那天 = 第 1 天；第 2 / 3 / 6 天各有一次追加总则） */
+  cgDay(){const st=this.cgState();return st?Math.max(1,this.day-(st.day||this.day)+1):1;},
+  cgScore(){const st=this.cgState();return st?(st.score|0):0;},
+  /** 这一处结界里的战场清单（fields[0] 沿用第 105 天原有的核心战斗） */
+  cgFieldList(ci){
+    const st=this.cgState();
+    const idx=clamp((ci!=null?ci:(st?st.colony:0))|0,0,CG_COLONIES.length-1);
+    const c=CG_COLONIES[idx];
+    const src=(((STORY[105]||{}).wheel||{}).items)||[];
+    const main=src[idx];
+    const out=[];
+    (c.fields||[]).forEach((f,k)=>{
+      const b=f.main?((main&&main.battle)||null):f.battle;
+      if(!b)return;
+      out.push({i:idx*3+k,k:k,ci:idx,main:!!f.main,
+        label:f.main?((main&&main.label)||c.label):f.label,
+        pos:f.main?((main&&main.pos)||c.pos):f.pos,
+        battle:b,
+        intro:f.main?(((main&&main.intro)||'')||(b.intro||'')):(f.intro||(b.intro||''))});
+    });
+    return out;
+  },
+  /** 泳者情报（第 3 日公开）：分数 = 底分 + 每日增速 × 已过日数 */
+  cgRosterScore(r,d){return Math.round((r.v0||0)+(r.g||0)*(d||0));},
+  cgIntelList(){
+    const st=this.cgState();const d=st?this.cgDay():1;
+    const rows=CG_ROSTER.map(r=>({name:r.name,colony:r.colony,score:this.cgRosterScore(r,d),me:false}));
+    const myCol=this.cgColony().label;
+    rows.push({name:(this.player.name||'你')+(this.player.techName?('（'+this.player.technique.name+'）'):''),colony:myCol,score:this.cgScore(),me:true});
+    rows.sort((a,b)=>b.score-a.score);
+    return rows;
+  },
+  /** 涨分：同时把「点数无变动」的计时归零 */
+  cgAddScore(n,why){
+    const st=this.cgState();if(!st||!(n>0))return;
+    st.score=(st.score|0)+n;
+    st.lastGainDay=this.day;
+    this.addLog('lgold','【泳者积分】+'+n+'（'+(why||'')+'）——当前 '+(st.score|0)+' 分。'
+      +((st.public&&(st.score|0)%5!==0)?'　⚠ 不是 5 的倍数：情报已经公开，这等于承认你杀过非术者。':''));
+    this.render();
+  },
+  /** 随机一名普通人（非术师）：名字带后缀，li 记 0（不入流的体魄） */
+  cgRollMundane(n){
+    const list=[];
+    for(let i=0;i<(n||1);i++){
+      const base=CG_MUNDANE_NAMES[rand(0,CG_MUNDANE_NAMES.length-1)]||'普通人';
+      list.push({name:((n||1)>1?((ORDINAL[i]||'')+'·'):'')+base,li:0,type:'非术师',wild:true});
+    }
+    return list;
+  },
+  /** 结界内狩猎的刷怪池：咒灵 二级~强特级、术师/诅咒师 二级~超特级（强档稀有） */
+  cgRollRoster(){
+    const c=this.cgColony(),sp=c.spawn;
+    const n=rand(sp.n[0],sp.n[1]);
+    const list=[];
+    for(let i=0;i<n;i++){
+      const sorc=Math.random()<sp.w;
+      const lo=sorc?sp.sorc[0]:sp.curse[0], hi=sorc?sp.sorc[1]:sp.curse[1];
+      // 幂次偏置：越高的档位越稀有（结界内最强的泳者也就到超特级）
+      let li=clamp(lo+Math.floor(Math.pow(Math.random(),1.9)*(hi-lo+1)),lo,hi);
+      list.push({name:((n>1&&!sorc)?((ORDINAL[i]||'')+'·'):'')+lvName(li)+(sorc?'泳者':'咒灵'),
+        li:li,type:sorc?'咒术师':'咒灵',wild:true});
+    }
+    // 情报公开之后：积分不是 5 的倍数 ⇒ 结界里「正义的术师」会主动找上门
+    const st=this.cgState();
+    if(st&&st.public&&(st.score|0)%5!==0&&Math.random()<CG_JUSTICE_W){
+      let li=rand(9,10);if(Math.random()<0.25)li=11;
+      list.push({name:'正义的术师·'+lvName(li),li:li,type:'咒术师',wild:true,justice:true});
+      this.addLog('lred','【正义的术师】你的积分 '+(st.score|0)+' 不是 5 的倍数——情报公开之后，这等于在布告上写着「我杀过非术者」。有人循着分数找来了。');
+    }
+    return list;
+  },
+  /** 总分则：完整展示 8 条，点「宣誓参加」才能继续 */
+  cgOathModal(){
+    return new Promise(res=>{
+      showModal('<h2>死灭洄游 · 总 则</h2>'
+        +'<div class="center" style="color:var(--purple);letter-spacing:3px;margin-bottom:10px">在以自己的意志宣誓参加之前，请先读完总则</div>'
+        +'<div class="cg-rules">'+CG_RULES.map(t=>'<div class="cg-rule">'+this.escHtml(t)+'</div>').join('')+'</div>'
+        +'<p style="color:var(--txt3);font-size:12px;line-height:1.8">宣誓参加之后，你与其他泳者再无分别——被记入分数，也被记入「十九日」。<br>（本作把十九日缩成 <b>'+CG_DEPRIVE_DAYS+'</b> 日：点数连续 '+CG_DEPRIVE_DAYS+' 日没有变动，术式就会被剥夺。）</p>'
+        +'<div class="center"><button class="btn" id="cgOath">宣 誓 参 加 死 灭 洄 游</button></div>');
+      $('cgOath').onclick=()=>{closeModal();res();};
+    });
+  },
+  /** 追加总则的宣读演出 */
+  cgRulePopup(r,d){
+    return this.storyModal('死灭洄游 · 追加总则（第 '+d+' 日）',
+      '管理员的声音在场地上空响起，像在宣读一份新贴出来的布告。\n\n提出者：'+r.who+'\n\n「'+r.text+'」\n\n'+r.note
+      +(r.id==='public'?('\n\n——东京第二结界的一名泳者累计达到了 <b>100 分</b>，这条总则因此被触发。\n现在，所有人的姓名、所属结界与总分值都公开了。'):''),
+      '死灭洄游');
+  },
+  /** 每天推进时检查：追加总则 / 剥夺术式倒计时 */
+  async cgTickRules(){
+    const st=this.cgState();if(!st||this.over)return;
+    const d=this.cgDay();
+    st.rules=st.rules||[];
+    const fire=[];
+    CG_RULES_ADD.forEach(r=>{if(d>=r.day&&st.rules.indexOf(r.id)<0)fire.push(r);});
+    for(let i=0;i<fire.length;i++){
+      const r=fire[i];
+      st.rules.push(r.id);
+      if(r.id==='public')st.public=true;
+      this.addLog('lgold','【追加总则·第 '+d+' 日】'+r.who+' 提出：'+r.text);
+      await this.cgRulePopup(r,d);
+      if(this.over)return;
+    }
+    const last=(st.lastGainDay!=null)?st.lastGainDay:(st.day||this.day);
+    const idle=Math.max(0,this.day-last);
+    const left=CG_DEPRIVE_DAYS-idle;
+    if(!st.sealed&&left>0&&left<=2)this.addLog('lred','【总则八】你的点数已经 '+idle+' 日没有变动——再过 '+left+' 日，术式就会被剥夺。'
+      +'（去杀人涨分，或者找泳者转让分数——第 2 天起开放的那条总则就是为这个准备的。）');
+    if(!st.sealed&&left<=0)await this.cgDeprive();
+    this.render();
+  },
+  /** 总则八执行：术式被剥夺（本章结束前不会回来；属性 / 体术 / 道具 / 结界术熟练度都还在） */
+  async cgDeprive(){
+    const st=this.cgState(),P=this.player;if(!st||!P||st.sealed)return;
+    st.sealed=true;
+    P.techSealed=true;P.techSealedDay=this.day;
+    try{Player.syncUlt(P);Player.syncDomain(P);}catch(e){}
+    this.addLog('lred','◆【总则八】执行——你的术式被剥夺了。');
+    await this.storyModal('死灭洄游 · 术式剥夺',
+      '管理员的声音在脑子里响起来，像宣读一份早就写好的判决。\n\n'
+      +'「泳者——十九日内所获点数未见变动。依总则第八条，剥夺术式。」\n\n'
+      +'术式从你身上被抽走的那一刻没有痛感，只是某种一直贴着掌心的东西不见了。\n\n'
+      +'（属性、体术、道具与结界术熟练度都还在；术式相关的技能、领域、极之番与召唤一并失效。'
+      +'被剥夺的东西不会因为继续涨分回来——直到这一章结束。）',
+      '死灭洄游');
+    this.render();
+  },
+  /** 进入死灭洄游：总分则 → 宣誓参加 → 选结界 → 落地开地图 */
+  async cgEnter(day,node){
+    const P=this.player;if(!P)return;
+    const items=(((node&&node.wheel)||{}).items)||[];
+    await this.cgOathModal();
+    if(this.over)return;
+    const pick=await openWheelModal({title:((node&&node.wheel)||{}).title||'选择要加入的结界',items:items});
+    const ci=Math.max(0,items.indexOf(pick));
+    P.cg={on:true,day:this.day,colony:ci,trainDay:-1,done:[],score:0,
+      kills:{sorc:0,mundane:0,curse:0},spared:0,sealed:false,public:false,
+      lastGainDay:this.day,rules:[],transfers:{}};
+    P.openAdv=null;          // 105 不再走旧开放式冒险（旧档残留一并清掉）
+    P.hp=P.maxHp;P.cp=P.maxCp;
+    this.addLog('lred','◆ 死灭洄游：你在【'+pick.label+'】外宣誓参加——从这一刻起，你的分数就是你的命。');
+    this.addLog('lgold','【死灭洄游规则】击杀术师 +5、击杀非术师 +1、咒灵不计分；每天只能在结界内修炼一次，其余时间都得上街狩猎；'
+      +'战斗是连续的（血蓝只接残血，想回满只能靠那次修炼）；点数连续 '+CG_DEPRIVE_DAYS+' 日没有变动，术式就会被剥夺。');
+    this.addLog('lg','（结界地图在右上角小地图，随时点开：那里面还有「查看总则 / 泳者情报 / 转让分数」。）');
+    this.render();
+    await this.storyModal(node.title+' · '+pick.label,(pick.intro||(pick.battle&&pick.battle.intro)||''),node.chapter);
+    await this.openCgMap();
+  },
+  /** 离开死灭洄游（第 120 天新宿决战前收束；分数记进轮回战报） */
+  cgLeave(){
+    const P=this.player;if(!P||!P.cg)return;
+    const st=P.cg;
+    P.cgResult={score:st.score|0,day:this.day,spared:st.spared|0,sealed:!!st.sealed,
+      kills:st.kills||{sorc:0,mundane:0,curse:0}};
+    if(st.sealed){P.techSealed=false;try{Player.syncUlt(P);Player.syncDomain(P);}catch(e){}}
+    P.techSealed=false;
+    P.cg=null;
+    const k=P.cgResult.kills;
+    this.addLog('lgold','【死灭洄游】杀阵在远处收束——你带着 '+(P.cgResult.score|0)+' 分离开这一章'
+      +(st.sealed?'；被剥夺的术式在收束的瞬间回到了身上。':'。'));
+    this.addLog('lg','最终战绩：击杀术师 '+(k.sorc|0)+' 人、非术者 '+(k.mundane|0)+' 人、咒灵 '+(k.curse|0)+' 只，放走非术者 '+(P.cgResult.spared|0)+' 人。');
+    this.render();
+  },
+  /** 死灭洄游版行动轮盘：修炼一次 / 结界内狩猎 / 结界地图 /（第 2 日起）与泳者交涉 */
+  async cgDaily(){
+    const P=this.player,st=this.cgState();if(!P||!st)return;
+    const c=this.cgColony(),d=this.cgDay();
+    const items=[];
+    if((st.trainDay|0)!==this.day)items.push({label:'在结界内修炼一次（今日限一次）',act:'train',
+      desc:'这一天唯一的一次正经修炼——顺便把伤压下去（血蓝全额接回）。'});
+    items.push({label:'结界内狩猎',act:'patrol',
+      desc:'在 '+c.label+' 的街区里找猎物：击杀术师 +5、非术师 +1、咒灵不计分；强档越靠内越常见。'});
+    // （结界地图常驻右上角小地图，不占行动——点战场才花 1 次行动）
+    if(d>=CG_TRANSFER_DAY)items.push({label:'与泳者交涉（转让分数）',act:'xfer',
+      desc:'互相倒分——原作主角团加这条总则，就是为了躲开「点数不变即剥夺术式」。'});
+    const pick=await openWheelModal({title:'第 '+this.day+' 天 · 死灭洄游（'+c.label+'｜积分 '+(st.score|0)+'｜第 '+d+' 日）',items:items});
+    if(pick.act==='train'){
+      const t=await openWheelModal({title:'在结界内修炼（今日限一次）',items:WHEEL_DAILY.filter(it=>it.act&&it.act!=='hunt')});
+      st.trainDay=this.day;
+      const txt=Player.train(P,t.act);
+      P.hp=P.maxHp;P.cp=P.maxCp;
+      this.addLog('lcyan','【结界内修炼·'+t.label+'】'+txt+'　——顺便把伤压了下去（血蓝全额接回）。');
+      this.render();return;
+    }
+    if(pick.act==='patrol'){await this.cgPatrol('结界内狩猎');return;}
+    if(pick.act==='map'){await this.openCgMap();return;}
+    if(pick.act==='xfer'){await this.openCgTransfer();return;}
+  },
+  /** 一次战斗的公共流程（巡逻与战场共用）：打 → 计分/救活 → 连续战斗结算 */
+  async cgFightNow(roster,title,intro,opts){
+    const P=this.player,st=this.cgState();if(!P||!st)return false;
+    if(intro)await this.storyModal(title,intro,'死灭洄游');
+    if(this.over)return false;
+    let win=false;
+    try{win=await BattleUI.run({title:title,player:P,enemies:roster,allies:(opts&&opts.allies)||[],
+      villain:!!(opts&&opts.villain),hunt:true,scene:(opts&&opts.scene)||('cg'+this.day)});}
+    catch(err){console&&console.error&&console.error('死灭洄游战斗异常:',err);win=false;this.addLog('lred','战斗出现异常，已按撤退安全结算。');}
+    P.battleCount++;
+    await this.afterCgFight(win,roster,opts);
+    return win;
+  },
+  /** 结界内狩猎：刷怪、撞普通人（放走 / 杀死）、正义术师都从这里出来 */
+  async cgPatrol(tag){
+    const P=this.player,st=this.cgState();if(!P||!st)return false;
+    const c=this.cgColony();
+    const pre=(tag?('【'+tag+'】'):'【结界内狩猎】')+c.label+'：';
+    // ① 撞上普通人：放走不记分，就地杀死 +1/人；有时他们被泳者当挡箭牌夹在队伍里
+    if(Math.random()<CG_MUNDANE_RATE){
+      const nMund=rand(1,2);
+      const escorted=Math.random()<0.45;
+      if(!escorted){await this.cgMundaneChoice(nMund);return false;}
+      const roster=this.cgRollRoster();
+      const munds=this.cgRollMundane(nMund);
+      this.addLog('lred',pre+'一队泳者挡在路中间——后面还缩着 '+nMund+' 个普通人。他们把人当挡箭牌。');
+      return await this.cgFightNow(roster.concat(munds),'死灭洄游 · 结界内狩猎',null,{scene:'cg'+this.day+'_m'});
+    }
+    // ② 普通遭遇
+    const roster=this.cgRollRoster();
+    this.addLog('lg',pre+roster.map(e=>e.name).join('、')+' 出现在你的行进路线上。');
+    return await this.cgFightNow(roster,'死灭洄游 · 结界内狩猎',null,{scene:'cg'+this.day+'_p'});
+  },
+  /** 普通人的抉择：放走 / 就地杀死（不打架——他们不会还手） */
+  cgMundaneChoice(n){
+    const st=this.cgState(),P=this.player;
+    if(!st||!P)return Promise.resolve(false);
+    return new Promise(res=>{
+      showModal('<h2>街 上 的 普 通 人</h2>'
+        +'<p style="line-height:2">街角有 '+n+' 个人影——是没能逃出去的普通人。\n\n他们看见你就发抖。没有术式，也没有武器。</p>'
+        +'<p style="line-height:1.8;color:var(--txt3);font-size:12px">总则第五条：非术师值 1 分。放走不记分；就地杀死，积分 +'+n+'。</p>'
+        +'<div style="display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap">'
+        +'<button class="btn ghost" id="cgSpare" style="flex:1;min-width:140px">放 走 他 们</button>'
+        +'<button class="btn" id="cgKill" style="flex:1;min-width:140px;border-color:rgba(255,120,120,.55);color:#ff9a9a">就 地 杀 死</button>'
+        +'</div>');
+      $('cgSpare').onclick=()=>{closeModal();res(false);};
+      $('cgKill').onclick=()=>{closeModal();res(true);};
+    }).then(kill=>{
+      if(!kill){
+        st.spared=(st.spared|0)+n;
+        this.addLog('lg','你侧身让开了路。他们连滚带爬地跑远——没有分数，也没有别的。');
+        this.render();
+        return false;
+      }
+      st.kills=st.kills||{sorc:0,mundane:0,curse:0};
+      st.kills.mundane=(st.kills.mundane|0)+n;
+      this.addLog('lred','你抬手解决了 '+n+' 名普通人。血溅在墙上，连术式都不需要。');
+      this.cgAddScore(n,'击杀非术者 ×'+n);
+      return true;
+    });
+  },
+  /** 误杀普通人之后：救活放生（不算杀非术者、不加分） */
+  cgRescuePrompt(n){
+    return new Promise(res=>{
+      showModal('<h2>战 后 · 倒 下 的 人</h2>'
+        +'<p style="line-height:2">清场之后你才发现：刚才的混战里，有 <b style="color:var(--gold)">'+n+'</b> 个普通人被卷了进去，已经不动了。\n\n还能救——反转术式够得着他们。</p>'
+        +'<p style="line-height:1.8;color:var(--txt3);font-size:12px">救活放生：不算击杀非术者，也不加分。不救：按总则第五条，每人记 1 分。</p>'
+        +'<div style="display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap">'
+        +'<button class="btn" id="cgRescue" style="flex:1;min-width:150px">救 活 并 放 生</button>'
+        +'<button class="btn ghost" id="cgLeaveDead" style="flex:1;min-width:150px;border-color:rgba(255,120,120,.55);color:#ff9a9a">不 管 他 们</button>'
+        +'</div>');
+      $('cgRescue').onclick=()=>{closeModal();res(true);};
+      $('cgLeaveDead').onclick=()=>{closeModal();res(false);};
+    });
+  },
+  /** 战后结算：计分（术师 5 / 非术师 1 / 咒灵 0）+ 救活放生 + 连续战斗（血蓝只接残血） */
+  async afterCgFight(win,roster,opts){
+    const P=this.player,st=this.cgState();if(!P)return;
+    const u=(typeof BattleUI!=='undefined'&&BattleUI.eng)?BattleUI.eng.player:null;
+    const hpr=u?Math.max(0,Math.min(1,(u.hp||0)/Math.max(1,u.maxHp||1))):1;
+    const cpr=u?Math.max(0,Math.min(1,(u.cp||0)/Math.max(1,u.maxCp||1))):1;
+    let sorcDead=0,mundDead=0,curseDead=0;
+    const names=[];
+    const eng=(typeof BattleUI!=='undefined')?BattleUI.eng:null;
+    if(eng&&win){
+      eng.units.forEach(x=>{
+        if(!x||x.isPlayer||x.side!=='enemy'||x.alive||x.summonTag)return;
+        names.push(x.name);
+        const t=x.type||'';
+        if(t==='非术师')mundDead++;
+        else if(t==='咒灵')curseDead++;
+        else sorcDead++;      // 术师 / 诅咒师 / 受肉体 / 人类……只要不是咒灵与非术师，就按泳者算 5 分
+      });
+    }
+    let rescued=0;
+    if(win&&mundDead>0&&CG_RESCUE_CIVILIAN){
+      const ok=await this.cgRescuePrompt(mundDead);
+      if(ok){rescued=mundDead;mundDead=0;
+        this.addLog('lgreen','【救活放生】你把倒下的普通人一个一个拖到墙边——反转术式接住了他们。他们磕了个头，跑了。'
+          +'（'+rescued+' 人不计入击杀非术者，也不加分）');}
+      else this.addLog('lred','你看着他们断了气，没有伸手。');
+    }
+    if(win){
+      const li=(roster&&roster.length)?Math.max.apply(null,roster.map(e=>e.li||0)):0;
+      const rw=Player.reward(P,li);
+      this.addLog('lgreen','✔ 清理完毕：'+(names.length?names.join('、'):'（无人阵亡）')+'。'+rw);
+      if(st){
+        st.kills=st.kills||{sorc:0,mundane:0,curse:0};
+        st.kills.sorc=(st.kills.sorc|0)+sorcDead;
+        st.kills.mundane=(st.kills.mundane|0)+mundDead;
+        st.kills.curse=(st.kills.curse|0)+curseDead;
+        const gain=sorcDead*5+mundDead*1;
+        if(gain>0){
+          const why=[];
+          if(sorcDead)why.push('击杀术师 ×'+sorcDead+'（5 分/人）');
+          if(mundDead)why.push('击杀非术者 ×'+mundDead+'（1 分/人）');
+          this.cgAddScore(gain,why.join('、'));
+        }else if(curseDead){
+          this.addLog('lg','——咒灵不计分：总则第五条只认泳者（术师 5 点、非术师 1 点）。');
+        }
+      }
+    }else if(roster&&roster.length){
+      const li=Math.max.apply(null,roster.map(e=>e.li||0));
+      const rw=Player.reward(P,li,false);
+      this.addLog('lgold','【苦战收益】'+rw);
+    }
+    // ★ 连续战斗：血蓝只接残血（+8%，有反转术式 +20%）——想回满只能靠每天一次「在结界内修炼」
+    const restHp=CG_REST_HP+(P.reverse?CG_REST_CAP_HP:0);
+    P.hp=Math.max(1,Math.min(P.maxHp,Math.round(P.maxHp*hpr+P.maxHp*restHp)));
+    P.cp=Math.max(0,Math.min(P.maxCp,Math.round(P.maxCp*cpr+P.maxCp*CG_REST_CP)));
+    if(P.possess){P.possess=null;delete P.possessRoundThis;}
+    this.addLog('lg','【连续战斗】你带着上一场的伤继续走：生命 '+Math.round(P.hp)+' / '+P.maxHp+'，咒力 '+Math.round(P.cp)+' / '+P.maxCp
+      +(P.reverse?'（反转术式压住了大半伤口）':'（没有反转术式，只能靠这点喘息——回满得回结界里修炼）'));
+    this.render();
+  },
+  /** 指定战场：从结界地图点进来（第 6 日起也能去别的结界） */
+  async cgFightField(i){
+    const P=this.player,st=this.cgState();if(!P||!st)return;
+    const all=[];
+    CG_COLONIES.forEach((c,ci)=>{this.cgFieldList(ci).forEach(f=>all.push(f));});
+    const f=all.find(x=>x.i===i);
+    if(!f)return;
+    if((st.done||[]).indexOf(i)>=0){this.addLog('lg','这一处战场已经清过了。');this.render();return;}
+    if(f.ci!==(st.colony|0)&&this.cgDay()<CG_OPEN_DAY){
+      this.addLog('lred','【总则】你还不能自由进出结界——第 '+CG_OPEN_DAY+' 日起才能去别的结界。');
+      this.render();return;
+    }
+    if(f.ci!==(st.colony|0))await this.cgTravelTo(f.ci,true);
+    if(!(await this.cgSpend())){this.addLog('lg','今天的力气用完了——先歇一晚。');return;}
+    const sides=this.flipSides(f.battle.enemies||[],f.battle.allies||[],f.battle.noFlip);
+    if(!sides.enemies.length){st.done=st.done||[];st.done.push(i);this.addLog('lgold','此处无敌对目标，你顺势接管了这一片。');this.render();return;}
+    const win=await this.cgFightNow(sides.enemies,'死灭洄游 · '+f.label,(f.intro||''),
+      {allies:sides.allies,villain:sides.villain,scene:'cg105_'+i});
+    if(this.over)return;
+    if(win){
+      st.done=st.done||[];
+      if(st.done.indexOf(i)<0)st.done.push(i);
+      const leftN=this.cgFieldList().filter(x=>st.done.indexOf(x.i)<0).length;
+      this.addLog('lgold','★ 稳住了【'+f.label+'】。（'+this.cgColony().label+' 还剩 '+leftN+' 处战场）');
+      (sides.allies||[]).forEach(a=>{if(typeof NPC_PROFILES!=='undefined'&&NPC_PROFILES[a.name])this.addAffinity(a.name,1);});
+      this.render();
+    }else if(f.battle.lose==='continue'){
+      this.addLog('lred','你在【'+f.label+'】倒下了，但同伴把你拖了出来——没有死，只是这一处没守住。');
+      this.lossReward(sides.enemies);
+      this.render();
+    }else{
+      this.ending('death',{title:'死灭洄游 · '+f.label});
+    }
+  },
+  /** 跨结界移动（第 6 天起）：花 1 次行动 */
+  async cgTravelTo(ci,free){
+    const st=this.cgState();if(!st)return false;
+    const idx=clamp(ci|0,0,CG_COLONIES.length-1);
+    if(idx===(st.colony|0))return true;
+    if(this.cgDay()<CG_OPEN_DAY){this.addLog('lred','【总则】所有泳者自由进出结界——这条总则第 '+CG_OPEN_DAY+' 日才会被提出。');return false;}
+    if(!free&&!(await this.cgSpend())){this.addLog('lg','今天的力气用完了——先歇一晚。');return false;}
+    st.colony=idx;
+    this.addLog('lgold','你穿过结界的边界，进了【'+CG_COLONIES[idx].label+'】。'+CG_COLONIES[idx].note);
+    this.render();
+    return true;
+  },
+  /** 行动点消耗（与涩谷同一套：每天 ACTIONS_PER_DAY 次） */
+  cgSpend(){
+    if((this.dayActions|0)>=this.actionCap())return false;
+    this.dayActions=(this.dayActions|0)+1;
+    this.render();
+    return true;
+  },
+  /** 与泳者互相转让分数（第 2 天起的追加总则）：转给对方换好感；也能向交情够的泳者要一次 5 分 */
+  cgTransferTo(name,n){
+    const st=this.cgState(),P=this.player;if(!st||!P)return false;
+    n=Math.max(5,Math.round((n||5)/5)*5);
+    if((st.score|0)<n){this.addLog('lred','你的积分不够转出 '+n+' 分。');return false;}
+    st.score=(st.score|0)-n;
+    st.transfers=st.transfers||{};
+    st.transfers[name]=(st.transfers[name]||0)+1;
+    this.addAffinity(name,1);
+    this.addLog('lgold','你把 '+n+' 分转给了【'+name+'】——分数在他们之间来回倒，这条总则本来就是为这个加的。（剩余 '+(st.score|0)+' 分；好感 +1）');
+    this.render();
+    return true;
+  },
+  cgTransferFrom(name){
+    const st=this.cgState(),P=this.player;if(!st||!P)return false;
+    st.got=st.got||{};
+    if(st.got[name]){this.addLog('lg','【'+name+'】已经转过一次了——他在总则的边上冷笑：「一个人只能给一次，我可不想被管理员盯上。」');return false;}
+    if(this.affinityOf(name)<3){this.addLog('lg','【'+name+'】别开脸：「我们还没到能互相倒分的交情。」（好感 3 以上才肯先给你）');return false;}
+    st.got[name]=true;
+    st.score=(st.score|0)+5;
+    st.lastGainDay=this.day;
+    this.addLog('lgold','【'+name+'】把 5 分转给了你——「别死。分数在你手里比在我手里有用。」（当前 '+(st.score|0)+' 分）');
+    this.render();
+    return true;
+  },
+  /* ==================== 死灭洄游 · 界面 ==================== */
+  /** 右上角小地图：还没开放结界之前画本结界的 3 处战场；开放之后画四个结界 */
+  cgMiniHtml(){
+    const st=this.cgState();if(!st)return'';
+    const list=this.cgFieldList(),done=st.done||[];
+    const open=(this.cgDay()>=CG_OPEN_DAY);
+    let marks='';
+    if(open){
+      CG_COLONIES.forEach((c,ci)=>{
+        const here=(ci===(st.colony|0));
+        marks+='<i class="mm-dot colony'+(here?' here':'')+'" style="left:'+c.pos[0]+'%;top:'+c.pos[1]+'%"></i>';
+      });
+    }
+    let fdone=0;
+    list.forEach(f=>{
+      const d=done.indexOf(f.i)>=0;if(d)fdone++;
+      marks+='<i class="mm-dot cg'+(d?' done':'')+'" style="left:'+(f.pos?f.pos[0]:40)+'%;top:'+(f.pos?f.pos[1]:50)+'%"></i>';
+    });
+    return '<div class="mm-cap">积分 '+(st.score|0)+' ｜ '+fdone+' / '+list.length+'</div><div class="mm-body">'+marks+'</div>';
+  },
+  /** 结界地图：点战场＝前往开打（1 行动）；第 6 日起点别的结界＝跨结界移动（1 行动） */
+  openCgMap(){
+    const P=this.player,st=this.cgState();
+    if(!P||!st)return Promise.resolve();
+    return new Promise(res=>{
+      const c=this.cgColony(),d=this.cgDay(),list=this.cgFieldList(),done=st.done||[];
+      const open=(d>=CG_OPEN_DAY);
+      let marks='';
+      if(open){
+        CG_COLONIES.forEach((k,ci)=>{
+          const here=(ci===(st.colony|0));
+          const dl=this.cgFieldList(ci).filter(x=>done.indexOf(x.i)>=0).length;
+          marks+='<button class="adv-node colony'+(here?' here':'')+'" data-cgc="'+ci+'" style="left:'+k.pos[0]+'%;top:'+k.pos[1]+'%" title="'+this.escHtml(k.note||'')+'">'
+            +'<span class="dot">'+(here?'你':('T'+k.tier))+'</span><span class="nm">'+this.escHtml(k.label)+'（'+dl+'/3）</span></button>';
+        });
+      }
+      list.forEach(f=>{
+        const dm=done.indexOf(f.i)>=0;
+        const px=f.pos?f.pos[0]:40, py=f.pos?f.pos[1]:50;
+        const pos=open?[clamp(px*0.5+12,4,96),clamp(py*0.5+26,12,94)]:[px,py];
+        marks+='<button class="adv-node field'+(dm?' done':'')+'" data-cgf="'+f.i+'" style="left:'+pos[0]+'%;top:'+pos[1]+'%" title="'+this.escHtml(f.intro||'')+'"'+(dm?' disabled':'')+'>'
+          +'<span class="dot">'+(dm?'✔':('T'+(f.k+1)))+'</span><span class="nm">'+this.escHtml(f.label)+'</span></button>';
+      });
+      const left=Math.max(0,this.actionCap()-(this.dayActions|0));
+      const trained=((st.trainDay|0)===this.day);
+      const warn=(st.public&&(st.score|0)%5!==0);
+      const last=(st.lastGainDay!=null)?st.lastGainDay:(st.day||this.day);
+      const dl=Math.max(0,CG_DEPRIVE_DAYS-(this.day-last));
+      showModal('<h2>死灭洄游 · '+this.escHtml(c.label)+'</h2>'
+        +'<div class="center" style="color:var(--purple);letter-spacing:2px;margin-bottom:8px">第 '+d+' 日 ｜ 积分 <b style="color:var(--gold)">'+(st.score|0)+'</b> 分 ｜ 今日剩余行动 '+left+' ｜ 修炼 '+(trained?'已用':'未用')+' ｜ 距术式剥夺 '+dl+' 日</div>'
+        +(warn?'<div class="center" style="color:#ff8a95;font-size:12px;margin-bottom:6px">⚠ 你的积分不是 5 的倍数——情报已公开，正义的术师正在循着分数找你。</div>':'')
+        +(st.sealed?'<div class="center" style="color:#ff8a95;font-size:12px;margin-bottom:6px">⚠ 你的术式已被总则第八条剥夺（本章结束前不会回来）。</div>':'')
+        +'<div class="adv-zoombar">'
+        +'<button class="btn mini ghost" id="advZoomOut">－ 缩小</button>'
+        +'<button class="btn mini ghost" id="advZoomIn">＋ 放大</button>'
+        +'<button class="btn mini ghost" id="advZoomReset">↺ 重置</button>'
+        +'<span class="tips">滚轮缩放 · 拖动空白处平移 · 点节点触发</span></div>'
+        +'<div class="adv-map cg" id="advZoomBox"><div class="adv-zoom" id="advZoom">'+marks+'</div></div>'
+        +'<div class="center" style="color:var(--txt3);font-size:12px;margin-top:8px">'
+        +(open?'四个结界全开——点别的结界＝跨结界移动（1 行动），点战场＝前往开打。':'点战场＝前往开打（每次 1 行动）；第 '+CG_OPEN_DAY+' 日起可以自由进出结界。')
+        +'</div>'
+        +'<div style="display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap">'
+        +'<button class="btn ghost" id="cgRulesBtn">📜 查看总则</button>'
+        +(d>=CG_PUBLIC_DAY?'<button class="btn ghost" id="cgIntelBtn">🕵 泳者情报</button>':'')
+        +(d>=CG_TRANSFER_DAY?'<button class="btn ghost" id="cgXferBtn">🔁 转让分数</button>':'')
+        +'<button class="btn" id="cgCloseBtn">关 闭</button></div>');
+      $('cgCloseBtn').onclick=()=>{closeModal();res();};
+      this.bindMapZoom();
+      $('cgRulesBtn').onclick=()=>{this.openCgRules(true);};
+      if($('cgIntelBtn'))$('cgIntelBtn').onclick=()=>{this.openCgIntel(true);};
+      if($('cgXferBtn'))$('cgXferBtn').onclick=()=>{this.openCgTransfer(true);};
+      $('modalBox').querySelectorAll('[data-cgf]').forEach(b=>{
+        b.onclick=async()=>{
+          if(b.disabled)return;
+          closeModal();
+          await this.cgFightField(parseInt(b.getAttribute('data-cgf'),10));
+        };
+      });
+      $('modalBox').querySelectorAll('[data-cgc]').forEach(b=>{
+        b.onclick=async()=>{
+          const ci=parseInt(b.getAttribute('data-cgc'),10);
+          if(ci===(st.colony|0))return;
+          closeModal();
+          const ok=await this.cgTravelTo(ci);
+          if(ok)await this.openCgMap();else res();
+        };
+      });
+    });
+  },
+  /** 总则面板：8 条原文 + 已提出的追加总则 */
+  openCgRules(fromMap){
+    const st=this.cgState();if(!st)return;
+    const got=st.rules||[];
+    const add=CG_RULES_ADD.map(r=>{
+      const on=got.indexOf(r.id)>=0;
+      return '<div class="cg-rule'+(on?'':' off')+'">'+(on?('【第 '+r.day+' 日 · '+r.who+'】'+r.text):('（第 '+r.day+' 日提出 · 尚未公开）'))+'</div>';
+    }).join('');
+    showModal('<h2>死灭洄游 · 总 则</h2>'
+      +'<div class="cg-rules">'+CG_RULES.map(t=>'<div class="cg-rule">'+this.escHtml(t)+'</div>').join('')+'</div>'
+      +'<h3 style="margin:12px 0 4px">追加总则</h3>'
+      +'<div class="cg-rules">'+add+'</div>'
+      +'<div class="center"><button class="btn" id="cgRulesOk">关 闭</button></div>');
+    $('cgRulesOk').onclick=()=>{closeModal();if(fromMap)this.openCgMap();};
+  },
+  /** 泳者情报（第 3 日公开）：姓名 / 结界 / 总分值 */
+  openCgIntel(fromMap){
+    const st=this.cgState();if(!st)return;
+    if(this.cgDay()<CG_PUBLIC_DAY){this.addLog('lg','【总则】泳者情报只有在信息公开之后才能查看——第 '+CG_PUBLIC_DAY+' 日会被提出。');return;}
+    const rows=this.cgIntelList();
+    showModal('<h2>泳者情报（公开）</h2>'
+      +'<div style="font-size:12px;color:var(--txt3);margin-bottom:8px">第 3 日追加总则：公开所有参赛术士的情报——姓名、所属结界、总分值。<br>'
+      +'看懂这张表就懂了结界里的规矩：分数不是 5 的倍数的人，都杀过非术者。</div>'
+      +'<div class="cg-table">'+rows.map(r=>'<div class="cg-row'+(r.me?' me':'')+'"><span class="n">'+this.escHtml(r.name)+'</span>'
+        +'<span class="c">'+this.escHtml(r.colony)+'</span><b class="s">'+r.score+'</b></div>').join('')+'</div>'
+      +'<div class="center" style="margin-top:10px"><button class="btn" id="cgIntelOk">关 闭</button></div>');
+    $('cgIntelOk').onclick=()=>{closeModal();if(fromMap)this.openCgMap();};
+  },
+  /** 转让分数（第 2 日追加总则）：给分换好感；好感 3 以上可以要一次 5 分（用来解除剥夺倒计时） */
+  openCgTransfer(fromMap){
+    const st=this.cgState(),P=this.player;if(!st||!P)return;
+    const d=this.cgDay();
+    if(d<CG_TRANSFER_DAY){this.addLog('lg','【总则】泳者之间自由转让分数——这条总则第 '+CG_TRANSFER_DAY+' 日才会被提出。');return;}
+    const myCol=this.cgColony().label;
+    const who=CG_ROSTER.filter(r=>r.colony===myCol||['虎杖悠仁','伏黑惠','乙骨忧太'].indexOf(r.name)>=0);
+    const rows=who.map((r,i)=>'<div class="cg-row"><span class="n">'+this.escHtml(r.name)+'</span>'
+      +'<span class="c">'+this.escHtml(r.colony)+' ｜ 好感 '+this.affinityOf(r.name)+'</span>'
+      +'<span class="btns"><button class="btn ghost mini" data-cgto="'+i+'">转 5 分</button>'
+      +'<button class="btn ghost mini" data-cgfrom="'+i+'">要 5 分</button></span></div>').join('');
+    showModal('<h2>转让分数</h2>'
+      +'<div style="font-size:12px;color:var(--txt3);margin-bottom:8px">你的积分：<b style="color:var(--gold)">'+(st.score|0)+'</b> 分'
+      +'（第 '+d+' 日 ｜ 距术式剥夺 '+Math.max(0,CG_DEPRIVE_DAYS-(this.day-((st.lastGainDay!=null)?st.lastGainDay:st.day)))+' 日）<br>'
+      +'「转 5 分」＝把 5 分给对方（好感 +1；给出去不算「获得点数」，不会解除倒计时）。<br>'
+      +'「要 5 分」＝请对方转 5 分给你（好感 3 以上才肯，每人只给一次）——这就是主角团加这条总则的用法。</div>'
+      +'<div class="cg-table">'+(rows||'<div class="cg-row"><span class="n">附近没有能交涉的泳者。</span></div>')+'</div>'
+      +'<div class="center" style="margin-top:10px"><button class="btn" id="cgXferOk">关 闭</button></div>');
+    $('cgXferOk').onclick=()=>{closeModal();if(fromMap)this.openCgMap();};
+    const box=$('modalBox');
+    box.querySelectorAll('[data-cgto]').forEach(b=>b.onclick=()=>{this.cgTransferTo(who[parseInt(b.getAttribute('data-cgto'),10)].name,5);this.openCgTransfer(fromMap);});
+    box.querySelectorAll('[data-cgfrom]').forEach(b=>b.onclick=()=>{this.cgTransferFrom(who[parseInt(b.getAttribute('data-cgfrom'),10)].name);this.openCgTransfer(fromMap);});
+  },
   async triggerEvent(day){
     const node=this.currentStory()[day],P=this.player;
     await this.storyModal(node.title,node.intro,node.chapter);
     await this.npcScene(day);   // 剧情日的角色对话与羁绊
     if(node.wheel){
       // ★ 开放式章节（多战场同时开打）：不抽签，直接摊开大地图自由支援
+      // ★ 死灭洄游：总分则 + 宣誓参加 + 选结界，之后进入 P.cg 那套每日循环（不再用旧的开放式冒险）
+      if(node.wheel.culling)return this.cgEnter(day,node);
       if(node.wheel.open)return this.openAdvStart(day,node);
       const pick=await openWheelModal({title:node.wheel.title,items:node.wheel.items});
       if(pick.skipText){
@@ -9034,6 +9774,19 @@ const Game={
     Player.applyBarrierMaster(this.player);
     Player.syncUlt(this.player);   // 极之番流派：旧存档补默认「常规」   // 超级结界术：读档时补齐 500% 结界术熟练度
     Player.syncDomain(this.player);   // 旧存档没有结界术熟练度：按新规则重算领域资格
+    // 死灭洄游（num87 起）：第 105 天不再用旧的开放式冒险——旧档里残留的 openAdv 清掉；P.cg 的字段补齐
+    try{
+      const _p=this.player;
+      if(_p.openAdv&&_p.openAdv.day===105)_p.openAdv=null;
+      if(_p.cg&&_p.cg.on){
+        _p.cg.kills=_p.cg.kills||{sorc:0,mundane:0,curse:0};
+        _p.cg.rules=_p.cg.rules||[];_p.cg.done=_p.cg.done||[];_p.cg.transfers=_p.cg.transfers||{};
+        if(_p.cg.score==null)_p.cg.score=0;
+        if(_p.cg.colony==null)_p.cg.colony=0;
+        if(_p.cg.day==null)_p.cg.day=this.day;
+        if(_p.cg.lastGainDay==null)_p.cg.lastGainDay=_p.cg.day;
+      }
+    }catch(e){}
     this.day=st.day||0;
     // 旧存档没有这个字段：当作「今天刚开始」，下次点击推进到第二天
     this.dayActions=(st.dayActions!=null)?st.dayActions:ACTIONS_PER_DAY;
@@ -9582,6 +10335,7 @@ const Game={
         <div class="r-item"><span>最终生命上限</span><b>${P.maxHp}</b></div>
         <div class="r-item"><span>术式伤害区间</span><b>【${lvName(tierIndexOf(P.eff[1],DMG_TIERS))}】${P.eff[0]}~${P.eff[1]}</b></div>
         <div class="r-item"><span>历经战斗 / 狩猎</span><b>${P.battleCount} 场 / ${P.huntCount} 次</b></div>
+        ${(P.cgResult&&P.cgResult.kills)?('<div class="r-item"><span>死灭洄游 · 泳者积分</span><b>'+(P.cgResult.score|0)+' 分（击杀术师 '+(P.cgResult.kills.sorc|0)+'、非术者 '+(P.cgResult.kills.mundane|0)+'、咒灵 '+(P.cgResult.kills.curse|0)+'；放走非术者 '+(P.cgResult.spared|0)+' 人'+(P.cgResult.sealed?'；曾被剥夺术式':'')+'）</b></div>'):''}
         <div class="r-item"><span>黑闪触发</span><b>${P.flashCount} 次（累计加成×${P.statBoost}）</b></div>
       </div>`;
     const closeOnes=Object.keys(P.bonds||{}).filter(n=>(P.bonds[n]||0)>=5);
