@@ -335,6 +335,10 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
   .save-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
   .save-meta{font-size:12px;color:var(--txt2);margin-top:4px;line-height:1.6}
   .save-actions{display:flex;gap:8px;margin-top:8px}
+  .save-io-text{width:100%;box-sizing:border-box;background:rgba(10,8,20,.72);color:var(--txt2);
+    border:1px solid rgba(160,120,255,.35);border-radius:10px;padding:8px 10px;font-size:11.5px;line-height:1.5;
+    font-family:ui-monospace,Consolas,monospace;resize:vertical}
+  .save-manual{margin-top:12px;padding-top:10px;border-top:1px dashed rgba(160,120,255,.25)}
   .save-empty{color:var(--txt3,#7a8399);font-size:13px;text-align:center;padding:20px 0}
   .save-msg{color:#ffc060;font-size:12.5px;margin-top:8px}
 /* —— 可点击指定的选项 —— */
@@ -358,6 +362,14 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
   .rt-borrow{margin-top:8px;padding:8px 10px 10px;border:1px solid rgba(255,200,60,.65);border-radius:12px;
     background:linear-gradient(180deg,rgba(255,200,60,.10),rgba(255,200,60,.03));box-shadow:0 0 12px rgba(255,200,60,.15)}
   .rt-borrow.hidden{display:none}
+  /* 式神附体：黑框里放「借来的式神术式」（只花行动点，用你自己的属性打出） */
+  .rt-shadow{margin-top:8px;padding:8px 10px 10px;border:1px solid rgba(150,140,190,.55);border-radius:12px;
+    background:linear-gradient(180deg,rgba(20,18,32,.92),rgba(8,7,14,.75));box-shadow:0 0 14px rgba(90,60,160,.28),inset 0 0 18px rgba(0,0,0,.5)}
+  .rt-shadow.hidden{display:none}
+  .rt-shadow-head{font-size:12px;color:#bda7ff;letter-spacing:.5px;margin-bottom:6px;text-align:center;text-shadow:0 0 8px rgba(120,80,255,.45)}
+  .rt-shadow-body{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .rt-shadow .rt-skill{border-color:rgba(150,140,190,.5);background:rgba(16,14,26,.85)}
+  .rt-shadow .rt-skill .nm{color:#d8ccff}
   .rt-borrow-head{font-size:12px;color:#ffd24a;letter-spacing:.5px;margin-bottom:6px;text-align:center}
   .rt-borrow-body{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
   .rt-borrow .rt-skill{border-color:rgba(255,200,60,.55)}
@@ -1857,6 +1869,35 @@ const SHADOW_SKILLS={
   ]
   // 虎葬：原作没有交代它的能力，所以不设独有术式，走普通攻击
 };
+/** 式神附体带给主人的招式：附体后进入战斗界面下方的「黑影框」，用你自己的行动点打出
+ *  key 与 shadowSkillAct 里的效果一一对应；倍率按**你自己的属性**结算（和以前的基础附体一样）
+ *  exclusive = 合体技：只有这只嵌合兽能用——「雷光电泳」只有附体顎吐才能用，单独附体鵺只会猛雷 */
+const POSSESS_SKILLS={
+  '玉犬·黑':   [{name:'尖牙利爪',      key:'fang',    ap:20, spd:15, mult:2.4}],
+  '玉犬·白':   [{name:'尖牙利爪',      key:'fang',    ap:20, spd:15, mult:2.4}],
+  '玉犬·渾':   [{name:'尖牙利爪·渾',   key:'fang',    ap:22, spd:15, mult:3.0}],
+  '脱兔':      [{name:'兔群',          key:'rabbit',  ap:20, spd:12}],
+  '蝦蟇':      [{name:'影缚',          key:'bind',    ap:25, spd:12, mult:1.8, bind:1}],
+  '鵺':        [{name:'猛雷',          key:'thunder', ap:25, spd:14, mult:2.6}],
+  '大蛇':      [{name:'影缚',          key:'bind',    ap:25, spd:12, mult:1.4, bind:2}],
+  '円鹿':      [{name:'高速反转外放',  key:'heal',    ap:30, spd:12}],
+  '貫牛':      [{name:'蛮牛冲撞',      key:'bull',    ap:30, spd:13, mult:2.2}],
+  '虎葬':      [{name:'巨躯冲撞',      key:'ram',     ap:30, spd:12, mult:3.0}],
+  '満象':      [{name:'穿水',          key:'water',   ap:40, spd:16, mult:2.0}],
+  '嵌合兽·式神':[{name:'嵌合撕咬',     key:'fang',    ap:20, spd:15, mult:2.6}],
+  /* 顎吐 = 大蛇（影缚）+ 虎葬（无）+ 円鹿（超高能反转）+ 鵺（猛雷）：
+     四门继承招式都在，另外多一门**只有它能用**的合体技「雷光电泳」 */
+  '顎吐':[
+    {name:'猛雷·顎吐',    key:'thunder',  ap:25, spd:14, mult:3.0},
+    {name:'影缚·顎吐',    key:'bind',     ap:25, spd:12, mult:1.6, bind:2},
+    {name:'高速反转外放', key:'heal',     ap:30, spd:12},
+    {name:'雷光电泳',     key:'galvanic', ap:45, spd:18, mult:5.0, exclusive:true}
+  ]
+};
+/** 某只式神附体带来的招式表（没有就返回 null，附体只给被动） */
+function possessSkillsOf(name){return POSSESS_SKILLS[name]||null;}
+/** 附体招式的「账面收益」：按各招的行动点折算成档位倍率（只用于展示排序，不参与咒力计价） */
+function possessSkillGaits(list){return (list||[]).map(s=>s.name+'·'+s.ap+'点').join('、');}
 /** 魔虚罗·适应：每 MAKORA_WHEEL_EVERY 回合转一次「适应轮盘」，从本场见过的术式里抽一项加一转 */
 /** 魔虚罗会适应的「效果类」能力：免疫 / 锁血 / 闪避 / 减伤。
  *  这一轨不看是否被再次打中——只要在场上见识过，就每回合必定 +1 转（高速适应）：
@@ -2231,6 +2272,21 @@ class BattleEngine{
         ev.push({type:'heal',from:u.name,text:`【超高能反转】${u.name} 运转高速反转术式，为全体同伴疗伤（${rs.map(r=>(r.m.isPlayer?'你':r.m.name)+' +'+r.heal).join('、')}）。`,heal:rs.length?rs[0].heal:0});
         return true;
       }
+      case 'galvanic':{
+        // 顎吐·雷光电泳（合体技）：把雷电缠在水刃上高速掠过去——高行动点、高速度、高伤害
+        const t=aim();if(!t)return false;
+        ev.push({type:'skillcut',actorName:u.name,text:ss.name});
+        this.strikeScaled(u,t,'tech',ss.mult/2,ev,ss.name);
+        if(t.alive&&Math.random()<0.45){t.buff.stun=Math.max(t.buff.stun||0,1);ev.push({type:'skill',text:`【雷光电泳】${t.name} 被雷光贯穿，浑身麻痹——下一次行动作废。`});}
+        this.afterStrike(ev);return true;
+      }
+      case 'ram':{
+        // 虎葬·巨躯冲撞：原作没交代它的能力，就以巨躯直接撞过去
+        const t2=aim();if(!t2)return false;
+        ev.push({type:'skillcut',actorName:u.name,text:ss.name});
+        this.strikeScaled(u,t2,'melee',ss.mult,ev,ss.name);
+        this.afterStrike(ev);return true;
+      }
       case 'bull':{
         // 貫牛·蛮牛冲撞：对同一个目标反复冲撞，伤害一次比一次高
         const t=aim();if(!t)return false;
@@ -2592,11 +2648,13 @@ class BattleEngine{
         if(po.left>0&&po.left<90){
           po.left--;
           if(po.left<=0){
-            ev.push({type:'info',text:'【式神附体·'+po.name+'】的术式从你身上褪去。'});
+            ev.push({type:'info',text:'【式神附体·'+po.shadow+'】附体时间到了——黑影框收起，借来的术式消散。'});
+            this.clearPossess();   // ★ 附体结束：把它的招式卡从技能栏撤掉
             this.cfg.player.possess=null;
             if(u.possess)u.possess=null;
+            if(po.kind==='wheel'){u.makora=false;}
           }
-          else if(po.left<=1)ev.push({type:'info',text:'【式神附体·'+po.name+'】还剩 1 回合。'});
+          else if(po.left<=1)ev.push({type:'info',text:'【式神附体·'+po.shadow+'】的附体还剩 1 回合。'});
         }
       }
       try{this.onTurnStart(u,ev);}catch(e){console&&console.error&&console.error('回合开始结算异常:',e);}
@@ -2865,6 +2923,7 @@ class BattleEngine{
       special:sk.special||null,forceExtra:false,domainIdx:(sk.domainIdx||0),
       amp:this.ampActive(p),              // ★「展延」词条：这一手是开着展延打出去的
 extractId:(sk.borrowed?(sk.extractId||null):null),   // 借来的术式：撤销时要把这份提取放回术式库
+shadowName:(sk.shadowName||null),shadowIdx:(sk.shadowIdx!=null?sk.shadowIdx:null),   // 附体招式：打出的是哪只式神的哪一门
 extractRec:(sk.borrowed?(sk.extractRec||null):null),
       frac:(_filler?(cost/15):null)});
     return {ok:true};
@@ -2956,7 +3015,7 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     }
     // 式神附体·基础用法：直接把那只式神的术式当作自己的一次行动打出去
     if(a.special==='shadowCast'){
-      const r=this.playerCastShadowSkill(u,a.shadowName);
+      const r=this.playerCastShadowSkill(u,a.shadowName,a.shadowIdx);
       if(r&&r.events&&r.events.length)ev.push(...r.events);
       this.afterAction(u,ev,true,true);
       return;
@@ -3043,13 +3102,14 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     return ok>0;
   }
   /** 玩家主动召唤；返回 false 表示未消耗本次行动（咒力不足等） */
-  playerSummon(p,ev,key){
+  playerSummon(p,ev,key,free){
     const opt=this.summonOptions().find(o=>o.key===key);
     if(!opt){ev.push({type:'info',text:'没有可召唤的对象。'});return false;}
     if(opt.onField){ev.push({type:'info',text:`【${opt.name}】已经在场上了——同一种召唤物同时只能存在一只。`});return false;}
 
-    if(opt.cp>0&&p.cp<opt.cp){ev.push({type:'info',text:`咒力不足（需要 ${opt.cp}），无法召唤【${opt.name}】。`});return false;}
-    if(opt.cp>0)p.cp-=opt.cp;
+    // free=true：极之番自带的「不耗咒力」召唤（嵌合暗翳庭 / 万灵归位）——既不查咒力也不扣
+    if(!free&&opt.cp>0&&p.cp<opt.cp){ev.push({type:'info',text:`咒力不足（需要 ${opt.cp}），无法召唤【${opt.name}】。`});return false;}
+    if(!free&&opt.cp>0)p.cp-=opt.cp;
     let u;
     if(opt.key.indexOf('shadow:')===0){
       const st=this.shadowState();
@@ -3087,9 +3147,10 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
       }
     }
     if(!u){ev.push({type:'info',text:'召唤失败。'});return false;}
-    ev.push({type:'skill',text:opt.cp>0
+    ev.push({type:'skill',text:(opt.cp>0&&!free)
       ? `${p.name} 消耗 ${opt.cp} 点咒力，召唤了【${opt.name}】（强度 ${Math.round(opt.ratio*100)}%，血量另计）。`
-      : `${p.name} 召唤了【${opt.spirit.name}】参战！（此咒灵若战死将从咒灵库中永久消失）`});
+      : (free?`${p.name} 自影中唤出【${opt.name}】（极之番的召唤不耗咒力，强度 ${Math.round(opt.ratio*100)}%）。`
+        : `${p.name} 召唤了【${opt.spirit.name}】参战！（此咒灵若战死将从咒灵库中永久消失）`)});
     // 召唤当回合立刻入列：给它一份行动点并排好本回合的行动（原来要等下一回合才有行动点）
     if(this.phase==='plan'){try{u.ap=AP_PER_ROUND;this.npcDeclare(u,[]);}catch(e){}}
     return true;
@@ -3129,10 +3190,13 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
   }
   /** 基础附体：直接使用某只式神的独有术式（把它的术式当成自己的一次行动）
    *  实现上借用式神自己的 shadowSkillAct —— 所以倍率、附带效果（麻痹/影缚/护盾/连咬两口）与它本人出手时**完全一致** */
-  playerCastShadowSkill(u,name){
+  playerCastShadowSkill(u,name,idx){
     const ev=[];
     const raw=u.shadowSkill;
-    const sk=SHADOW_SKILLS[name];
+    // 附体（黑影框）：招式表来自 POSSESS_SKILLS —— 含嵌合兽的合体技（例如顎吐的雷光电泳）；
+    // 式神自己出手时（idx 为空）才走它自己的 SHADOW_SKILLS 表
+    const plist=possessSkillsOf(name);
+    const sk=(idx!=null&&plist&&plist[idx])?plist[idx]:(SHADOW_SKILLS[name]||null);
     if(!sk){
       // 虎葬这类没有独有术式的：以它的巨躯撞过去
       const t=this.pickEnemyTarget();
@@ -3144,113 +3208,108 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     }
     // 借术式：必定发动（不掷概率），嵌合兽的多门术式仍随机抽一门
     const defs=(Array.isArray(sk)?sk:[sk]).map(d=>Object.assign({},d,{chance:1}));
-    u.shadowSkill=(defs.length===1?defs[0]:defs);
+    // idx：黑影框里点的是这一只式神的哪一门招式（不给就随机抽一门——嵌合兽的老行为）
+    u.shadowSkill=(idx!=null&&defs[idx])?defs[idx]:(defs.length===1?defs[0]:defs);
     let ok=false;
     try{ok=this.shadowSkillAct(u,ev);}catch(e){ok=false;}
     finally{u.shadowSkill=raw||null;this._ampHit=null;}
     return {ok:ok,events:ev};
   }
-  /** 可用的式神附体清单（已调服且未战死；嵌合兽看 fused） */
+  /** 可用的式神附体清单：附体后它的术式进入下方「黑影框」，用你自己的行动点打出
+   *  （点名四门円鹿/魔虚罗/玉犬·黑/満象 同时保留各自的被动） */
   possessOptions(){
     const P=this.cfg&&this.cfg.player;if(!P)return [];
     const st=P.shadows||{},tamed=st.tamed||{},dead=st.dead||{},fused=st.fused||{};
     const active=P.possess||null;
     const out=[];
     const add=(name,isFusion)=>{
-      const o=SHADOW_POSSESSION.find(x=>x.shadow===name);
-      if(o){
-        out.push(Object.assign({},o,{slot:true,isFusion:!!isFusion,
-          // 按式神名比对：只要 id 缺失也不会把「四门都判成上身中」
-          active:!!(active&&active.shadow===o.shadow&&active.left>0),
-          cp:summonPrice(P,o.cost),ap:40}));
-        return;
-      }
-      // 基础附体：直接把它的术式当自己的一次行动打出去（不占上身位）
-      const sk=SHADOW_SKILLS[name];
-      const nm=sk?(Array.isArray(sk)?sk.map(d=>d.name).join(' ／ '):sk.name):null;
-      out.push({shadow:name,id:'cast:'+name,kind:'skill',slot:false,isFusion:!!isFusion,active:false,
-        name:name+' · '+(nm||'巨躯冲撞'),
-        desc:nm?('基础附体 —— 直接使用它的术式【'+nm+'】：本回合以你自己的属性打出这一击，不占上身位。')
-               :'基础附体 —— 以它的巨躯撞过去：本回合打出一记重击，不占上身位。',
-        cp:summonPrice(P,0.03),ap:25});
+      const skills=possessSkillsOf(name)||[];
+      const slot=SHADOW_POSSESSION.find(x=>x.shadow===name)||null;
+      const short=(slot&&slot.name.indexOf(' · ')>=0)?slot.name.split(' · ')[1]:'借术式';
+      out.push({
+        id:'attach:'+name,kind:'skills',shadow:name,slot:!!slot,isFusion:!!isFusion,
+        active:!!(active&&active.shadow===name),
+        name:name+' · '+short,
+        skills:skills,
+        desc:'附体后它的术式进入下方的黑影框——'
+          +(skills.length?possessSkillGaits(skills):'（这只式神没有主动术式）')
+          +(slot?('；同时持续获得【'+short+'】的被动'):'')
+          +'，持续 '+((slot&&slot.rounds)||3)+' 回合。用你自己的行动点打出，不额外耗咒力。',
+        cp:slot?summonPrice(P,slot.cost):summonPrice(P,0.03),
+        rounds:(slot&&slot.rounds)||3
+      });
     };
     SHADOW_TABLE.forEach(t=>{const n=t[0];if(tamed[n]&&!dead[n])add(n,false);});
     SHADOW_FUSIONS.forEach(f=>{if(fused[f.key])add(f.key,true);});
     return out;
   }
-  /** 式神附体：分为两种
-   *  · 点名的四门（円鹿/魔虚罗/玉犬·黑/満象）——挂上身，占**唯一的上身位**，新的覆盖旧的
-   *  · 其余式神与嵌合兽——**基础附体**：直接把它的术式当自己的一次行动打出去，不占上身位 */
+  /** 附体带来的招式 → 技能卡（id 前缀 ps、标记 possessSkill）
+   *  这些卡只花**行动点**（gain:0＝不耗咒力），出手时以你自己的属性结算 */
+  possessCards(name){
+    const list=possessSkillsOf(name)||[];
+    return list.map((s,i)=>({id:'ps:'+name+':'+i,name:s.name,tier:'basic',cast:[0],cd:0,mult:[1],scope:'self',
+      gain:0,chargeable:false,kind:'tech',ap:[s.ap||25],spd:[s.spd||12],
+      special:'shadowCast',shadowName:name,shadowIdx:i,possessSkill:true,possessKey:s.key,
+      desc:'【式神附体·'+name+'】'+(s.exclusive?'（合体技）':'')+'以你自己的属性打出（'+s.ap+' 行动点）'}));
+  }
+  /** 卸下附体带来的招式卡（切换附体 / 附体结束 / 战斗结束时） */
+  clearPossess(){
+    const p=this.player;if(!p)return;
+    p.skillBar=(p.skillBar||[]).filter(sk=>!sk.possessSkill);
+  }
+  /** 式神附体：把一只式神的术式借到身上
+   *  · 附体后**不会立刻出招**——它的术式进入战斗界面下方的「黑影框」，用你自己的行动点打出
+   *  · 点名四门（円鹿 / 魔虚罗 / 玉犬·黑 / 満象）同时保留各自的被动；魔虚罗额外挂起适应法轮
+   *  · 上身位只有一个，再附体会覆盖；每回合只能用一次（`possessRoundUsed`） */
   playerPossess(u,id){
     const P=this.cfg&&this.cfg.player;if(!P)return {ok:false,why:'没有角色数据'};
     const st=P.shadows||{},tamed=st.tamed||{},dead=st.dead||{},fused=st.fused||{};
     const p=this.player;
-    const _chk=(name,isFusion)=>{
-      if(isFusion){if(!fused[name])return '【'+name+'】尚未融合成形';}
-      else{
-        if(dead[name])return '【'+name+'】已经战死，借不到它的术式了（活着时先收进影子就能保住它）';
-        if(!tamed[name])return '【'+name+'】尚未调服，借不到它的术式';
-      }
-      return null;
-    };
-    // —— 基础附体：直接使用它的术式 ——
-    if(id&&String(id).indexOf('cast:')===0){
-      const name=String(id).slice(5);
-      const isFusion=SHADOW_FUSIONS.some(f=>f.key===name);
-      const bad=_chk(name,isFusion);
-      if(bad)return {ok:false,why:bad};
-      const used=this.possessRoundUsed(P);
-      if(used)return {ok:false,why:'式神附体每回合只能用一次（本回合已经借过术式了）'};
-      const cp=summonPrice(p,0.03);
-      if(p.cp<cp)return {ok:false,why:'咒力不足（需要 '+cp+' 点）'};
-      p.cp-=cp;
-      P.possessRoundThis=(this.round||0);
-      // 立刻生效：当场把这只式神的术式打出去（不占行动点、不进出手序）
-      const r=this.playerCastShadowSkill(p,name);
-      const evs=(r&&r.events)||[];
-      evs.unshift({type:'skill',text:'【式神附体·'+name+'】你借出它的术式，当场打出（不消耗行动点，本回合的附体次数已用完）。'});
-      return {ok:!!(r&&r.ok),events:evs};
+    const name=String(id||'').replace(/^attach:/,'');
+    const isFusion=SHADOW_FUSIONS.some(f=>f.key===name);
+    if(!isFusion&&!SHADOW_TABLE.some(t=>t[0]===name))return {ok:false,why:'没有这只式神'};
+    if(isFusion){if(!fused[name])return {ok:false,why:'【'+name+'】尚未融合成形'};}
+    else{
+      if(dead[name])return {ok:false,why:'【'+name+'】已经战死，借不到它的术式了（活着时先收进影子就能保住它）'};
+      if(!tamed[name])return {ok:false,why:'【'+name+'】尚未调服，借不到它的术式'};
     }
-    // —— 挂上身（唯一的附体位）——
-    const o=SHADOW_POSSESSION.find(x=>x.id===id)||SHADOW_POSSESSION.find(x=>x.shadow===id);
-    if(!o){
-      // 传进来的是一个「没点名」的式神名（多半是它已战死/未调服，所以没出现在清单里）
-      const nm=String(id||'');
-      const isFus=SHADOW_FUSIONS.some(f=>f.key===nm);
-      if(isFus||SHADOW_TABLE.some(t=>t[0]===nm)){const bad0=_chk(nm,isFus);if(bad0)return {ok:false,why:bad0};}
-      return {ok:false,why:'没有这门附体术式'};
-    }
-    const bad=_chk(o.shadow,false);
-    if(bad)return {ok:false,why:bad};
-    const used=this.possessRoundUsed(P);
-    if(used)return {ok:false,why:'式神附体每回合只能用一次（本回合已经借过术式了）'};
-    const cp=summonPrice(p,o.cost);
+    if(this.possessRoundUsed(P))return {ok:false,why:'式神附体每回合只能用一次（本回合已经附体过了）'};
+    const slot=SHADOW_POSSESSION.find(x=>x.shadow===name)||null;
+    const cp=slot?summonPrice(p,slot.cost):summonPrice(p,0.03);
     if(p.cp<cp)return {ok:false,why:'咒力不足（需要 '+cp+' 点）'};
     p.cp-=cp;
     P.possessRoundThis=(this.round||0);
     const ev=[];
     const prev=P.possess;
-    // 切换上身：把上一门的残留状态收掉（例如从法轮切走时，法轮挂在身上的适应系统要一起收）
-    if(prev&&prev.kind==='wheel'&&o.kind!=='wheel'){
+    // 切换附体：把上一门的残留状态收掉（法轮切走时，上身位的适应系统要一起收）
+    if(prev&&prev.kind==='wheel'&&name!=='魔虚罗'){
       p.makora=false;p.makoraSeen={};p.makoraAdapt={};
       ev.push({type:'info',text:'（【魔虚罗·法轮】从你身上退去——适应系统的状态清空，但已解析出的反制术式仍永久保留。）'});
     }
-    if(o.kind==='wheel'){
-      P.possess={id:o.id,shadow:o.shadow,kind:'wheel',name:o.name,left:o.rounds||99};
-      p.possess=P.possess;   // ★ 结算读的是战场单位
-      p.makora=true;this.makoraLoad(p);   // 法轮就是魔虚罗的适应系统：接着上一场已解析的进度往下转
-      ev.push({type:'skillcut',actorName:'你',text:'式神附体 · 魔虚罗法轮'});
-      if(prev)ev.push({type:'info',text:'（上身位只有一个——覆盖了之前的【'+prev.name+'】）'});
-      ev.push({type:'skill',text:'你挂起了魔虚罗的适应法轮——从这一刻起，对方的每一招都由你替它挨下，法轮会替你「适应」这套术式：重复挨打会越来越轻，五转之后彻底无效。'});
-    }else{
-      P.possess={id:o.id,shadow:o.shadow,kind:o.kind,name:o.name,mult:o.mult||1,left:o.rounds||3};
-      p.possess=P.possess;   // ★ 结算读的是战场单位（dealDamage 回血 / performStrike 增伤）
-      ev.push({type:'skillcut',actorName:'你',text:'式神附体 · '+o.name});
-      ev.push({type:'skill',text:'【式神附体·上身】'+o.desc+(prev?('（上身位只有一个——覆盖了之前的【'+prev.name+'】）'):'（上身位已占用，再上身会覆盖这一门）')});
+    const rounds=(slot&&slot.rounds)||3;
+    const short=(slot&&slot.name.indexOf(' · ')>=0)?slot.name.split(' · ')[1]:'借术式';
+    P.possess={id:'attach:'+name,shadow:name,kind:slot?slot.kind:'skills',
+      name:name+' · '+short,mult:slot?(slot.mult||1):1,rounds:rounds,left:rounds,
+      skills:possessSkillsOf(name)||[]};
+    p.possess=P.possess;   // ★ 结算读的是战场单位（dealDamage 回血 / performStrike 增伤）
+    if(name==='魔虚罗'){p.makora=true;this.makoraLoad(p);}
+    // 黑影框：把它的术式挂进技能栏（只在这一段附体期间有效）
+    this.clearPossess();
+    const cards=this.possessCards(name);
+    if(cards.length)p.skillBar=(p.skillBar||[]).concat(cards);
+    ev.push({type:'skillcut',actorName:'你',text:'式神附体 · '+name});
+    if(prev)ev.push({type:'info',text:'（上身位只有一个——覆盖了之前的【'+prev.name+'】）'});
+    if(slot){
+      ev.push({type:'skill',text:(name==='魔虚罗'
+        ? '你挂起了魔虚罗的适应法轮——从这一刻起，对方的每一招都由你替它挨下，法轮会替你「适应」这套术式：重复挨打会越来越轻，五转之后彻底无效。'
+        : ('【附体·'+short+'】'+slot.desc))});
     }
+    if(cards.length)ev.push({type:'skill',text:'【'+name+'】的术式进入了下方的黑影框（'+possessSkillGaits(cards.map(c=>({name:c.name,ap:c.ap[0]})))+'）——消耗你自己的行动点就能打出去，持续 '+rounds+' 回合。'});
+    else ev.push({type:'info',text:'【'+name+'】没有主动术式——这次附体只带来它的被动。'});
     this.checkEnd(ev);
-    return {ok:true,events:ev};
+    return {ok:true,events:ev,rounds:rounds};
   }
+
   /** 本回合是否已经用过式神附体（不耗行动点的技能要有个次数上限，否则一回合能刷到蓝干） */
   possessRoundUsed(P){
     const cur=this.round||0;
@@ -4027,6 +4086,19 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
     }else{
       if(att.ultUsed)return false;
     }
+    // ★ 灵魂型极之番：先查灵魂库够不够（num51 重写这一节时漏掉了，这里补回）
+    if(res.kind==='soul'){
+      const need=res.souls||3;
+      const bank=(P&&Array.isArray(P.soulBank))?P.soulBank:[];
+      if(bank.length<need){if(att.isPlayer)ev.push({type:'info',text:'【'+label+'】需要 '+need+' 条灵魂（现在只有 '+bank.length+' 条）。'});return false;}
+    }
+    // ★ 极之番自己的咒力消耗（账面收益 15 × 效率中值 − 操控减免）：声明时已预付的不再扣
+    //   （num51 重写这一节时漏掉了整段，导致 NPC 的极之番变成免费；玩家的因为 playerDeclare 已预付看不出问题）
+    const cost=this.ultCost(att);
+    if(!prepaid&&!res.noUse){
+      if(att.cp<cost){if(att.isPlayer)ev.push({type:'info',text:'咒力不足以释放极之番（需要 '+cost+' 点）。'});return false;}
+      att.cp-=cost;
+    }
     if(att.isPlayer){if(!res.noUse)att.ultUses[_key]=att.ultUses[_key]-1;}else att.ultUsed=true;   // 漩涡在声明时已经扣过次数（res.noUse）
     const avg=Math.round((att.eff[0]+att.eff[1])/2);
     const tName=(att.isPlayer&&P&&res.flag)?Player.techNameOf(P,res.flag):(att.techName||att.name);
@@ -4122,7 +4194,8 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
         const list=(P&&Array.isArray(P.absorbed))?P.absorbed:[];
         if(!list.length)break;
         const sp=list[rand(0,list.length-1)];
-        try{if(this.playerSummon(att,ev,'spirit:'+(sp.id||('i'+i))))ok++;}catch(e){}
+        // free：这一式本身不耗咒力（咒灵召唤本来就是 0，这里把语义钉死）
+        try{if(this.playerSummon(att,ev,'spirit:'+(sp.id||('i'+i)),true))ok++;}catch(e){}
       }
       if(ok)ev.push({type:'skill',text:'【极之番·万灵归位】'+ok+' 个亡灵应召而来。'});
     }
@@ -4133,7 +4206,8 @@ extractRec:(sk.borrowed?(sk.extractRec||null):null),
         if((st.dead||{})[n])return;
         const opt=this.summonOptions().find(o=>o.key==='shadow:'+n&&!o.onField);
         if(!opt)return;
-        try{if(this.playerSummon(att,ev,opt.key))ok++;}catch(e){}
+        // free：这一式本身不耗咒力，白召（否则会按正常价再扣一次召唤咒力）
+        try{if(this.playerSummon(att,ev,opt.key,true))ok++;}catch(e){}
       });
       if(ok)ev.push({type:'skill',text:'【极之番·嵌合暗翳庭】'+ok+' 只式神自影中齐出。'});
     }
@@ -5065,15 +5139,15 @@ const Fx={
 };
 /** 战斗台词表：key=场景(s+天数_场次/战场名)，value={角色名:{e进场,w胜利,l战败}} */
 const QUOTES={
-'s3_0':{'准二级咒灵':{e:'女人.....我需要更多的女人！！！',l:'啊啊啊啊——',w:'与我融为一体吧！'}},
+'s3_0':{'准二级咒灵':{e:'人……我需要更多的人……更多祭品！！！',l:'啊啊啊啊——',w:'与我融为一体吧！'}},
 's3_1':{'1指受肉宿傩':{e:'我出来了！女人在哪？小孩在哪？啊哈哈哈哈！',l:'我记住你了小鬼，下次见面我就会杀了你',w:'现代咒术师弱到这种程度了吗？'}},
 's3_2':{
  '1指受肉宿傩':{e:'我出来了！女人在哪？小孩在哪？啊哈哈哈哈！',l:'我记住你了小鬼，下次见面我就会杀了你',w:'现代咒术师弱到这种程度了吗？'},
  '五条悟':{e:'真有趣，那就让我来试试你的底色吧',l:'打得很爽啊......',w:'就这种程度嘛？让人失望。'},
  '伏黑惠':{e:'敢打我？由良由良......',l:'救，救命，我还不想死，牢师呢？乙骨学长呢？特级咒术师在哪里？快来救救我！！',w:'又是被大爹们带飞的一天~'}},
 's10_0':{
- '二级咒灵':{e:'小妞~不想这个小鬼死的话，就乖乖把衣服脱了~欸嘿嘿嘿！！',l:'不！不可能......',w:'爽......爽！这个小妞的滋味真不错！'},
- '钉崎野蔷薇':{e:'该死！该死！该死！都怪我！',l:'该死的色孽咒灵......',w:'谢谢你，如果不是你，我可能只能......不过只是谢谢而已哦！你敢乱想我就杀了你！'}},
+ '二级咒灵':{e:'小鬼～不想她死的话，就把你的咒力交出来～欸嘿嘿嘿！！',l:'不！不可能......',w:'嘿嘿嘿……咒术师的血肉，滋味真不错！'},
+ '钉崎野蔷薇':{e:'该死！该死！该死！都怪我！',l:'该死……我居然会在这种地方……',w:'哼，还不错嘛。不过只是谢谢而已哦——下次可别指望我会再让你救一次！'}},
 's33_0':{
  '咒胎怠天':{e:'嘻！嘻嘻嘻！',l:'嘎啊！！！',w:'嘻嘻嘻！'},
  '伏黑惠':{e:'敢打我？由良由良......',l:'救，救命，我还不想死，牢师呢？乙骨学长呢？特级咒术师在哪里？快来救救我！！',w:'又是被大爹们带飞的一天~'},
@@ -5330,6 +5404,7 @@ const BattleUI={
           <button class="btn small" id="rtEnd">结 束 回 合</button>
         </div>
         <div class="rt-bar" id="rtBar"></div>
+        <div class="rt-shadow hidden" id="rtShadow"></div>
         <div class="rt-borrow hidden" id="rtBorrow"></div>
         <div class="summon-mask hidden" id="bfSummonMask">
           <div class="summon-box">
@@ -5682,7 +5757,7 @@ const BattleUI={
   renderSkillBar(){
     const eng=this.eng;if(!eng||!eng.player)return;
     const box=$('rtBar');if(!box)return;
-    const p=eng.player,bar=(p.skillBar||[]).filter(sk=>sk.special!=='summon'&&!sk.borrowed);   // 借来的术式不进主栏
+    const p=eng.player,bar=(p.skillBar||[]).filter(sk=>sk.special!=='summon'&&!sk.borrowed&&!sk.possessSkill);   // 借来的 / 附体带来的招式不进主栏
     box.innerHTML=bar.map(sk=>{
       const apArr=(sk.ap&&sk.ap.length)?sk.ap:[15];
       const spdArr=(sk.spd&&sk.spd.length)?sk.spd:[10];
@@ -5715,7 +5790,7 @@ const BattleUI={
       if((sk.ap||[0]).length>1)return;   // 多段技能只能点上面的段位按钮
       card.onclick=()=>this.doDeclare(id,0);
     });
-    this.renderBorrowBar();
+    this.renderBorrowBar();this.renderPossessBar();
     this.refreshPlanUI();
   },
   /** 术式释放：金色框——本回合借来的那门术式可用的招式（用完/回合结束就消失） */
@@ -5773,7 +5848,7 @@ const BattleUI={
     const eng=this.eng;if(!eng||!eng.player)return;
     const p=eng.player;
     const planning=eng.phase==='plan'&&!eng.ended&&!this._resolveBusy;
-    this.renderBorrowBar();   // 借来的招式用完就立刻把金色框收掉
+    this.renderBorrowBar();this.renderPossessBar();   // 借来的招式 / 附体招式：用完或行动点变化时一起刷新
     const tot=(typeof AP_PER_ROUND!=='undefined')?AP_PER_ROUND:60;
     const apTxt=$('rtApTxt'),apFill=$('rtApFill');
     if(apTxt)apTxt.textContent='行动点 '+Math.round(p.ap)+' / '+tot;
@@ -6234,6 +6309,30 @@ const BattleUI={
     close();
   },
   /** 式神附体面板：借已调服式神的术式上身 */
+  /** 黑影框：式神附体借来的招式（只花行动点；用你的属性打出，和自己的招式分开显示） */
+  renderPossessBar(){
+    const box=$('rtShadow');if(!box)return;
+    const eng=this.eng,p=eng&&eng.player;
+    const cards=p?((p.skillBar||[]).filter(sk=>sk.possessSkill)):[];
+    const pos=p&&p.possess;
+    if(!cards.length&&!pos){box.classList.add('hidden');box.innerHTML='';return;}
+    box.classList.remove('hidden');
+    const planning=eng.phase==='plan'&&!eng.ended&&!this._resolveBusy;
+    const head='✦ 式神附体　·　'+(pos?(pos.shadow+(pos.left>0?('　剩余 '+pos.left+' 回合'):'')):'')
+      +(pos&&pos.kind==='wheel'?'　—　适应法轮生效中（被动）':'　—　这些招式用你自己的行动点打出');
+    box.innerHTML='<div class="rt-shadow-head">'+head+'</div>'
+      +'<div class="rt-shadow-body">'+(cards.length?cards.map(sk=>{
+        const ap=(sk.ap&&sk.ap[0])||0;
+        const na=!planning||(ap>p.ap);
+        return '<button class="rt-skill sx'+(na?' is-na':'')+'" data-sx="'+sk.id+'"'+(na?' disabled':'')+'>'
+          +'<div class="nm">'+sk.name+'</div>'
+          +'<div class="meta">行动点 '+ap+' · 出手 '+((sk.spd&&sk.spd[0])||10)+' · 不耗咒力</div></button>';
+      }).join(''):'<span style="color:var(--txt3);font-size:12px">（这门式神只有被动，没有可打出的招式）</span>')+'</div>';
+    box.querySelectorAll('[data-sx]').forEach(btn=>{
+      btn.onclick=()=>this.doDeclare(btn.getAttribute('data-sx'),0);
+    });
+  },
+  /** 式神附体面板：选一只式神借它的术式（黑影框） */
   openPossess(){
     const eng=this.eng;if(!eng||eng.ended||eng.phase!=='plan')return;
     const p=eng.player,opts=eng.possessOptions();
@@ -6244,20 +6343,23 @@ const BattleUI={
     }
     const used=eng.possessRoundUsed(G.player);
     const items=opts.map(o=>({
-      label:((o.slot&&o.shadow&&o.name.indexOf(o.shadow)<0)?(o.shadow+' · '+o.name):o.name)+(o.active?'　（上身中）':''),
+      label:o.name+(o.active?'　（附体中）':''),
       meta:o.desc+(o.isFusion?'　★ 嵌合兽':''),
-      cost:'不耗行动点 · 耗 '+o.cp+' 咒力'+(o.slot?'　（占用唯一上身位 · 持续数回合）':'　（不占位 · 选完立刻打出）'),
-      disabled:p.cp<o.cp||used||(o.slot&&o.active),
+      cost:'不耗行动点 · 耗 '+o.cp+' 咒力',
+      disabled:p.cp<o.cp||used||(o.active),
       onPick:()=>{
         const r=eng.playerPossess(p,o.id);
         if(!r.ok){this.appendLog({type:'info',text:'无法附体：'+r.why});return;}
         this.closePick();this.render();
-        this.eventsAnim(r.events||[],()=>this.refreshPlanUI());
+        this.eventsAnim(r.events||[],()=>{
+          if(eng.ended){this.finish(eng.result==='win');return;}
+          this.renderSkillBar();this.refreshPlanUI();
+        });
       }
     }));
-    this.openPick('式神附体','不消耗行动点、选完立刻生效（每回合只能用一次，代价是咒力）。'
-      +'上身位只有一个——円鹿 / 魔虚罗 / 玉犬·黑 / 満象 这四门要占位（持续数回合，再上身会覆盖旧的）；'
-      +'其余式神与嵌合兽走基础附体：当场把它的术式打出去，不占上身位。已战死的式神不能上身，嵌合兽可以。'
+    this.openPick('式神附体','附体不消耗行动点、选完立刻生效（每回合只能用一次，代价是咒力）。'
+      +'附体后**不会立刻出招**——它的术式进入战斗界面下方的黑影框，之后由你消耗自己的行动点打出（持续数回合）。'
+      +'点名四门（円鹿 / 魔虚罗 / 玉犬·黑 / 満象）另带各自的被动；上身位只有一个，再附体会覆盖旧的。'
       +(used?'　（本回合已经附体过了，下回合再来）':''),items);
     $('bfPickCancel').onclick=()=>this.closePick();
   },
@@ -8184,6 +8286,86 @@ const Game={
   dayActions:ACTIONS_PER_DAY,   // 今天还剩几次行动（>=ACTIONS_PER_DAY 表示今天还没开始）
   SAVE_KEY:'jjk_saves',
   AUTO_KEY:'jjk_autosave',
+  /* ================= 存档导入 / 导出 ================= */
+  /** 下载一段文本为文件（Blob + a[download]；file:// 下同样可用） */
+  downloadTextFile(name,text){
+    try{
+      const blob=new Blob([text],{type:'application/json;charset=utf-8'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download=name;a.style.display='none';
+      document.body.appendChild(a);a.click();
+      setTimeout(()=>{try{URL.revokeObjectURL(url);a.remove();}catch(e){}},0);
+      return true;
+    }catch(e){return false;}
+  },
+  /** 导出存档：scope='all' 全部手动存档＋自动存档；scope='one' 只导指定 id 的那一条 */
+  exportSaves(scope,id){
+    const list=this.readSaves(),auto=this.readAuto();
+    let saves=[];
+    if(scope==='one'){
+      const rec=list.find(s=>s.id===id)||(auto&&auto.id===id?auto:null);
+      if(!rec)return {ok:false,msg:'这条存档已经不在了。'};
+      saves=[rec];
+    }else{
+      saves=list.slice();
+      if(auto)saves.push(Object.assign({},auto,{auto:true}));
+      if(!saves.length)return {ok:false,msg:'现在还没有任何存档可以导出。'};
+    }
+    const pack={app:'jjk-rimwheel-save',v:1,exportedAt:Date.now(),count:saves.length,saves:saves};
+    const text=JSON.stringify(pack);
+    const d=new Date(),p2=n=>String(n).padStart(2,'0');
+    const stamp=''+d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+'-'+p2(d.getHours())+p2(d.getMinutes());
+    const nm=(scope==='one'?('轮回转盘存档_第'+saves[0].day+'天_'):('轮回转盘存档_全部'+saves.length+'份_'))+stamp+'.json';
+    const ok=this.downloadTextFile(nm,text);
+    return {ok:true,download:ok,text:text,name:nm,count:saves.length,
+      msg:(ok?('已导出 '+saves.length+' 份存档（'+Math.round(text.length/1024)+' KB）：'+nm)
+              :('浏览器没让直接下载——下面文本框里已经放好内容，手动复制保存即可。'))
+        +'　（文本框里也放了一份，可以粘贴到别处）'};
+  },
+  /** 从文本导入存档：接受 ①导出包 {saves:[...]} ②单条存档 ③存档数组
+   *  一律**新增**（不会覆盖你已有的任何存档），导入的名字后面会带「（导入）」 */
+  importSavesFromText(text){
+    const raw=String(text==null?'':text).trim();
+    if(!raw)return {ok:false,msg:'没有内容——请先选择文件，或把导出的文本粘到下面的框里。',added:0};
+    if(raw.length>12*1024*1024)return {ok:false,msg:'内容太大（超过 12 MB），不像是一份存档。',added:0};
+    let data=null;
+    try{data=JSON.parse(raw);}catch(e){return {ok:false,msg:'这不是合法的存档 JSON。',added:0};}
+    let arr=[];
+    if(Array.isArray(data))arr=data;
+    else if(data&&Array.isArray(data.saves))arr=data.saves;
+    else if(data&&data.state&&data.state.player)arr=[data];
+    else return {ok:false,msg:'这份文件里没有能识别的存档（既没有 saves 列表，也没有 state.player）。',added:0};
+    const list=this.readSaves();
+    const used={};list.forEach(s=>{used[String(s.name)]=true;});
+    let added=0,skip=0;
+    arr.forEach((rec,i)=>{
+      if(!rec||!rec.state||!rec.state.player){skip++;return;}
+      const cp=Object.assign({},rec);
+      cp.id='i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+i;
+      cp.auto=false;
+      let nm=String(cp.name||'导入的存档').slice(0,24);
+      if(used[nm])nm=(nm+'（导入）').slice(0,24);
+      let k=2;while(used[nm]){nm=(String(cp.name||'导入').slice(0,18)+'（导入'+(k++)+'）').slice(0,24);}
+      cp.name=nm;used[nm]=true;
+      cp.savedAt=cp.savedAt||Date.now();
+      list.unshift(cp);added++;
+    });
+    if(!added)return {ok:false,msg:'没有可导入的存档'+(skip?('（跳过 '+skip+' 条损坏记录）'):'。'),added:0};
+    const w=this.writeSaves(list);
+    return w?{ok:true,added:added,skip:skip,
+        msg:'已导入 '+added+' 份存档'+(skip?('，跳过 '+skip+' 条损坏记录'):'')+'——它们排在列表最上面，名字后带「（导入）」，点「读 取」即可恢复。'}
+      :{ok:false,added:0,msg:'写入本机存储失败（可能是隐私模式或空间已满）。'};
+  },
+  /** 读取本地文件（导入用） */
+  readSaveFile(file,cb){
+    try{
+      const fr=new FileReader();
+      fr.onload=()=>cb(String(fr.result||''));
+      fr.onerror=()=>cb(null);
+      fr.readAsText(file,'utf-8');
+    }catch(e){cb(null);}
+  },
   readSaves(){
     try{const a=JSON.parse(localStorage.getItem(this.SAVE_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}
   },
@@ -8295,6 +8477,7 @@ const Game={
       +'<div class="save-meta">第 '+rec.day+' 天 · '+this.escHtml(rec.era||'')+' · '+this.escHtml(rec.identity||'')+' · 综合 '+this.escHtml(rec.level||'')+'</div>'
       +'<div class="save-meta">存档时间：'+this.fmtTime(rec.savedAt)+'</div>'
       +'<div class="save-actions"><button class="btn small" data-save-load="'+rec.id+'">读 取</button>'
+      +'<button class="btn small ghost" data-save-exp="'+rec.id+'">导 出</button>'
       +'<button class="btn small ghost" data-save-del="'+rec.id+'">删 除</button></div></div>';
   },
   openSavePanel(canSave,defaultName){
@@ -8304,22 +8487,65 @@ const Game={
     const list=this.readSaves(),auto=this.readAuto();
     const h='<h2>存 档 库</h2>'
       +'<p style="line-height:1.8;color:var(--txt2);font-size:13px">存档保存在本机浏览器里，条数不设上限。'
-      +'<b style="color:var(--gold)">自动存档</b>会在每次推进后刷新，读档覆盖当前进度后，随时可以从它回到刚才的位置。</p>'
+      +'<b style="color:var(--gold)">自动存档</b>会在每次推进后刷新，读档覆盖当前进度后，随时可以从它回到刚才的位置。<br>'
+      +'支持<b>导出 / 导入</b>：导出的是一份 .json 文件（含全部手动存档与自动存档），换机器、换浏览器时导进去就能继续。</p>'
       +(canSave?'<div class="save-input-row"><input id="saveNameInput" class="vs-input" maxlength="24" placeholder="给这段轮回起个名字（可留空）" value="'+this.escHtml(nameValue)+'"><button class="btn" id="saveDoBtn">保存当前进度</button></div>':'')
+      +'<div class="center" style="margin:10px 0;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
+      +'<button class="btn small ghost" id="saveExpAll">导 出 全 部（'+((list.length+(auto?1:0)))+' 份）</button>'
+      +'<button class="btn small ghost" id="saveImpFile">导 入 存 档</button>'
+      +'<input id="saveImpFiles" type="file" accept=".json,application/json" style="display:none">'
+      +'</div>'
       +(msg?'<div class="save-msg">'+this.escHtml(msg)+'</div>':'')
       +'<div class="save-list">'
       +(auto?this.saveCardHtml(auto,true):'')
       +(list.length?list.map(r=>this.saveCardHtml(r,false)).join(''):'')
       +((!auto&&!list.length)?'<div class="save-empty">'+(canSave?'还没有存档。点上面的按钮，把当前进度存下来。':'还没有存档。先开始一次穿越吧。'):'')
       +'</div>'
+      +'<div class="save-manual"><div class="save-meta" style="margin-bottom:4px">手动通道（导出的文本也可以直接粘贴走；把文本贴到下面再点「从文本导入」）：</div>'
+      +'<textarea id="saveImpText" class="save-io-text" rows="4" placeholder="导出的 JSON 文本 / 或者把要导入的内容粘在这里"></textarea>'
+      +'<div class="center" style="margin-top:6px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
+      +'<button class="btn small" id="saveDoImpText">从 文 本 导 入</button>'
+      +'<button class="btn small ghost" id="saveExpText">导 出 到 文 本（全部）</button>'
+      +'</div></div>'
       +'<div class="center" style="margin-top:16px"><button class="btn ghost" id="saveCloseBtn">关 闭</button></div>';
     showModal(h);
     const cur=$('saveNameInput');
+    const txt=$('saveImpText');
     const cb=$('saveCloseBtn');if(cb)cb.onclick=()=>closeModal();
     const sb=$('saveDoBtn');
     if(sb)sb.onclick=()=>{
       const r=this.saveCurrent(cur?cur.value:'');
       this._renderSavePanel(canSave,cur?cur.value:'',r.ok?('已保存：'+r.rec.name):r.msg);
+    };
+    // —— 导出：单条 / 全部 / 到文本框 ——
+    const doExport=(scope,id,toText)=>{
+      const r=this.exportSaves(scope,id);
+      if(!r.ok){this._renderSavePanel(canSave,cur?cur.value:'',r.msg);return;}
+      if(toText&&txt)txt.value=r.text;
+      this._renderSavePanel(canSave,cur?cur.value:'',r.msg);
+      const t2=$('saveImpText');if(toText&&t2)t2.value=r.text;
+    };
+    const ea=$('saveExpAll');if(ea)ea.onclick=()=>doExport('all',null,true);   // 下载 + 同时把文本放进手动通道
+    const et=$('saveExpText');if(et)et.onclick=()=>doExport('all',null,true);
+    document.querySelectorAll('[data-save-exp]').forEach(b=>{
+      b.onclick=()=>doExport('one',b.getAttribute('data-save-exp'),true);
+    });
+    // —— 导入：选文件 / 贴文本 ——
+    const fi=$('saveImpFiles'),fb=$('saveImpFile');
+    if(fb&&fi)fb.onclick=()=>fi.click();
+    if(fi)fi.onchange=()=>{
+      const f=fi.files&&fi.files[0];
+      if(!f){return;}
+      this.readSaveFile(f,text=>{
+        if(text==null){this._renderSavePanel(canSave,cur?cur.value:'','读不出这个文件（可能是编码或权限问题）。');return;}
+        const r=this.importSavesFromText(text);
+        this._renderSavePanel(canSave,cur?cur.value:'',r.msg);
+      });
+    };
+    const it=$('saveDoImpText');
+    if(it)it.onclick=()=>{
+      const r=this.importSavesFromText(txt?txt.value:'');
+      this._renderSavePanel(canSave,cur?cur.value:'',r.msg);
     };
     document.querySelectorAll('[data-save-load]').forEach(b=>{
       b.onclick=()=>{
@@ -8332,6 +8558,7 @@ const Game={
       b.onclick=()=>{this.deleteSave(b.getAttribute('data-save-del'));this._renderSavePanel(canSave,cur?cur.value:'','');};
     });
   },
+
   /* ================= 剧情 NPC 与羁绊 ================= */
   /** 与某角色的羁绊值 */
   bondOf(name){const P=this.player;return(P&&P.bonds&&P.bonds[name])||0;},
