@@ -17,10 +17,25 @@ const BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': 'https://iteamgame.dpdns.org',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-proxy-token',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Vary': 'Origin',
 };
+
+// 共享密钥（Supabase secret：HTGEMINI_TOKEN）。未配置即拒绝服务（fail-closed）。
+// 修复前本函数零鉴权：任何匿名者都能驱动它用服务端凭据转发到上游。
+const AUTH_TOKEN = Deno.env.get('HTGEMINI_TOKEN') ?? '';
+const MAX_BODY = 64_000;
+
+function safeEqual(a: string, b: string): boolean {
+  const ab = new TextEncoder().encode(a);
+  const bb = new TextEncoder().encode(b);
+  if (ab.length !== bb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
+  return diff === 0;
+}
 
 Deno.serve(async (req) => {
   // CORS 预检
@@ -35,10 +50,33 @@ Deno.serve(async (req) => {
     );
   }
 
-  try {
-    const body = await req.json();
+  // ① 鉴权：必须携带与 HTGEMINI_TOKEN 一致的 x-proxy-token
+  if (!AUTH_TOKEN) {
+    console.error('[htgemini] HTGEMINI_TOKEN 未配置，拒绝服务');
+    return new Response(
+      JSON.stringify({ error: 'Proxy token not configured' }),
+      { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
+  }
+  if (!safeEqual(req.headers.get('x-proxy-token') ?? '', AUTH_TOKEN)) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
+  }
 
-    // 转发到氢队（只带必要头，不转发任何 CF-* 头）
+  try {
+    // ② 体积上限：避免被当作大流量转发器 / 放大带宽消耗
+    const raw = await req.text();
+    if (raw.length > MAX_BODY) {
+      return new Response(
+        JSON.stringify({ error: 'Payload too large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+    const body = JSON.parse(raw);
+
+    // 转发到氢队（只带必要头，不转发任何 CF-* 头，也不转发调用方凭证）
     const upstream = await fetch(HYDROGEN_URL, {
       method: 'POST',
       headers: {

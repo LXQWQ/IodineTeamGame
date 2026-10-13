@@ -19,9 +19,10 @@
  */
 
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://iteamgame.dpdns.org',
   'Access-Control-Allow-Headers': 'authorization, content-type, x-proxy-token',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Vary': 'Origin',
 };
 
 function json(obj, status = 200) {
@@ -29,6 +30,16 @@ function json(obj, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json; charset=utf-8', ...CORS },
   });
+}
+
+// 定长比较，避免按字节提前返回造成的时序侧信道
+function safeEqual(a, b) {
+  const ab = new TextEncoder().encode(String(a));
+  const bb = new TextEncoder().encode(String(b));
+  if (ab.length !== bb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
+  return diff === 0;
 }
 
 export default {
@@ -41,8 +52,15 @@ export default {
       return json({ error: 'Method not allowed' }, 405);
     }
 
-    // 防滥用：若配置了 PROXY_TOKEN，则校验 X-Proxy-Token
-    if (env.PROXY_TOKEN && request.headers.get('X-Proxy-Token') !== env.PROXY_TOKEN) {
+    // 防滥用（fail-closed）：必须已配置 PROXY_TOKEN，且请求头与其定长相等。
+    // 修复前逻辑是"配了才校验"，而该 Secret 从未设置 ⇒ 等于零鉴权，
+    // 任何人可拿本站域名白用站长的 Gemini Key（也把出口 IP 借给别人）。
+    const expected = env.PROXY_TOKEN;
+    if (!expected) {
+      console.error('[htgemini] PROXY_TOKEN 未配置，拒绝服务');
+      return json({ error: 'Proxy token not configured' }, 503);
+    }
+    if (!safeEqual(request.headers.get('X-Proxy-Token') || '', expected)) {
       return json({ error: 'Unauthorized' }, 401);
     }
 

@@ -17,11 +17,16 @@ npx wrangler deploy
 # 3. 设置两个 Secret（Key 不进代码/仓库，只在 Cloudflare 加密存储）
 #    第一个：Google Gemini API Key（必填）
 npx wrangler secret put GEMINI_KEY
-#     粘贴：AIzaSyBnpYXaAod_sURILzdEOIdmz2SIHUVtabQ
+#     粘贴：你自己的 Gemini API Key
+#     ⚠️ 历史事故：旧 key（AIzaSyBnp…tabQ）曾被明文提交进本文件并公开于仓库，
+#        Google 已标记 leaked 并撤销。请到 Google Cloud Console **删除**该 key，
+#        新建一个并加上 HTTP referrer / API 限制与配额上限。
 
-# 4.（可选）防滥用令牌 —— 设置了之后，碘队 Worker 调用时必须带 X-Proxy-Token 头
+# 4. 防滥用令牌 —— **必填**（本 Worker 现在 fail-closed：未配置则拒绝服务）
 npx wrangler secret put PROXY_TOKEN
-#     粘贴：任意随机字符串（如：htg-<随机>）
+#     粘贴：任意高强度随机串（如：htg-<32位随机>）
+#     注意：碘队主 Worker 也必须配置**同一个值**，否则 Gemini 路径会 401：
+#       cd deploy && npx wrangler secret put PROXY_TOKEN
 ```
 
 > `wrangler secret put` 设置后自动生效，无需重新 deploy。

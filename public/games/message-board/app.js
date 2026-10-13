@@ -40,9 +40,19 @@
         initThemeSync();
         initShockwaveEffects();
 
+        // 全量 HTML 实体转义（含引号）。凡来自数据库/用户的内容，插入 HTML 前必须过这里。
+        // 修复：原实现只转义 & < >，不转义引号，导致属性逃逸面。
         function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        // 数值守卫：用于属性 / DOM id 插值。非有限数字一律返回空串，避免属性逃逸。
+        function safeNum(v) {
+            const n = Number(v);
+            return Number.isFinite(n) ? String(n) : '';
         }
 
         // 获取当前用户昵称
@@ -56,6 +66,19 @@
                 .maybeSingle();
             if (error || !data) return null;
             return data.username;
+        }
+
+        // 取得当前用户的 服务端可信身份（auth.users.id）+ 展示用昵称。
+        // 归属判定一律以 id（即 auth.uid()）为准，昵称只用于显示。
+        async function getCurrentUser() {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) return null;
+            const { data } = await supabase
+                .from('profiles')
+                .select('username')
+                .eq('uid', user.id)
+                .maybeSingle();
+            return { id: user.id, nickname: (data && data.username) || null };
         }
 
         // 加载所有留言及其回复
@@ -87,7 +110,9 @@
             const container = document.getElementById('msgList');
             if (!container) return;
             const { feedbacks, replies } = await loadAllFeedbacksAndReplies();
-            const currentUser = await getCurrentUserNickname();
+            const me = await getCurrentUser();
+            const currentUserNick = me ? me.nickname : null;
+            const currentUserId = me ? me.id : null;
             if (!feedbacks || feedbacks.length === 0) {
                 container.innerHTML = '<div style="text-align:center; padding:1rem;">✨ 暂无留言，成为第一个留言的玩家吧～</div>';
                 return;
@@ -102,17 +127,18 @@
             let html = '';
             for (const fb of feedbacks) {
                 const fbReplies = repliesMap.get(fb.time) || [];
+                const fbTime = safeNum(fb.time);
                 html += `
-                    <div class="feedback-item" data-fb-time="${fb.time}">
-                        <div><span class="fb-name">🧪 ${escapeHtml(fb.nickname)}</span><span class="fb-time">${fb.time_fmt}</span></div>
+                    <div class="feedback-item" data-fb-time="${fbTime}">
+                        <div><span class="fb-name">🧪 ${escapeHtml(fb.nickname)}</span><span class="fb-time">${escapeHtml(fb.time_fmt)}</span></div>
                         <div class="fb-text">${escapeHtml(fb.message)}</div>
-                        <button class="reply-btn" data-time="${fb.time}">💬 回复</button>
-                        <div class="reply-section" id="reply-section-${fb.time}">
-                            ${renderReplies(fbReplies, currentUser)}
+                        <button class="reply-btn" data-time="${fbTime}">💬 回复</button>
+                        <div class="reply-section" id="reply-section-${fbTime}">
+                            ${renderReplies(fbReplies, currentUserNick, currentUserId)}
                         </div>
-                        <div class="reply-input-container" id="reply-input-${fb.time}" style="display:none;">
-                            <textarea id="reply-text-${fb.time}" rows="2" placeholder="写下你的回复..." maxlength="2000"></textarea>
-                            <button class="reply-submit" data-time="${fb.time}">提交回复</button>
+                        <div class="reply-input-container" id="reply-input-${fbTime}" style="display:none;">
+                            <textarea id="reply-text-${fbTime}" rows="2" placeholder="写下你的回复..." maxlength="2000"></textarea>
+                            <button class="reply-submit" data-time="${fbTime}">提交回复</button>
                         </div>
                     </div>
                 `;
@@ -137,19 +163,25 @@
                         alert("回复内容不能为空");
                         return;
                     }
-                    const nickname = await getCurrentUserNickname();
-                    if (!nickname) {
+                    const me = await getCurrentUser();
+                    if (!me || !me.nickname) {
                         alert("请先登录后再回复");
                         return;
                     }
-                    const newReply = {
-                        feedback_time: parseInt(fbTime),
-                        nickname: nickname,
+                    const baseReply = {
+                        feedback_time: parseInt(fbTime, 10),
+                        nickname: me.nickname,
                         message: message,
                         time: Date.now(),
                         time_fmt: new Date().toLocaleString('zh-CN', { hour12: false })
                     };
-                    const { error } = await supabase.from('replies').insert([newReply]);
+                    // owner_uid 归属列随 RLS 迁移引入。迁移未跑时 PostgREST 会因未知列报错，
+                    // 因此先带归属写入，失败再退回不带归属 —— 迁移前后功能均可用。
+                    let error = (await supabase.from('replies')
+                        .insert([{ ...baseReply, owner_uid: me.id }])).error;
+                    if (error && /owner_uid|column|schema/i.test(error.message || '')) {
+                        error = (await supabase.from('replies').insert([baseReply])).error;
+                    }
                     if (error) {
                         console.error(error);
                         alert("回复失败，请重试");
@@ -166,22 +198,26 @@
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const replyId = btn.dataset.id;
-                    const currentUserNick = await getCurrentUserNickname();
-                    if (!currentUserNick) {
+                    const me = await getCurrentUser();
+                    if (!me) {
                         alert("请先登录");
                         return;
                     }
-                    // 确认删除权限（后端会验证，前端先获取该回复的昵称）
+                    // 前端归属校验只用于交互提示；真正的删除授权由服务端 RLS 裁决
+                    // （replies 的 DELETE 策略必须绑定 owner_uid = auth.uid()）。
                     const { data: reply, error: fetchErr } = await supabase
                         .from('replies')
-                        .select('nickname')
+                        .select('nickname, owner_uid')
                         .eq('id', replyId)
                         .single();
                     if (fetchErr || !reply) {
                         alert("回复不存在");
                         return;
                     }
-                    if (reply.nickname !== currentUserNick) {
+                    const isMine = reply.owner_uid
+                        ? reply.owner_uid === me.id
+                        : (!!me.nickname && reply.nickname === me.nickname);
+                    if (!isMine) {
                         alert("只能删除自己的回复");
                         return;
                     }
@@ -196,17 +232,22 @@
         }
 
         // 渲染回复列表
-        function renderReplies(replies, currentUser) {
+        // 归属判定：优先用服务端可信的 owner_uid === auth.uid()；
+        // 若该列尚未迁移则退回昵称比较（仅作展示层提示——真正的授权必须由 RLS 在服务端裁决，
+        // 前端判定只决定"要不要画出删除按钮"，绝不能当作安全边界）。
+        function renderReplies(replies, viewerNick, viewerId) {
             if (!replies.length) return '<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.3rem;">暂无回复</div>';
             let replyHtml = '';
             for (const rep of replies) {
-                const isOwner = (currentUser === rep.nickname);
+                const isOwner = rep.owner_uid
+                    ? (!!viewerId && rep.owner_uid === viewerId)
+                    : (!!viewerNick && viewerNick === rep.nickname);
                 replyHtml += `
                     <div class="reply-item">
                         <div>
                             <span class="reply-name">💬 ${escapeHtml(rep.nickname)}</span>
-                            <span class="reply-time">${rep.time_fmt}</span>
-                            ${isOwner ? `<span class="reply-delete" data-id="${rep.id}">删除</span>` : ''}
+                            <span class="reply-time">${escapeHtml(rep.time_fmt)}</span>
+                            ${isOwner ? `<span class="reply-delete" data-id="${safeNum(rep.id)}">删除</span>` : ''}
                         </div>
                         <div class="reply-text">${escapeHtml(rep.message)}</div>
                     </div>
