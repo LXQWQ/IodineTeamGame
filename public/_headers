@@ -1,0 +1,24 @@
+# Cloudflare 静态资源响应头（assets 目录专用文件，不会被当作资源下发）
+# 说明：Worker 里也做了一份同样的注入（withSecurityHeaders），但静态资源默认
+#       由边缘直接返回、不经过 Worker，因此这里必须再声明一份才真正生效。
+#
+# CSP 采用宽松档：本站大量内联脚本/样式，并从 CDN 取 supabase-js / KaTeX / 字体。
+# 它挡不住内联型 XSS —— 真正的 XSS 修复是输出转义（public/games/message-board/app.js）；
+# 这里主要封死插件内容、base-uri 劫持与跨站嵌套，并补齐 HSTS / nosniff 等加固项。
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Content-Security-Policy: default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; font-src 'self' https: data:; connect-src 'self' https:; media-src 'self' https: data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self' https:
+
+# 题库答案等敏感静态文件：禁止被直接下载（若仍需公开请删掉该段）
+# /quiz_questions.json
+#   Cache-Control: no-store
+
+# 不要把 .git / 源码 / 配置类路径下发（当前 public/ 目录已天然隔离，这里是兜底）
+/.git/*
+  X-Robots-Tag: noindex
