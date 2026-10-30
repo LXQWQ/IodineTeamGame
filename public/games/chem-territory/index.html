@@ -140,6 +140,9 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
 
 /* HUD */
 .hud{display:grid;grid-template-columns:1fr auto 1fr;gap:9px;align-items:stretch}
+/* 人机对战时标记「我方」阵营 */
+.hud-side.me{ box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.28), 0 0 0 2px rgba(255,255,255,.10); }
+.hud-side.me .hud-name::after{ content:''; }
 .hud-side{
     display:flex;align-items:center;gap:10px;padding:9px 13px;
     background:linear-gradient(180deg,var(--surf),var(--bg2));
@@ -381,6 +384,15 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
       </div>
     </div>
 
+    <div class="field" id="sideField">
+      <div class="field-label"><i></i>我的阵营</div>
+      <div class="seg" id="sideSeg">
+        <button data-side="1" class="on">酸方</button>
+        <button data-side="2">碱方</button>
+      </div>
+      <div class="hint-sm" id="sideHint">你执酸方先手，AI 执碱方后手。</div>
+    </div>
+
     <div class="field" id="diffField">
       <div class="field-label"><i></i>AI 强度</div>
       <div class="seg" id="diffSeg">
@@ -474,20 +486,22 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
     <div class="rules-body">
       <div class="rule-sec">
         <h3>目标</h3>
-        <p>占领敌方<b>首都</b>（棋盘对角的高亮格），或在任一回合结束时掌控 <b>60%</b> 以上的格子。</p>
+        <p>占领敌方<b>首都</b>（棋盘对角的高亮格），或在任一回合结束时掌控 <b>52%</b> 以上的格子（元素争霸为 <b>45%</b>）。</p>
         <p>若打满 <b>30 回合</b>，领地更多的一方获胜。</p>
       </div>
       <div class="rule-sec">
         <h3>回合流程</h3>
-        <p><b>① 补给</b>：按领地自动获得资源，每个单位需要 1 资源维护费。</p>
-        <p><b>② 部署</b>：每回合最多部署 2 个单位，只能放在自己的领地，或与自己领地相邻的中立格。</p>
-        <p><b>③ 反应</b>：所有相邻的敌对单位同时交战，按战力从高到低结算，胜者吞并对方格子。</p>
-        <p><b>④ 同化</b>：存活的单位把相邻的敌方/中立<b>空地</b>转化为自己的领土（不会直接杀人）。</p>
+        <p><b>① 补给</b>：按领地自动获得资源。每个单位 1 资源维护费，领地超过 15 格后每多一格再加 0.4（越大的版图越难养）。</p>
+        <p><b>② 补偿</b>：领土落后方按差距获得补给（最多 +20），被压制时仍有翻盘资金。</p>
+        <p><b>③ 部署</b>：每回合最多部署 2 个（首回合双方各只能部署 1 个），只能放在自己的领地，或与自己领地相邻的中立格。</p>
+        <p><b>④ 反应</b>：相邻的敌对单位交战，按战力从高到低结算，胜者吞并对方格子。<b>每个单位每回合只交战一次</b>。</p>
+        <p><b>⑤ 同化</b>：存活的单位把相邻的<b>中立空地</b>转化为自己的领土。<b>敌方领地只能用战斗夺取</b>，不会被同化白拿。</p>
       </div>
       <div class="rule-sec">
         <h3>战力计算</h3>
-        <p>战力 = 单位基础战力 + 环境加成（见下方模式）+ 驻防加成（在本方领地作战 +0.5）。</p>
+        <p>战力 = 单位基础战力 + 环境加成（最多 ±1.5）+ 驻防加成（在本方领地作战 +1，站在自家首都 +2.5）。</p>
         <p>平局则双方<b>同归于尽</b>，该格归属中立——这是防守方以弱换强的机会。</p>
+        <p>环境加成上限只有 1.5，<b>买不起强单位就无法靠地形翻盘</b>：便宜单位打不过贵单位，但贵单位也吃不住围攻。</p>
       </div>
       <div class="rule-sec">
         <h3>单位特性</h3>
@@ -496,16 +510,18 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
         <p><b>中和</b>（三阶）：击杀敌人时，连带转化目标身旁 1 格。</p>
         <p><b>氧化</b>（四阶）：同化范围 +1。</p>
         <p><b>强蚀</b>（五阶）：同化范围 ×2，并无视对方「缓冲」。</p>
+        <p>单位战力 1–5 与费用 10–46 一一对应：低阶铺地快、能填线；高阶战斗力强、同化范围大，但一回合只能杀一个。</p>
       </div>
       <div class="rule-sec">
         <h3>三种模式</h3>
-        <p><b>酸碱中和</b>：每格有 pH（0–14）。pH 离 7 越远，驻守单位战力越高（最多 +3）。pH=7 的格子会恢复中立。</p>
-        <p><b>电化学</b>：每格有电势。电势绝对值越高，驻守单位战力加成越多。</p>
-        <p><b>元素争霸</b>：场上散布野元素格，站在本族亲和元素上获得 +2 战力，拮抗元素 −2。</p>
+        <p><b>酸碱中和</b>：每格有 pH（0–14）。pH 离 7 越远，驻守加成越高（最多 +1.5）。pH=7 的格子会恢复中立。</p>
+        <p><b>电化学</b>：每格有电势。电势绝对值越高，驻守加成越多（最多 +1.5）。</p>
+        <p><b>元素争霸</b>：场上散布野元素格，站在本族亲和元素上 +1.5，拮抗元素 −1.5。野元素会逐回合消退，僵持会被打破——这个模式偏消耗战，多数对局由领地判定。</p>
       </div>
       <div class="rule-sec">
         <h3>操作</h3>
         <p>点单位卡选中 → 点棋盘高亮格部署。快捷键：<code>1–5</code> 选单位、<code>Space</code> 结束部署、<code>Esc</code> 取消选中、<code>Ctrl+Z</code> 撤销。</p>
+        <p>人机对战可在开局选择<b>执哪一方</b>：选了后手就先看 AI 走，你的阵营在顶部 HUD 会标高亮。</p>
       </div>
     </div>
     <div class="btn-row">
@@ -558,9 +574,13 @@ const now = () => performance.now();
    1. 配置 & 模式
    ============================================================ */
 const COLS = 11, ROWS = 11;
-const START_RES = 60;
+const START_RES = 60;          // 先手起始资源
+const START_RES_P2 = 60;       // 后手补偿：先手首回合少 1 个部署已足够，不再额外补资源
 const MAX_DEPLOY = 2;
-const WIN_RATIO = 0.60;
+const FIRST_TURN_DEPLOY = 1;   // 先手首回合只部署 1 个，抑制滚雪球
+const CAP_DEF = 2.5;           // 首都驻防加成（斩首不再一次战力胜利就成立）
+const ENV_CAP = 1.5;           // 环境加成上限：低于任何一档战力，避免"便宜单位靠环境碾压"
+const WIN_RATIO = 0.52;        // 121 格的 52% ≈ 63 格；配合降速同化后实测可达成
 const TURN_LIMIT = 30;
 const SAVE_KEY = 'ct.save.v2';
 const SOUND_KEY = 'ct.sound';
@@ -594,7 +614,7 @@ const MODES = {
         ],
         metric:'ph', metricName:'pH',
         // 环境加成
-        envBonus(h){ return Math.min(3, Math.abs((h.ph==null?7:h.ph)-7) * 0.5); },
+        envBonus(h){ return Math.min(ENV_CAP, Math.abs((h.ph==null?7:h.ph)-7) * 0.35); },
         envText(h){ const p = h.ph==null?7:h.ph; return 'pH '+p.toFixed(1); },
         phOf(owner){ return owner===1?3:(owner===2?11:7); },
         // 部署后把该格 pH 拉向自己一侧
@@ -638,7 +658,7 @@ const MODES = {
              ]},
         ],
         metric:'potential', metricName:'电势',
-        envBonus(h){ return Math.min(3, Math.abs(h.potential||0)); },
+        envBonus(h){ return Math.min(ENV_CAP, Math.abs(h.potential||0) * 0.75); },
         envText(h){ const p = h.potential||0; return 'E '+ (p>0?'+':'') + p.toFixed(1) + 'V'; },
         nudge(h, owner){
             h.potential = clamp((h.potential||0) + (owner===1?0.6:-0.6), -2, 2);
@@ -682,7 +702,8 @@ const MODES = {
                          (h.owner===2 && ['F','Cl','Br'].includes(h.wildElement));
             const bad  = (h.owner===1 && ['F','Cl','Br'].includes(h.wildElement)) ||
                          (h.owner===2 && ['Li','Na','K'].includes(h.wildElement));
-            return good ? 2 : (bad ? -2 : 0);
+            // 与其它模式统一 1.5 上限，避免因主场亲和导致的无解僵局
+            return good ? ENV_CAP : (bad ? -ENV_CAP : 0);
         },
         envText(h){ return h.wildElement ? h.wildElement : '—'; },
         nudge(h){ if (h.wildElement && Math.random()<0.35) h.wildElement = null; },
@@ -740,6 +761,7 @@ function hexDist(c1,r1,c2,r2){
    3. 状态
    ============================================================ */
 let G = null;
+const SIM = { on:false };   // 批量自对弈时跳过渲染/存档（仅调试钩子使用）
 
 /* 对局内的异步定时器统一托管：重开/回菜单时一并清理，避免回调打到已清空的 G 上 */
 const GAME_TIMERS = new Set();
@@ -753,22 +775,22 @@ function clearGameTimers(){
     GAME_TIMERS.clear();
 }
 const UI = {
-    mode: 'acid-base', vsAI: true, diff: 'medium', pass: true,
+    mode: 'acid-base', vsAI: true, diff: 'medium', pass: true, side: 1,
     sel: -1, hover: null, legal: new Set(),
     fx: [], shake: 0, flash: null,
     sound: true, raf: 0, dirty: true,
     logSeq: 0,
 };
 
-function newGame(modeKey, vsAI, diff, pass){
+function newGame(modeKey, vsAI, diff, pass, humanSide){
     const M = MODES[modeKey];
     G = {
-        mode: modeKey, vsAI, diff, pass,
+        mode: modeKey, vsAI, diff, pass, humanSide: humanSide===2 ? 2 : 1,
         hexes: [], cur: 1, turn: 1, phase:'deploy',
         deployed: 0, over:false, winner:0, reason:'',
         players:[
             {res:START_RES, captured:0, kills:0, lost:0},
-            {res:START_RES, captured:0, kills:0, lost:0},
+            {res:START_RES_P2, captured:0, kills:0, lost:0},
         ],
         undo: [], log: [],
         firstBlood: false,
@@ -806,9 +828,10 @@ function newGame(modeKey, vsAI, diff, pass){
     buildRoster();
     renderAll();
     addLog(`⚔️ ${M.label}开局 · ${vsAI?'人机对战':'双人同屏'}`,'turn');
-    addLog(`${M.sides[0].name} 先手，拥有 ${START_RES} 资源`,'sys');
+    addLog(`${M.sides[0].name} 先手 ${START_RES} 资源 · ${M.sides[1].name} 后手 ${START_RES_P2} 资源`,'sys');
+    if (vsAI) addLog(`你执 ${M.sides[G.humanSide-1].name}，AI 执 ${M.sides[2-G.humanSide].name}`,'sys');
     saveGame();
-    if (vsAI && G.cur===2) gset(aiTurn, 520);
+    if (isAITurn()) gset(aiTurn, 520);
 }
 
 function getHex(c,r){
@@ -816,6 +839,9 @@ function getHex(c,r){
     return G.hexes[r][c];
 }
 const M = () => MODES[G ? G.mode : 'acid-base'];
+/* 人机对战时 AI 执哪一方：玩家选了后手，则 AI 执先手那方 */
+function aiPid(){ return (G && G.vsAI) ? (G.humanSide===2 ? 1 : 2) : 0; }
+function isAITurn(){ return !!(G && G.vsAI && G.cur === aiPid()); }
 const capPos = owner => owner===1 ? {c:2,r:2} : {c:8,r:8};
 const capHex = owner => getHex(capPos(owner).c, capPos(owner).r);
 
@@ -829,6 +855,11 @@ function canDeployAt(hex, pid){
     return neighbors(hex.col,hex.row).some(n=>getHex(n.col,n.row).owner===pid);
 }
 function deployCost(unit){ return unit.cost; }
+/* 本回合可部署数量：首回合双方都只给 1 个，先手不再白赚一个单位的节奏 */
+function deployLimit(){
+    if (!G) return MAX_DEPLOY;
+    return (G.turn===1) ? FIRST_TURN_DEPLOY : MAX_DEPLOY;
+}
 
 function deploy(hex, unitIdx, pid, silent){
     const me = G.players[pid-1];
@@ -838,11 +869,11 @@ function deploy(hex, unitIdx, pid, silent){
     if (!canDeployAt(hex,pid)){ toast('只能部署在自己的领地或相邻中立格','err'); sfx('err'); return false; }
 
     // 撤销快照
-    G.undo.push({
+    if (!SIM.on) G.undo.push({
         hexes: JSON.parse(JSON.stringify(G.hexes)),
         res: me.res, deployed: G.deployed, kills: me.kills,
     });
-    if (G.undo.length>6) G.undo.shift();
+    if (!SIM.on && G.undo.length>6) G.undo.shift();
 
     me.res -= u.cost;
     hex.unit = {player:pid, id:u.id, name:u.name, formula:u.formula, power:u.power, abi:u.ability};
@@ -904,8 +935,11 @@ function resolveReactions(){
     pairs.sort((x,y)=> (y.a.unit.power+y.b.unit.power) - (x.a.unit.power+x.b.unit.power));
 
     let clashes = 0;
+    const fought = new Set();   // 每个单位每回合只交战一次：避免单个强单位一回合清空战线
     for (const {a,b} of pairs){
         if (!a.unit || !b.unit) continue;      // 已被前面的结算清掉
+        if (fought.has(a) || fought.has(b)) continue;
+        fought.add(a); fought.add(b);
         const r = resolvePair(a,b);
         if (r) clashes++;
     }
@@ -915,16 +949,19 @@ function resolveReactions(){
 function resolvePair(a,b){
     const ua = a.unit, ub = b.unit;
     if (!ua || !ub) return null;
-    let ea = Math.min(3, Math.abs(M().envBonus(a))) + ua.power;
-    let eb = Math.min(3, Math.abs(M().envBonus(b))) + ub.power;
-    if (a.owner===ua.player) ea += 0.5;
-    if (b.owner===ub.player) eb += 0.5;
+    let ea = M().envBonus(a) + ua.power;
+    let eb = M().envBonus(b) + ub.power;
+    if (a.owner===ua.player) ea += 1;      // 本土防守加成
+    if (b.owner===ub.player) eb += 1;
+    // 首都驻防：站在自家首都格上额外加成，斩首必须真正压倒守军
+    if (a.cap===ua.player) ea += CAP_DEF;
+    if (b.cap===ub.player) eb += CAP_DEF;
     // 缓冲：让对方失去环境加成
-    if (ua.abi==='buffer') eb -= Math.min(3, Math.abs(M().envBonus(b)));
-    if (ub.abi==='buffer') ea -= Math.min(3, Math.abs(M().envBonus(a)));
+    if (ua.abi==='buffer') eb -= M().envBonus(b);
+    if (ub.abi==='buffer') ea -= M().envBonus(a);
     // 强蚀：破缓冲（把被扣掉的环境加成还回去）
-    if (ua.abi==='corrode' && ub.abi==='buffer') eb += Math.min(3, Math.abs(M().envBonus(b)));
-    if (ub.abi==='corrode' && ua.abi==='buffer') ea += Math.min(3, Math.abs(M().envBonus(a)));
+    if (ua.abi==='corrode' && ub.abi==='buffer') eb += M().envBonus(b);
+    if (ub.abi==='corrode' && ua.abi==='buffer') ea += M().envBonus(a);
 
     const A = M().sides[ua.player-1], B = M().sides[ub.player-1];
 
@@ -986,30 +1023,29 @@ function resolveAssimilation(){
         const h = getHex(c,r);
         if (h.unit) units.push(h);
     }
-    // 稳定顺序：先扫描行，再列（可预测、可复盘）
-    units.sort((x,y)=> (x.row-y.row) || (x.col-y.col));
+    // 同化扫描顺序：每回合正/反交替，消除「左上角一方永远先抢中立格」的系统偏差
+    const flip = (G.turn % 2 === 0);
+    units.sort((x,y)=>{
+        const d = (x.row-y.row) || (x.col-y.col);
+        return flip ? -d : d;
+    });
 
     let converted = 0;
     for (const h of units){
         const u = h.unit;
         if (!u) continue;
-        let range = 1 + Math.floor((u.power-1)/2);   // 1..3
+        let range = 1 + Math.floor((u.power-1)/2);   // 1..3，战力越高铺得越快
         if (u.abi==='oxidize') range += 1;
-        if (u.abi==='corrode') range = Math.floor(range*2);
+        if (u.abi==='corrode') range = Math.min(3, range*2);
 
         let took = 0;
         const targets = neighbors(h.col,h.row)
             .map(n=>getHex(n.col,n.row))
-            .filter(n=>n && !n.unit && n.owner!==u.player)
+            .filter(n=>n && !n.unit && n.owner===0 && !n.cap)
             .sort((x,y)=> (x.row-y.row)||(x.col-y.col));
 
         for (const t of targets){
             if (took>=range) break;
-            // 敌方格子：需要战力压制；中立格：直接同化
-            if (t.owner!==0){
-                const def = 1 + Math.min(3, Math.abs(M().envBonus(t)));
-                if (u.power < def) continue;
-            }
             t.owner = u.player;
             M().nudge(t, u.player);
             took++; converted++;
@@ -1031,8 +1067,30 @@ function settleNeutral(){
     }
 }
 
-/* ---------- 经济 ---------- */
+/* ---------- 野元素衰减（元素模式） ----------
+   野元素会随回合被慢慢消耗：主场亲和逐回合变淡，
+   避免双方各自缩在亲和区里导致永久僵局。 */
+function decayWild(){
+    if (G.mode!=='element') return 0;
+    const rate = 0.10 + G.turn*0.004;      // 越往后消退越快
+    let cleared = 0;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = getHex(c,r);
+        if (h.wildElement && Math.random()<rate){ h.wildElement = null; cleared++; }
+    }
+    if (cleared) addLog(`🍃 野元素消退 ${cleared} 格`,'sys');
+    return cleared;
+}
+
+/* ---------- 经济 ----------
+   负反馈设计：
+   · 领地维护费：超过 SOFT_CELLS 格后每格额外 0.4，抑制"领地越大越无解"
+   · 落后补偿：领土落后方按差距补给（上限 +20），让对局能被追回
+   ------------------------------------ */
+const SOFT_CELLS = 15;
+
 function income(pid){
+    const opp = pid===1?2:1;
     let base = 0, bonus = 0, count = 0, units = 0;
     for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
         const h = getHex(c,r);
@@ -1049,8 +1107,12 @@ function income(pid){
             if (h.owner===pid) bonus += Math.floor(Math.abs(h.ph-7)/3);
         }
     }
-    const upkeep = units;
-    return {total: base + bonus - upkeep, base, bonus, upkeep, count, units};
+    const over = Math.max(0, count - SOFT_CELLS);
+    const upkeep = units + Math.round(over * 0.4);
+    // 落后补偿（只看领土差，与资源无关，避免滚资源）
+    const gap = Math.max(0, territory(opp) - count);
+    const catchup = Math.min(20, Math.round(gap * 1.2));
+    return {total: base + bonus + catchup - upkeep, base, bonus, upkeep, count, units, catchup, over};
 }
 function territory(pid){
     let n=0;
@@ -1059,13 +1121,19 @@ function territory(pid){
 }
 
 /* ---------- 胜负 ---------- */
+/* 各模式的胜利线：元素争霸是消耗战，格子更难铺开，门槛略低 */
+function winRatio(){
+    return (G && G.mode==='element') ? 0.45 : WIN_RATIO;
+}
+
 function checkWin(){
     const p1 = territory(1), p2 = territory(2), total = COLS*ROWS;
     // 首都易主
     if (capHex(1).owner===2 && !capHex(1).unit) return {w:2, why:'占领了酸方首都'};
     if (capHex(2).owner===1 && !capHex(2).unit) return {w:1, why:'占领了碱方首都'};
-    if (p1/total >= WIN_RATIO) return {w:1, why:`掌控 ${Math.round(p1/total*100)}% 领地`};
-    if (p2/total >= WIN_RATIO) return {w:2, why:`掌控 ${Math.round(p2/total*100)}% 领地`};
+    const wr = winRatio();
+    if (p1/total >= wr) return {w:1, why:`掌控 ${Math.round(p1/total*100)}% 领地`};
+    if (p2/total >= wr) return {w:2, why:`掌控 ${Math.round(p2/total*100)}% 领地`};
     if (G.turn > TURN_LIMIT){
         if (p1>p2) return {w:1, why:`${TURN_LIMIT} 回合后领地领先`};
         if (p2>p1) return {w:2, why:`${TURN_LIMIT} 回合后领地领先`};
@@ -1092,12 +1160,12 @@ function beginTurn(){
 
     buildRoster();
     renderAll(); saveGame();
-    if (G.vsAI && G.cur===2) gset(aiTurn, 560);
+    if (isAITurn()) gset(aiTurn, 560);
 }
 
 function endDeploy(force){
     if (!G || G.over || G.phase!=='deploy') return;
-    if (!force && G.vsAI && G.cur===2) return;
+    if (!force && isAITurn()) return;
     G.phase = 'reaction';
     UI.sel = -1;
     renderHud();
@@ -1107,6 +1175,7 @@ function endDeploy(force){
     addLog('🌀 同化阶段…','sys');
     resolveAssimilation();
     settleNeutral();
+    decayWild();
     renderAll();
 
     const w = checkWin();
@@ -1172,14 +1241,16 @@ function finish(w, why){
 /* ============================================================
    6. AI
    ============================================================ */
-function aiTurn(){
-    if (!G || G.over || G.cur!==2) return;
-    const pid = 2, me = G.players[1];
-    const units = M().sides[1].units;
+/* AI 为任意一方挑选一手（不解定时器，便于自动化对局与平衡测算） */
+function aiPlayFor(pid, diff){
+    if (!G || G.over) return [];
+    diff = diff || G.diff || 'medium';
+    const me = G.players[pid-1];
+    const units = M().sides[pid-1].units;
+    const picks = [];
     let guard = 0;
 
     const pickOne = () => {
-        // 候选：所有可部署格 × 单位
         const cands = [];
         for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
             const h = getHex(c,r);
@@ -1192,19 +1263,27 @@ function aiTurn(){
         }
         if (!cands.length) return null;
         cands.sort((a,b)=>b.s-a.s);
-        if (G.diff==='easy') return cands[rnd(Math.min(cands.length, 5))];
-        if (G.diff==='medium') return cands[rnd(Math.min(cands.length, 3))];
+        if (diff==='easy') return cands[rnd(Math.min(cands.length, 5))];
+        if (diff==='medium') return cands[rnd(Math.min(cands.length, 3))];
         return cands[0];
     };
 
-    while (G.deployed < MAX_DEPLOY && guard++ < 8){
+    while (G.deployed < deployLimit() && guard++ < 8){
         const pick = pickOne();
         if (!pick) break;
-        if (G.diff==='hard' && pick.s < -4) break;   // 没有好棋就不硬下
-        if (!deploy(pick.h, pick.i, pid, false)) break;
-        renderAll();
+        if (diff==='hard' && pick.s < -4) break;   // 没有好棋就不硬下
+        if (!deploy(pick.h, pick.i, pid, true)) break;
+        picks.push(pick.u.id);
     }
-    gset(()=>{ if (!G || G.over || G.cur!==2) return; endDeploy(true); }, 620);
+    return picks;
+}
+
+function aiTurn(){
+    const pid = aiPid();
+    if (!G || G.over || !pid || G.cur!==pid) return;
+    aiPlayFor(pid, G.diff);
+    renderAll();
+    gset(()=>{ if (!G || G.over || G.cur!==pid) return; endDeploy(true); }, 620);
 }
 
 function aiScore(h, u, pid){
@@ -1228,8 +1307,8 @@ function aiScore(h, u, pid){
     for (const n of neighbors(h.col,h.row)){
         const nh = getHex(n.col,n.row);
         if (nh.unit && nh.unit.player===opp){
-            const mine = u.power + Math.min(3,Math.abs(M().envBonus(h)))+(h.owner===pid?0.5:0);
-            const theirs = nh.unit.power + Math.min(3,Math.abs(M().envBonus(nh)))+(nh.owner===opp?0.5:0);
+            const mine = u.power + M().envBonus(h)+(h.owner===pid?1:0)+(h.cap===pid?CAP_DEF:0);
+            const theirs = nh.unit.power + M().envBonus(nh)+(nh.owner===opp?1:0)+(nh.cap===opp?CAP_DEF:0);
             s += mine>theirs ? 5.5 : (mine<theirs ? -4.5 : 0.4);
         }
     }
@@ -1464,7 +1543,8 @@ function shade(hex, amt){
     return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
 }
 
-function pushFx(o){ UI.fx.push(o); if (UI.fx.length>90) UI.fx.shift(); }
+function pushFx(o){
+    if (SIM.on) return; UI.fx.push(o); if (UI.fx.length>90) UI.fx.shift(); }
 function drawFx(t){
     UI.fx = UI.fx.filter(f=> t - f.t0 < 780);
     for (const f of UI.fx){
@@ -1548,7 +1628,7 @@ function buildRoster(){
             <div class="uc-abi"><b>${u.abilityName}</b><span>${locked?'资源不足':u.abilityDesc}</span></div>`;
         b.addEventListener('click', ()=>{
             if (G.over) return;
-            if (G.vsAI && G.cur===2) { toast('等待 AI 行动','err'); return; }
+            if (isAITurn()) { toast('等待 AI 行动','err'); return; }
             if (G.phase!=='deploy'){ toast('现在是'+phaseName()+'，无法部署','err'); return; }
             if (locked){ toast('资源不足：还差 '+(u.cost-me.res)+' ⚡','err'); sfx('err'); return; }
             UI.sel = (UI.sel===i) ? -1 : i;
@@ -1618,10 +1698,18 @@ function renderHud(){
         $('#tagP'+pid).textContent = pid===1?'先手':'后手';
     });
     $('#hudTurn').textContent = `第 ${G.turn} 回合`;
-    $('#hudPhase').textContent = G.over ? '已结束' : (G.vsAI && G.cur===2 && G.phase==='deploy' ? 'AI 思考中' : phaseName());
-    $('#hudDeploy').innerHTML = `部署 <b>${G.deployed}/${MAX_DEPLOY}</b>`;
+    ['hudP1','hudP2'].forEach((id,i)=>{
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('me', !!G.vsAI && G.humanSide === i+1);
+    });
+    const t1 = $('#tagP1'), t2 = $('#tagP2');
+    if (t1) t1.textContent = G.vsAI ? (G.humanSide===1?'先手 · 你':'先手 · AI') : '先手';
+    if (t2) t2.textContent = G.vsAI ? (G.humanSide===2?'后手 · 你':'后手 · AI') : '后手';
+    $('#hudPhase').textContent = G.over ? '已结束' : (isAITurn() && G.phase==='deploy' ? 'AI 思考中' : phaseName());
+    $('#hudDeploy').innerHTML = `部署 <b>${G.deployed}/${deployLimit()}</b>`;
     $('#btnUndo').disabled = !G.undo.length || G.phase!=='deploy';
-    $('#btnEnd').disabled = G.over || G.phase!=='deploy' || (G.vsAI && G.cur===2);
+    $('#btnEnd').disabled = G.over || G.phase!=='deploy' || isAITurn();
 }
 function renderLegend(){
     const mode = M();
@@ -1631,6 +1719,7 @@ function renderLegend(){
         + `<div class="lg-item"><i style="background:var(--gold)"></i>★ 首都</div>`;
 }
 function renderAll(){
+    if (SIM.on) return;
     if (!G) return;
     renderHud(); renderRoster(); renderLegend(); recalcLegal();
     layoutCanvasIfNeeded(); draw(); kick();
@@ -1646,6 +1735,7 @@ if (typeof ResizeObserver !== 'undefined'){
 }
 
 function addLog(msg, cls){
+    if (SIM.on) return;
     if (!G) return;
     const box = $('#logList');
     const d = document.createElement('div');
@@ -1709,10 +1799,11 @@ function sfx(name){
    10. 存档
    ============================================================ */
 function saveGame(){
+    if (SIM.on) return;
     if (!G || G.over) return;
     try{
         const data = {
-            v:2, mode:G.mode, vsAI:G.vsAI, diff:G.diff, pass:G.pass,
+            v:2, mode:G.mode, vsAI:G.vsAI, diff:G.diff, pass:G.pass, humanSide:G.humanSide||1,
             hexes:G.hexes, cur:G.cur, turn:G.turn, phase:'deploy',
             deployed:G.deployed, players:G.players, ts:Date.now(),
         };
@@ -1731,7 +1822,7 @@ function loadSave(){
 }
 function resumeGame(d){
     G = {
-        mode:d.mode, vsAI:d.vsAI, diff:d.diff, pass:d.pass,
+        mode:d.mode, vsAI:d.vsAI, diff:d.diff, pass:d.pass, humanSide:d.humanSide===2?2:1,
         hexes:d.hexes, cur:d.cur, turn:d.turn, phase:'deploy',
         deployed:0, over:false, winner:0, reason:'',
         players:d.players, undo:[], log:[], firstBlood:false,
@@ -1741,7 +1832,7 @@ function resumeGame(d){
     $('#game').classList.add('show');
     buildRoster(); renderAll();
     addLog('⏱ 已恢复上次对局','sys');
-    if (G.vsAI && G.cur===2) gset(aiTurn, 500);
+    if (isAITurn()) gset(aiTurn, 500);
 }
 
 /* ============================================================
@@ -1773,7 +1864,7 @@ cv.addEventListener('mouseleave', ()=>{ UI.hover = null; draw(); kick(); });
 
 cv.addEventListener('click', e=>{
     if (!G || G.over) return;
-    if (G.vsAI && G.cur===2) { toast('等待 AI 行动','err'); return; }
+    if (isAITurn()) { toast('等待 AI 行动','err'); return; }
     if (G.phase!=='deploy'){ toast('现在是'+phaseName()+'，无法部署','err'); return; }
     const {x,y} = canvasPos(e);
     const ax = pixelToHex(x,y);
@@ -1788,12 +1879,12 @@ cv.addEventListener('click', e=>{
         }
         return;
     }
-    if (G.deployed>=MAX_DEPLOY){ toast('本回合部署次数已用完（'+MAX_DEPLOY+'）','err'); sfx('err'); return; }
+    if (G.deployed>=deployLimit()){ toast('本回合部署次数已用完（'+deployLimit()+'）','err'); sfx('err'); return; }
     const ok = deploy(h, UI.sel, G.cur);
     if (ok){
         UI.sel = -1;
         renderRoster(); recalcLegal();
-        if (G.deployed>=MAX_DEPLOY) toast('部署次数已用完，可以结束部署','ok');
+        if (G.deployed>=deployLimit()) toast('部署次数已用完，可以结束部署','ok');
     }
 });
 
@@ -1811,6 +1902,24 @@ window.addEventListener('resize', ()=>{ layoutCanvasIfNeeded(); draw(); });
 /* ============================================================
    12. 设置界面
    ============================================================ */
+function refreshSideSeg(){
+    UI.side = (UI.side === 2) ? 2 : 1;          // 兜底，避免未初始化时模板取值报错
+    const m = MODES[UI.mode] || MODES['acid-base'];
+    const seg = $('#sideSeg');
+    if (!seg) return;
+    const b1 = seg.children[0], b2 = seg.children[1];
+    b1.textContent = m.sides[0].name;
+    b2.textContent = m.sides[1].name;
+    b1.classList.toggle('on', UI.side===1);
+    b2.classList.toggle('on', UI.side===2);
+    const field = $('#sideField');
+    if (field) field.style.display = UI.vsAI ? '' : 'none';
+    const hint = $('#sideHint');
+    if (hint) hint.textContent = UI.vsAI
+        ? `你执 ${m.sides[UI.side-1].name}（${UI.side===1?'先手':'后手'}），AI 执 ${m.sides[2-UI.side].name}。`
+        : `双人同屏：两人各执一方，${m.sides[0].name} 先手。`;
+}
+
 function buildSetup(){
     const grid = $('#modeGrid');
     grid.innerHTML = '';
@@ -1822,6 +1931,7 @@ function buildSetup(){
         b.addEventListener('click', ()=>{
             UI.mode = m.key;
             [...grid.children].forEach(x=>x.classList.toggle('on', x.dataset.m===m.key));
+            refreshSideSeg();
             sfx('tap');
         });
         grid.appendChild(b);
@@ -1832,6 +1942,7 @@ function buildSetup(){
         UI.vsAI = b.dataset.vs==='true';
         [...$('#oppSeg').children].forEach(x=>x.classList.toggle('on', x===b));
         $('#diffField').style.display = UI.vsAI ? '' : 'none';
+        refreshSideSeg();
         sfx('tap');
     });
     $('#diffSeg').addEventListener('click', e=>{
@@ -1842,11 +1953,19 @@ function buildSetup(){
     });
     $('#passToggle').addEventListener('change', e=>{ UI.pass = e.target.checked; });
 
+    $('#sideSeg').addEventListener('click', e=>{
+        const b = e.target.closest('button'); if (!b) return;
+        UI.side = +b.dataset.side;
+        refreshSideSeg();
+        sfx('tap');
+    });
+    refreshSideSeg();
+
     $('#btnStart').addEventListener('click', ()=>{
         ac();
         $('#setupScreen').classList.remove('show');
         $('#game').classList.add('show');
-        newGame(UI.mode, UI.vsAI, UI.diff, UI.pass);
+        newGame(UI.mode, UI.vsAI, UI.diff, UI.pass, UI.side);
         setTimeout(()=>{ layoutCanvas(); lastW = 0; layoutCanvasIfNeeded(); draw(); }, 30);
     });
     $('#btnResume').addEventListener('click', ()=>{
@@ -1898,14 +2017,14 @@ function bindGame(){
     });
     $('#btnGoAgain').addEventListener('click', ()=>{
         $('#goScreen').classList.remove('show');
-        newGame(UI.mode, UI.vsAI, UI.diff, UI.pass);
+        newGame(UI.mode, UI.vsAI, UI.diff, UI.pass, UI.side);
         setTimeout(()=>{ lastW=0; layoutCanvasIfNeeded(); draw(); }, 30);
     });
 
     // 键盘
     window.addEventListener('keydown', e=>{
         if (!G) return;
-        if (e.key===' ' && G.phase==='deploy' && !(G.vsAI && G.cur===2)){
+        if (e.key===' ' && G.phase==='deploy' && !isAITurn()){
             e.preventDefault(); endDeploy();
         } else if (e.key==='Escape'){
             UI.sel=-1; renderRoster(); recalcLegal(); draw();
@@ -1956,6 +2075,12 @@ if (/[?&]debug\b/.test(location.search)){
         deployFor: (c,r,i,pid) => deploy(getHex(c,r), i, pid, true),
         endPhase: () => endDeploy(true),
         ai: () => aiTurn(),
+        aiPlay: (pid, diff) => aiPlayFor(pid, diff),
+        setSim: v => { SIM.on = !!v; },
+        aiPid: () => aiPid(),
+        isAITurn: () => isAITurn(),
+        deployLimit: () => deployLimit(),
+        winRatio: () => winRatio(),
         income, territory, checkWin, UI,
         perms: () => [...UI.legal],
         canDeployAt: (c,r) => canDeployAt(getHex(c,r), G.cur),
