@@ -5,107 +5,327 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>离子竞技场 · Ion Arena</title>
 <style>
+:root{
+  --bg:#05070f; --panel:rgba(9,14,26,.86); --panel2:rgba(15,22,40,.94);
+  --line:rgba(120,160,220,.20); --line2:rgba(120,160,220,.38);
+  --gold:#facc15; --gold2:#eab308; --cyan:#22d3ee; --txt:#e8eefb; --txt2:#9fb0cc; --dim:#6b7c99;
+  --rose:#f87171; --green:#4ade80;
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#060a14;overflow:hidden;font-family:system-ui,sans-serif;user-select:none}
+html,body{height:100%}
+body{
+  background:radial-gradient(1200px 800px at 50% -10%,#0d1730 0%,#070b16 45%,var(--bg) 100%);
+  overflow:hidden;color:var(--txt);user-select:none;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
 canvas{display:block;cursor:none}
-#ui{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10;padding:10px}
-#topBar{display:flex;justify-content:space-between;align-items:flex-start}
-#stats{background:rgba(0,0,0,0.7);border-radius:10px;padding:8px 14px;color:#e2e8f0;font-size:12px;line-height:1.6}
-#stats .val{color:#facc15;font-weight:bold}
-#zone{background:rgba(0,0,0,0.7);border-radius:10px;padding:6px 12px;color:#94a3b8;font-size:11px}
-#inventory{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10;pointer-events:auto}
-.inv-slot{width:50px;height:50px;background:rgba(0,0,0,0.7);border:2px solid #334155;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#64748b;transition:all .2s;overflow:hidden;text-overflow:ellipsis;pointer-events:auto}
-.inv-slot.equipped{border-color:#facc15;color:#facc15}
-.inv-slot:hover{border-color:#94a3b8}
-#tooltip{position:fixed;pointer-events:none;background:rgba(0,0,0,0.9);color:#e2e8f0;border-radius:8px;padding:8px 12px;font-size:11px;display:none;z-index:20;max-width:180px}
-#deathScreen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;justify-content:center;align-items:center;flex-direction:column}
-#deathScreen .title{font-size:2rem;color:#ef4444;margin-bottom:1rem}
-#deathScreen .info{color:#94a3b8;margin-bottom:1.5rem}
-#deathScreen button{padding:.6rem 1.5rem;border-radius:20px;border:none;background:#facc15;color:#0a0e17;font-weight:bold;cursor:pointer;font-size:0.9rem}
-/* 小地图 */
-#minimap{position:fixed;bottom:70px;right:10px;width:140px;height:110px;background:rgba(0,0,0,0.8);border:2px solid #334155;border-radius:8px;z-index:10;overflow:hidden}
+
+/* ---------- HUD ---------- */
+#ui{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10;padding:10px;display:none}
+#topBar{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+#stats,#zone,#waveInfo{
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  backdrop-filter:blur(9px);box-shadow:0 10px 28px -18px #000;
+}
+#stats{padding:8px 13px;font-size:12px;line-height:1.65;color:var(--txt2);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+#stats .val{color:var(--gold);font-weight:700}
+#zone{padding:6px 12px;font-size:11.5px;color:var(--cyan);letter-spacing:1.4px;font-weight:700}
+#waveInfo{padding:5px 11px;color:var(--gold);font-size:11px;text-align:center;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+#waveInfo .val{font-weight:700}
+
+/* ---------- 底部物质栏 ---------- */
+#inventory{
+  position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+  display:flex;gap:7px;z-index:10;pointer-events:auto;
+  padding:8px 10px;border-radius:14px;
+  background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(9px);
+  box-shadow:0 16px 40px -24px #000;
+}
+.inv-slot{
+  position:relative;width:52px;height:52px;border-radius:10px;
+  background:rgba(255,255,255,.035);border:1.5px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;
+  pointer-events:auto;transition:transform .14s,border-color .14s,box-shadow .14s;
+}
+.inv-slot:hover{transform:translateY(-3px);border-color:var(--line2)}
+.inv-slot.equipped{border-color:var(--gold);color:var(--gold);
+  box-shadow:0 0 0 1px rgba(250,204,21,.35),0 8px 22px -12px rgba(250,204,21,.7)}
+.inv-slot .rar-dot{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%}
+
+/* ---------- tooltip ---------- */
+#tooltip{
+  position:fixed;pointer-events:none;display:none;z-index:60;max-width:210px;
+  background:var(--panel2);border:1px solid var(--line2);border-radius:10px;
+  padding:8px 11px;font-size:11.5px;line-height:1.65;color:var(--txt);
+  box-shadow:0 18px 40px -20px #000;backdrop-filter:blur(8px);
+}
+#tooltip .tip{border-color:var(--line)}
+
+/* ---------- 小地图 ---------- */
+#minimap{
+  position:fixed;bottom:74px;right:12px;width:146px;height:114px;z-index:10;
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  overflow:hidden;backdrop-filter:blur(8px);box-shadow:0 16px 36px -22px #000;
+}
 #minimap canvas{width:100%;height:100%}
-/* 技能面板 */
-#skillPanel{display:none;pointer-events:auto;pointer-events:auto;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);border:2px solid #facc15;border-radius:12px;padding:16px;z-index:50;color:#e2e8f0;min-width:340px}
-#skillPanel h3{color:#facc15;margin-bottom:8px;font-size:14px}
-#skillPanel .skill-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e293b;font-size:12px}
-#skillPanel .skill-row button{padding:3px 10px;border-radius:10px;border:1px solid #facc15;background:transparent;color:#facc15;cursor:pointer;font-size:11px}
-#skillPanel .skill-row button:disabled{opacity:0.3;cursor:not-allowed}
-#skillPanel .skill-row button:hover:not(:disabled){background:#facc15;color:#0a0e17}
-#skillPanel .close-btn{display:block;margin-top:10px;width:100%;padding:6px;border-radius:8px;border:1px solid #64748b;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px}
-/* 合成面板 */
-#craftPanel{display:none;pointer-events:auto;pointer-events:auto;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);border:2px solid #a855f7;border-radius:12px;padding:16px;z-index:50;color:#e2e8f0;min-width:300px}
-#craftPanel h3{color:#a855f7;margin-bottom:8px;font-size:14px}
-#craftSlots{display:flex;gap:8px;justify-content:center;margin:10px 0}
-.craft-slot{width:50px;height:50px;background:rgba(255,255,255,0.05);border:2px dashed #334155;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer}
-.craft-slot.filled{border-color:#a855f7}
-.craft-arrow{display:flex;align-items:center;color:#94a3b8;font-size:18px}
-#craftResult{width:50px;height:50px;background:rgba(168,85,247,0.1);border:2px solid #a855f7;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
-#craftBtn{display:block;margin:8px auto 0;padding:6px 16px;border-radius:12px;border:none;background:#a855f7;color:#fff;cursor:pointer;font-weight:bold}
-#craftBtn:disabled{opacity:0.3;cursor:not-allowed}
-.craft-close{display:block;margin-top:6px;width:100%;padding:4px;border-radius:8px;border:1px solid #64748b;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px}
-/* 背包面板 */
-#backpackPanel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);border:2px solid #3b82f6;border-radius:12px;padding:16px;z-index:50;color:#e2e8f0;min-width:360px;pointer-events:auto}
-#backpackPanel h3{color:#3b82f6;margin-bottom:8px;font-size:14px}
-#bpSlots{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;max-height:200px;overflow-y:auto}
-.bp-slot{width:48px;height:48px;background:rgba(255,255,255,0.05);border:2px solid #334155;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:grab;transition:all .15s;position:relative}
-.bp-slot:hover{border-color:#3b82f6}
-.bp-slot{cursor:pointer}
-.bp-slot .del-btn{position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:#ef4444;border:none;border-radius:50%;color:#fff;font-size:10px;cursor:pointer;display:none;align-items:center;justify-content:center}
-.bp-slot:hover .del-btn{display:flex}
-.bp-close{display:block;margin-top:8px;width:100%;padding:4px;border-radius:8px;border:1px solid #64748b;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px}
-/* 提示文字 */
-.hint-text{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-size:10px;z-index:5;pointer-events:none}
-/* 教程按钮 */
-#tutorialBtn{position:fixed;top:10px;right:10px;width:32px;height:32px;background:rgba(0,0,0,0.7);border:2px solid #facc15;border-radius:50%;color:#facc15;font-size:16px;font-weight:bold;cursor:pointer;z-index:30;display:flex;align-items:center;justify-content:center;transition:all .2s}
-#tutorialBtn:hover{background:#facc15;color:#0a0e17}
-/* 教程面板 */
-#tutorialOverlay{display:none;pointer-events:auto;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:60;justify-content:center;align-items:center}
+
+/* ---------- 死亡 ---------- */
+#deathScreen{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(4,6,12,.88);backdrop-filter:blur(7px);
+  justify-content:center;align-items:center;flex-direction:column;gap:6px;
+}
+#deathScreen .title{font-size:34px;font-weight:800;letter-spacing:3px;color:var(--rose)}
+#deathScreen .info{color:var(--txt2);font-size:13px;line-height:1.9;text-align:center}
+#deathScreen button{
+  margin-top:14px;padding:11px 26px;border-radius:12px;border:1px solid rgba(250,204,21,.5);
+  background:linear-gradient(120deg,#eab308,#facc15);color:#0a0e17;font-weight:800;
+  cursor:pointer;font-size:13.5px;letter-spacing:.6px;font-family:inherit;
+  box-shadow:0 14px 34px -16px rgba(250,204,21,.8);transition:filter .14s,transform .14s;
+}
+#deathScreen button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+
+/* ---------- 通用面板（技能/合成/背包/教程）---------- */
+#skillPanel,#craftPanel,#backpackPanel{
+  display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:50;pointer-events:auto;padding:16px 17px;
+  background:var(--panel2);border:1px solid var(--line2);border-radius:16px;
+  backdrop-filter:blur(12px);box-shadow:0 34px 90px -40px #000;
+  color:var(--txt);min-width:340px;max-width:min(560px,92vw);max-height:84vh;overflow-y:auto;
+}
+#skillPanel h3,#craftPanel h3,#backpackPanel h3{
+  color:var(--gold);font-size:13.5px;letter-spacing:1.4px;margin-bottom:10px;font-weight:800;
+}
+.close-btn,.craft-close,.bp-close{
+  position:absolute;top:11px;right:12px;width:26px;height:26px;border-radius:8px;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--txt2);
+  font-size:12px;line-height:1;display:grid;place-items:center;font-family:inherit;
+}
+.close-btn:hover,.craft-close:hover,.bp-close:hover{background:rgba(250,204,21,.16);color:var(--gold)}
+
+.skill-row{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:8px 0;border-bottom:1px solid rgba(120,160,220,.13);font-size:12.5px;
+}
+.skill-row:last-child{border-bottom:none}
+.skill-row button{
+  padding:4px 12px;border-radius:9px;border:1px solid rgba(250,204,21,.45);
+  background:rgba(250,204,21,.10);color:var(--gold);cursor:pointer;font-size:11.5px;
+  font-family:inherit;font-weight:700;transition:background .14s;
+}
+.skill-row button:hover{background:rgba(250,204,21,.22)}
+.skill-row button:disabled{opacity:.35;cursor:not-allowed}
+
+/* 合成台 */
+#craftSlots{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0 4px}
+.craft-slot{
+  width:62px;height:62px;border-radius:12px;
+  background:rgba(255,255,255,.035);border:1.5px dashed var(--line2);
+  display:grid;place-items:center;font-size:10px;color:var(--dim);
+  position:relative;overflow:hidden;
+}
+.craft-slot.filled{border-style:solid;border-color:var(--gold);color:var(--gold)}
+.craft-arrow{color:var(--dim);font-size:16px}
+#craftResult{
+  width:70px;height:70px;border-radius:14px;
+  background:rgba(34,211,238,.08);border:1.5px solid rgba(34,211,238,.42);
+  display:grid;place-items:center;font-size:11px;color:var(--cyan);margin:0 auto 10px;
+}
+#craftBtn{
+  display:block;width:100%;margin-top:12px;padding:10px;border-radius:11px;cursor:pointer;
+  background:linear-gradient(120deg,#0891b2,#22d3ee);border:1px solid rgba(34,211,238,.5);
+  color:#04141b;font-weight:800;font-size:13px;font-family:inherit;letter-spacing:.6px;
+}
+#craftBtn:hover{filter:brightness(1.08)}
+.hint-text{font-size:11px;color:var(--dim);margin-top:9px;line-height:1.6;text-align:center}
+
+/* 背包 */
+#bpSlots{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px;margin-top:10px}
+.bp-slot{
+  height:58px;border-radius:11px;background:rgba(255,255,255,.035);
+  border:1.5px solid var(--line);display:grid;place-items:center;
+  font-size:10px;color:var(--txt2);position:relative;overflow:hidden;
+  transition:border-color .14s,transform .14s;
+}
+.bp-slot:hover{border-color:var(--line2);transform:translateY(-2px)}
+.del-btn{
+  position:absolute;top:2px;right:3px;font-size:10px;color:var(--rose);
+  background:rgba(0,0,0,.5);border-radius:5px;padding:0 3px;line-height:1.5;
+}
+.info{font-size:11.5px;color:var(--dim);line-height:1.7}
+.title{font-weight:800}
+
+/* 教程 */
+#tutorialOverlay{
+  display:none;position:fixed;inset:0;z-index:120;
+  background:rgba(4,6,12,.86);backdrop-filter:blur(7px);
+  justify-content:center;align-items:center;
+}
 #tutorialOverlay.show{display:flex}
-.tutorial-box{background:#111827;border:2px solid #facc15;border-radius:16px;padding:20px;max-width:500px;width:92%;max-height:85vh;overflow-y:auto;color:#e2e8f0;font-size:12px;line-height:1.7}
-.tutorial-box h2{color:#facc15;font-size:18px;margin-bottom:12px;text-align:center}
-.tutorial-box h3{color:#facc15;font-size:13px;margin:12px 0 4px;border-bottom:1px solid #1e293b;padding-bottom:2px}
-.tutorial-box kbd{background:#1e293b;color:#facc15;padding:1px 5px;border-radius:3px;font-size:11px;border:1px solid #334155}
-.tutorial-box .tip{color:#94a3b8;font-size:11px}
-	/* 区域选择 */
-	#zoneSelect{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:200;display:flex;justify-content:center;align-items:center;flex-direction:column}
-	#zoneSelect h1{color:#facc15;font-size:1.5rem;margin-bottom:1.5rem}
-	.zone-grid{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:500px}
-	.zone-btn{width:130px;padding:18px 12px;border-radius:14px;border:2px solid #334155;background:rgba(255,255,255,0.05);color:#e2e8f0;cursor:pointer;text-align:center;transition:all .2s;font-size:13px}
-	.zone-btn:hover{border-color:#facc15;background:rgba(250,204,21,0.1);transform:translateY(-2px)}
-	.zone-btn .zicon{font-size:2rem;display:block;margin-bottom:6px}
-	.zone-btn .zname{font-weight:bold}
-	.zone-btn .zdiff{font-size:10px;color:#94a3b8;margin-top:4px}
-.tutorial-close{display:block;margin:14px auto 0;padding:6px 20px;border-radius:12px;border:none;background:#facc15;color:#0a0e17;font-weight:bold;cursor:pointer;font-size:13px}
+.tutorial-box{
+  width:min(540px,92vw);max-height:82vh;overflow-y:auto;
+  background:var(--panel2);border:1px solid var(--line2);border-radius:18px;padding:20px 22px;
+  box-shadow:0 34px 90px -40px #000;
+}
+.tutorial-box h2{font-size:17px;color:var(--gold);letter-spacing:1.6px;margin-bottom:12px}
+.tutorial-box p{font-size:13px;line-height:1.9;color:var(--txt2);margin-bottom:8px}
+.tutorial-box b{color:var(--txt)}
+.tutorial-box kbd{
+  display:inline-block;min-width:20px;text-align:center;padding:1px 6px;margin:0 2px;
+  border-radius:6px;background:rgba(255,255,255,.09);border:1px solid var(--line2);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--gold);
+}
+.tutorial-close{
+  display:block;margin:16px auto 0;padding:9px 26px;border-radius:11px;cursor:pointer;
+  border:1px solid rgba(250,204,21,.5);background:linear-gradient(120deg,#eab308,#facc15);
+  color:#0a0e17;font-weight:800;font-size:13px;font-family:inherit;
+  /* v2 修复：内容较长时按钮会被滚出视野，改为常驻底部 */
+  position:sticky;bottom:0;z-index:2;
+  box-shadow:0 -18px 22px -12px var(--panel2),0 10px 24px -12px #000;
+}
+.tutorial-close:hover{filter:brightness(1.08)}
+
+/* ---------- 落地页 ---------- */
+#zoneSelect{
+  position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:22px;padding:26px 18px;overflow-y:auto;
+}
+#zoneSelect::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(760px 460px at 50% 0%,rgba(250,204,21,.10),transparent 68%),
+    radial-gradient(620px 420px at 12% 88%,rgba(34,211,238,.09),transparent 70%),
+    radial-gradient(620px 420px at 88% 82%,rgba(168,85,247,.09),transparent 70%);
+}
+.land-head{position:relative;text-align:center}
+.land-badge{
+  display:inline-flex;align-items:center;gap:8px;padding:4px 13px;border-radius:999px;
+  background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.34);
+  color:var(--gold);font-size:11px;letter-spacing:2px;font-weight:700;margin-bottom:14px;
+}
+#zoneSelect h1{
+  position:relative;font-size:clamp(26px,4.4vw,40px);letter-spacing:4px;font-weight:800;
+  background:linear-gradient(120deg,#fff 10%,#facc15 60%,#22d3ee 120%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.land-sub{
+  position:relative;margin-top:9px;font-size:12.5px;color:var(--txt2);letter-spacing:1.4px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.zone-grid{
+  position:relative;display:grid;gap:13px;width:min(980px,100%);
+  grid-template-columns:repeat(6,1fr);
+}
+.zone-btn{
+  grid-column:span 2;cursor:pointer;text-align:center;padding:18px 12px 16px;border-radius:15px;
+  background:linear-gradient(165deg,rgba(255,255,255,.055),rgba(255,255,255,.015));
+  border:1px solid var(--line);position:relative;overflow:hidden;
+  transition:transform .16s,border-color .16s,box-shadow .16s,background .16s;
+}
+.zone-btn::after{
+  content:'';position:absolute;inset:0;border-radius:15px;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
+}
+.zone-btn:hover{
+  transform:translateY(-4px);border-color:var(--zone,#facc15);
+  box-shadow:0 22px 46px -26px var(--zone,#facc15);
+  background:linear-gradient(165deg,rgba(255,255,255,.09),rgba(255,255,255,.02));
+}
+.zone-btn:nth-child(4),.zone-btn:nth-child(5){grid-column:span 3}
+.zone-btn .zicon{display:block;font-size:26px;line-height:1;margin-bottom:9px}
+.zone-btn .zname{display:block;font-size:15.5px;font-weight:800;letter-spacing:1.2px}
+.zone-btn .zdiff{
+  display:inline-block;margin-top:7px;padding:2px 9px;border-radius:999px;
+  font-size:10.5px;font-weight:700;letter-spacing:.6px;
+  background:rgba(255,255,255,.07);color:var(--txt2);
+}
+.zone-btn .zdiff.d1{background:rgba(74,222,128,.14);color:var(--green)}
+.zone-btn .zdiff.d2{background:rgba(34,211,238,.14);color:var(--cyan)}
+.zone-btn .zdiff.d3{background:rgba(251,191,36,.14);color:var(--gold)}
+.zone-btn .zdiff.d4{background:rgba(248,113,113,.14);color:var(--rose)}
+.zone-btn .zmobs{
+  display:block;margin-top:9px;font-size:10.5px;color:var(--dim);line-height:1.6;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.land-legend{
+  position:relative;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;
+  font-size:11.5px;color:var(--dim);
+}
+.land-legend span{display:inline-flex;align-items:center;gap:6px}
+.land-legend kbd{
+  display:inline-block;min-width:20px;text-align:center;padding:1px 6px;border-radius:6px;
+  background:rgba(255,255,255,.08);border:1px solid var(--line2);color:var(--gold);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+}
+@media (max-width:820px){
+  .zone-grid{grid-template-columns:repeat(2,1fr)}
+  .zone-btn,.zone-btn:nth-child(4),.zone-btn:nth-child(5){grid-column:span 1}
+  #inventory{max-width:96vw;overflow-x:auto}
+  #minimap{width:112px;height:88px;bottom:78px}
+  #stats{font-size:10.5px;padding:6px 9px}
+  #zone{display:none}
+}
+
+body:not(.ingame) #minimap,
+body:not(.ingame) #inventory,
+body:not(.ingame) #tutorialBtn,
+body:not(.ingame) #tooltip{display:none !important}
+#tutorialBtn{
+  position:fixed;top:12px;right:12px;z-index:11;width:34px;height:34px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--line);color:var(--txt2);cursor:pointer;
+  font-size:15px;line-height:1;display:grid;place-items:center;pointer-events:auto;
+}
+#tutorialBtn:hover{color:var(--gold);border-color:var(--line2)}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 	<div id="zoneSelect">
-	    <h1>🧪 选择区域 · 波次挑战</h1>
-	    <div class="zone-grid">
-	        <div class="zone-btn" onclick="startZone(0)" style="border-color:#5599cc">
-	            <span class="zicon">💧</span><span class="zname">水溶液</span>
-	            <span class="zdiff">入门 · H2O NaCl CaCO3</span>
-	        </div>
-	        <div class="zone-btn" onclick="startZone(1)" style="border-color:#cc6666">
-	            <span class="zicon">🧪</span><span class="zname">酸性区</span>
-	            <span class="zdiff">普通 · HCl H2SO4 HNO3</span>
-	        </div>
-	        <div class="zone-btn" onclick="startZone(3)" style="border-color:#8888cc">
-	            <span class="zicon">⚗️</span><span class="zname">碱性区</span>
-	            <span class="zdiff">普通 · NaOH KOH NH3</span>
-	        </div>
-	        <div class="zone-btn" onclick="startZone(2)" style="border-color:#66aa66">
-	            <span class="zicon">🌿</span><span class="zname">有机区</span>
-	            <span class="zdiff">困难 · CH4 C6H6 C2H5OH</span>
-	        </div>
-	        <div class="zone-btn" onclick="startZone(4)" style="border-color:#ff8844">
-	            <span class="zicon">⚡</span><span class="zname">等离子区</span>
-	            <span class="zdiff">极难 · O2+ N2+ Ar+</span>
-	        </div>
-	    </div>
-	</div>
+  <div class="land-head">
+    <div class="land-badge">⚛ ION ARENA · 化学版 florr</div>
+    <h1>离子竞技场</h1>
+    <p class="land-sub">选一块区域，用物质当武器，在波次里活下来</p>
+  </div>
+  <div class="zone-grid">
+    <div class="zone-btn" onclick="startZone(0)" style="--zone:#5599cc">
+      <span class="zicon">💧</span><span class="zname">水溶液</span>
+      <span class="zdiff d1">入门</span>
+      <span class="zmobs">H₂O · NaCl · CaCO₃ · MgSO₄</span>
+    </div>
+    <div class="zone-btn" onclick="startZone(1)" style="--zone:#cc6666">
+      <span class="zicon">🧪</span><span class="zname">酸性区</span>
+      <span class="zdiff d2">普通</span>
+      <span class="zmobs">HCl · H₂SO₄ · HNO₃ · H₃PO₄</span>
+    </div>
+    <div class="zone-btn" onclick="startZone(3)" style="--zone:#8888cc">
+      <span class="zicon">⚗️</span><span class="zname">碱性区</span>
+      <span class="zdiff d2">普通</span>
+      <span class="zmobs">NaOH · KOH · NH₃ · Na₂CO₃</span>
+    </div>
+    <div class="zone-btn" onclick="startZone(2)" style="--zone:#66aa66">
+      <span class="zicon">🌿</span><span class="zname">有机区</span>
+      <span class="zdiff d3">困难</span>
+      <span class="zmobs">CH₄ · C₂H₄ · C₆H₆ · C₂H₅OH</span>
+    </div>
+    <div class="zone-btn" onclick="startZone(4)" style="--zone:#ff8844">
+      <span class="zicon">⚡</span><span class="zname">等离子区</span>
+      <span class="zdiff d4">极难</span>
+      <span class="zmobs">O₂⁺ · N₂⁺ · Ar⁺ · 电子束</span>
+    </div>
+  </div>
+  <div class="land-legend">
+    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 或鼠标移动</span>
+    <span><kbd>E</kbd> 技能</span>
+    <span><kbd>C</kbd> 合成</span>
+    <span><kbd>B</kbd> 背包</span>
+    <span><kbd>Tab</kbd> 自动装备</span>
+    <span>物质会自动绕你环转并攻击</span>
+  </div>
+</div>
 <div id="ui">
     <div id="topBar">
         <div id="stats">
@@ -202,6 +422,7 @@ canvas{display:block;cursor:none}
 <script>
 const TAU = Math.PI * 2;
 var mobs=[],drops=[],projs=[],mines=[];
+var keys = {};  /* v2 修复：键盘状态必须在主脚本作用域内声明，update/keydown 共用 */
 // ==================== CANVAS SETUP ====================
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -224,6 +445,18 @@ const ZONES = [
 ];
 const ARENA_RADIUS = 1500; // 圆形竞技场半径
 let currentZoneId = 0;
+
+// v2 修复：WAVE 全局状态此前漏声明，导致 startZone/initWave/update 全部 ReferenceError，游戏根本跑不起来
+const WAVE = {
+  current: 1,          // 当前波次
+  isSpecial: false,    // 是否特殊波
+  spawnedThisWave: 0,  // 本波已生成数量
+  spawnTimer: 0,       // 当前生成计时
+  mobsToSpawn: 0,      // 本波目标数量
+  spawnInterval: 1500, // 生成间隔(ms)
+  clearTimer: 30000,   // 清场倒计时(ms)
+  mobsPerWaveBase: 12  // 基础每波怪物数
+};
 
 function startZone(zoneId) {
     currentZoneId = zoneId;
@@ -340,10 +573,10 @@ const CAT_COLORS = {damage:'#ff4444',projectile:'#ff8844',poison:'#9944cc',heal:
 
 // florr.io 9级稀有度
 const RARITIES=['common','unusual','rare','epic','legendary','mythic','ultra','super','unique'];
-const RARITY_MULT={common:1,unusual:3,rare:9,epic:27,legendary:81,mythic:243,ultra:729,super:2187,unique:6561};
+const RARITY_MULT={common:1,unusual:2,rare:4,epic:8,legendary:16,mythic:32,ultra:64,super:128,unique:256};
 const RARITY_COLORS={common:'#94a3b8',unusual:'#22c55e',rare:'#3b82f6',epic:'#a855f7',legendary:'#f59e0b',mythic:'#06b6d4',ultra:'#ec4899',super:'#ff4444',unique:'#ffd700'};
-const MOB_HP_MULT={common:1,unusual:3.75,rare:13.5,epic:54,legendary:405,mythic:2430,ultra:29160,super:1312200,unique:19683000};
-const RARITY_WEIGHT=[1000,300,90,27,8,2.4,0.7,0.2,0.05];
+const MOB_HP_MULT={common:1,unusual:2,rare:4,epic:8,legendary:16,mythic:32,ultra:64,super:128,unique:256};
+const RARITY_WEIGHT=[1000,260,70,18,4.5,1.1,0.26,0.06,0.014];
 
 function createPetal(chemId, rarity, angle) {
     const base = CHEMICAL_PETALS[chemId];
@@ -438,7 +671,7 @@ function getWaveMobs(zoneId, isSpecial) {
     if (isSpecial) {
         // 特殊波：只有1-2种怪物成群出现
         const eligible = allMobs.filter(name => {
-            const sw = MOB_DEFS[name].startWave || 1;
+            const sw = MOB_DEFS[name].sw || MOB_DEFS[name].startWave || 1;
             return sw <= wave;
         });
         const pick = eligible[Math.floor(Math.random() * eligible.length)];
@@ -447,38 +680,17 @@ function getWaveMobs(zoneId, isSpecial) {
 
     // 普通波：筛选已解锁的怪物
     return allMobs.filter(name => {
-        const sw = MOB_DEFS[name].startWave || 1;
+        const sw = MOB_DEFS[name].sw || MOB_DEFS[name].startWave || 1;
         return sw <= wave;
     });
 }
 
 // ==================== MOB WAVE DATA ====================
 // 为每个怪物添加起始波次
-Object.assign(MOB_DEFS['H2O'],    { startWave: 1 });
-Object.assign(MOB_DEFS['NaCl'],   { startWave: 1 });
-Object.assign(MOB_DEFS['CaCO3'],  { startWave: 2 });
-Object.assign(MOB_DEFS['MgSO4'],  { startWave: 1 });
-Object.assign(MOB_DEFS['KCl'],    { startWave: 2 });
-Object.assign(MOB_DEFS['HCl'],    { startWave: 1 });
-Object.assign(MOB_DEFS['H2SO4'],  { startWave: 2 });
-Object.assign(MOB_DEFS['HNO3'],   { startWave: 2 });
-Object.assign(MOB_DEFS['H3PO4'],  { startWave: 3 });
-Object.assign(MOB_DEFS['CH3COOH'],{ startWave: 1 });
-Object.assign(MOB_DEFS['NaOH'],   { startWave: 1 });
-Object.assign(MOB_DEFS['KOH'],    { startWave: 2 });
-Object.assign(MOB_DEFS['CaOH2'],  { startWave: 3 });
-Object.assign(MOB_DEFS['NH3'],    { startWave: 1 });
-Object.assign(MOB_DEFS['Na2CO3'], { startWave: 2 });
-Object.assign(MOB_DEFS['CH4'],    { startWave: 1 });
-Object.assign(MOB_DEFS['C2H4'],   { startWave: 2 });
-Object.assign(MOB_DEFS['C6H6'],   { startWave: 3 });
-Object.assign(MOB_DEFS['C2H5OH'], { startWave: 1 });
-Object.assign(MOB_DEFS['CH3CHO'], { startWave: 2 });
-Object.assign(MOB_DEFS['O2+'],    { startWave: 3 });
-Object.assign(MOB_DEFS['N2+'],    { startWave: 3 });
-Object.assign(MOB_DEFS['Ar+'],    { startWave: 4 });
-Object.assign(MOB_DEFS['e-束'],   { startWave: 2 });
-Object.assign(MOB_DEFS['Ne+'],    { startWave: 4 });
+// v2 修复：原此处有 25 行 Object.assign(MOB_DEFS['x'], {startWave:N})，
+// 但 MOB_DEFS 里没有 startWave 字段（真正字段是 sw），首参为 undefined 会抛
+// TypeError: Cannot convert undefined or null to object，直接终止本 <script>，
+// 使后面的 let mouseX/spawnTimer/lastTime 停在 TDZ，游戏永远跑不起来。已删除。
 
 // 特殊波配置（仿 florr.io 各区域特殊波）
 const SPECIAL_WAVES = {
@@ -615,7 +827,7 @@ function spawnParticles(x, y, count, color) {
 }
 
 // ==================== INPUT ====================
-const keys = {};
+// keys 已在主脚本顶部声明（line 434 附近）
 let mouseX = W / 2, mouseY = H / 2;
 let mouseDown = false, rightDown = false;
 
@@ -1732,6 +1944,24 @@ document.getElementById('respawnBtn').onclick = function() {
 
 initWave();
 requestAnimationFrame(gameLoop);
+</script>
+
+<script>
+
+/* v2：落地页 ↔ 游戏内 状态切换（包装原函数，保持原逻辑不变） */
+(function () {
+  function wrapRun(name, add) {
+    var orig = window[name];
+    if (typeof orig !== 'function') return;
+    window[name] = function () {
+      document.body.classList.toggle('ingame', add);
+      return orig.apply(this, arguments);
+    };
+  }
+  function boot() { wrapRun('startZone', true); wrapRun('backToSelect', false); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
 </script>
 </body>
 </html>
