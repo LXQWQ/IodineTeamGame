@@ -208,6 +208,9 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
 .uc-formula{font-size:.86rem;font-weight:800;letter-spacing:.01em;font-variant-numeric:tabular-nums}
 .uc-cost{font-size:.74rem;font-weight:800;color:var(--gold);white-space:nowrap}
 .uc-cost::before{content:'⚡';font-size:.66rem;margin-right:1px;opacity:.9}
+.uc-stats{display:flex;gap:7px;font-size:11.5px;letter-spacing:.2px;white-space:nowrap}
+.uc-stats .atk{color:#fca5a5;font-weight:700}
+.uc-stats .def{color:#93c5fd;font-weight:700}
 .uc-row2{display:flex;align-items:center;gap:6px;margin-top:3px}
 .uc-name{font-size:.68rem;color:var(--text2);font-weight:600}
 .uc-pips{margin-left:auto;display:flex;gap:2px}
@@ -368,7 +371,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
     <div class="intro">
       在六边形战场上用真实的化学势力争夺领地。<br>
       部署单位扩张疆域，相邻的敌对单位会自发<b>反应</b>，胜者吞并对方领地；
-      存活单位继续<b>同化</b>周围格子。占领敌方<b>首都</b>或掌控 60% 领地即可获胜。
+      存活单位继续<b>同化</b>周围格子。占领敌方<b>首都</b>或掌控 52% 领地（元素 45%）即可获胜。
     </div>
 
     <div class="field">
@@ -495,24 +498,31 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
         <p><b>② 补偿</b>：领土落后方按差距获得补给（最多 +20），被压制时仍有翻盘资金。</p>
         <p><b>③ 部署</b>：每回合最多部署 2 个（首回合双方各只能部署 1 个），只能放在自己的领地，或与自己领地相邻的中立格。</p>
         <p><b>④ 反应</b>：相邻的敌对单位交战，按战力从高到低结算，胜者吞并对方格子。<b>每个单位每回合只交战一次</b>。</p>
-        <p><b>⑤ 同化</b>：存活的单位把相邻的<b>中立空地</b>转化为自己的领土。</p>
-        <p><b>⑥ 渗透</b>：单位会把周围 6 格里<b>没有驻兵</b>的格子「环境」往自己这侧推——几级兵就能同时影响几格（强蚀/氧化再多 1 格）。同一格被渗透 4 次即易主。</p>
+        <p><b>⑤ 行军</b>：自带「行军」特性的单位会自动朝敌方首都方向推进 1 格（只走空地，不主动闯敌境）。</p>
+        <p><b>⑥ 同化</b>：存活的单位把相邻的<b>中立空地</b>转化为自己的领土。</p>
+        <p><b>⑦ 渗透</b>：单位会把周围 6 格里<b>没有驻兵</b>的格子「环境」往自己这侧推——几级兵就能同时影响几格（强蚀/氧化再多 1 格）。同一格被渗透 4 次即易主。</p>
         <p>这条很关键：敌方没放兵的空地，靠部队在旁边施压就能一步步拿下来，不会出现「明明围住了却打不动」的死局。看棋盘底色就能看出压力方向。</p>
       </div>
       <div class="rule-sec">
-        <h3>战力计算</h3>
-        <p>战力 = 单位基础战力 + 环境加成（最多 ±1.5）+ 驻防加成（在本方领地作战 +1，站在自家首都 +2.5）。</p>
-        <p>平局则双方<b>同归于尽</b>，该格归属中立——这是防守方以弱换强的机会。</p>
-        <p>环境加成上限只有 1.5，<b>买不起强单位就无法靠地形翻盘</b>：便宜单位打不过贵单位，但贵单位也吃不住围攻。</p>
+        <h3>战力计算：攻防分离</h3>
+        <p>每个兵种有<b>攻击 ⚔</b> 与 <b>防御 🛡</b> 两个独立数值，不再成正比。</p>
+        <p><b>攻击 ≥ 对方防御 × 1.05 → 击杀对方</b>；反之对方也击杀了你 → <b>同归于尽</b>；双方都打不穿 → <b>僵持</b>（各自活下来，谁也不掉格）。</p>
+        <p>双方都会额外获得：环境加成（最多 ±1.5）、本土驻防 +1、自家首都 +2.5。</p>
+        <p>所以：<b>高攻低防的兵能一刀劈开坦克，但也会被任何一支杂兵反杀；坦克打不死人，却能把整条线卡住。</b>僵持要靠夹击、支援、穿刺来破。</p>
       </div>
       <div class="rule-sec">
-        <h3>单位特性</h3>
-        <p><b>扩张</b>（一阶）：部署时立刻同化 1 格相邻中立地。</p>
-        <p><b>缓冲</b>（二阶）：削弱对方环境加成的一半（最多 −0.75），擅长守土但不至于锁死强单位。</p>
-        <p><b>中和</b>（三阶）：击杀敌人时，连带转化目标身旁 1 格。</p>
-        <p><b>氧化</b>（四阶）：同化范围 +1。</p>
-        <p><b>强蚀</b>（五阶）：同化范围 ×2，且「缓冲」对强蚀无效——强酸强碱超出缓冲容量，这是化学事实。</p>
-        <p>单位战力 1–5 与费用 10–46 一一对应：低阶铺地快、能填线；高阶战斗力强、同化范围大，但一回合只能杀一个。</p>
+        <h3>兵种与特性（每阵营 9 种）</h3>
+        <p><b>扩张</b>：部署时立刻同化 1 格相邻中立地。便宜、铺地快。</p>
+        <p><b>缓冲</b>：削弱对方环境加成一半。守土型，别指望它杀人。</p>
+        <p><b>先锋</b>：<b>离本王城越远攻击越高</b>（每格 +0.16）——推得越深越致命，但脱离本土也没有驻防加成。</p>
+        <p><b>行军</b>：每回合自动朝敌方首都推进 1 格，不花部署次数。适合铺前线，但会被正面拦住。</p>
+        <p><b>氧化</b>：同化范围 +1，铺场效率高。</p>
+        <p><b>守土</b>：<b>越靠近本王城防御越高</b>（每格 +0.18）——回防时硬得离谱，远征就只剩半条命。</p>
+        <p><b>支援</b>：相邻友军攻击 +0.8（最多 +2）。本身很脆，但它能把一支杂兵变成破防线。</p>
+        <p><b>穿刺</b>：无视目标 35% 的<b>基础防御</b>——专门拆坦克。</p>
+        <p><b>强蚀</b>：同化范围 ×2，且「缓冲」对强蚀无效。</p>
+        <h3>全局机制：两面夹击</h3>
+        <p>目标被<b>两支以上敌军</b>贴身时，每多一支就<b>防御 −1.2</b>。所以再贵的顶级兵被围住也会被啃掉——这就是「不计得失全押」不再稳赢的原因。</p>
       </div>
       <div class="rule-sec">
         <h3>三种模式</h3>
@@ -522,7 +532,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
       </div>
       <div class="rule-sec">
         <h3>操作</h3>
-        <p>点单位卡选中 → 点棋盘高亮格部署。快捷键：<code>1–5</code> 选单位、<code>Space</code> 结束部署、<code>Esc</code> 取消选中、<code>Ctrl+Z</code> 撤销。</p>
+        <p>点单位卡选中 → 点棋盘高亮格部署。卡面直接显示 <b>⚔攻击 / 🛡防御</b>，费用在右上。快捷键：<code>1–9</code> 选单位、<code>Space</code> 结束部署、<code>Esc</code> 取消选中、<code>Ctrl+Z</code> 撤销。</p>
         <p>人机对战可在开局选择<b>执哪一方</b>：选了后手就先看 AI 走，你的阵营在顶部 HUD 会标高亮。</p>
       </div>
     </div>
@@ -576,8 +586,14 @@ const now = () => performance.now();
    1. 配置 & 模式
    ============================================================ */
 const COLS = 11, ROWS = 11;
-const START_RES = 60;          // 先手起始资源
-const START_RES_P2 = 60;       // 后手补偿：先手首回合少 1 个部署已足够，不再额外补资源
+const START_RES = 50;          // 起始资源（够买 1 个中阶兵，买不起顶级兵 → 抑制开局裸奔压家）
+const START_RES_P2 = 50;   // 双方同资源；先手约 +5~8% 回合优势（自对弈实测），换取完全对称的规则
+const KILL_MARGIN = 1.05;      // 要打死对方，攻击必须超过其防御的 1.05 倍
+const FLANK_PENALTY = 1.2;     // 两面夹击：目标每多一个相邻敌军，防御 −1.2
+const HOME_PER_TILE = 0.18;    // 守土：离本王城每近 1 格，防御 +
+const VANGUARD_PER_TILE = 0.16;// 先锋：离本王城每远 1 格，攻击 +
+const SUPPORT_ATK = 0.8;       // 支援：每个相邻友军给攻击 +
+const PIERCE_RATE = 0.35;      // 穿刺：无视目标这个比例的防御
 const MAX_DEPLOY = 2;
 const FIRST_TURN_DEPLOY = 1;   // 先手首回合只部署 1 个，抑制滚雪球
 const CAP_DEF = 2.5;           // 首都驻防加成（斩首不再一次战力胜利就成立）
@@ -587,8 +603,10 @@ const TURN_LIMIT = 30;
 const SAVE_KEY = 'ct.save.v2';
 const SOUND_KEY = 'ct.sound';
 
-function unit(id,name,formula,cost,power,ability,abilityName,abilityDesc,ico){
-    return {id,name,formula,cost,power,ability,abilityName,abilityDesc,ico};
+/* 兵种：攻防分离 —— atk 决定能打死谁，def 决定能被谁打死
+   tier 只用于同化/渗透的范围与阶级显示 */
+function unit(id,name,formula,cost,tier,atk,def,ability,abilityName,abilityDesc,ico){
+    return {id,name,formula,cost,tier,atk,def,power:tier,ability,abilityName,abilityDesc,ico};
 }
 
 const MODES = {
@@ -599,19 +617,27 @@ const MODES = {
         sides:[
             {name:'酸方', color:'#f43f5e', light:'#fda4af', glyph:'酸',
              units:[
-                unit('H2CO3','碳酸','H₂CO₃',10,1,'expand','扩张','部署时同化 1 格中立地','🧪'),
-                unit('HAc','醋酸','CH₃COOH',16,2,'buffer','缓冲','削弱对方环境加成一半','🧪'),
-                unit('HCl','盐酸','HCl',24,3,'neutralize','中和','击杀后连带转化 1 格','🧪'),
-                unit('HNO3','硝酸','HNO₃',34,4,'oxidize','氧化','同化范围 +1','🧪'),
-                unit('H2SO4','硫酸','H₂SO₄',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🧪'),
+                unit('H2CO3','碳酸','H₂CO₃',10,1,2.0,2.5,'expand','扩张','部署时同化 1 格中立地','🧪'),
+                unit('HAc','醋酸','CH₃COOH',16,2,2.6,3.6,'buffer','缓冲','削弱对方环境加成一半','🧪'),
+                unit('HCl','盐酸','HCl',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🧪'),
+                unit('H2SO3','亚硫酸','H₂SO₃',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🧪'),
+                unit('HNO3','硝酸','HNO₃',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🧪'),
+                unit('H3PO4','磷酸','H₃PO₄',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🧪'),
+                unit('H2C2O4','草酸','H₂C₂O₄',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🧪'),
+                unit('HClO4','高氯酸','HClO₄',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🧪'),
+                unit('H2SO4','硫酸','H₂SO₄',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🧪'),
              ]},
             {name:'碱方', color:'#3b82f6', light:'#93c5fd', glyph:'碱',
              units:[
-                unit('Na2CO3','碳酸钠','Na₂CO₃',10,1,'expand','扩张','部署时同化 1 格中立地','⚪'),
-                unit('NH3','氨水','NH₃·H₂O',16,2,'buffer','缓冲','削弱对方环境加成一半','💨'),
-                unit('NaOH','氢氧化钠','NaOH',24,3,'neutralize','中和','击杀后连带转化 1 格','⚪'),
-                unit('CaOH2','氢氧化钙','Ca(OH)₂',34,4,'oxidize','氧化','同化范围 +1','⚪'),
-                unit('KOH','氢氧化钾','KOH',46,5,'corrode','强蚀','同化 ×2，缓冲失效','⚪'),
+                unit('Na2CO3','碳酸钠','Na₂CO₃',10,1,2.0,2.5,'expand','扩张','部署时同化 1 格中立地','⚪'),
+                unit('NH3','氨水','NH₃·H₂O',16,2,2.6,3.6,'buffer','缓冲','削弱对方环境加成一半','💨'),
+                unit('NaOH','氢氧化钠','NaOH',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','⚪'),
+                unit('BaOH2','氢氧化钡','Ba(OH)₂',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','⚪'),
+                unit('K2CO3','碳酸钾','K₂CO₃',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','⚪'),
+                unit('CaOH2','氢氧化钙','Ca(OH)₂',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','⚪'),
+                unit('Na3PO4','磷酸钠','Na₃PO₄',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','⚪'),
+                unit('CsOH','氢氧化铯','CsOH',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','⚪'),
+                unit('KOH','氢氧化钾','KOH',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','⚪'),
              ]},
         ],
         metric:'ph', metricName:'pH',
@@ -648,19 +674,27 @@ const MODES = {
         sides:[
             {name:'阳极', color:'#fb923c', light:'#fdba74', glyph:'阳',
              units:[
-                unit('Fe','铁','Fe',10,1,'expand','扩张','部署时同化 1 格中立地','🔶'),
-                unit('Zn','锌','Zn',16,2,'buffer','缓冲','削弱对方环境加成一半','🔶'),
-                unit('Al','铝','Al',24,3,'neutralize','中和','击杀后连带转化 1 格','🔶'),
-                unit('Mg','镁','Mg',34,4,'oxidize','氧化','同化范围 +1','🔶'),
-                unit('Li','锂','Li',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🔶'),
+                unit('Zn','锌','Zn',10,1,2.0,2.5,'expand','扩张','部署时同化 1 格中立地','🔶'),
+                unit('Al','铝','Al',16,2,2.6,3.6,'buffer','缓冲','削弱对方环境加成一半','🔶'),
+                unit('Mg','镁','Mg',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🔶'),
+                unit('Fe','铁','Fe',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🔶'),
+                unit('Ni','镍','Ni',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🔶'),
+                unit('Sn','锡','Sn',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🔶'),
+                unit('Pb','铅','Pb',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🔶'),
+                unit('Ti','钛','Ti',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🔶'),
+                unit('Cu','铜','Cu',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🔶'),
              ]},
             {name:'阴极', color:'#22d3ee', light:'#a5f3fc', glyph:'阴',
              units:[
-                unit('C','石墨','C',10,1,'expand','扩张','部署时同化 1 格中立地','🔵'),
-                unit('Cu','铜','Cu',16,2,'buffer','缓冲','削弱对方环境加成一半','🔵'),
-                unit('Ag','银','Ag',24,3,'neutralize','中和','击杀后连带转化 1 格','🔵'),
-                unit('Pt','铂','Pt',34,4,'oxidize','氧化','同化范围 +1','🔵'),
-                unit('Au','金','Au',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🔵'),
+                unit('C','石墨','C',10,1,2.0,2.5,'expand','扩张','部署时同化 1 格中立地','🔵'),
+                unit('Ag','银','Ag',16,2,2.6,3.6,'buffer','缓冲','削弱对方环境加成一半','🔵'),
+                unit('Hg','汞','Hg',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🔵'),
+                unit('Pt','铂','Pt',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🔵'),
+                unit('Pd','钯','Pd',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🔵'),
+                unit('Rh','铑','Rh',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🔵'),
+                unit('Ir','铱','Ir',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🔵'),
+                unit('Au','金','Au',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🔵'),
+                unit('W','钨','W',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🔵'),
              ]},
         ],
         metric:'potential', metricName:'电势',
@@ -689,19 +723,27 @@ const MODES = {
         sides:[
             {name:'碱金属', color:'#f43f5e', light:'#fda4af', glyph:'碱',
              units:[
-                unit('Li','锂','Li',10,1,'expand','扩张','部署时同化 1 格中立地','🔴'),
-                unit('Na','钠','Na',16,2,'buffer','缓冲','削弱对方环境加成一半','🔴'),
-                unit('K','钾','K',24,3,'neutralize','中和','击杀后连带转化 1 格','🔴'),
-                unit('Rb','铷','Rb',34,4,'oxidize','氧化','同化范围 +1','🔴'),
-                unit('Cs','铯','Cs',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🔴'),
+                unit('Li','锂','Li',10,1,2.0,2.5,'expand','扩张','部署时同化 1 格中立地','🔴'),
+                unit('Na','钠','Na',16,2,2.6,3.6,'buffer','缓冲','削弱对方环境加成一半','🔴'),
+                unit('K','钾','K',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🔴'),
+                unit('Rb','铷','Rb',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🔴'),
+                unit('Cs','铯','Cs',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🔴'),
+                unit('Fr','钫','Fr',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🔴'),
+                unit('Mg','镁','Mg',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🔴'),
+                unit('Ca','钙','Ca',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🔴'),
+                unit('Sr','锶','Sr',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🔴'),
              ]},
             {name:'卤素', color:'#22c55e', light:'#86efac', glyph:'卤',
              units:[
-                unit('I','碘','I₂',10,1,'expand','扩张','部署时同化 1 格中立地','🟢'),
-                unit('Br','溴','Br₂',16,2,'buffer','缓冲','削弱对方环境加成一半','🟢'),
-                unit('Cl','氯','Cl₂',24,3,'neutralize','中和','击杀后连带转化 1 格','🟢'),
-                unit('F','氟','F₂',34,4,'oxidize','氧化','同化范围 +1','🟢'),
-                unit('At','砹','At₂',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🟢'),
+                unit('I','碘','I₂',10,1,2.0,2.5,'expand','扩张','部署时同化 1 格中立地','🟢'),
+                unit('Br','溴','Br₂',16,2,2.6,3.6,'buffer','缓冲','削弱对方环境加成一半','🟢'),
+                unit('Cl','氯','Cl₂',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🟢'),
+                unit('At','砹','At₂',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🟢'),
+                unit('F','氟','F₂',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🟢'),
+                unit('S','硫','S₈',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🟢'),
+                unit('Se','硒','Se',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🟢'),
+                unit('Te','碲','Te',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🟢'),
+                unit('N','氮','N₂',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🟢'),
              ]},
         ],
         metric:'wildElement', metricName:'野元素',
@@ -890,7 +932,8 @@ function deploy(hex, unitIdx, pid, silent){
     if (!SIM.on && G.undo.length>6) G.undo.shift();
 
     me.res -= u.cost;
-    hex.unit = {player:pid, id:u.id, name:u.name, formula:u.formula, power:u.power, abi:u.ability};
+    hex.unit = {player:pid, id:u.id, name:u.name, formula:u.formula, power:u.power,
+                atk:u.atk, def:u.def, abi:u.ability};
     hex.owner = pid;
     hex.press = {1:0, 2:0};
     M().nudge(hex, pid);
@@ -947,7 +990,8 @@ function resolveReactions(){
         }
     }
     if (!pairs.length) return;
-    pairs.sort((x,y)=> (y.a.unit.power+y.b.unit.power) - (x.a.unit.power+x.b.unit.power));
+    pairs.sort((x,y)=> ((y.a.unit.atk+y.a.unit.def)+(y.b.unit.atk+y.b.unit.def))
+                     - ((x.a.unit.atk+x.a.unit.def)+(x.b.unit.atk+x.b.unit.def)));
 
     let clashes = 0;
     const fought = new Set();   // 每个单位每回合只交战一次：避免单个强单位一回合清空战线
@@ -961,78 +1005,135 @@ function resolveReactions(){
     if (clashes) sfx('clash');
 }
 
-/* 测试专用：构造临时格与单位，跑真实 pairScore */
-function _duel(pa,aa,ea,ownA,pb,ab,eb,ownB){
-    const mkUnit=(power,abi,player)=>({power,abi,player,formula:'T'});
-    const A={col:0,row:0,owner:ownA?1:0,cap:0,wildElement:null,ph:7,potential:0};
-    const B={col:1,row:0,owner:ownB?2:0,cap:0,wildElement:null,ph:7,potential:0};
-    const r=pairScore(mkUnit(pa,aa,1),ea,A,mkUnit(pb,ab,2),eb,B);
-    return {a:r.ea, b:r.eb};
+/* ---------- 兵种相遇：攻防分离 ----------
+   atk 决定「能打死谁」，def 决定「能被谁打死」。
+   于是同一份战力可以拆出玻璃炮（高攻低防）、坦克（低攻高防）、均衡兵。 */
+const BUFFER_RATE = 0.5;
+/* 首都格（复用已有的 capPos 坐标表） */
+function capHexOf(pid){ const c = capPos(pid); return getHex(c.c, c.r); }
+function adjacentAllies(h, pid){
+    let n = 0;
+    for (const nb of neighbors(h.col,h.row)){
+        const x = getHex(nb.col,nb.row);
+        if (x.unit && x.unit.player===pid) n++;
+    }
+    return n;
+}
+function adjacentFoes(h, pid){
+    let n = 0;
+    for (const nb of neighbors(h.col,h.row)){
+        const x = getHex(nb.col,nb.row);
+        if (x.unit && x.unit.player!==pid) n++;
+    }
+    return n;
+}
+/* 支援光环：相邻的「支援」友军给本单位攻击加成 */
+function supportBonus(h, pid){
+    let b = 0;
+    for (const nb of neighbors(h.col,h.row)){
+        const x = getHex(nb.col,nb.row);
+        if (x.unit && x.unit.player===pid && x.unit.abi==='support') b += SUPPORT_ATK;
+    }
+    return Math.min(2, b);
+}
+/* 单侧基础值：atk / def 各自携带环境与兵种特性 */
+function sideScore(u, env0, h){
+    const myCap = capHexOf(u.player);
+    const dOwn = myCap ? hexDist(h.col,h.row,myCap.col,myCap.row) : 6;
+    let atk = (u.atk||0) + env0;
+    let def = (u.def||0) + env0;
+    if (h.owner===u.player) def += 1;             // 本土驻防
+    if (h.cap===u.player)   def += CAP_DEF;       // 首都驻防
+    if (u.abi==='vanguard') atk += dOwn * VANGUARD_PER_TILE;                    // 先锋：离家越远越猛
+    if (u.abi==='home')     def += Math.max(0, 8-dOwn) * HOME_PER_TILE;          // 守土：守家越近越硬
+    atk += supportBonus(h, u.player);
+    return {atk, def};
 }
 
-/* 战力结算（纯函数，便于单测与复核）
-   返回 {ea, eb}，ea 是 a 格的战力，eb 是 b 格的战力。 */
-const BUFFER_RATE = 0.5;
+/* 一次相遇的完整判定 */
 function pairScore(ua, ea0, a, ub, eb0, b){
-    let ea = ea0 + ua.power;
-    let eb = eb0 + ub.power;
-    if (a.owner===ua.player) ea += 1;      // 本土防守加成
-    if (b.owner===ub.player) eb += 1;
-    // 首都驻防：站在自家首都格上额外加成，斩首必须真正压倒守军
-    if (a.cap===ua.player) ea += CAP_DEF;
-    if (b.cap===ub.player) eb += CAP_DEF;
-    // 缓冲：削弱对方环境加成的「正加成」一半
-    // （旧版是全免，16 费的二级兵能把 46 费的五级兵锁死；
-    //   元素模式 env 可为负，不能直接乘，否则会把负环境变成给对方加分）
     const posA = Math.max(0, ea0), posB = Math.max(0, eb0);
-    if (ua.abi==='buffer') eb -= posB * BUFFER_RATE;
-    if (ub.abi==='buffer') ea -= posA * BUFFER_RATE;
-    // 强蚀：破缓冲——把自己被扣掉的那份环境加成拿回来
-    // （旧实现写反：给对手加分，导致强蚀反而打不过缓冲）
-    if (ua.abi==='corrode' && ub.abi==='buffer') ea += posA * BUFFER_RATE;
-    if (ub.abi==='corrode' && ua.abi==='buffer') eb += posB * BUFFER_RATE;
-    return {ea, eb};
+    const sa = sideScore(ua, ea0, a);
+    const sb = sideScore(ub, eb0, b);
+
+    // 缓冲 / 强蚀：对「环境加成」的操控，同时作用于攻与防
+    if (ua.abi==='buffer'){ sb.atk -= posB*BUFFER_RATE; sb.def -= posB*BUFFER_RATE; }
+    if (ub.abi==='buffer'){ sa.atk -= posA*BUFFER_RATE; sa.def -= posA*BUFFER_RATE; }
+    if (ua.abi==='corrode' && ub.abi==='buffer'){ sa.atk += posA*BUFFER_RATE; sa.def += posA*BUFFER_RATE; }
+    if (ub.abi==='corrode' && ua.abi==='buffer'){ sb.atk += posB*BUFFER_RATE; sb.def += posB*BUFFER_RATE; }
+
+    // 穿刺：无视目标一部分「本单位基础防御」
+    if (ua.abi==='pierce') sb.def -= (ub.def||0) * PIERCE_RATE;
+    if (ub.abi==='pierce') sa.def -= (ua.def||0) * PIERCE_RATE;
+
+    // 两面夹击：被两支以上敌军贴住时防御下降（铁壁免疫）
+    if (ub.abi!=='taunt') sb.def -= Math.max(0, adjacentFoes(b, ub.player)-1) * FLANK_PENALTY;
+    if (ua.abi!=='taunt') sa.def -= Math.max(0, adjacentFoes(a, ua.player)-1) * FLANK_PENALTY;
+
+    const killA = sa.atk > sb.def * KILL_MARGIN;   // a 能打死 b
+    const killB = sb.atk > sa.def * KILL_MARGIN;   // b 能打死 a
+    return {sa, sb, killA, killB};
+}
+
+/* 测试专用：构造临时格与单位，跑真实 pairScore
+   duel(atkA, defA, abiA, envA, ownA, atkB, defB, abiB, envB, ownB) */
+function _duel(atkA, defA, abiA, envA, ownA, atkB, defB, abiB, envB, ownB){
+    const mk=(atk,def,abi,player)=>({atk,def,power:1,abi,player,formula:'T'});
+    const A={col:5,row:5,owner:ownA?1:0,cap:0,wildElement:null,ph:7,potential:0};
+    const B={col:6,row:5,owner:ownB?2:0,cap:0,wildElement:null,ph:7,potential:0};
+    const r=pairScore(mk(atkA,defA,abiA,1),envA,A, mk(atkB,defB,abiB,2),envB,B);
+    return {atkA:r.sa.atk, defA:r.sa.def, atkB:r.sb.atk, defB:r.sb.def,
+            killA:r.killA, killB:r.killB};
 }
 
 function resolvePair(a,b){
     const ua = a.unit, ub = b.unit;
     if (!ua || !ub) return null;
-    const sc = pairScore(ua, M().envBonus(a), a, ub, M().envBonus(b), b);
-    const ea = sc.ea, eb = sc.eb;
-
+    const r = pairScore(ua, M().envBonus(a), a, ub, M().envBonus(b), b);
     const A = M().sides[ua.player-1], B = M().sides[ub.player-1];
-
-    const winner = (ea>eb) ? a : (eb>ea ? b : null);
+    const f = v => v.toFixed(1);
 
     // 视觉
     pushFx({kind:'lunge', from:{c:a.col,r:a.row}, to:{c:b.col,r:b.row}, color:A.color, t0:now()});
     pushFx({kind:'lunge', from:{c:b.col,r:b.row}, to:{c:a.col,r:a.row}, color:B.color, t0:now()});
 
-    if (ea===eb){
-        // 同归于尽
+    // ① 谁也打不动谁 → 僵持（需要靠夹击/支援/穿刺来破局）
+    if (!r.killA && !r.killB){
+        addLog(`🛡️ ${ua.formula} ⚔ ${ub.formula} 互不能破（${f(r.sa.atk)} vs 防${f(r.sb.def)}｜${f(r.sb.atk)} vs 防${f(r.sa.def)}）僵持`,'clash');
+        return 'stand';
+    }
+
+    // ② 双方都能击杀 → 同归于尽
+    if (r.killA && r.killB){
         a.unit = null; b.unit = null;
         if (!a.cap) a.owner = 0;
         if (!b.cap) b.owner = 0;
-        addLog(`⚖️ ${ua.formula} ⚔ ${ub.formula} 势均力敌，同归于尽（${ea.toFixed(1)} : ${eb.toFixed(1)}）`,'clash');
+        a.press = {1:0,2:0}; b.press = {1:0,2:0};
+        G.players[ua.player-1].lost++;
+        G.players[ub.player-1].lost++;
+        addLog(`💥 ${ua.formula} 与 ${ub.formula} 同归于尽（攻 ${f(r.sa.atk)}/防 ${f(r.sb.def)}｜攻 ${f(r.sb.atk)}/防 ${f(r.sa.def)}）`,'clash');
         pushFx({kind:'burst', c:a.col,r:a.row, color:'#fbbf24', t0:now()});
         pushFx({kind:'burst', c:b.col,r:b.row, color:'#fbbf24', t0:now()});
+        UI.shake = Math.max(UI.shake, 4);
         return 'tie';
     }
 
-    const w = winner, l = winner===a ? b : a;
+    // ③ 单方击杀
+    const wIsA = r.killA;
+    const w = wIsA ? a : b, l = wIsA ? b : a;
     const wu = w.unit, lu = l.unit;
     const wSide = M().sides[wu.player-1];
-    const lSide = M().sides[lu.player-1];
+    const atkW = wIsA ? r.sa.atk : r.sb.atk;
+    const defL = wIsA ? r.sb.def : r.sa.def;
 
-    // 败方单位阵亡，格子易主
     l.unit = null;
     l.owner = wu.player;
     M().nudge(l, wu.player);
     G.players[wu.player-1].kills++;
     G.players[lu.player-1].lost++;
-
     l.press = {1:0, 2:0};
-    addLog(`⚔️ ${wu.formula} 击溃 ${lu.formula}（${(winner===a?ea:eb).toFixed(1)} : ${(winner===a?eb:ea).toFixed(1)}）→ 夺取 ${l.col},${l.row}`,'clash');
+
+    addLog(`⚔️ ${wu.formula} 击溃 ${lu.formula}（攻 ${f(atkW)} > 防 ${f(defL)}）→ 夺取 ${l.col},${l.row}`,'clash');
     pushFx({kind:'burst', c:l.col,r:l.row, color:wSide.color, t0:now()});
     pushFx({kind:'float', c:l.col,r:l.row, text:'+1', color:wSide.color, t0:now()});
 
@@ -1103,6 +1204,42 @@ function settleNeutral(){
             h.owner = 0;
         }
     }
+}
+
+/* ---------- 行军：自带推进的单位每回合向敌方首都方向走 1 格 ---------- */
+function resolveMarch(){
+    const movers = [];
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = getHex(c,r);
+        if (h.unit && h.unit.abi==='march') movers.push(h);
+    }
+    if (!movers.length) return 0;
+    let moved = 0;
+    for (const h of movers){
+        const u = h.unit;
+        if (!u) continue;
+        const opp = 3-u.player;
+        const myCap = capHexOf(u.player);
+        const curD = hexDist(h.col,h.row, capPos(opp).c, capPos(opp).r);
+        let best = null, bestD = curD;
+        for (const nb of neighbors(h.col,h.row)){
+            const x = getHex(nb.col,nb.row);
+            if (!x || x.unit || x.cap) continue;            // 空位才走，别撞人
+            if (x.owner!==0 && x.owner!==u.player) continue;// 不主动进敌境（那是战斗的事）
+            const d = hexDist(x.col,x.row, capPos(opp).c, capPos(opp).r);
+            if (d < bestD){ bestD = d; best = x; }
+        }
+        if (!best) continue;
+        h.unit = null;
+        best.unit = u;
+        best.owner = u.player;
+        best.press = {1:0,2:0};
+        M().nudge(best, u.player);
+        moved++;
+        pushFx({kind:'ring', c:best.col, r:best.row, color:M().sides[u.player-1].color, t0:now()});
+        addLog(`🚶 ${u.formula} 行军 → ${best.col},${best.row}`,'sys');
+    }
+    return moved;
 }
 
 /* ---------- 渗透：无兵格的归属压力 ----------
@@ -1268,6 +1405,9 @@ function endDeploy(force){
     addLog('⚗️ 反应阶段…','sys');
     resolveReactions();
     addLog('🌀 同化阶段…','sys');
+    addLog('🚶 行军阶段…','sys');
+    const mvd = resolveMarch();
+    if (mvd) addLog(`  行军推进 ${mvd} 格`,'sys');
     resolveAssimilation();
     addLog('🌫️ 渗透阶段…','sys');
     const infl = resolveInfluence();
@@ -1405,8 +1545,8 @@ function aiScore(h, u, pid){
     for (const n of neighbors(h.col,h.row)){
         const nh = getHex(n.col,n.row);
         if (nh.unit && nh.unit.player===opp){
-            const mine = u.power + M().envBonus(h)+(h.owner===pid?1:0)+(h.cap===pid?CAP_DEF:0);
-            const theirs = nh.unit.power + M().envBonus(nh)+(nh.owner===opp?1:0)+(nh.cap===opp?CAP_DEF:0);
+            const mine = (u.atk+u.def)/2 + M().envBonus(h)+(h.owner===pid?1:0)+(h.cap===pid?CAP_DEF:0);
+            const theirs = (nh.unit.atk+nh.unit.def)/2 + M().envBonus(nh)+(nh.owner===opp?1:0)+(nh.cap===opp?CAP_DEF:0);
             s += mine>theirs ? 5.5 : (mine<theirs ? -4.5 : 0.4);
         }
     }
@@ -1429,7 +1569,7 @@ function aiScore(h, u, pid){
     if (dOwn<=1 && enemyUnitAdj>0) s += 3;
 
     // 成本与战力
-    s += u.power*0.55 - u.cost*0.045;
+    s += (u.atk*0.5+u.def*0.5)*0.55 - u.cost*0.045;
 
     // 资源紧张时不乱花钱
     if (G.players[pid-1].res < 40 && u.cost > 30) s -= 3;
@@ -1721,7 +1861,7 @@ function buildRoster(){
         b.innerHTML = `
             <div class="uc-row1"><span class="uc-formula">${u.formula}</span><span class="uc-cost mono">${u.cost}</span></div>
             <div class="uc-row2"><span class="uc-name">${u.name}</span>
-                <span class="uc-pips">${[1,2,3,4,5].map(k=>`<i class="${k<=u.power?'on':''}"></i>`).join('')}</span>
+                <span class="uc-stats"><b class="atk">⚔${u.atk.toFixed(1)}</b><b class="def">🛡${u.def.toFixed(1)}</b></span>
             </div>
             <div class="uc-abi"><b>${u.abilityName}</b><span>${locked?'资源不足':u.abilityDesc}</span></div>`;
         b.addEventListener('click', ()=>{
@@ -1970,7 +2110,7 @@ cv.addEventListener('click', e=>{
     if (!h) return;
     if (UI.sel<0){
         if (h.unit && h.unit.player===G.cur){
-            toast('已选中 '+h.unit.formula+'（'+h.unit.power+' 战力）','ok');
+            toast('已选中 '+h.unit.formula+'（⚔'+h.unit.atk.toFixed(1)+' / 🛡'+h.unit.def.toFixed(1)+'）','ok');
             sfx('tap');
         } else {
             toast('先在左侧选择要部署的单位','err');
@@ -2178,13 +2318,15 @@ if (/[?&]debug\b/.test(location.search)){
         aiPid: () => aiPid(),
         isAITurn: () => isAITurn(),
         runInfluence: () => resolveInfluence(),
+        runMarch: () => resolveMarch(),
+        unitScore: (c,r) => { const h = getHex(c,r); return h.unit ? sideScore(h.unit, M().envBonus(h), h) : null; },
+        units: (pid) => M().sides[pid-1].units.map(u=>({id:u.id,name:u.name,atk:u.atk,def:u.def,ability:u.ability,cost:u.cost})),
         hexAt: (c,r) => getHex(c,r),
         setHex: (c,r,obj) => { Object.assign(getHex(c,r), obj); if (obj && 'owner' in obj) getHex(c,r).press = {1:0,2:0}; },
-        /* 测试用：不改变棋局，直接算一场对决的双方战力 */
-        duel: (pa, aa, ea, ownA, pb, ab, eb, ownB, modeKey) => {
-            if (modeKey) { const bak = G && G.mode; if (G) G.mode = modeKey; var r = _duel(pa,aa,ea,ownA,pb,ab,eb,ownB); if (G) G.mode = bak; return r; }
-            return _duel(pa,aa,ea,ownA,pb,ab,eb,ownB);
-        },
+        /* 测试用：不改变棋局，直接算一场对决的双方战力
+           参数：atkA, defA, abiA, envA, ownA, atkB, defB, abiB, envB, ownB */
+        duel: (atkA, defA, abiA, envA, ownA, atkB, defB, abiB, envB, ownB) =>
+            _duel(atkA, defA, abiA, envA||0, !!ownA, atkB, defB, abiB, envB||0, !!ownB),
         deployLimit: () => deployLimit(),
         winRatio: () => winRatio(),
         income, territory, checkWin, UI,
