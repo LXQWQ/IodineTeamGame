@@ -1,104 +1,149 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>相转移大作战 · 科学重设计版</title>
-        <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>相转移大作战 · 相图博弈</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="game-container">
-    <!-- 音乐播放器 -->
-    <div class="music-player">
-        <button class="music-toggle-btn" id="musicToggleBtn" title="音乐播放控制">
-            <span class="music-icon">🎵</span>
-            <span class="music-status" id="musicStatus">暂停</span>
-        </button>
-        <div class="music-dropdown" id="musicDropdown">
-            <div class="music-header">
-                <span>🎵 背景音乐</span>
-                <button class="music-close-btn" id="musicCloseBtn">✕</button>
-            </div>
-            <div class="music-controls">
-                <button class="music-control-btn" id="musicPlayPauseBtn">▶️ 播放</button>
-                <button class="music-control-btn" id="musicStopBtn">⏹️ 停止</button>
-                <button class="music-control-btn" id="musicNextBtn">⏭️ 下一首</button>
-            </div>
-            <div class="music-volume-control">
-                <span>🔊 音量</span>
-                <input type="range" id="musicVolume" min="0" max="100" value="50" class="volume-slider">
-                <span id="volumeValue">50%</span>
-            </div>
-            <div class="music-playlist" id="musicPlaylist">
-                <!-- 音乐列表将通过JavaScript动态生成 -->
-            </div>
-        </div>
+
+  <!-- 音乐播放器 -->
+  <div class="music-player">
+    <button class="music-toggle-btn" id="musicToggleBtn" title="音乐播放控制">
+      <span class="music-icon">🎵</span>
+      <span class="music-status" id="musicStatus">暂停</span>
+    </button>
+    <div class="music-dropdown" id="musicDropdown">
+      <div class="music-header">
+        <span>🎵 背景音乐</span>
+        <button class="music-close-btn" id="musicCloseBtn">✕</button>
+      </div>
+      <div class="music-controls">
+        <button class="music-control-btn" id="musicPlayPauseBtn">▶️ 播放</button>
+        <button class="music-control-btn" id="musicStopBtn">⏹️ 停止</button>
+        <button class="music-control-btn" id="musicNextBtn">⏭️ 下一首</button>
+      </div>
+      <div class="music-volume-control">
+        <span>🔊 音量</span>
+        <input type="range" id="musicVolume" min="0" max="100" value="50" class="volume-slider">
+        <span id="volumeValue">50%</span>
+      </div>
+      <div class="music-playlist" id="musicPlaylist"></div>
     </div>
-    <h1>⚛️ 相转移大作战 · 科学重设计版 ⚛️</h1>
-    <div class="arena">
-        <div class="player" id="playerLeft">
-            <div class="player-name"><span id="leftName">🔴 左道修士</span></div>
-            <div class="phase-text" id="leftPhase">固相</div>
-            <div class="boundary-line"></div>
-            <div class="phase-icon" id="leftIcon">❄️</div>
-        </div>
-        <div class="reaction-zone">
-            <div class="reactant-card" id="reactantCard">
-                <div class="reactant-icon" id="reactantIcon">🧪</div>
-                <div class="reactant-name" id="reactantName">未知物质</div>
-                <div class="reactant-state" id="reactantState">状态未知</div>
-            </div>
-            <div class="state-info">
-                <div class="state-item">
-                    <span>温度:</span>
-                    <span class="state-value" id="tempValue">25°C</span>
-                </div>
-                <div class="state-item">
-                    <span>压强:</span>
-                    <span class="state-value" id="pressureValue">1.0 atm</span>
-                </div>
-                <div class="state-item">
-                    <span>热力学相:</span>
-                    <span class="state-value" id="phaseValue">固相</span>
-                </div>
-                <div class="state-item">
-                    <span>溶剂环境:</span>
-                    <span class="state-value" id="solventValue">无</span>
-                </div>
-            </div>
-            <div class="phase-space" id="phaseSpace">
-                <div class="phase-axis horizontal"></div>
-                <div class="phase-axis vertical"></div>
-                <div class="phase-label" style="top: 5px; left: 50%; transform: translateX(-50%);">等离子相</div>
-                <div class="phase-label" style="top: 50%; right: 5px; transform: translateY(-50%);">气相</div>
-                <div class="phase-label" style="bottom: 5px; left: 50%; transform: translateX(-50%);">固相</div>
-                <div class="phase-label" style="top: 50%; left: 5px; transform: translateY(-50%);">液相</div>
-                <div class="phase-label" style="top: 5px; left: 5px;">亲水/有机</div>
-                <div class="phase-label" style="bottom: 5px; right: 5px;">疏水/无</div>
-                <div class="target-zone left" id="leftTarget"></div>
-                <div class="target-zone right" id="rightTarget"></div>
-                <div class="substance-marker" id="substanceMarker"></div>
-            </div>
-            <div class="current-turn" id="turnIndicator">左道修士回合</div>
-        </div>
-        <div class="player" id="playerRight">
-            <div class="player-name"><span id="rightName">🔵 右道修士</span></div>
-            <div class="phase-text" id="rightPhase">液相</div>
-            <div class="boundary-line"></div>
-            <div class="phase-icon" id="rightIcon">💧</div>
-        </div>
+  </div>
+
+  <header class="hd">
+    <h1>相转移大作战</h1>
+    <p class="sub">把物质<b>留在</b>自己的相区一整轮，才算赢</p>
+  </header>
+
+  <!-- 对局设置 -->
+  <section class="setup" id="setup">
+    <div class="setup-row">
+      <span class="lb">对手</span>
+      <div class="seg" id="foeSeg">
+        <button data-foe="ai" class="on">🤖 人机对战</button>
+        <button data-foe="pvp">👥 双人同屏</button>
+      </div>
     </div>
-    <div class="hand-area">
-        <div class="hand-title">
-            <span>🎴 反应条件卡牌 (点击使用)</span>
-            <button id="resetGameBtn" class="reset-btn">🔄 新物质·新对局</button>
-        </div>
-        <div class="cards" id="cardsContainer"></div>
-        <div class="game-message" id="gameMessage"></div>
+    <div class="setup-row" id="diffRow">
+      <span class="lb">AI 强度</span>
+      <div class="seg" id="diffSeg">
+        <button data-diff="easy">简单</button>
+        <button data-diff="medium" class="on">中等</button>
+        <button data-diff="hard">困难</button>
+      </div>
     </div>
-    <footer>🧪 科学规则：使用真实物理操作改变物质的热力学状态和溶剂环境。使物质进入你的目标象限即可获胜！温度、压力、溶剂都会影响相变。</footer>
+    <div class="setup-row">
+      <span class="lb">物质</span>
+      <div class="seg" id="subSeg">
+        <button data-sub="random" class="on">🎲 随机</button>
+        <button data-sub="pick">📋 指定</button>
+      </div>
+    </div>
+    <div class="sub-pick" id="subPick"></div>
+    <button class="btn-start" id="btnStart">开始对局 →</button>
+  </section>
+
+  <!-- 对局 -->
+  <section class="board" id="board">
+    <div class="side left" id="sideLeft">
+      <div class="side-top">
+        <span class="who">🔴 你</span>
+        <span class="occ" id="occL">未占领</span>
+      </div>
+      <div class="goal" id="goalL">—</div>
+      <div class="meter"><i id="enL"></i></div>
+      <div class="en-txt"><span id="enLtxt">3</span> ⚡</div>
+    </div>
+
+    <div class="center">
+      <div class="mat-head">
+        <span class="mat-name" id="matName">—</span>
+        <span class="mat-state" id="matState">—</span>
+      </div>
+
+      <div class="phase-map" id="phaseMap">
+        <div class="axis-y" id="axisY"></div>
+        <div class="axis-x" id="axisX"></div>
+        <div class="grid" id="grid"></div>
+        <div class="token" id="token"><span id="tokenIcon">🧪</span></div>
+      </div>
+
+      <div class="readout">
+        <div><span>温度</span><b id="rTemp">25°C</b></div>
+        <div><span>压强</span><b id="rPress">1.0 atm</b></div>
+        <div><span>热力学相</span><b id="rPhase">固相</b></div>
+        <div><span>溶剂环境</span><b id="rSolv">无</b></div>
+      </div>
+
+      <div class="turnbar" id="turnbar">—</div>
+    </div>
+
+    <div class="side right" id="sideRight">
+      <div class="side-top">
+        <span class="who" id="whoR">🔵 对手</span>
+        <span class="occ" id="occR">未占领</span>
+      </div>
+      <div class="goal" id="goalR">—</div>
+      <div class="meter"><i id="enR"></i></div>
+      <div class="en-txt"><span id="enRtxt">3</span> ⚡</div>
+    </div>
+  </section>
+
+  <!-- 手牌 -->
+  <section class="hand-area">
+    <div class="hand-head">
+      <span>🎴 反应条件卡牌</span>
+      <span class="hint" id="handHint">点卡牌使用 · 每回合 +3⚡</span>
+      <button id="resetGameBtn" class="reset-btn">🔄 新对局</button>
+    </div>
+    <div class="cards" id="cardsContainer"></div>
+    <div class="game-message" id="gameMessage"></div>
+  </section>
+
+  <footer class="ft">
+    🧪 规则：卡牌改变温度/压强/溶剂 → 物质在相图上移动；停在自己的目标格并且撑过对手一回合，即获胜。
+  </footer>
 </div>
 
+<!-- 结算 -->
+<div class="over" id="over">
+  <div class="over-box">
+    <div class="over-trophy" id="overIcon">🏆</div>
+    <h2 id="overTitle">胜利</h2>
+    <p id="overSub">—</p>
+    <div class="over-stats" id="overStats"></div>
+    <div class="over-btns">
+      <button id="ovAgain" class="btn-again">再来一局</button>
+      <button id="ovSetup" class="btn-ghost">返回设置</button>
+    </div>
+  </div>
+</div>
+
+<script src="music.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

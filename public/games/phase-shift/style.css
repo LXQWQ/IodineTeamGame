@@ -1,495 +1,264 @@
-* {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-        }
-        :root {
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --border: #334155;
-            --accent: #f59e0b;
-            --text-light: #f1f5f9;
-            --text-dim: #94a3b8;
-        }
-        body {
-            background: linear-gradient(145deg, #0b1120 0%, #111827 100%);
-            color: var(--text-light);
-            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-        }
-        .game-container {
-            max-width: 1300px;
-            width: 100%;
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(8px);
-            border-radius: 3rem;
-            padding: 1.5rem;
-            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.5);
-            border: 1px solid var(--border);
-        }
-        h1 {
-            text-align: center;
-            font-size: 2rem;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #f0f9ff, #bae6fd);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            margin-bottom: 1rem;
-        }
-        .arena {
-            display: flex;
-            align-items: stretch;
-            gap: 1.5rem;
-            margin: 1rem 0;
-            min-height: 420px;
-        }
-        .player {
-            flex: 1;
-            background: var(--card-bg);
-            border-radius: 2rem;
-            padding: 1.2rem;
-            text-align: center;
-            transition: all 0.2s;
-            border: 2px solid transparent;
-            box-shadow: 0 8px 16px -6px rgba(0,0,0,0.3);
-        }
-        .player.active {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px var(--accent), 0 10px 20px -5px rgba(0,0,0,0.5);
-            background: #2d3a4e;
-        }
-        .player-name {
-            font-size: 1.6rem;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .phase-icon {
-            font-size: 2rem;
-        }
-        .phase-text {
-            font-size: 0.9rem;
-            background: #0f172a;
-            display: inline-block;
-            padding: 0.2rem 1rem;
-            border-radius: 40px;
-            margin-top: 0.5rem;
-            color: var(--text-dim);
-        }
-        .boundary-line {
-            width: 90%;
-            height: 4px;
-            background: var(--border);
-            margin: 1rem auto;
-            border-radius: 4px;
-            position: relative;
-        }
-        .reaction-zone {
-            width: 320px;
-            background: #0f172a;
-            border-radius: 3rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            padding: 1rem 0;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            border: 1px solid var(--accent);
-        }
-        .reactant-card {
-            background: #1e293b;
-            border-radius: 1.5rem;
-            padding: 0.8rem;
-            margin: 10px;
-            width: 90%;
-            text-align: center;
-            border: 1px solid var(--accent);
-        }
-        .reactant-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--accent);
-        }
-        .reactant-state {
-            font-size: 0.8rem;
-            background: #0f172a;
-            display: inline-block;
-            padding: 0.2rem 0.8rem;
-            border-radius: 20px;
-            margin-top: 0.3rem;
-        }
-        .reactant-icon {
-            font-size: 3rem;
-            margin: 5px 0;
-        }
-        .phase-space {
-            width: 300px;
-            height: 300px;
-            background: #0f172a;
-            border: 2px solid var(--accent);
-            border-radius: 1rem;
-            position: relative;
-            margin: 1rem auto;
-        }
-        .phase-axis {
-            position: absolute;
-            background: var(--border);
-        }
-        .phase-axis.horizontal {
-            width: 100%;
-            height: 2px;
-            top: 50%;
-            left: 0;
-        }
-        .phase-axis.vertical {
-            width: 2px;
-            height: 100%;
-            top: 0;
-            left: 50%;
-        }
-        .phase-label {
-            position: absolute;
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            font-weight: bold;
-        }
-        .substance-marker {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: var(--accent);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: all 0.3s ease-out;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
-        }
-        .target-zone {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            border: 2px dashed;
-            border-radius: 1rem;
-            transform: translate(-50%, -50%);
-        }
-        .target-zone.left {
-            border-color: #ef4444;
-            background: rgba(239, 68, 68, 0.1);
-        }
-        .target-zone.right {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-        }
-        .state-info {
-            background: var(--card-bg);
-            border-radius: 1rem;
-            padding: 1rem;
-            margin: 1rem 0;
-            font-size: 0.8rem;
-        }
-        .state-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 0.3rem 0;
-        }
-        .state-value {
-            font-weight: bold;
-            color: var(--accent);
-        }
-        .current-turn {
-            background: var(--accent);
-            color: #0f172a;
-            padding: 0.3rem 1rem;
-            border-radius: 40px;
-            font-weight: bold;
-            font-size: 0.8rem;
-            display: inline-block;
-            margin-top: 10px;
-        }
-        
-        /* 音乐播放器样式 */
-        .music-player {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            z-index: 1000;
-        }
-        
-        .music-toggle-btn {
-            background: var(--card-bg);
-            border: 2px solid var(--border);
-            padding: 0.4rem 0.8rem;
-            border-radius: 40px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-size: 0.8rem;
-            color: var(--text-light);
-            transition: all 0.3s ease;
-        }
-        
-        .music-toggle-btn:hover {
-            background: var(--accent);
-            transform: translateY(-2px);
-        }
-        
-        .music-icon {
-            animation: music-pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes music-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .music-status {
-            font-size: 0.7rem;
-            opacity: 0.8;
-        }
-        
-        .music-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--card-bg);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem;
-            min-width: 280px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-            z-index: 1001;
-        }
-        
-        .music-dropdown.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        .music-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .music-close-btn {
-            background: none;
-            border: none;
-            color: var(--text-dim);
-            cursor: pointer;
-            font-size: 0.8rem;
-            padding: 0.2rem;
-        }
-        
-        .music-close-btn:hover {
-            color: var(--text-light);
-        }
-        
-        .music-controls {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        .music-control-btn {
-            background: var(--card-bg);
-            border: 2px solid var(--border);
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            color: var(--text-light);
-            transition: all 0.2s ease;
-        }
-        
-        .music-control-btn:hover {
-            background: var(--accent);
-            transform: translateY(-1px);
-        }
-        
-        .music-volume-control {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            padding: 0.5rem;
-            background: rgba(15, 23, 42, 0.8);
-            border-radius: 8px;
-        }
-        
-        .volume-slider {
-            flex: 1;
-            height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-        }
-        
-        .volume-slider::-webkit-slider-thumb {
-            appearance: none;
-            width: 12px;
-            height: 12px;
-            background: var(--accent);
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        
-        #volumeValue {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            min-width: 35px;
-        }
-        
-        .music-playlist {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        
-        .music-item {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            font-size: 0.8rem;
-            color: var(--text-light);
-        }
-        
-        .music-item:hover {
-            background: rgba(245, 158, 11, 0.2);
-        }
-        
-        .music-item.active {
-            background: var(--accent);
-            color: #0f172a;
-        }
-        
-        .music-item-title {
-            flex: 1;
-        }
-        
-        .music-item-duration {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            margin-left: 0.5rem;
-        }
-        
-        .music-item.active .music-item-duration {
-            color: rgba(15, 23, 42, 0.8);
-        }
-        .hand-area {
-            background: var(--card-bg);
-            border-radius: 2rem;
-            padding: 1rem;
-            margin-top: 1rem;
-            border: 1px solid var(--border);
-        }
-        .hand-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 0.8rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-        .cards {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .card {
-            background: linear-gradient(145deg, #2d3a4e, #1e2a3a);
-            border-radius: 1.5rem;
-            width: 150px;
-            padding: 0.8rem 0.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.1s ease;
-            border: 1px solid #475569;
-            box-shadow: 0 6px 0 #0f172a;
-        }
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 0 #0f172a;
-            background: #3b4a62;
-        }
-        .card:active {
-            transform: translateY(2px);
-            box-shadow: 0 4px 0 #0f172a;
-        }
-        .card.disabled {
-            opacity: 0.4;
-            pointer-events: none;
-            filter: grayscale(0.3);
-        }
-        .card-name {
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-bottom: 0.2rem;
-        }
-        .card-desc {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-        }
-        .card-power {
-            font-size: 1rem;
-            font-weight: bold;
-            color: var(--accent);
-            margin-top: 0.3rem;
-        }
-        button {
-            background: var(--accent);
-            border: none;
-            padding: 0.5rem 1.2rem;
-            border-radius: 2rem;
-            font-weight: bold;
-            cursor: pointer;
-            color: #0f172a;
-            transition: 0.1s;
-        }
-        button:hover {
-            transform: scale(0.97);
-            filter: brightness(1.1);
-        }
-        .reset-btn {
-            background: #475569;
-            color: white;
-        }
-        .game-message {
-            text-align: center;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            min-height: 2.5rem;
-        }
-        footer {
-            text-align: center;
-            font-size: 0.7rem;
-            margin-top: 1rem;
-            color: var(--text-dim);
-        }
-        @media (max-width: 850px) {
-            .arena { flex-direction: column; align-items: center; }
-            .reaction-zone { width: 100%; order: -1; margin-bottom: 1rem; }
-            .player { width: 100%; }
-            .card { width: 120px; }
-        }
+/* ============================================================
+   相转移大作战 · 相图博弈  样式
+   ============================================================ */
+:root{
+    --bg:#070a12;
+    --panel:rgba(19,25,40,.82);
+    --line:rgba(120,160,220,.18);
+    --txt:#dfe7f3;
+    --dim:#7c8aa3;
+    --ac:#5ee1c0;
+    --l:#ff6b6b;
+    --r:#5b9cff;
+    --gold:#ffce5c;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+    min-height:100vh;
+    background:
+        radial-gradient(1100px 620px at 16% -8%,rgba(94,225,192,.10),transparent 60%),
+        radial-gradient(900px 620px at 88% 108%,rgba(91,156,255,.12),transparent 60%),
+        var(--bg);
+    color:var(--txt);
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    font-size:14px;
+}
+.game-container{max-width:1180px;margin:0 auto;padding:14px 14px 40px;position:relative}
+
+/* ---------- 音乐播放器 ---------- */
+.music-player{position:fixed;top:14px;right:14px;z-index:60}
+.music-toggle-btn{
+    display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:20px;
+    background:rgba(20,28,44,.9);border:1px solid var(--line);color:var(--txt);
+    cursor:pointer;font-size:12px;backdrop-filter:blur(8px)
+}
+.music-toggle-btn:hover{border-color:var(--ac);color:var(--ac)}
+.music-dropdown{
+    display:none;position:absolute;top:44px;right:0;width:250px;max-height:70vh;overflow:auto;
+    background:rgba(16,22,36,.97);border:1px solid var(--line);border-radius:14px;padding:12px;
+    box-shadow:0 18px 50px rgba(0,0,0,.6)
+}
+.music-dropdown.show{display:block}
+.music-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--dim);margin-bottom:10px}
+.music-close-btn{background:none;border:0;color:var(--dim);cursor:pointer;font-size:14px}
+.music-controls{display:flex;gap:6px;margin-bottom:10px}
+.music-control-btn{
+    flex:1;padding:6px 4px;font-size:11px;border-radius:8px;cursor:pointer;
+    background:rgba(94,225,192,.1);border:1px solid rgba(94,225,192,.3);color:var(--ac)
+}
+.music-volume-control{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);margin-bottom:10px}
+.volume-slider{flex:1;accent-color:var(--ac)}
+.music-playlist{display:flex;flex-direction:column;gap:3px}
+.music-item{padding:6px 8px;border-radius:7px;font-size:11px;color:var(--dim);cursor:pointer}
+.music-item:hover{background:rgba(255,255,255,.05);color:var(--txt)}
+.music-item.active{background:rgba(94,225,192,.14);color:var(--ac)}
+
+/* ---------- 头部 ---------- */
+.hd{text-align:center;padding:26px 0 18px}
+.hd h1{
+    margin:0;font-size:clamp(22px,4.4vw,34px);font-weight:800;letter-spacing:.06em;
+    background:linear-gradient(96deg,var(--ac),#8ab6ff 55%,#c69bff);
+    -webkit-background-clip:text;background-clip:text;color:transparent
+}
+.hd .sub{margin:8px 0 0;color:var(--dim);font-size:14px}
+.hd .sub b{color:var(--gold)}
+
+/* ---------- 设置 ---------- */
+.setup{
+    max-width:520px;margin:0 auto;background:var(--panel);border:1px solid var(--line);
+    border-radius:20px;padding:22px;backdrop-filter:blur(10px)
+}
+.setup-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.setup-row .lb{flex:0 0 62px;font-size:13px;color:var(--dim)}
+.seg{display:flex;flex:1;gap:6px}
+.seg button{
+    flex:1;padding:9px 6px;border-radius:10px;cursor:pointer;font-size:13px;
+    background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--dim);
+    transition:.16s;font-family:inherit
+}
+.seg button:hover{color:var(--txt);border-color:rgba(94,225,192,.4)}
+.seg button.on{background:rgba(94,225,192,.16);border-color:var(--ac);color:var(--ac);font-weight:600}
+.sub-pick{display:none;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.sub-pick.show{display:flex}
+.sub-btn{
+    flex:1 1 30%;padding:8px 4px;border-radius:9px;cursor:pointer;font-size:12px;
+    background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--dim);font-family:inherit
+}
+.sub-btn small{display:block;font-size:10px;opacity:.6}
+.sub-btn.on{background:rgba(255,206,92,.14);border-color:var(--gold);color:var(--gold)}
+.btn-start{
+    width:100%;padding:14px;border-radius:13px;border:0;cursor:pointer;
+    font-size:16px;font-weight:700;font-family:inherit;color:#04140f;
+    background:linear-gradient(96deg,var(--ac),#7ee3ff);
+    box-shadow:0 10px 30px rgba(94,225,192,.28);transition:.18s
+}
+.btn-start:hover{transform:translateY(-1px);box-shadow:0 14px 36px rgba(94,225,192,.4)}
+
+/* ---------- 棋盘 ---------- */
+.board{display:none;grid-template-columns:150px 1fr 150px;gap:12px;align-items:start;margin-top:6px}
+.board.show{display:grid}
+
+.side{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px;
+    transition:.2s
+}
+.side.active{border-color:currentColor;box-shadow:0 0 0 1px currentColor,0 8px 26px rgba(0,0,0,.4)}
+.side.left{color:var(--l)}
+.side.right{color:var(--r)}
+.side .side-top{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.side .who{font-weight:700;color:currentColor}
+.side .occ{font-size:10px;color:var(--dim)}
+.side .occ.on{color:var(--gold);font-weight:700}
+.side .goal{margin-top:10px;font-size:12px;line-height:1.5;color:var(--txt)}
+.side .goal small{display:block;font-size:10px;color:var(--dim);margin-bottom:2px;letter-spacing:.08em}
+.side .meter{height:7px;border-radius:4px;background:rgba(255,255,255,.07);margin-top:12px;overflow:hidden}
+.side .meter i{display:block;height:100%;width:0;border-radius:4px;background:currentColor;transition:width .28s}
+.side .en-txt{margin-top:5px;font-size:12px;color:var(--dim);text-align:right}
+.side .en-txt span{color:currentColor;font-weight:700}
+
+.center{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.mat-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.mat-name{font-size:15px;font-weight:700}
+.mat-state{font-size:11px;color:var(--dim)}
+
+/* 相图 */
+.phase-map{position:relative;padding:22px 8px 26px 34px}
+.axis-x{position:absolute;bottom:2px;left:34px;right:8px;display:grid;grid-template-columns:repeat(4,1fr);font-size:10.5px;color:var(--dim);text-align:center}
+.axis-y{position:absolute;top:22px;bottom:26px;left:0;width:30px;display:grid;grid-template-rows:repeat(4,1fr);font-size:10.5px;color:var(--dim);align-items:center;justify-content:center;text-align:center}
+.grid{
+    display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);
+    gap:6px;aspect-ratio:4/3;position:relative
+}
+.cell{
+    position:relative;border-radius:10px;border:1px solid rgba(255,255,255,.07);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    transition:.18s;background:rgba(255,255,255,.02)
+}
+.cell .ci{font-size:15px;opacity:.5}
+.cell .cn{font-size:9.5px;color:var(--dim)}
+.cell.p-solid{background:rgba(120,190,255,.07)}
+.cell.p-liquid{background:rgba(90,160,255,.11)}
+.cell.p-gas{background:rgba(160,200,255,.07)}
+.cell.p-plasma{background:rgba(200,140,255,.12)}
+.cell.is-g1{border-color:var(--l);box-shadow:inset 0 0 0 1px var(--l),0 0 18px rgba(255,107,107,.25)}
+.cell.is-g2{border-color:var(--r);box-shadow:inset 0 0 0 1px var(--r),0 0 18px rgba(91,156,255,.25)}
+.cell.is-g1::after{content:'你的目标';position:absolute;top:3px;font-size:8.5px;color:var(--l)}
+.cell.is-g2::after{content:'对手目标';position:absolute;top:3px;font-size:8.5px;color:var(--r)}
+
+/* 物质标记 */
+.token{
+    position:absolute;left:0;top:0;border-radius:10px;pointer-events:none;
+    display:flex;align-items:center;justify-content:center;font-size:19px;
+    box-shadow:0 0 0 2px rgba(255,255,255,.5),0 8px 22px rgba(0,0,0,.5);
+    transition:transform .34s cubic-bezier(.34,1.4,.5,1),width .2s,height .2s;
+    z-index:3
+}
+.token.holding{animation:holdPulse 1.1s ease-in-out infinite}
+@keyframes holdPulse{
+    0%,100%{box-shadow:0 0 0 2px rgba(255,206,92,.9),0 0 16px rgba(255,206,92,.5)}
+    50%{box-shadow:0 0 0 4px rgba(255,206,92,.45),0 0 34px rgba(255,206,92,.85)}
+}
+
+.readout{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.readout div{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:9px;padding:7px 9px}
+.readout span{display:block;font-size:10px;color:var(--dim)}
+.readout b{font-size:13px;font-weight:700}
+
+.turnbar{
+    margin-top:12px;padding:9px 11px;border-radius:10px;font-size:12.5px;
+    background:rgba(94,225,192,.07);border:1px solid rgba(94,225,192,.22);color:var(--ac);
+    display:flex;gap:8px;align-items:center;flex-wrap:wrap
+}
+.turnbar b{color:#fff}
+.turnbar .logline{margin-left:auto;font-size:11px;color:var(--dim);font-weight:400}
+
+/* ---------- 手牌 ---------- */
+.hand-area{margin-top:14px}
+.hand-head{display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:10px;flex-wrap:wrap}
+.hand-head .hint{font-size:11px;color:var(--dim)}
+.reset-btn{
+    margin-left:auto;padding:7px 13px;border-radius:9px;cursor:pointer;font-size:12px;font-family:inherit;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--dim)
+}
+.reset-btn:hover{color:var(--txt);border-color:var(--ac)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.card{
+    position:relative;text-align:left;padding:12px 11px 10px;border-radius:13px;cursor:pointer;
+    background:linear-gradient(170deg,rgba(40,52,78,.9),rgba(22,29,46,.9));
+    border:1px solid var(--line);color:var(--txt);font-family:inherit;
+    transition:.16s;display:flex;flex-direction:column;gap:5px
+}
+.card:hover:not(.disabled){transform:translateY(-3px);border-color:var(--ac);box-shadow:0 12px 28px rgba(0,0,0,.45)}
+.card.disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.4)}
+.card .c-cost{
+    position:absolute;top:-1px;right:-1px;padding:3px 8px;border-radius:0 13px 0 11px;
+    background:rgba(94,225,192,.2);color:var(--ac);font-size:11px;font-weight:700
+}
+.card .c-name{font-size:14px;font-weight:700;padding-right:38px}
+.card .c-desc{font-size:11px;color:var(--dim)}
+.card .c-preview{font-size:11px;margin-top:2px}
+.card .c-preview .ok{color:var(--gold)}
+.card .c-preview .bad{color:var(--l)}
+.card .c-preview .dim{color:var(--dim)}
+
+.game-message{
+    margin-top:10px;padding:9px 12px;border-radius:9px;font-size:12.5px;
+    background:rgba(255,206,92,.1);border:1px solid rgba(255,206,92,.3);color:var(--gold);
+    opacity:0;transform:translateY(-4px);transition:.25s;pointer-events:none
+}
+.game-message.show{opacity:1;transform:translateY(0)}
+
+.ft{margin-top:22px;text-align:center;font-size:11.5px;color:var(--dim);line-height:1.7}
+
+/* ---------- 结算 ---------- */
+.over{
+    position:fixed;inset:0;background:rgba(4,7,14,.82);backdrop-filter:blur(7px);
+    display:none;align-items:center;justify-content:center;z-index:90;padding:20px
+}
+.over.show{display:flex}
+.over-box{
+    width:min(420px,100%);background:var(--panel);border:1px solid var(--line);
+    border-radius:20px;padding:26px 22px;text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,.7);animation:popIn .28s ease
+}
+@keyframes popIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.over-trophy{font-size:46px;line-height:1}
+.over-box h2{margin:8px 0 4px;font-size:22px}
+.over-box p{margin:0 0 16px;font-size:12.5px;color:var(--dim)}
+.over-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.over-stats div{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:9px;padding:8px}
+.over-stats span{display:block;font-size:10px;color:var(--dim)}
+.over-stats b{font-size:13px}
+.over-btns{display:flex;gap:9px}
+.btn-again{
+    flex:1.4;padding:12px;border-radius:11px;border:0;cursor:pointer;font-weight:700;font-family:inherit;
+    background:linear-gradient(96deg,var(--ac),#7ee3ff);color:#04140f
+}
+.btn-ghost{
+    flex:1;padding:12px;border-radius:11px;cursor:pointer;font-family:inherit;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--dim)
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:860px){
+    .board.show{grid-template-columns:1fr;gap:10px}
+    .side{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:10px 12px}
+    .side .goal{margin-top:0;grid-column:1/-1;font-size:11px}
+    .side .meter{grid-column:1;margin-top:6px}
+    .side .en-txt{grid-column:2;margin-top:6px}
+    .center{order:-1}
+    .phase-map{padding:20px 6px 24px 30px}
+    .grid{aspect-ratio:4/3.6}
+    .readout{grid-template-columns:repeat(2,1fr)}
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .music-player{top:8px;right:8px}
+    .over-stats{grid-template-columns:1fr}
+}
+@media (max-width:420px){
+    .game-container{padding:10px 10px 30px}
+    .hd{padding:16px 0 12px}
+    .setup{padding:16px}
+    .setup-row{flex-direction:column;align-items:stretch;gap:7px}
+    .setup-row .lb{flex:none}
+}

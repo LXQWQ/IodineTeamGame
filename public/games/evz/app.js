@@ -8,24 +8,24 @@ async function ldRk(){const c=d('rankC');if(!spOk){c.innerHTML='<div style="text
 
 // ==================== ELEMENTS ====================
 const EL={
-    H:{n:'氢',s:'H',cost:10,hp:200,dmg:13,cd:0.75,r:'rapid',d:'最轻元素·快速连射',cl:'#6caed6',bl:'#98ccf0',start:true},
-    C:{n:'碳',s:'C',cost:50,hp:280,dmg:0,cd:6,r:'prod',d:'产电子(8s/30⚡)·不可相邻',cl:'#3d3d3d',na:true,pi:8,pa:30,start:true},
-    O:{n:'氧',s:'O',cost:40,hp:260,dmg:17,cd:0.5,r:'dbl',d:'强氧化剂·双发燃烧',cl:'#4088cc',bl:'#66aaee',bn:true},
-    N:{n:'氮',s:'N',cost:35,hp:300,dmg:10,cd:1.0,r:'shoot',d:'阻止僵尸回血3秒',cl:'#7ab0e0',bl:'#a0c8f0',ah:3},
-    Na:{n:'钠',s:'Na',cost:32,hp:240,dmg:280,cd:16,r:'bomb',d:'遇水僵尸剧烈爆炸·产物NaOH+H₂',cl:'#dd9930',wr:true,bR:2},
-    Cl:{n:'氯',s:'Cl',cost:48,hp:230,dmg:21,cd:0.7,r:'shoot',d:'子弹消除僵尸特殊能力',cl:'#80d860',bl:'#a0ff80',dp:true},
-    Fe:{n:'铁',s:'Fe',cost:55,hp:380,dmg:25,cd:1.3,r:'hom',d:'智能追踪·跨路攻击',cl:'#b0a090',bl:'#d0c0a0'},
-    S:{n:'硫',s:'S',cost:44,hp:270,dmg:12,cd:0.95,r:'shoot',d:'毒气攻击·相邻己方也受伤·遇重金属生成沉淀',cl:'#d4b030',bl:'#ddcc40',po:true,ap:true},
-    Mg:{n:'镁',s:'Mg',cost:38,hp:300,dmg:15,cd:0.85,r:'shoot',d:'闪光致盲0.5秒',cl:'#c8a050',bl:'#ffe888',fl:true},
-    Si:{n:'硅',s:'Si',cost:60,hp:500,dmg:23,cd:1.3,r:'spike',d:'永久地刺·不需重种',cl:'#9a8868',pm:true},
-    He:{n:'氦',s:'He',cost:15,hp:4000,dmg:0,cd:0,r:'wall',d:'惰性气体·不受任何特效',cl:'#c89898'},
-    Ne:{n:'氖',s:'Ne',cost:25,hp:3200,dmg:0,cd:10,r:'wall',d:'红光减速周围僵尸',cl:'#da7a50',sa:true,sr:130},
-    Ar:{n:'氩',s:'Ar',cost:50,hp:2800,dmg:0,cd:38,r:'wall',d:'放置后所在行5秒无敌',cl:'#c880c8',rs:5},
-    Li:{n:'锂',s:'Li',cost:20,hp:260,dmg:200,cd:14,r:'bomb',d:'被吃自爆·遇水生成LiOH',cl:'#d85545',wr:true,bR:1.5},
-    Al:{n:'铝',s:'Al',cost:42,hp:850,dmg:0,cd:22,r:'wall',d:'两性金属·反射酸碱伤害',cl:'#aab4c4',rf:true},
-    P:{n:'磷',s:'P',cost:55,hp:150,dmg:9999,cd:40,r:'skill',d:'范围爆发·自身消失',cl:'#dd5a2a',sR:1.5},
-    Zn:{n:'锌',s:'Zn',cost:50,hp:350,dmg:0,cd:10,r:'anode',d:'原电池阳极·与Cu相邻产电子',cl:'#aaaacc'},
-    Cu:{n:'铜',s:'Cu',cost:52,hp:380,dmg:0,cd:10,r:'cathode',d:'原电池阴极·与Zn相邻产电子',cl:'#cc8844'}
+    H:{n:'氢',s:'H',cost:10,hp:180,dmg:12,cd:0.7,r:'rapid',d:'最轻元素·廉价连射（17 DPS / 10⚡）',cl:'#6caed6',bl:'#98ccf0',start:true},
+    C:{n:'碳',s:'C',cost:50,hp:260,dmg:0,cd:6,r:'prod',d:'产电子 35⚡/8s·不可相邻种植',cl:'#3d3d3d',na:true,pi:8,pa:35,start:true},
+    O:{n:'氧',s:'O',cost:40,hp:240,dmg:16,cd:0.45,r:'dbl',d:'强氧化剂·双发燃烧（71 DPS）',cl:'#4088cc',bl:'#66aaee',bn:true},
+    N:{n:'氮',s:'N',cost:30,hp:300,dmg:10,cd:0.9,r:'shoot',d:'阻止僵尸回血 3 秒',cl:'#7ab0e0',bl:'#a0c8f0',ah:3},
+    Na:{n:'钠',s:'Na',cost:30,hp:220,dmg:240,cd:15,r:'bomb',d:'遇水基僵尸剧烈爆炸→NaOH+H₂',cl:'#dd9930',wr:true,bR:2},
+    Cl:{n:'氯',s:'Cl',cost:45,hp:220,dmg:20,cd:0.65,r:'shoot',d:'子弹消除僵尸特殊能力（30 DPS）',cl:'#80d860',bl:'#a0ff80',dp:true},
+    Fe:{n:'铁',s:'Fe',cost:55,hp:360,dmg:24,cd:1.1,r:'hom',d:'智能追踪·跨路攻击（22 DPS）',cl:'#b0a090',bl:'#d0c0a0'},
+    S:{n:'硫',s:'S',cost:40,hp:260,dmg:12,cd:0.9,r:'shoot',d:'毒气·相邻己方也受伤·遇重金属沉淀',cl:'#d4b030',bl:'#ddcc40',po:true,ap:true},
+    Mg:{n:'镁',s:'Mg',cost:35,hp:280,dmg:15,cd:0.8,r:'shoot',d:'闪光致盲 0.5 秒',cl:'#c8a050',bl:'#ffe888',fl:true},
+    Si:{n:'硅',s:'Si',cost:55,hp:520,dmg:22,cd:1.2,r:'spike',d:'永久地刺·不需重种',cl:'#9a8868',pm:true},
+    He:{n:'氦',s:'He',cost:20,hp:900,dmg:0,cd:0,r:'wall',d:'惰性气体·免受一切特效（廉价填线）',cl:'#c89898'},
+    Ne:{n:'氖',s:'Ne',cost:30,hp:1100,dmg:0,cd:10,r:'wall',d:'红光减速周围僵尸',cl:'#da7a50',sa:true,sr:130},
+    Ar:{n:'氩',s:'Ar',cost:45,hp:1400,dmg:0,cd:38,r:'wall',d:'放置后所在行 5 秒无敌',cl:'#c880c8',rs:5},
+    Li:{n:'锂',s:'Li',cost:18,hp:240,dmg:160,cd:14,r:'bomb',d:'被吃自爆·遇水生成 LiOH',cl:'#d85545',wr:true,bR:1.5},
+    Al:{n:'铝',s:'Al',cost:40,hp:1200,dmg:0,cd:22,r:'wall',d:'两性金属·反射酸碱伤害',cl:'#aab4c4',rf:true},
+    P:{n:'磷',s:'P',cost:50,hp:140,dmg:9999,cd:40,r:'skill',d:'点击引爆 3×3 范围·自身消失',cl:'#dd5a2a',sR:1.5},
+    Zn:{n:'锌',s:'Zn',cost:45,hp:320,dmg:0,cd:10,r:'anode',d:'原电池阳极·与 Cu 相邻产电子',cl:'#aaaacc'},
+    Cu:{n:'铜',s:'Cu',cost:45,hp:340,dmg:0,cd:10,r:'cathode',d:'原电池阴极·与 Zn 相邻产电子',cl:'#cc8844'}
 };
 const EG=[{lb:'第一周期',it:['H','He']},{lb:'碱金属',it:['Li','Na']},{lb:'碱土金属',it:['Mg']},{lb:'碳族',it:['C','Si']},{lb:'氮族',it:['N','P']},{lb:'氧族',it:['O','S']},{lb:'卤素',it:['Cl']},{lb:'惰性气体',it:['He','Ne','Ar']},{lb:'过渡金属',it:['Fe','Zn','Cu']},{lb:'硼族',it:['Al']}];
 
@@ -54,17 +54,17 @@ const SUBS={
 
 // ==================== ZOMBIES (each a specific chemical) ====================
 const ZT={
-    water:{n:'水基僵尸',sub:'H2O',cl:'#5599cc',hp:300,sp:35,sc:10,us:0,atk:8,chem:'H₂O',d:'主要成分H₂O·遇Na→NaOH+H₂·遇Li→LiOH+H₂'},
-    hcl:{n:'稀盐酸僵尸',sub:'HCl',cl:'#cc6666',hp:350,sp:32,sc:20,us:40,atk:12,chem:'HCl',d:'含HCl·遇NaOH→NaCl+H₂O·遇Na→NaCl+H₂↑',isAcid:true},
-    h2so4:{n:'稀硫酸僵尸',sub:'H2SO4',cl:'#cc8844',hp:380,sp:30,sc:25,us:55,atk:14,chem:'H₂SO₄',d:'含H₂SO₄·遇NaOH→Na₂SO₄+H₂O',isAcid:true},
-    hno3:{n:'稀硝酸僵尸',sub:'HNO3',cl:'#cc9944',hp:360,sp:33,sc:28,us:70,atk:13,chem:'HNO₃',d:'含HNO₃·氧化性酸·遇NaOH→NaNO₃+H₂O',isAcid:true,isOxid:true},
-    naoh:{n:'烧碱僵尸',sub:'NaOH',cl:'#8888cc',hp:350,sp:30,sc:20,us:45,atk:12,chem:'NaOH',d:'含NaOH·遇HCl→NaCl+H₂O·遇H₂SO₄→Na₂SO₄+H₂O',isBase:true},
-    pyridine:{n:'吡啶僵尸',sub:'pyridine',cl:'#aa88cc',hp:340,sp:28,sc:30,us:60,atk:10,chem:'C₅H₅N',d:'有机碱·被F/Cl裂解→额外C碎片',isBase:true,isOrg:true},
-    imidazole:{n:'咪唑僵尸',sub:'imidazole',cl:'#cc88aa',hp:330,sp:29,sc:32,us:75,atk:11,chem:'C₃H₄N₂',d:'有机碱·被F/Cl裂解→额外C+N碎片',isBase:true,isOrg:true},
-    h2o2:{n:'过氧化氢僵尸',sub:'H2O2',cl:'#88cccc',hp:400,sp:30,sc:25,us:50,atk:15,chem:'H₂O₂',d:'死亡即分解→H₂O+O₂',isOxid:true},
-    pbno3:{n:'硝酸铅僵尸',sub:'PbNO32',cl:'#888888',hp:2000,sp:16,sc:80,us:95,atk:25,chem:'Pb(NO₃)₂',d:'遇S→PbS↓沉淀·极高血量',isHeavy:true,arm:30},
-    pe:{n:'聚乙烯僵尸',sub:'PE',cl:'#66aa66',hp:280,sp:42,sc:15,us:35,atk:8,chem:'(C₂H₄)n',d:'碳基聚合物·被F/Cl裂解→C碎片',isOrg:true},
-    enzyme:{n:'酶催化僵尸',sub:'enzyme',cl:'#ddaa44',hp:220,sp:55,sc:55,us:80,atk:0,chem:'Enz',d:'加速周围僵尸·死亡掉落酶提取物→可提Mg',isCat:true}
+    water:{n:'水基僵尸',sub:'H2O',cl:'#5599cc',hp:300,sp:35,sc:10,us:0,atk:8,chem:'H₂O',d:'主要成分 H₂O·遇 Na→NaOH+H₂·遇 Li→LiOH+H₂'},
+    hcl:{n:'稀盐酸僵尸',sub:'HCl',cl:'#cc6666',hp:340,sp:32,sc:18,us:35,atk:12,chem:'HCl',d:'含 HCl·遇 NaOH→NaCl+H₂O',isAcid:true},
+    h2so4:{n:'稀硫酸僵尸',sub:'H2SO4',cl:'#cc8844',hp:380,sp:30,sc:22,us:50,atk:14,chem:'H₂SO₄',d:'含 H₂SO₄·遇 NaOH→Na₂SO₄+H₂O',isAcid:true},
+    naoh:{n:'烧碱僵尸',sub:'NaOH',cl:'#8888cc',hp:350,sp:30,sc:18,us:45,atk:12,chem:'NaOH',d:'含 NaOH·遇 HCl→NaCl+H₂O',isBase:true},
+    hno3:{n:'稀硝酸僵尸',sub:'HNO3',cl:'#cc9944',hp:360,sp:33,sc:26,us:65,atk:13,chem:'HNO₃',d:'氧化性酸·遇 NaOH→NaNO₃+H₂O',isAcid:true,isOxid:true},
+    pyridine:{n:'吡啶僵尸',sub:'pyridine',cl:'#aa88cc',hp:340,sp:28,sc:28,us:60,atk:10,chem:'C₅H₅N',d:'有机碱·被 F/Cl 裂解→额外 C 碎片',isBase:true,isOrg:true},
+    imidazole:{n:'咪唑僵尸',sub:'imidazole',cl:'#cc88aa',hp:330,sp:29,sc:30,us:75,atk:11,chem:'C₃H₄N₂',d:'有机碱·被 F/Cl 裂解→额外 C+N 碎片',isBase:true,isOrg:true},
+    h2o2:{n:'过氧化氢僵尸',sub:'H2O2',cl:'#88cccc',hp:400,sp:30,sc:22,us:55,atk:15,chem:'H₂O₂',d:'死亡即分解→H₂O+O₂',isOxid:true},
+    pe:{n:'聚乙烯僵尸',sub:'PE',cl:'#66aa66',hp:280,sp:42,sc:14,us:30,atk:8,chem:'(C₂H₄)n',d:'碳基聚合物·被 F/Cl 裂解→C 碎片',isOrg:true},
+    enzyme:{n:'酶催化僵尸',sub:'enzyme',cl:'#ddaa44',hp:220,sp:55,sc:50,us:85,atk:0,chem:'Enz',d:'加速周围僵尸·死亡掉落酶提取物→可提 Mg',isCat:true},
+    pbno3:{n:'硝酸铅僵尸',sub:'PbNO32',cl:'#888888',hp:1800,sp:16,sc:75,us:110,atk:25,chem:'Pb(NO₃)₂',d:'遇 S→PbS↓沉淀·极高血量',isHeavy:true,arm:30}
 };
 
 // ==================== DEATH DROP TABLE ====================
@@ -166,12 +166,12 @@ const RCP=[
 // ==================== STATE ====================
 const COLS=9,ROWS=5,CW=100,CH=100;
 const cv=d('gc'),cx=cv.getContext('2d');cv.width=COLS*CW;cv.height=ROWS*CH;
-let es=200,sc=0,wv=0,go=false,gs=false;
+let es=150,sc=0,wv=0,go=false,gs=false;
 let zs=[],els=[],bls=[],ps=[],ecs=[],rxa=[],rxl=[];
 let gd=Array(ROWS).fill().map(()=>Array(COLS).fill(null));
 let sel='H',shv=false,skl=false,unlocked=new Set(['H','C','Ne']);
 let inv={};let gst=0,lf=0,ls=0,les=0,fr=null,mg={r:-1,c:-1};
-let cds={},cdt={},rxc={};let boss=null,bt=0;
+let cds={},cdt={},rxc={},_lastPay=0;let boss=null,bt=0;
 function d(id){return document.getElementById(id)}
 
 // ==================== CLASSES ====================
@@ -253,10 +253,16 @@ const RX={
 };
 
 // ==================== GAME LOOP ====================
-function spZ(now){if(!gs||go)return;const et=(now-gst)/1000;if(et<30)return;let iv=Math.max(0.6,3-wv*0.15);if(boss)iv=Math.max(0.2,iv/1.5);if(ls>0&&now-ls<iv*1000)return;ls=now;let tps=[];for(let[k,v]of Object.entries(ZT)){if(et>=v.us)tps.push(k)}if(!tps.length)tps.push('water');const tp=tps[Math.floor(Math.random()*tps.length)],row=Math.floor(Math.random()*ROWS);const z=new Zb(row,tp);z.hp+=Math.floor(wv*18);z.sp=Math.min(160,z.sp+wv*1.5);zs.push(z);wv++;upUI()}
-function gup(now){if(go){draw();return}const dt=Math.min(0.033,(now-lf)/1000);if(dt<=0){lf=now;fr=requestAnimationFrame(gup);return}lf=now;upUI();const etCd=Math.max(0,30-(now-gst)/1000);const cdEl=d('cdStat'),cdVl=d('vCd');if(etCd>0.5){cdVl.innerText=Math.ceil(etCd);cdEl.style.display=''}else if(cdEl.style.display!=='none'){cdEl.style.display='none';d('msg').innerHTML='⚠️ 僵尸入侵！'}spZ(now);if(!les||now-les>12000){les=now;ecs.push({x:30+Math.random()*(cv.width-60),y:30+Math.random()*(cv.height-60),st:now});if(ecs.length>8)ecs.shift()}for(let i=ecs.length-1;i>=0;i--){if(now-ecs[i].st>2500){es+=20;ecs.splice(i,1);upUI()}}for(let e of els){e.up(dt);if(e.al&&e.at<=0&&e.r!=='wall'&&e.r!=='anode'&&e.r!=='cathode'&&e.r!=='skill')e.attack()}for(let r=0;r<ROWS;r++){for(let c=0;c<COLS-1;c++){const a=gd[r][c],b=gd[r][c+1];if(!a||!b||!a.al||!b.al)continue;const k1=a.s+'+'+b.s,k2=b.s+'+'+a.s;if(RX[k1])trR(k1,a,b);else if(RX[k2])trR(k2,a,b)}}for(let e of els){if(!e.al||e.s!=='Zn')continue;for(let e2 of els){if(!e2.al||e2.s!=='Cu'||e2===e)continue;if(Math.abs(e.row-e2.row)<=1&&Math.abs(e.col-e2.col)<=1)trR('Zn+Cu',e,e2)}}for(let i=bls.length-1;i>=0;i--){bls[i].up(dt);if(!bls[i].al)bls.splice(i,1)}for(let i=zs.length-1;i>=0;i--){const z=zs[i];z.up(dt);for(let b of bls){if(!b.al)continue;if(Math.hypot(b.x-z.x,b.y-z.y)<22){if(b.bn)z.bn=2;if(b.po)z.po=3;if(b.ah)z.nh=b.ah;if(b.dp){z.dp=true;z.sp=ZT[z.tp].sp*0.5;setTimeout(()=>{z.sp=ZT[z.tp].sp},3000)}if(b.fl)z.fl=0.5}}if(z.x<-60){go=true;d('msg').innerHTML='💀 僵尸突破防线！游戏结束';cancelAnimationFrame(fr);draw();return}if(z.hp<=0){sc+=z.sc;sySc(sc);const dmsg=applyDeathDrops(z);d('msg').innerHTML=dmsg;sP(z.x,z.y,z.cl,15);zs.splice(i,1)}}for(let i=ps.length-1;i>=0;i--){if(!ps[i].up(dt))ps.splice(i,1)}if(boss)upBoss(now,dt);draw();fr=requestAnimationFrame(gup)}
+function spZ(now){if(!gs||go)return;const et=(now-gst)/1000;if(et<30)return;let iv=Math.max(0.75,2.6-wv*0.11);if(boss)iv=Math.max(0.2,iv/1.5);if(ls>0&&now-ls<iv*1000)return;ls=now;let tps=[];for(let[k,v]of Object.entries(ZT)){if(et>=v.us)tps.push(k)}if(!tps.length)tps.push('water');const tp=tps[Math.floor(Math.random()*tps.length)],row=Math.floor(Math.random()*ROWS);const z=new Zb(row,tp);z.hp+=Math.floor(wv*14);z.sp=Math.min(150,z.sp+wv*1.2);zs.push(z);wv++;
+    if(wv%10===0) waveBanner('第 '+wv+' 只僵尸');upUI()}
+function gup(now){if(go){draw();return}const dt=Math.min(0.033,(now-lf)/1000);if(dt<=0){lf=now;fr=requestAnimationFrame(gup);return}lf=now;upUI();const etCd=Math.max(0,30-(now-gst)/1000);const cdEl=d('cdStat'),cdVl=d('vCd');if(etCd>0.5){cdVl.innerText=Math.ceil(etCd);cdEl.style.display=''}else if(cdEl.style.display!=='none'){cdEl.style.display='none';d('msg').innerHTML='⚠️ 僵尸入侵！'}spZ(now);if(!les||now-les>12000){les=now;ecs.push({x:30+Math.random()*(cv.width-60),y:30+Math.random()*(cv.height-60),st:now});if(ecs.length>8)ecs.shift()}for(let i=ecs.length-1;i>=0;i--){if(now-ecs[i].st>2500){es+=15;ecs.splice(i,1);upUI()}}if(now-(_lastPay||0)>=5000){_lastPay=now;es+=10;upUI()}for(let e of els){e.up(dt);if(e.al&&e.at<=0&&e.r!=='wall'&&e.r!=='anode'&&e.r!=='cathode'&&e.r!=='skill')e.attack()}for(let r=0;r<ROWS;r++){for(let c=0;c<COLS-1;c++){const a=gd[r][c],b=gd[r][c+1];if(!a||!b||!a.al||!b.al)continue;const k1=a.s+'+'+b.s,k2=b.s+'+'+a.s;if(RX[k1])trR(k1,a,b);else if(RX[k2])trR(k2,a,b)}}for(let e of els){if(!e.al||e.s!=='Zn')continue;for(let e2 of els){if(!e2.al||e2.s!=='Cu'||e2===e)continue;if(Math.abs(e.row-e2.row)<=1&&Math.abs(e.col-e2.col)<=1)trR('Zn+Cu',e,e2)}}for(let i=bls.length-1;i>=0;i--){bls[i].up(dt);if(!bls[i].al)bls.splice(i,1)}for(let i=zs.length-1;i>=0;i--){const z=zs[i];z.up(dt);for(let b of bls){if(!b.al)continue;if(Math.hypot(b.x-z.x,b.y-z.y)<22){if(b.bn)z.bn=2;if(b.po)z.po=3;if(b.ah)z.nh=b.ah;if(b.dp){z.dp=true;z.sp=ZT[z.tp].sp*0.5;setTimeout(()=>{z.sp=ZT[z.tp].sp},3000)}if(b.fl)z.fl=0.5}}if(z.x<-60){go=true;d('msg').innerHTML='💀 僵尸突破防线！游戏结束';cancelAnimationFrame(fr);draw();return}if(z.hp<=0){sc+=z.sc;sySc(sc);const dmsg=applyDeathDrops(z);d('msg').innerHTML=dmsg;sP(z.x,z.y,z.cl,15);zs.splice(i,1)}}for(let i=ps.length-1;i>=0;i--){if(!ps[i].up(dt))ps.splice(i,1)}if(boss)upBoss(now,dt);draw();fr=requestAnimationFrame(gup)}
 
 // ==================== BOSS ====================
+function waveBanner(txt){
+    const el=d('waveBanner'); if(!el) return;
+    el.textContent=txt; el.classList.add('show');
+    clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),1400);
+}
 function stBoss(n){if(go||boss)return;const ms={1:500,2:1500,3:3000};if(sc<ms[n])return;boss={nm:n,tm:0,dt:{st:performance.now()}};if(n===1){boss.dt.hp=25000;boss.dt.mhp=25000;boss.dt.fN=null;boss.dt.fH=null;boss.dt.nh3=false;boss.dt.nh3t=0;d('msg').innerHTML='🏭 哈伯-博斯出现！用F/Cl破坏催化剂'}else if(n===2){boss.dt.hp=18000;boss.dt.mhp=18000;boss.dt.rad=[{x:cv.width-120,y:cv.height/2,sz:22,hp:800}];boss.dt.stm=0;d('msg').innerHTML='⚡ 自由基出现！用C/S/P捕获'}else{boss.dt.hp=35000;boss.dt.mhp=35000;boss.dt.tx=0;boss.dt.txt=0;d('msg').innerHTML='☠️ 重金属污染源！用S沉淀封堵'}d('bsStat').style.display='inline-block';upUI()}
 function upBoss(now,dt){const bd=boss.dt;bt+=dt;if(boss.nm===1){if(bt>12&&!bd.nh3&&!bd.fN){bd.fN={x:cv.width-220,y:180};bd.fH={x:cv.width-120,y:300};d('msg').innerHTML='🌫️ N₂/H₂雾出现！用<b>F/Cl</b>破坏催化剂'}if(bt>28&&bd.fN&&!bd.nh3){bd.nh3=true;bd.nh3t=0;d('msg').innerHTML='⚠️ NH₃开始合成！15秒后毒云爆发'}if(bd.nh3){bd.nh3t+=dt;if(bd.nh3t>15){for(let e of els){e.hp-=60;e.po=12}d('msg').innerHTML='💨 NH₃毒云爆发！';bd.nh3=false;bd.fN=null;bd.fH=null;bt=0}}for(let e of els){if(!e.al||!'FCl'.includes(e.s))continue;if(bd.fN&&Math.hypot(e.x-bd.fN.x,e.y-bd.fN.y)<CW*1.5){bd.fN=null;bd.fH=null;bd.nh3=false;d('msg').innerHTML='✅ 催化剂被破坏！NH₃合成中止';bt=0;sP(e.x,e.y,'#88ff88',20);bd.hp-=3000}}if(bd.hp<=0)wnBoss(1)}else if(boss.nm===2){bd.stm+=dt;if(bd.stm>6&&bd.rad.length<24){const nr=[];for(let r of bd.rad){r.sz/=1.5;r.hp/=1.5;nr.push({...r,sz:r.sz,hp:r.hp})}bd.rad.push(...nr);bd.stm=0;d('msg').innerHTML='⚡ 自由基分裂！当前<b>'+bd.rad.length+'</b>个'}for(let e of els){if(!e.al||!'CSP'.includes(e.s))continue;for(let i=bd.rad.length-1;i>=0;i--){if(Math.hypot(e.x-bd.rad[i].x,e.y-bd.rad[i].y)<CW*1.2){bd.rad.splice(i,1);sP(e.x,e.y,'#88ff88',10);sc+=200;sySc(sc);upUI()}}}if(bd.rad.length===0)wnBoss(2)}else{bd.txt+=dt;if(bd.txt>3.5){bd.tx+=6;bd.txt=0;for(let e of els){if(Math.random()<0.25){e.po=10;e.hp-=15}}}for(let e of els){if(!e.al||e.s!=='S')continue;bd.tx=Math.max(0,bd.tx-3);if(Math.random()<0.25)sP(e.x,e.y,'#ffff00',6)}if(bd.tx<=0)wnBoss(3)}d('vBs').innerText=Math.floor(bd.hp||0)}
 function wnBoss(n){const rw={1:8000,2:15000,3:25000};sc+=rw[n]||8000;sySc(sc);upUI();d('msg').innerHTML='🎉 Boss击败！+'+rw[n]+'积分！获得稀有物质';addSub('CaCO3',3);addSub('SiO2',2);addSub('PbNO32',2);d('bsStat').style.display='none';boss=null;bt=0}
@@ -271,6 +277,7 @@ function stCD(t,sec){cds[t]=sec;upCDUI();if(cdt[t])clearTimeout(cdt[t]);cdt[t]=s
 function upCDUI(){document.querySelectorAll('.el-card').forEach(ch=>{const t=ch.dataset.type;if(!t||!EL[t])return;const rm=cds[t];const bar=ch.querySelector('.cd-bar'),txt=ch.querySelector('.cd-txt');if(rm&&rm>0){bar.style.width=(rm/(EL[t].cd||5)*100)+'%';txt.innerText=Math.ceil(rm)+'s'}else{bar.style.width='0%';txt.innerText=''}})}
 
 // ==================== DRAW ====================
+function fitCanvas(){cv.width=COLS*CW;cv.height=ROWS*CH;cx=cv.getContext('2d');}
 function draw(){cx.clearRect(0,0,cv.width,cv.height);cx.strokeStyle='rgba(74,122,58,0.5)';cx.lineWidth=1;for(let i=0;i<=COLS;i++){cx.beginPath();cx.moveTo(i*CW,0);cx.lineTo(i*CW,cv.height);cx.stroke()}for(let i=0;i<=ROWS;i++){cx.beginPath();cx.moveTo(0,i*CH);cx.lineTo(cv.width,i*CH);cx.stroke()}for(let c=0;c<COLS;c++){cx.fillStyle=c%2===0?'rgba(0,0,0,0)':'rgba(255,255,255,0.01)';cx.fillRect(c*CW,0,CW,cv.height)}for(let e of els){if(!e.al||!e.rust)continue;cx.save();cx.fillStyle='rgba(139,69,19,0.08)';cx.beginPath();cx.arc(e.x,e.y,e.rust.r,0,Math.PI*2);cx.fill();cx.strokeStyle='rgba(139,69,19,0.3)';cx.lineWidth=2;cx.setLineDash([8,4]);cx.stroke();cx.setLineDash([]);cx.restore()}for(let e of els)e.draw(cx);for(let z of zs)z.draw(cx);for(let b of bls)b.draw(cx);for(let p of ps)p.draw(cx);for(let e of ecs){cx.save();const a=Math.min(1,(performance.now()-e.st)/500);cx.globalAlpha=a;cx.beginPath();cx.arc(e.x,e.y,13,0,Math.PI*2);cx.fillStyle='#ffd700';cx.shadowBlur=12;cx.fill();cx.beginPath();cx.arc(e.x,e.y,6,0,Math.PI*2);cx.fillStyle='#fff';cx.fill();cx.restore()}if(boss)drawBoss();if(mg.r!==-1&&!go){cx.save();cx.globalAlpha=0.25;cx.fillStyle=shv?'#e05030':skl?'#dd5a2a':'#f0c040';cx.fillRect(mg.c*CW,mg.r*CH,CW,CH);cx.restore()}if(go){cx.fillStyle='rgba(0,0,0,0.55)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#f0c040';cx.font='bold 36px sans-serif';cx.textAlign='center';cx.fillText('GAME OVER',cv.width/2,cv.height/2-10);cx.font='16px sans-serif';cx.fillStyle='#fff';cx.fillText('积分: '+sc+' | 波次: '+wv+' | 解锁: '+unlocked.size+'元素',cv.width/2,cv.height/2+30)}}
 function drawBoss(){const bd=boss.dt;if(bd.hp!==undefined){const bw=300,bx=(cv.width-bw)/2;cx.fillStyle='rgba(30,10,50,0.8)';rR(cx,bx-2,3,bw+4,20,10);cx.fill();cx.fillStyle='#b83bff';rR(cx,bx,5,bw*(bd.hp/bd.mhp),16,8);cx.fill();cx.strokeStyle='rgba(240,200,255,0.6)';cx.lineWidth=1.5;cx.beginPath();rR(cx,bx,5,bw,16,8);cx.stroke();cx.fillStyle='#fff';cx.font='bold 9px sans-serif';cx.fillText('Boss HP '+Math.floor(bd.hp)+'/'+bd.mhp,bx+8,16)}if(boss.nm===1){cx.save();cx.fillStyle='#556';rR(cx,cv.width-160,cv.height/2-55,100,110,12);cx.fill();cx.strokeStyle='#888';cx.lineWidth=2;cx.beginPath();rR(cx,cv.width-160,cv.height/2-55,100,110,12);cx.stroke();cx.fillStyle='#fff';cx.font='bold 13px sans-serif';cx.textAlign='center';cx.fillText('H-B',cv.width-110,cv.height/2+5);cx.font='9px sans-serif';cx.fillStyle='#aaa';cx.fillText('Haber-Bosch',cv.width-110,cv.height/2+20);cx.restore();if(bd.fN){cx.save();cx.fillStyle='rgba(100,180,255,0.25)';cx.beginPath();cx.arc(bd.fN.x,bd.fN.y,55,0,Math.PI*2);cx.fill();cx.fillStyle='#fff';cx.font='bold 16px sans-serif';cx.textAlign='center';cx.fillText('N₂',bd.fN.x,bd.fN.y+5);cx.fillStyle='rgba(255,200,255,0.25)';cx.beginPath();cx.arc(bd.fH.x,bd.fH.y,45,0,Math.PI*2);cx.fill();cx.fillText('H₂',bd.fH.x,bd.fH.y+5);cx.restore()}if(bd.nh3){const a=Math.min(0.6,bd.nh3t/15*0.6);cx.fillStyle=`rgba(200,255,100,${a})`;cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#ff0';cx.font='bold 18px sans-serif';cx.textAlign='center';cx.fillText('NH₃ 合成中...',cv.width/2,cv.height/2)}}else if(boss.nm===2){for(let r of bd.rad){cx.save();cx.beginPath();cx.arc(r.x,r.y,r.sz,0,Math.PI*2);cx.fillStyle=`rgba(255,180,0,${0.4+r.sz/40})`;cx.shadowBlur=15;cx.shadowColor='#ffa000';cx.fill();cx.restore()}}else{cx.save();cx.fillStyle='#2a4a2a';rR(cx,cv.width-160,cv.height/2-55,60,110,10);cx.fill();cx.strokeStyle='#4a8a4a';cx.lineWidth=2;cx.beginPath();rR(cx,cv.width-160,cv.height/2-55,60,110,10);cx.stroke();cx.fillStyle='rgba(0,200,0,'+(0.1+bd.tx/30)+')';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#fff';cx.font='10px sans-serif';cx.textAlign='center';cx.fillText('毒性:'+bd.tx,cv.width-130,cv.height/2+5);cx.restore()}}
 
@@ -284,6 +291,49 @@ cv.addEventListener('mousemove',e=>{const r=cv.getBoundingClientRect();const mx=
 d('btnRe').addEventListener('click',restart);d('btnGd').addEventListener('click',()=>{rGuide();d('guideMod').classList.add('show')});d('closeGd').addEventListener('click',()=>d('guideMod').classList.remove('show'));d('btnRk').addEventListener('click',()=>{ldRk();d('rankMod').classList.add('show')});d('closeRk').addEventListener('click',()=>d('rankMod').classList.remove('show'));d('btnLab').addEventListener('click',openLab);d('closeLab').addEventListener('click',()=>d('labMod').classList.remove('show'));d('btnB1').addEventListener('click',()=>stBoss(1));d('btnB2').addEventListener('click',()=>stBoss(2));d('btnB3').addEventListener('click',()=>stBoss(3));
 ['rankMod','guideMod','labMod'].forEach(id=>d(id).addEventListener('click',e=>{if(e.target===d(id))d(id).classList.remove('show')}));
 
-function restart(){go=false;gs=true;es=200;sc=0;wv=0;zs=[];els=[];bls=[];ps=[];rxa=[];rxl=[];ecs=[];gd=Array(ROWS).fill().map(()=>Array(COLS).fill(null));cds={};for(let t in cdt)clearTimeout(cdt[t]);cdt={};rxc={};inv={};unlocked=new Set(['H','C','Ne']);boss=null;bt=0;shv=false;skl=false;sel='H';gst=performance.now();lf=gst;ls=0;les=0;upUI();upInvUI();rSide();d('msg').innerHTML='⚛️ 初始：<b>H C Ne</b> | 僵尸死亡产物取决于击杀方式 | 🔬实验室提取新元素 | 30秒发育期';d('bsStat').style.display='none';d('btnB1').style.display='none';d('btnB2').style.display='none';d('btnB3').style.display='none';if(fr)cancelAnimationFrame(fr);fr=requestAnimationFrame(gup)}
-async function init(){await iSp();rSide();upUI();upInvUI();gs=true;gst=performance.now();lf=gst;d('msg').innerHTML='⚛️ 初始：<b>H C Ne</b> | 僵尸死亡产物=真实反应结果 | Na杀水僵尸→NaOH, 酸碱中和→盐+水 | 30秒发育期';fr=requestAnimationFrame(gup)}init();
+function saveBest(){
+    try{
+        const k='evz_best';
+        const b=+(localStorage.getItem(k)||0);
+        if(sc>b){localStorage.setItem(k,String(sc));}
+    }catch(e){}
+    const el=d('vBest'); if(el){ try{ el.innerText=(localStorage.getItem('evz_best')||0); }catch(e){} }
+}
+function loadBest(){
+    const el=d('vBest'); if(!el) return;
+    try{ el.innerText=(localStorage.getItem('evz_best')||0); }catch(e){ el.innerText='0'; }
+}
+function restart(){go=false;gs=true;es=150;sc=0;wv=0;zs=[];els=[];bls=[];ps=[];rxa=[];rxl=[];ecs=[];gd=Array(ROWS).fill().map(()=>Array(COLS).fill(null));cds={};for(let t in cdt)clearTimeout(cdt[t]);cdt={};rxc={};inv={};unlocked=new Set(['H','C','Ne']);boss=null;bt=0;shv=false;skl=false;sel='H';gst=performance.now();lf=gst;ls=0;les=0;upUI();upInvUI();rSide();d('msg').innerHTML='⚛️ 初始：<b>H C Ne</b> | 僵尸死亡产物取决于击杀方式 | 🔬实验室提取新元素 | 30秒发育期';d('bsStat').style.display='none';d('btnB1').style.display='none';d('btnB2').style.display='none';d('btnB3').style.display='none';if(fr)cancelAnimationFrame(fr);fr=requestAnimationFrame(gup)}
+async function init(){try{await iSp()}catch(e){spOk=false} rSide();upUI();upInvUI();gs=true;gst=performance.now();lf=gst;d('msg').innerHTML='⚛️ 初始：<b>H C Ne</b> | 僵尸死亡产物=真实反应结果 | Na杀水僵尸→NaOH, 酸碱中和→盐+水 | 30秒发育期';fr=requestAnimationFrame(gup)}init();
+
+// ==================== 调试钩子（仅用于自动化验证） ====================
+window.__evz = {
+    get s(){
+        return {
+            es, sc, wv, go, gs,
+            sel, unlocked: [...unlocked],
+            zombies: zs.length, elements: els.length, orbs: ecs.length,
+            inv: {...inv},
+            canvas: {w: cv.width, h: cv.height},
+            zombiesDetail: zs.slice(0, 8).map(z => ({t: z.t, hp: Math.round(z.hp), x: Math.round(z.x), row: z.row}))
+        };
+    },
+    give(n){ es += n; upUI(); },
+    setWave(n){ wv = n; upUI(); },
+    skipGrace(){ gst = performance.now() - 31000; ls = 0; },
+    clearCd(){ cds = {}; },
+    // 手动推进（headless 下 rAF 可能不触发，用此同步驱动逻辑帧）
+    step(frames, dtms){
+        let t = (lf || performance.now());
+        for(let i=0;i<(frames||60);i++){ t += (dtms || 16); gup(t); }
+        return { zs: zs.length, es: Math.floor(es), wv, x0: (zs[0]||{}).x };
+    },
+    unlockAll(){ Object.keys(EL).forEach(k => unlocked.add(k)); rSide(); },
+    start(){ gs = true; go = false; gst = performance.now(); lf = gst; if(!fr) fr = requestAnimationFrame(gup); },
+    place(type, row, col){ sel = type; cds[type] = 0; rSide(); const ok = plEl(row, col); cds[type] = 0; return ok; },
+    elAt(row, col){ return gd[row] && gd[row][col] ? gd[row][col].t : null; },
+    spawn(){ spZ(performance.now()); },
+    killAll(){ zs.forEach(z => { z.hp = 0; }); },
+    best(){ try { return localStorage.getItem('evz_best'); } catch(e){ return null; } }
+};
 })();
