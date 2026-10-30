@@ -506,10 +506,10 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
       <div class="rule-sec">
         <h3>单位特性</h3>
         <p><b>扩张</b>（一阶）：部署时立刻同化 1 格相邻中立地。</p>
-        <p><b>缓冲</b>（二阶）：无视对方的环境加成，擅长守土。</p>
+        <p><b>缓冲</b>（二阶）：削弱对方环境加成的一半（最多 −0.75），擅长守土但不至于锁死强单位。</p>
         <p><b>中和</b>（三阶）：击杀敌人时，连带转化目标身旁 1 格。</p>
         <p><b>氧化</b>（四阶）：同化范围 +1。</p>
-        <p><b>强蚀</b>（五阶）：同化范围 ×2，并无视对方「缓冲」。</p>
+        <p><b>强蚀</b>（五阶）：同化范围 ×2，且「缓冲」对强蚀无效——强酸强碱超出缓冲容量，这是化学事实。</p>
         <p>单位战力 1–5 与费用 10–46 一一对应：低阶铺地快、能填线；高阶战斗力强、同化范围大，但一回合只能杀一个。</p>
       </div>
       <div class="rule-sec">
@@ -598,18 +598,18 @@ const MODES = {
             {name:'酸方', color:'#f43f5e', light:'#fda4af', glyph:'酸',
              units:[
                 unit('H2CO3','碳酸','H₂CO₃',10,1,'expand','扩张','部署时同化 1 格中立地','🧪'),
-                unit('HAc','醋酸','CH₃COOH',16,2,'buffer','缓冲','无视对方环境加成','🧪'),
+                unit('HAc','醋酸','CH₃COOH',16,2,'buffer','缓冲','削弱对方环境加成一半','🧪'),
                 unit('HCl','盐酸','HCl',24,3,'neutralize','中和','击杀后连带转化 1 格','🧪'),
                 unit('HNO3','硝酸','HNO₃',34,4,'oxidize','氧化','同化范围 +1','🧪'),
-                unit('H2SO4','硫酸','H₂SO₄',46,5,'corrode','强蚀','同化 ×2，破缓冲','🧪'),
+                unit('H2SO4','硫酸','H₂SO₄',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🧪'),
              ]},
             {name:'碱方', color:'#3b82f6', light:'#93c5fd', glyph:'碱',
              units:[
                 unit('Na2CO3','碳酸钠','Na₂CO₃',10,1,'expand','扩张','部署时同化 1 格中立地','⚪'),
-                unit('NH3','氨水','NH₃·H₂O',16,2,'buffer','缓冲','无视对方环境加成','💨'),
+                unit('NH3','氨水','NH₃·H₂O',16,2,'buffer','缓冲','削弱对方环境加成一半','💨'),
                 unit('NaOH','氢氧化钠','NaOH',24,3,'neutralize','中和','击杀后连带转化 1 格','⚪'),
                 unit('CaOH2','氢氧化钙','Ca(OH)₂',34,4,'oxidize','氧化','同化范围 +1','⚪'),
-                unit('KOH','氢氧化钾','KOH',46,5,'corrode','强蚀','同化 ×2，破缓冲','⚪'),
+                unit('KOH','氢氧化钾','KOH',46,5,'corrode','强蚀','同化 ×2，缓冲失效','⚪'),
              ]},
         ],
         metric:'ph', metricName:'pH',
@@ -643,18 +643,18 @@ const MODES = {
             {name:'阳极', color:'#fb923c', light:'#fdba74', glyph:'阳',
              units:[
                 unit('Fe','铁','Fe',10,1,'expand','扩张','部署时同化 1 格中立地','🔶'),
-                unit('Zn','锌','Zn',16,2,'buffer','缓冲','无视对方环境加成','🔶'),
+                unit('Zn','锌','Zn',16,2,'buffer','缓冲','削弱对方环境加成一半','🔶'),
                 unit('Al','铝','Al',24,3,'neutralize','中和','击杀后连带转化 1 格','🔶'),
                 unit('Mg','镁','Mg',34,4,'oxidize','氧化','同化范围 +1','🔶'),
-                unit('Li','锂','Li',46,5,'corrode','强蚀','同化 ×2，破缓冲','🔶'),
+                unit('Li','锂','Li',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🔶'),
              ]},
             {name:'阴极', color:'#22d3ee', light:'#a5f3fc', glyph:'阴',
              units:[
                 unit('C','石墨','C',10,1,'expand','扩张','部署时同化 1 格中立地','🔵'),
-                unit('Cu','铜','Cu',16,2,'buffer','缓冲','无视对方环境加成','🔵'),
+                unit('Cu','铜','Cu',16,2,'buffer','缓冲','削弱对方环境加成一半','🔵'),
                 unit('Ag','银','Ag',24,3,'neutralize','中和','击杀后连带转化 1 格','🔵'),
                 unit('Pt','铂','Pt',34,4,'oxidize','氧化','同化范围 +1','🔵'),
-                unit('Au','金','Au',46,5,'corrode','强蚀','同化 ×2，破缓冲','🔵'),
+                unit('Au','金','Au',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🔵'),
              ]},
         ],
         metric:'potential', metricName:'电势',
@@ -681,18 +681,18 @@ const MODES = {
             {name:'碱金属', color:'#f43f5e', light:'#fda4af', glyph:'碱',
              units:[
                 unit('Li','锂','Li',10,1,'expand','扩张','部署时同化 1 格中立地','🔴'),
-                unit('Na','钠','Na',16,2,'buffer','缓冲','无视对方环境加成','🔴'),
+                unit('Na','钠','Na',16,2,'buffer','缓冲','削弱对方环境加成一半','🔴'),
                 unit('K','钾','K',24,3,'neutralize','中和','击杀后连带转化 1 格','🔴'),
                 unit('Rb','铷','Rb',34,4,'oxidize','氧化','同化范围 +1','🔴'),
-                unit('Cs','铯','Cs',46,5,'corrode','强蚀','同化 ×2，破缓冲','🔴'),
+                unit('Cs','铯','Cs',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🔴'),
              ]},
             {name:'卤素', color:'#22c55e', light:'#86efac', glyph:'卤',
              units:[
                 unit('I','碘','I₂',10,1,'expand','扩张','部署时同化 1 格中立地','🟢'),
-                unit('Br','溴','Br₂',16,2,'buffer','缓冲','无视对方环境加成','🟢'),
+                unit('Br','溴','Br₂',16,2,'buffer','缓冲','削弱对方环境加成一半','🟢'),
                 unit('Cl','氯','Cl₂',24,3,'neutralize','中和','击杀后连带转化 1 格','🟢'),
                 unit('F','氟','F₂',34,4,'oxidize','氧化','同化范围 +1','🟢'),
-                unit('At','砹','At₂',46,5,'corrode','强蚀','同化 ×2，破缓冲','🟢'),
+                unit('At','砹','At₂',46,5,'corrode','强蚀','同化 ×2，缓冲失效','🟢'),
              ]},
         ],
         metric:'wildElement', metricName:'野元素',
@@ -946,22 +946,44 @@ function resolveReactions(){
     if (clashes) sfx('clash');
 }
 
-function resolvePair(a,b){
-    const ua = a.unit, ub = b.unit;
-    if (!ua || !ub) return null;
-    let ea = M().envBonus(a) + ua.power;
-    let eb = M().envBonus(b) + ub.power;
+/* 测试专用：构造临时格与单位，跑真实 pairScore */
+function _duel(pa,aa,ea,ownA,pb,ab,eb,ownB){
+    const mkUnit=(power,abi,player)=>({power,abi,player,formula:'T'});
+    const A={col:0,row:0,owner:ownA?1:0,cap:0,wildElement:null,ph:7,potential:0};
+    const B={col:1,row:0,owner:ownB?2:0,cap:0,wildElement:null,ph:7,potential:0};
+    const r=pairScore(mkUnit(pa,aa,1),ea,A,mkUnit(pb,ab,2),eb,B);
+    return {a:r.ea, b:r.eb};
+}
+
+/* 战力结算（纯函数，便于单测与复核）
+   返回 {ea, eb}，ea 是 a 格的战力，eb 是 b 格的战力。 */
+const BUFFER_RATE = 0.5;
+function pairScore(ua, ea0, a, ub, eb0, b){
+    let ea = ea0 + ua.power;
+    let eb = eb0 + ub.power;
     if (a.owner===ua.player) ea += 1;      // 本土防守加成
     if (b.owner===ub.player) eb += 1;
     // 首都驻防：站在自家首都格上额外加成，斩首必须真正压倒守军
     if (a.cap===ua.player) ea += CAP_DEF;
     if (b.cap===ub.player) eb += CAP_DEF;
-    // 缓冲：让对方失去环境加成
-    if (ua.abi==='buffer') eb -= M().envBonus(b);
-    if (ub.abi==='buffer') ea -= M().envBonus(a);
-    // 强蚀：破缓冲（把被扣掉的环境加成还回去）
-    if (ua.abi==='corrode' && ub.abi==='buffer') eb += M().envBonus(b);
-    if (ub.abi==='corrode' && ua.abi==='buffer') ea += M().envBonus(a);
+    // 缓冲：削弱对方环境加成的「正加成」一半
+    // （旧版是全免，16 费的二级兵能把 46 费的五级兵锁死；
+    //   元素模式 env 可为负，不能直接乘，否则会把负环境变成给对方加分）
+    const posA = Math.max(0, ea0), posB = Math.max(0, eb0);
+    if (ua.abi==='buffer') eb -= posB * BUFFER_RATE;
+    if (ub.abi==='buffer') ea -= posA * BUFFER_RATE;
+    // 强蚀：破缓冲——把自己被扣掉的那份环境加成拿回来
+    // （旧实现写反：给对手加分，导致强蚀反而打不过缓冲）
+    if (ua.abi==='corrode' && ub.abi==='buffer') ea += posA * BUFFER_RATE;
+    if (ub.abi==='corrode' && ua.abi==='buffer') eb += posB * BUFFER_RATE;
+    return {ea, eb};
+}
+
+function resolvePair(a,b){
+    const ua = a.unit, ub = b.unit;
+    if (!ua || !ub) return null;
+    const sc = pairScore(ua, M().envBonus(a), a, ub, M().envBonus(b), b);
+    const ea = sc.ea, eb = sc.eb;
 
     const A = M().sides[ua.player-1], B = M().sides[ub.player-1];
 
@@ -2079,6 +2101,11 @@ if (/[?&]debug\b/.test(location.search)){
         setSim: v => { SIM.on = !!v; },
         aiPid: () => aiPid(),
         isAITurn: () => isAITurn(),
+        /* 测试用：不改变棋局，直接算一场对决的双方战力 */
+        duel: (pa, aa, ea, ownA, pb, ab, eb, ownB, modeKey) => {
+            if (modeKey) { const bak = G && G.mode; if (G) G.mode = modeKey; var r = _duel(pa,aa,ea,ownA,pb,ab,eb,ownB); if (G) G.mode = bak; return r; }
+            return _duel(pa,aa,ea,ownA,pb,ab,eb,ownB);
+        },
         deployLimit: () => deployLimit(),
         winRatio: () => winRatio(),
         income, territory, checkWin, UI,
