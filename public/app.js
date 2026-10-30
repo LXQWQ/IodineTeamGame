@@ -177,7 +177,7 @@
             { id:1, name:"丹道化学Pro", emoji:"🧪🔥", tag:"炼丹模拟", desc:"收集五金八石，翻阅典籍，炼制灵丹！探索地图，解锁配方，登上排行榜。", link:"games/dandao-chemistry/", newWindow:false },
             { id:2, name:"元素大战僵尸Pro·物质炼金", emoji:"🧟🧠", tag:"化学塔防+RPG", desc:"完全重构！击杀特定化学物质僵尸收集HCl/H₂SO₄/吡啶等，在炼金实验室中电解、还原、裂解提取单质解锁新元素！三大化学Boss等你挑战。", link:"games/evz/", newWindow:false },
             { id:3, name:"相转移大作战", emoji:"💧❄⚡", tag:"双人对抗", desc:"原创游戏，回合制抽取卡牌，将反应物拉向自己的相！", link:"games/phase-shift/", newWindow:false },
-            { id:7, name:"化境争霸", emoji:"⚔️⚗️", tag:"领地争夺", desc:"化学主题六边形棋盘领地争夺战！酸碱中和、电化学、元素争霸三模式，支持双人对战和人机AI，通过化学反应摧毁敌方单位！", link:"games/chem-territory/", newWindow:false },
+            { id:7, name:"化境争霸", emoji:"⚔️⚗️", tag:"领地争夺", desc:"全新重制版！六边形战场上用真实化学式单位争夺领地：酸碱中和 / 电化学 / 元素争霸三模式、三档 AI、双人同屏，含撤销存档、pH 环境色战场与战斗粒子特效。", link:"games/chem-territory/", newWindow:false },
             { id:9, name:"化学海龟汤", emoji:"🐢", tag:"推理猜谜", desc:"化学版海龟汤！根据谜面推理化学物质/反应/现象，AI主持人月见八千代出题，沉浸式悬疑推理体验。手机电脑均可畅玩！", link:"games/chem-turtle-soup/", newWindow:false },
             { id:10, name:"元素大战僵尸·经典版", emoji:"🧟⚗️", tag:"经典塔防", desc:"经典PvZ式元素塔防！部署碳、镁、钠等元素守卫实验室，重温最初的元素战争。", link:"evz.html", newWindow:false },
             { id:11, name:"化境争霸 · 战争卡牌", emoji:"⚔️🧪", tag:"氧化还原对战", desc:"全新重制的红蓝卡牌战争！50名军团角色（氧化剂vs还原剂）、10种技能（护盾/连击/剧毒/自爆…）、14张反应卡。三线战场，支持人机对战与同屏双人热座PvP！", link:"games/chem-territory-v2/", newWindow:false },

@@ -3,1499 +3,1967 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080c14">
 <title>化境争霸 · Chemical Territory Conquest</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+/* ============================================================
+   化境争霸 v2 — 设计系统
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
-    --bg:#0a0e17;--surf:#111827;--border:#1e293b;--text:#e2e8f0;--text2:#94a3b8;
-    --p1:#ef4444;--p1bg:#3b1520;--p2:#3b82f6;--p2bg:#15203b;
-    --gold:#facc15;--acid:#ef4444;--base:#3b82f6;
-    --anode:#f97316;--cathode:#06b6d4;
-    --alkali:#ef4444;--halogen:#22c55e;
+    --bg:#080c14;
+    --bg2:#0b111c;
+    --surf:#111a28;
+    --surf2:#16202f;
+    --line:#22303f;
+    --line2:#2e4152;
+    --text:#e6edf6;
+    --text2:#8fa3b8;
+    --text3:#5d7189;
+    --gold:#fbbf24;
+    --gold2:#f59e0b;
+    --ok:#34d399;
+    --bad:#f43f5e;
+    --p1:#f43f5e;
+    --p1l:#fda4af;
+    --p2:#3b82f6;
+    --p2l:#93c5fd;
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow:0 10px 30px rgba(0,0,0,.45);
+    --dur:.22s;
+    --ease:cubic-bezier(.4,0,.2,1);
 }
+html,body{height:100%}
 body{
-    background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;
-    min-height:100vh;display:flex;justify-content:center;align-items:flex-start;
-    padding:0.5rem;
+    background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    font-size:14px;line-height:1.5;overflow-x:hidden;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;min-height:100dvh;
 }
-/* ===== 设置弹窗 ===== */
-.setup-overlay{
-    position:fixed;top:0;left:0;width:100%;height:100%;
-    background:rgba(0,0,0,0.85);z-index:100;display:flex;
-    justify-content:center;align-items:center;
+/* 背景光晕 */
+body::before{
+    content:'';position:fixed;inset:0;pointer-events-none;z-index:0;
+    background:
+        radial-gradient(900px 500px at 12% -8%, rgba(244,63,94,.13), transparent 62%),
+        radial-gradient(900px 500px at 88% 108%, rgba(59,130,246,.13), transparent 62%),
+        radial-gradient(700px 400px at 50% 50%, rgba(251,191,36,.045), transparent 70%);
 }
-.setup-box{
-    background:var(--surf);border:2px solid var(--gold);border-radius:1.5rem;
-    padding:2rem;max-width:480px;width:90%;text-align:center;
-    box-shadow:0 0 60px rgba(250,204,21,0.2);
+button{font-family:inherit;font-size:inherit;color:inherit;border:none;background:none;cursor:pointer}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ============================ 设置界面 ============================ */
+.overlay{
+    position:fixed;inset:0;z-index:100;display:none;
+    align-items:center;justify-content:center;padding:16px;
+    background:rgba(4,7,12,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    overflow-y:auto;
 }
-.setup-box h1{font-size:1.6rem;color:var(--gold);margin-bottom:0.4rem}
-.setup-box .subtitle{color:var(--text2);font-size:0.85rem;margin-bottom:1.5rem}
-.setup-section{margin-bottom:1.2rem;text-align:left}
-.setup-label{font-weight:bold;font-size:0.85rem;color:var(--text2);margin-bottom:0.4rem}
-.setup-options{display:flex;gap:0.5rem;flex-wrap:wrap}
-.setup-opt{
-    flex:1;min-width:80px;padding:0.6rem 0.8rem;border-radius:0.8rem;
-    border:2px solid var(--border);background:var(--bg);color:var(--text);
-    cursor:pointer;text-align:center;font-size:0.8rem;font-weight:bold;transition:all .15s;
+.overlay.show{display:flex}
+.overlay.dim{background:rgba(4,7,12,.94)}
+
+.panel{
+    width:100%;max-width:520px;background:linear-gradient(180deg,var(--surf),var(--bg2));
+    border:1px solid var(--line2);border-radius:22px;padding:26px 24px 22px;
+    box-shadow:var(--shadow),0 0 0 1px rgba(251,191,36,.07) inset;
+    animation:rise .34s var(--ease) both;
 }
-.setup-opt:hover{border-color:var(--text2)}
-.setup-opt.selected{border-color:var(--gold);background:rgba(250,204,21,0.1);color:var(--gold)}
-.setup-toggle{display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;color:var(--text2)}
-.setup-toggle input[type=checkbox]{accent-color:var(--gold)}
-.setup-start{
-    margin-top:1.5rem;width:100%;padding:0.8rem;border-radius:1rem;
-    border:none;background:linear-gradient(135deg,#f59e0b,#ef4444);
-    color:#fff;font-size:1rem;font-weight:bold;cursor:pointer;transition:all .15s;
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.brand-mark{
+    width:44px;height:44px;flex:none;border-radius:12px;
+    background:linear-gradient(145deg,#fbbf24,#f43f5e 60%,#3b82f6);
+    display:grid;place-items:center;font-size:22px;
+    box-shadow:0 6px 18px rgba(251,191,36,.28);
 }
-.setup-start:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(250,204,21,0.3)}
-/* ===== 游戏容器 ===== */
-.game-container{max-width:1200px;width:100%;display:none}
-.header{
-    display:flex;justify-content:space-between;align-items:center;
-    flex-wrap:wrap;gap:0.6rem;padding:0.5rem 0.8rem;background:var(--surf);
-    border:1px solid var(--border);border-radius:0.8rem;margin-bottom:0.5rem;
+.brand h1{font-size:1.42rem;font-weight:800;letter-spacing:.02em;
+    background:linear-gradient(92deg,#fbbf24,#fda4af 48%,#93c5fd);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.header .title{font-weight:bold;font-size:1rem}
-.header .mode-badge{
-    padding:0.2rem 0.6rem;border-radius:1rem;font-size:0.7rem;font-weight:bold;
+.brand .sub{font-size:.72rem;color:var(--text3);letter-spacing:.16em;text-transform:uppercase;margin-top:1px}
+.intro{color:var(--text2);font-size:.82rem;line-height:1.7;margin:14px 0 18px;
+    padding:11px 13px;background:rgba(255,255,255,.025);border-left:2px solid var(--gold);border-radius:0 8px 8px 0}
+
+.field{margin-bottom:16px}
+.field-label{display:flex;align-items:center;gap:7px;font-size:.76rem;font-weight:700;
+    color:var(--text2);letter-spacing:.09em;text-transform:uppercase;margin-bottom:9px}
+.field-label i{width:5px;height:5px;border-radius:50%;background:var(--gold);flex:none}
+
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mode-card{
+    position:relative;padding:11px 8px 10px;border-radius:var(--radius-sm);
+    border:1.5px solid var(--line);background:var(--bg2);text-align:center;
+    transition:border-color var(--dur) var(--ease),background var(--dur),transform var(--dur);
 }
-.mode-acid{background:rgba(239,68,68,0.2);color:var(--acid)}
-.mode-electro{background:rgba(6,182,212,0.2);color:var(--cathode)}
-.mode-element{background:rgba(34,197,94,0.2);color:var(--halogen)}
-.header .info{display:flex;gap:1rem;font-size:0.8rem;align-items:center}
-.header .res{font-weight:bold;color:var(--gold)}
-/* ===== 主区域 ===== */
-.main-area{display:flex;gap:0.5rem;flex-wrap:wrap}
-.log-panel{
-    width:140px;flex-shrink:0;background:var(--surf);border:1px solid var(--border);
-    border-radius:0.8rem;padding:0.5rem;font-size:0.7rem;color:var(--text2);
-    max-height:580px;overflow-y:auto;
+.mode-card:hover{border-color:var(--line2);transform:translateY(-1px)}
+.mode-card .mc-ico{font-size:19px;line-height:1.1;margin-bottom:5px}
+.mode-card .mc-name{font-size:.8rem;font-weight:700}
+.mode-card .mc-desc{font-size:.63rem;color:var(--text3);margin-top:2px;line-height:1.35}
+.mode-card.on{border-color:var(--gold);background:rgba(251,191,36,.1);box-shadow:0 0 0 3px rgba(251,191,36,.08)}
+.mode-card.on .mc-name{color:var(--gold)}
+
+.seg{display:flex;gap:7px}
+.seg button{
+    flex:1;padding:9px 6px;border-radius:var(--radius-sm);border:1.5px solid var(--line);
+    background:var(--bg2);font-size:.79rem;font-weight:700;color:var(--text2);
+    transition:all var(--dur) var(--ease);
 }
-.log-panel .log-item{padding:0.25rem 0;border-bottom:1px solid rgba(255,255,255,0.04)}
-.log-panel .log-item.reaction{color:var(--gold)}
-.log-panel .log-item.kill{color:var(--acid)}
-.canvas-wrap{flex:1;min-width:500px;display:flex;justify-content:center}
-canvas{border-radius:0.5rem;cursor:crosshair;max-width:100%;height:auto}
-/* ===== 底部面板 ===== */
-.unit-panel{
-    background:var(--surf);border:1px solid var(--border);border-radius:0.8rem;
-    padding:0.6rem;margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;
-    flex-wrap:wrap;
+.seg button:hover{border-color:var(--line2);color:var(--text)}
+.seg button.on{border-color:var(--gold);background:rgba(251,191,36,.1);color:var(--gold)}
+
+.checkline{display:flex;align-items:center;gap:9px;font-size:.79rem;color:var(--text2);cursor:pointer;
+    padding:9px 11px;border-radius:var(--radius-sm);background:rgba(255,255,255,.02);border:1px solid var(--line)}
+.checkline input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer}
+.checkline span{flex:1}
+.hint-sm{font-size:.68rem;color:var(--text3);margin-top:6px;line-height:1.5}
+
+.btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    padding:13px 18px;border-radius:var(--radius);font-size:.92rem;font-weight:800;
+    letter-spacing:.02em;transition:transform var(--dur) var(--ease),box-shadow var(--dur),filter var(--dur);
 }
-.unit-panel .player-label{
-    font-weight:bold;font-size:0.8rem;padding:0.3rem 0.6rem;border-radius:0.5rem;
-    white-space:nowrap;flex-shrink:0;
+.btn-primary{background:linear-gradient(100deg,#f59e0b,#f43f5e 55%,#be123c);color:#fff;
+    box-shadow:0 8px 24px rgba(244,63,94,.32)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(244,63,94,.42)}
+.btn-primary:active{transform:translateY(0) scale(.99)}
+.btn-ghost{border:1.5px solid var(--line2);color:var(--text2);font-weight:700;background:rgba(255,255,255,.02)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-row{display:flex;gap:9px;margin-top:18px}
+.btn-row .btn{flex:1}
+
+/* ============================ 游戏布局 ============================ */
+#game{width:100%;max-width:1360px;padding:10px;display:none;flex-direction:column;gap:9px;
+    position:relative;z-index:1;flex:1}
+#game.show{display:flex}
+
+/* HUD */
+.hud{display:grid;grid-template-columns:1fr auto 1fr;gap:9px;align-items:stretch}
+.hud-side{
+    display:flex;align-items:center;gap:10px;padding:9px 13px;
+    background:linear-gradient(180deg,var(--surf),var(--bg2));
+    border:1px solid var(--line);border-radius:var(--radius);
+    position:relative;overflow:hidden;transition:border-color var(--dur),box-shadow var(--dur);
 }
+.hud-side::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--side-color,#555);opacity:.9}
+.hud-side.active{border-color:var(--side-color);box-shadow:0 0 0 1px var(--side-color),0 0 22px -6px var(--side-color)}
+.hud-side.right{flex-direction:row-reverse;text-align:right}
+.hud-side.right::after{left:auto;right:0}
+.hud-emblem{
+    width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;
+    font-size:15px;font-weight:900;color:#fff;
+    background:var(--side-color);box-shadow:0 4px 14px -4px var(--side-color);
+}
+.hud-info{flex:1;min-width:0}
+.hud-name{font-size:.82rem;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:6px}
+.hud-side.right .hud-name{justify-content:flex-end}
+.hud-name .tag{font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:4px;
+    background:rgba(255,255,255,.09);color:var(--text2);letter-spacing:.06em}
+.hud-stats{display:flex;gap:11px;margin-top:3px;font-size:.72rem;color:var(--text2)}
+.hud-side.right .hud-stats{justify-content:flex-end}
+.hud-stats b{color:var(--text);font-weight:800;font-size:.86rem}
+.hud-stats .up{color:var(--ok);font-size:.66rem;font-weight:700}
+.hud-stats .down{color:var(--bad);font-size:.66rem;font-weight:700}
+.cap-bar{display:flex;gap:3px;margin-top:4px}
+.cap-bar i{width:16px;height:3px;border-radius:2px;background:var(--side-color);opacity:.9}
+.cap-bar i.lost{background:var(--line2);opacity:.5}
+
+.hud-mid{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:8px 16px;background:linear-gradient(180deg,var(--surf),var(--bg2));
+    border:1px solid var(--line);border-radius:var(--radius);min-width:150px;
+}
+.hud-turn{font-size:.68rem;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.hud-phase{font-size:.98rem;font-weight:800;margin-top:1px;color:var(--gold);letter-spacing:.02em}
+.hud-deploy{font-size:.7rem;color:var(--text2);margin-top:2px}
+.hud-deploy b{color:var(--gold);font-weight:800}
+
+/* 主区 */
+.main{display:grid;grid-template-columns:196px minmax(0,1fr) 210px;gap:9px;align-items:start}
+
+/* 单位面板 */
+.roster{display:flex;flex-direction:column;gap:7px}
+.roster-title{font-size:.68rem;font-weight:800;color:var(--text3);letter-spacing:.13em;
+    text-transform:uppercase;padding:0 3px 1px;display:flex;justify-content:space-between;align-items:center}
+.roster-title span{color:var(--gold);letter-spacing:0}
+
 .unit-card{
-    background:var(--bg);border:2px solid var(--border);border-radius:0.6rem;
-    padding:0.4rem 0.6rem;cursor:pointer;transition:all .15s;text-align:center;
-    min-width:70px;flex-shrink:0;
+    position:relative;width:100%;text-align:left;padding:9px 10px 8px;border-radius:var(--radius-sm);
+    border:1.5px solid var(--line);background:linear-gradient(180deg,var(--surf2),var(--bg2));
+    transition:all var(--dur) var(--ease);overflow:hidden;
 }
-.unit-card:hover{border-color:var(--gold);transform:translateY(-1px)}
-.unit-card.selected{border-color:var(--gold);box-shadow:0 0 12px rgba(250,204,21,0.3)}
-.unit-card.disabled{opacity:0.35;cursor:not-allowed;pointer-events:none}
-.unit-card .uc-emoji{font-size:1.2rem}
-.unit-card .uc-name{font-size:0.7rem;font-weight:bold}
-.unit-card .uc-cost{font-size:0.65rem;color:var(--gold)}
-.unit-card .uc-power{font-size:0.6rem;color:var(--text2)}
-.btn-end-turn{
-    padding:0.6rem 1.2rem;border-radius:1rem;border:none;
-    font-weight:bold;font-size:0.85rem;cursor:pointer;transition:all .15s;
-    background:var(--gold);color:#0a0e17;margin-left:auto;flex-shrink:0;
+.unit-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2.5px;
+    background:var(--side-color,#f43f5e);opacity:.55;transition:opacity var(--dur)}
+.unit-card:hover:not(.locked){border-color:var(--line2);transform:translateX(2px)}
+.unit-card:hover:not(.locked)::before{opacity:1}
+.unit-card.on{border-color:var(--side-color);background:color-mix(in srgb,var(--side-color) 13%,var(--bg2));
+    box-shadow:0 0 0 2px color-mix(in srgb,var(--side-color) 22%,transparent)}
+.unit-card.on::before{opacity:1;width:3.5px}
+.unit-card.locked{opacity:.42;cursor:not-allowed;filter:grayscale(.5)}
+.uc-row1{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.uc-formula{font-size:.86rem;font-weight:800;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.uc-cost{font-size:.74rem;font-weight:800;color:var(--gold);white-space:nowrap}
+.uc-cost::before{content:'⚡';font-size:.66rem;margin-right:1px;opacity:.9}
+.uc-row2{display:flex;align-items:center;gap:6px;margin-top:3px}
+.uc-name{font-size:.68rem;color:var(--text2);font-weight:600}
+.uc-pips{margin-left:auto;display:flex;gap:2px}
+.uc-pips i{width:4.5px;height:4.5px;border-radius:50%;background:var(--side-color);opacity:.35}
+.uc-pips i.on{opacity:1;box-shadow:0 0 5px var(--side-color)}
+.uc-abi{display:flex;align-items:flex-start;gap:4px;margin-top:6px;font-size:.63rem;
+    color:var(--text2);line-height:1.4}
+.uc-abi b{color:var(--gold);font-weight:800;flex:none}
+.unit-card.locked .uc-abi{color:var(--bad);opacity:.9}
+
+/* 棋盘 */
+.board-wrap{
+    position:relative;background:linear-gradient(180deg,#0a1019,#080c14);
+    border:1px solid var(--line);border-radius:var(--radius);padding:8px 8px 5px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;overflow:hidden;
 }
-.btn-end-turn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(250,204,21,0.3)}
-.btn-end-turn:disabled{opacity:0.4;cursor:not-allowed}
-/* ===== 传递遮罩 ===== */
-.pass-overlay{
-    display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-    background:rgba(0,0,0,0.9);z-index:90;justify-content:center;align-items:center;
+#board{display:block;width:100%;height:auto;touch-action:manipulation;border-radius:8px}
+.legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
+    padding:2px 4px 3px;width:100%}
+.lg-scale{display:flex;align-items:center;gap:6px;font-size:.6rem;color:var(--text3)}
+.lg-bar{width:96px;height:5px;border-radius:3px;background:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e,#06b6d4,#3b82f6)}
+.lg-item{display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--text2)}
+.lg-item i{width:7px;height:7px;border-radius:2px;flex:none}
+
+/* 日志 */
+.logbox{display:flex;flex-direction:column;gap:7px;min-width:0}
+.log-head{font-size:.68rem;font-weight:800;color:var(--text3);letter-spacing:.13em;
+    text-transform:uppercase;padding:0 3px 1px;display:flex;justify-content:space-between}
+.log-head button{font-size:.62rem;color:var(--text3);letter-spacing:0;text-transform:none;
+    font-weight:700;transition:color var(--dur)}
+.log-head button:hover{color:var(--gold)}
+#logList{display:flex;flex-direction:column;gap:4px;max-height:min(58vh,520px);overflow-y:auto;
+    padding:8px;background:linear-gradient(180deg,var(--surf),var(--bg2));
+    border:1px solid var(--line);border-radius:var(--radius);scrollbar-width:thin;
+    scrollbar-color:var(--line2) transparent}
+#logList::-webkit-scrollbar{width:4px}
+#logList::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+.log-item{font-size:.71rem;line-height:1.5;color:#a9bccf;padding:4px 7px;border-radius:6px;
+    background:rgba(255,255,255,.022);border-left:2px solid var(--line2);
+    animation:logIn .28s var(--ease) both;word-break:break-word}
+@keyframes logIn{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:none}}
+.log-item.turn{border-left-color:var(--gold);color:var(--gold);font-weight:700;background:rgba(251,191,36,.07)}
+.log-item.clash{border-left-color:var(--bad);color:#fda4af}
+.log-item.gain{border-left-color:var(--ok);color:#6ee7b7}
+.log-item.sys{border-left-color:var(--text3);color:var(--text3)}
+
+/* 操作栏 */
+.actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:center;
+    padding:2px 0 6px}
+.act{
+    display:flex;align-items:center;gap:6px;padding:9px 15px;border-radius:11px;
+    border:1.5px solid var(--line);background:var(--surf);font-size:.78rem;font-weight:700;
+    color:var(--text2);transition:all var(--dur) var(--ease);
 }
-.pass-overlay.show{display:flex}
-.pass-box{
-    text-align:center;background:var(--surf);border-radius:1.5rem;padding:2rem;
-    border:2px solid var(--gold);
-}
-.pass-box h2{font-size:1.5rem;margin-bottom:0.5rem}
-.pass-box p{color:var(--text2);margin-bottom:1.5rem}
-.pass-btn{
-    padding:0.8rem 2rem;border-radius:2rem;border:none;
-    font-size:1rem;font-weight:bold;cursor:pointer;
-    background:var(--gold);color:#0a0e17;
-}
-/* ===== 规则弹窗 ===== */
-.rules-overlay{
-    display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-    background:rgba(0,0,0,0.88);z-index:120;justify-content:center;align-items:flex-start;
-    overflow-y:auto;padding:2rem 0;
-}
-.rules-overlay.show{display:flex}
-.rules-box{
-    background:var(--surf);border:2px solid var(--gold);border-radius:1.5rem;
-    padding:1.5rem;max-width:540px;width:92%;margin:auto;
-}
-.rules-box h2{font-size:1.3rem;color:var(--gold);margin-bottom:1rem;text-align:center}
-.rules-box h3{font-size:0.95rem;color:var(--text);margin:1rem 0 0.4rem;border-bottom:1px solid var(--border);padding-bottom:0.3rem}
-.rules-box p,.rules-box li{font-size:0.8rem;color:var(--text2);line-height:1.6}
-.rules-box ul{padding-left:1.2rem}
-.rules-box .rules-close{
-    display:block;margin:1.2rem auto 0;padding:0.6rem 2rem;border-radius:1rem;
-    border:none;background:var(--gold);color:#0a0e17;font-weight:bold;cursor:pointer;font-size:0.9rem;
-}
-.setup-rule-btn{
-    background:transparent;color:var(--text2);border:1px solid var(--border);
-    padding:0.4rem 1rem;border-radius:1rem;font-size:0.75rem;cursor:pointer;transition:all .15s;
-}
-.setup-rule-btn:hover{color:var(--gold);border-color:var(--gold)}
-/* ===== Game Over ===== */
-.go-overlay{
-    display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-    background:rgba(0,0,0,0.88);z-index:110;justify-content:center;align-items:center;
-}
-.go-overlay.show{display:flex}
-.go-box{
-    background:var(--surf);border:3px solid var(--gold);border-radius:1.5rem;
-    padding:2rem;text-align:center;max-width:400px;width:90%;
-    box-shadow:0 0 60px rgba(250,204,21,0.3);
-}
-.go-box .go-emoji{font-size:4rem;margin-bottom:0.5rem}
-.go-box h2{font-size:1.5rem;color:var(--gold);margin-bottom:0.5rem}
-.go-box .go-detail{color:var(--text2);font-size:0.85rem;margin-bottom:1rem;line-height:1.6}
-.go-btn{
-    padding:0.7rem 1.5rem;border-radius:2rem;border:none;
-    font-weight:bold;cursor:pointer;margin:0.25rem;transition:all .15s;
-}
-.go-btn.primary{background:var(--gold);color:#0a0e17}
-.go-btn.secondary{background:transparent;color:var(--text2);border:1px solid var(--border)}
-/* ===== 动画 ===== */
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-@keyframes pop{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
-.pop{animation:pop .3s ease}
+.act:hover:not(:disabled){border-color:var(--line2);color:var(--text);transform:translateY(-1px)}
+.act:disabled{opacity:.35;cursor:not-allowed}
+.act.primary{background:linear-gradient(100deg,#f59e0b,#f43f5e);color:#fff;border-color:transparent;
+    box-shadow:0 6px 18px -6px rgba(244,63,94,.6);padding:9px 22px;font-weight:800}
+.act.primary:hover:not(:disabled){box-shadow:0 9px 24px -6px rgba(244,63,94,.75)}
+.act.icon{padding:9px 11px}
+.act .kbd{font-size:.6rem;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,.1);
+    color:var(--text3);font-family:ui-monospace,monospace}
+
+/* Toast */
+#toasts{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:200;
+    display:flex;flex-direction:column-reverse;gap:6px;align-items:center;pointer-events:none;width:max-content;max-width:90vw}
+.toast{padding:8px 16px;border-radius:10px;font-size:.78rem;font-weight:700;
+    background:rgba(17,26,40,.97);border:1px solid var(--line2);color:var(--text);
+    box-shadow:0 8px 24px rgba(0,0,0,.5);animation:toastIn .26s var(--ease) both}
+.toast.err{border-color:var(--bad);color:#fda4af}
+.toast.ok{border-color:var(--ok);color:#6ee7b7}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.toast.out{animation:toastOut .24s var(--ease) forwards}
+@keyframes toastOut{to{opacity:0;transform:translateY(-6px) scale(.97)}}
+
+/* 结算 / 规则 / 传递 */
+.modal{width:100%;max-width:470px}
+.modal h2{font-size:1.2rem;font-weight:800;display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.modal .lead{font-size:.8rem;color:var(--text2);line-height:1.65;margin:8px 0 14px}
+.rules-body{max-height:56vh;overflow-y:auto;padding-right:6px;display:flex;flex-direction:column;gap:11px;
+    scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.rules-body::-webkit-scrollbar{width:4px}
+.rules-body::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+.rule-sec{padding:11px 13px;border-radius:10px;background:rgba(255,255,255,.025);border-left:2px solid var(--gold)}
+.rule-sec h3{font-size:.83rem;font-weight:800;color:var(--gold);margin-bottom:5px}
+.rule-sec p{font-size:.75rem;color:var(--text2);line-height:1.72}
+.rule-sec p+p{margin-top:5px}
+.rule-sec b{color:var(--text);font-weight:700}
+.rule-sec code{font-family:ui-monospace,monospace;font-size:.72rem;padding:1px 4px;border-radius:3px;
+    background:rgba(251,191,36,.13);color:var(--gold)}
+
+.go-result{text-align:center;padding:6px 0 4px}
+.go-crown{font-size:44px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 6px 18px rgba(251,191,36,.4))}
+.go-title{font-size:1.5rem;font-weight:900;margin-bottom:5px;letter-spacing:.02em}
+.go-sub{font-size:.8rem;color:var(--text2);line-height:1.6}
+.go-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 4px}
+.go-stat{padding:10px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.go-stat .k{font-size:.63rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.go-stat .v{font-size:1.06rem;font-weight:800;margin-top:2px}
+
+.pass-badge{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;margin:2px auto 14px;
+    font-size:26px;font-weight:900;color:#fff;box-shadow:0 10px 30px -8px currentColor}
+.pass-text{text-align:center;font-size:1rem;font-weight:800;margin-bottom:4px}
+.pass-sub{text-align:center;font-size:.76rem;color:var(--text2);line-height:1.6}
+
 /* 响应式 */
-@media(max-width:780px){
-    .main-area{flex-direction:column}
-    .log-panel{width:100%;max-height:120px}
-    .canvas-wrap{min-width:auto}
-    .unit-panel{flex-direction:column;align-items:stretch}
-    .btn-end-turn{margin-left:0}
+@media (max-width:1080px){
+    .main{grid-template-columns:170px minmax(0,1fr)}
+    .logbox{grid-column:1/-1}
+    #logList{max-height:150px}
+}
+@media (max-width:820px){
+    #game{padding:8px;gap:7px}
+    .main{grid-template-columns:minmax(0,1fr);gap:8px}
+    .roster{flex-direction:row;overflow-x:auto;padding-bottom:2px;gap:6px;
+        scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .roster::-webkit-scrollbar{display:none}
+    .roster-title{display:none}
+    .unit-card{flex:0 0 128px;padding:8px}
+    .hud{grid-template-columns:1fr 1fr;grid-template-areas:"p1 p2" "mid mid";gap:7px}
+    .hud-side.left{grid-area:p1}.hud-side.right{grid-area:p2}
+    .hud-mid{grid-area:mid;flex-direction:row;gap:14px;padding:6px 10px;min-width:0}
+    .hud-mid .hud-phase{font-size:.88rem}
+    .hud-emblem{width:32px;height:32px;border-radius:9px;font-size:13px}
+    .hud-stats{gap:8px;font-size:.68rem}
+    .hud-stats b{font-size:.8rem}
+    .actions{gap:5px}
+    .act{padding:8px 11px;font-size:.72rem}
+    .act.primary{padding:8px 16px}
+    .act .kbd{display:none}
+    .brand h1{font-size:1.2rem}
+    .panel{padding:20px 17px 17px;border-radius:18px}
+    .mode-card .mc-desc{display:none}
+}
+@media (max-width:420px){
+    .hud-stats .up,.hud-stats .down{display:none}
+    .hud-name .tag{display:none}
+    .unit-card{flex:0 0 116px}
+    .uc-abi{font-size:.56rem}
+}
+@media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
 </style>
 </head>
 <body>
 
-<!-- 设置弹窗 -->
-<div class="setup-overlay" id="setupScreen">
-    <div class="setup-box">
-        <h1>⚗️ 化境争霸</h1>
-        <p class="subtitle">Chemical Territory Conquest</p>
-
-        <div class="setup-section">
-            <div class="setup-label">🎮 对战模式</div>
-            <div class="setup-options">
-                <button class="setup-opt" data-key="vsAI" data-val="false">🧑‍🤝‍🧑 PvP 对战</button>
-                <button class="setup-opt selected" data-key="vsAI" data-val="true">🤖 PvAI 对战</button>
-            </div>
-        </div>
-
-        <div class="setup-section">
-            <div class="setup-label">🧪 化学模式</div>
-            <div class="setup-options">
-                <button class="setup-opt selected" data-key="mode" data-val="acid-base">🧪 酸碱模式</button>
-                <button class="setup-opt" data-key="mode" data-val="electrochem">⚡ 电化学</button>
-                <button class="setup-opt" data-key="mode" data-val="element">⚛️ 元素争霸</button>
-            </div>
-        </div>
-
-        <div class="setup-section" id="aiSection">
-            <div class="setup-label">🧠 AI 难度</div>
-            <div class="setup-options">
-                <button class="setup-opt" data-key="aiDiff" data-val="easy">🟢 简单</button>
-                <button class="setup-opt selected" data-key="aiDiff" data-val="medium">🟡 中等</button>
-                <button class="setup-opt" data-key="aiDiff" data-val="hard">🔴 困难</button>
-            </div>
-        </div>
-
-        <div class="setup-section">
-            <label class="setup-toggle">
-                <input type="checkbox" id="passToggle" checked>
-                PvP回合切换遮罩（防偷看）
-            </label>
-        </div>
-
-        <div style="display:flex;gap:0.5rem;margin-top:1.5rem">
-            <button class="setup-start" id="btnStart" style="flex:1;margin-top:0">⚗️ 开始征服</button>
-            <button class="setup-rule-btn" id="btnRules">📖 规则</button>
-        </div>
+<!-- ==================== 设置 ==================== -->
+<div class="overlay show" id="setupScreen">
+  <div class="panel">
+    <div class="brand">
+      <div class="brand-mark">⚗️</div>
+      <div>
+        <h1>化境争霸</h1>
+        <div class="sub">Chemical Territory Conquest</div>
+      </div>
     </div>
+    <div class="intro">
+      在六边形战场上用真实的化学势力争夺领地。<br>
+      部署单位扩张疆域，相邻的敌对单位会自发<b>反应</b>，胜者吞并对方领地；
+      存活单位继续<b>同化</b>周围格子。占领敌方<b>首都</b>或掌控 60% 领地即可获胜。
+    </div>
+
+    <div class="field">
+      <div class="field-label"><i></i>对战模式</div>
+      <div class="mode-grid" id="modeGrid"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label"><i></i>对手</div>
+      <div class="seg" id="oppSeg">
+        <button data-vs="true" class="on">🤖 人机对战</button>
+        <button data-vs="false">👥 双人同屏</button>
+      </div>
+    </div>
+
+    <div class="field" id="diffField">
+      <div class="field-label"><i></i>AI 强度</div>
+      <div class="seg" id="diffSeg">
+        <button data-diff="easy">简单</button>
+        <button data-diff="medium" class="on">中等</button>
+        <button data-diff="hard">困难</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="checkline">
+        <input type="checkbox" id="passToggle" checked>
+        <span>双人模式显示「传递设备」遮挡页</span>
+      </label>
+      <div class="hint-sm">双人同屏时避免对方看到你的部署思路。</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnRules">📖 规则</button>
+      <button class="btn btn-primary" id="btnStart">开始争霸 →</button>
+    </div>
+    <div class="btn-row" id="resumeRow" style="display:none;margin-top:9px">
+      <button class="btn btn-ghost" id="btnResume">⏱ 继续上局</button>
+    </div>
+  </div>
 </div>
 
-<!-- 规则弹窗 -->
-<div class="rules-overlay" id="rulesScreen">
-    <div class="rules-box">
-        <h2>📖 化境争霸 · 规则说明</h2>
-
-        <h3>🎯 胜利条件</h3>
-        <p>满足以下任一条件即获胜：</p>
-        <ul>
-            <li><b>占领过半</b>：控制超过 61 个六边形格子（全场121格的半数以上）</li>
-            <li><b>首都陷落</b>：攻陷对方首都（左上角红方首都、右下角蓝方首都）</li>
-        </ul>
-
-        <h3>🔵 回合流程</h3>
-        <p>每回合分为三个阶段：</p>
-        <ul>
-            <li><b>资源阶段</b>：每格+2资源，首都+3，极端pH/电势格额外产出。<b>每个驻军单位消耗1资源/回合维护费</b></li>
-            <li><b>部署阶段</b>：从底部面板选择单位，点击己方领地或接壤中立格部署。每回合最多部署2次，也可直接结束</li>
-            <li><b>反应阶段</b>：自动检测所有相邻的敌对单位对，按化学规则结算胜负</li>
-        </ul>
-
-        <h3>🧪 酸碱模式</h3>
-        <ul>
-            <li>酸方（红）部署酸单位，碱方（蓝）部署碱单位</li>
-            <li>相邻敌对单位触发中和反应：有效力量 = 基础power + |pH-7|×0.5</li>
-            <li>每个格有pH值(0-14)，被酸占领降pH，被碱占领升pH</li>
-            <li><b>pH=7的格子自动归为灰色中立</b></li>
-        </ul>
-
-        <h3>⚡ 电化学模式</h3>
-        <ul>
-            <li>阳极（橙）vs 阴极（青），比较 基础power + |potential|</li>
-            <li>每个格有电势值，占领后电势朝己方方向</li>
-        </ul>
-
-        <h3>⚛️ 元素争霸</h3>
-        <ul>
-            <li>碱金属（红）vs 卤素（绿），反应查元素反应表</li>
-            <li>随机散布野元素格(C/O/N/惰性气体)，提供地形加成或减益</li>
-        </ul>
-
-        <h3>🧠 AI难度</h3>
-        <ul>
-            <li><b>简单</b>：随机选择合法落子</li>
-            <li><b>中等</b>：贪心算法，选当前收益最高的位置</li>
-            <li><b>困难</b>：2层minimax，预判你的回应后选最优</li>
-        </ul>
-
-        <button class="rules-close" id="btnRulesClose">关闭</button>
-    </div>
-</div>
-
-<!-- 游戏容器 -->
-<div class="game-container" id="gameContainer">
-    <div class="header">
-        <div class="title">⚗️ 化境争霸</div>
-        <span class="mode-badge" id="modeBadge">酸碱模式</span>
-        <div class="info">
-            <span>回合 <b id="turnNum">1</b></span>
-            <span style="color:var(--p1)">⚡ <b class="res" id="resP1">50</b></span>
-            <span style="color:var(--p2)">⚡ <b class="res" id="resP2">50</b></span>
+<!-- ==================== 游戏 ==================== -->
+<div id="game">
+  <div class="hud">
+    <div class="hud-side left" id="hudP1">
+      <div class="hud-emblem" id="emP1">酸</div>
+      <div class="hud-info">
+        <div class="hud-name"><span id="nmP1">酸方</span><span class="tag" id="tagP1">先手</span></div>
+        <div class="hud-stats">
+          <span>⚡ <b id="resP1" class="mono">0</b> <span id="incP1" class="up"></span></span>
+          <span>🗺 <b id="terP1" class="mono">0</b></span>
         </div>
-        <button class="go-btn secondary" onclick="location.reload()" style="font-size:0.7rem">↩ 菜单</button>
+        <div class="cap-bar" id="capP1"></div>
+      </div>
     </div>
-    <div class="main-area">
-        <div class="log-panel" id="logPanel"></div>
-        <div class="canvas-wrap">
-            <canvas id="hexCanvas" width="680" height="580"></canvas>
+
+    <div class="hud-mid">
+      <div class="hud-turn" id="hudTurn">第 1 回合</div>
+      <div class="hud-phase" id="hudPhase">部署阶段</div>
+      <div class="hud-deploy" id="hudDeploy">部署 <b>0/2</b></div>
+    </div>
+
+    <div class="hud-side right" id="hudP2">
+      <div class="hud-emblem" id="emP2">碱</div>
+      <div class="hud-info">
+        <div class="hud-name"><span id="nmP2">碱方</span><span class="tag" id="tagP2">后手</span></div>
+        <div class="hud-stats">
+          <span>⚡ <b id="resP2" class="mono">0</b> <span id="incP2" class="up"></span></span>
+          <span>🗺 <b id="terP2" class="mono">0</b></span>
         </div>
+        <div class="cap-bar" id="capP2"></div>
+      </div>
     </div>
-    <div class="unit-panel" id="unitPanel"></div>
+  </div>
+
+  <div class="main">
+    <div class="roster" id="roster"></div>
+
+    <div class="board-wrap">
+      <canvas id="board" width="700" height="700"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="logbox">
+      <div class="log-head"><span>战报</span><button id="btnClearLog">清空</button></div>
+      <div id="logList"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="act icon" id="btnUndo" title="撤销本次部署">↶ 撤销</button>
+    <button class="act primary" id="btnEnd">结束部署 <span class="kbd">Space</span></button>
+    <button class="act icon" id="btnSound" title="音效开关">🔊</button>
+    <button class="act icon" id="btnRules2" title="规则">📖</button>
+    <button class="act icon" id="btnRestart" title="重开">⟲</button>
+  </div>
 </div>
 
-<!-- 传递遮罩 -->
-<div class="pass-overlay" id="passScreen">
-    <div class="pass-box">
-        <h2 id="passTitle">请将设备交给</h2>
-        <p>不要让对手看到你的资源</p>
-        <button class="pass-btn" id="passBtn">✅ 准备好了</button>
+<div id="toasts"></div>
+
+<!-- ==================== 规则 ==================== -->
+<div class="overlay" id="rulesScreen">
+  <div class="panel modal">
+    <h2>📖 作战手册</h2>
+    <div class="rules-body">
+      <div class="rule-sec">
+        <h3>目标</h3>
+        <p>占领敌方<b>首都</b>（棋盘对角的高亮格），或在任一回合结束时掌控 <b>60%</b> 以上的格子。</p>
+        <p>若打满 <b>30 回合</b>，领地更多的一方获胜。</p>
+      </div>
+      <div class="rule-sec">
+        <h3>回合流程</h3>
+        <p><b>① 补给</b>：按领地自动获得资源，每个单位需要 1 资源维护费。</p>
+        <p><b>② 部署</b>：每回合最多部署 2 个单位，只能放在自己的领地，或与自己领地相邻的中立格。</p>
+        <p><b>③ 反应</b>：所有相邻的敌对单位同时交战，按战力从高到低结算，胜者吞并对方格子。</p>
+        <p><b>④ 同化</b>：存活的单位把相邻的敌方/中立<b>空地</b>转化为自己的领土（不会直接杀人）。</p>
+      </div>
+      <div class="rule-sec">
+        <h3>战力计算</h3>
+        <p>战力 = 单位基础战力 + 环境加成（见下方模式）+ 驻防加成（在本方领地作战 +0.5）。</p>
+        <p>平局则双方<b>同归于尽</b>，该格归属中立——这是防守方以弱换强的机会。</p>
+      </div>
+      <div class="rule-sec">
+        <h3>单位特性</h3>
+        <p><b>扩张</b>（一阶）：部署时立刻同化 1 格相邻中立地。</p>
+        <p><b>缓冲</b>（二阶）：无视对方的环境加成，擅长守土。</p>
+        <p><b>中和</b>（三阶）：击杀敌人时，连带转化目标身旁 1 格。</p>
+        <p><b>氧化</b>（四阶）：同化范围 +1。</p>
+        <p><b>强蚀</b>（五阶）：同化范围 ×2，并无视对方「缓冲」。</p>
+      </div>
+      <div class="rule-sec">
+        <h3>三种模式</h3>
+        <p><b>酸碱中和</b>：每格有 pH（0–14）。pH 离 7 越远，驻守单位战力越高（最多 +3）。pH=7 的格子会恢复中立。</p>
+        <p><b>电化学</b>：每格有电势。电势绝对值越高，驻守单位战力加成越多。</p>
+        <p><b>元素争霸</b>：场上散布野元素格，站在本族亲和元素上获得 +2 战力，拮抗元素 −2。</p>
+      </div>
+      <div class="rule-sec">
+        <h3>操作</h3>
+        <p>点单位卡选中 → 点棋盘高亮格部署。快捷键：<code>1–5</code> 选单位、<code>Space</code> 结束部署、<code>Esc</code> 取消选中、<code>Ctrl+Z</code> 撤销。</p>
+      </div>
     </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnRulesClose">明白了</button>
+    </div>
+  </div>
 </div>
 
-<!-- Game Over -->
-<div class="go-overlay" id="goScreen">
-    <div class="go-box">
-        <div class="go-emoji" id="goEmoji">🏆</div>
-        <h2 id="goTitle">获胜！</h2>
-        <div class="go-detail" id="goDetail"></div>
-        <button class="go-btn primary" onclick="location.reload()">🔄 再来一局</button>
-        <button class="go-btn secondary" onclick="startScreen()">🏠 返回菜单</button>
+<!-- ==================== 传递设备 ==================== -->
+<div class="overlay dim" id="passScreen">
+  <div class="panel modal" style="text-align:center">
+    <div class="pass-badge" id="passBadge">→</div>
+    <div class="pass-text" id="passText">请将设备交给对方</div>
+    <div class="pass-sub">对方已部署完毕，把屏幕递过去再继续。</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnPassGo">我是对方，继续 →</button>
     </div>
+  </div>
+</div>
+
+<!-- ==================== 结算 ==================== -->
+<div class="overlay dim" id="goScreen">
+  <div class="panel modal">
+    <div class="go-result">
+      <div class="go-crown" id="goCrown">🏆</div>
+      <div class="go-title" id="goTitle">胜利</div>
+      <div class="go-sub" id="goSub">你用化学的力量统一了战场。</div>
+    </div>
+    <div class="go-stats" id="goStats"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnGoSetup">← 返回设置</button>
+      <button class="btn btn-primary" id="btnGoAgain">再来一局</button>
+    </div>
+  </div>
 </div>
 
 <script>
 (function(){
-// ==================== 设置系统 ====================
-const settings = { vsAI: true, mode: 'acid-base', aiDiff: 'medium', passScreen: true };
+'use strict';
 
-function initSetup() {
-    document.querySelectorAll('.setup-opt').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const parent = this.parentElement;
-            parent.querySelectorAll('.setup-opt').forEach(b => b.classList.remove('selected'));
-            this.classList.add('selected');
-            settings[this.dataset.key] = this.dataset.val === 'true' ? true :
-                this.dataset.val === 'false' ? false : this.dataset.val;
-            // 切换PvP/PvAI时显示/隐藏AI难度
-            if (this.dataset.key === 'vsAI') {
-                document.getElementById('aiSection').style.display = settings.vsAI ? '' : 'none';
-            }
+/* ============================================================
+   0. 工具
+   ============================================================ */
+const $  = s => document.querySelector(s);
+const clamp = (v,a,b) => v<a?a:(v>b?b:v);
+const rnd = n => Math.floor(Math.random()*n);
+const now = () => performance.now();
+
+/* ============================================================
+   1. 配置 & 模式
+   ============================================================ */
+const COLS = 11, ROWS = 11;
+const START_RES = 60;
+const MAX_DEPLOY = 2;
+const WIN_RATIO = 0.60;
+const TURN_LIMIT = 30;
+const SAVE_KEY = 'ct.save.v2';
+const SOUND_KEY = 'ct.sound';
+
+function unit(id,name,formula,cost,power,ability,abilityName,abilityDesc,ico){
+    return {id,name,formula,cost,power,ability,abilityName,abilityDesc,ico};
+}
+
+const MODES = {
+    'acid-base': {
+        key:'acid-base', label:'酸碱中和', ico:'⚗️', desc:'pH 梯度决定战力',
+        badge:'酸碱模式',
+        capLabels:['酸','碱'],
+        sides:[
+            {name:'酸方', color:'#f43f5e', light:'#fda4af', glyph:'酸',
+             units:[
+                unit('H2CO3','碳酸','H₂CO₃',10,1,'expand','扩张','部署时同化 1 格中立地','🧪'),
+                unit('HAc','醋酸','CH₃COOH',16,2,'buffer','缓冲','无视对方环境加成','🧪'),
+                unit('HCl','盐酸','HCl',24,3,'neutralize','中和','击杀后连带转化 1 格','🧪'),
+                unit('HNO3','硝酸','HNO₃',34,4,'oxidize','氧化','同化范围 +1','🧪'),
+                unit('H2SO4','硫酸','H₂SO₄',46,5,'corrode','强蚀','同化 ×2，破缓冲','🧪'),
+             ]},
+            {name:'碱方', color:'#3b82f6', light:'#93c5fd', glyph:'碱',
+             units:[
+                unit('Na2CO3','碳酸钠','Na₂CO₃',10,1,'expand','扩张','部署时同化 1 格中立地','⚪'),
+                unit('NH3','氨水','NH₃·H₂O',16,2,'buffer','缓冲','无视对方环境加成','💨'),
+                unit('NaOH','氢氧化钠','NaOH',24,3,'neutralize','中和','击杀后连带转化 1 格','⚪'),
+                unit('CaOH2','氢氧化钙','Ca(OH)₂',34,4,'oxidize','氧化','同化范围 +1','⚪'),
+                unit('KOH','氢氧化钾','KOH',46,5,'corrode','强蚀','同化 ×2，破缓冲','⚪'),
+             ]},
+        ],
+        metric:'ph', metricName:'pH',
+        // 环境加成
+        envBonus(h){ return Math.min(3, Math.abs((h.ph==null?7:h.ph)-7) * 0.5); },
+        envText(h){ const p = h.ph==null?7:h.ph; return 'pH '+p.toFixed(1); },
+        phOf(owner){ return owner===1?3:(owner===2?11:7); },
+        // 部署后把该格 pH 拉向自己一侧
+        nudge(h, owner){
+            const target = owner===1?1:13;
+            h.ph = clamp((h.ph==null?7:h.ph) + (owner===1?-2:2), 0, 14);
+            if (Math.abs(h.ph-7) < 0.4) h.ph = target===1?3:11;
+        },
+        neutralized(h){ return h.ph!=null && Math.abs(h.ph-7) < 0.6; },
+        tint(h){ // 单元格底色（按 pH）
+            const p = clamp(h.ph==null?7:h.ph, 0, 14);
+            const t = p/14;
+            const r = Math.round(244 - t*185), g = Math.round(63 + t*66), b = Math.round(94 + t*152);
+            return `rgba(${r},${g},${b},`;
+        },
+        legendBar:'linear-gradient(90deg,#ef4444,#f59e0b,#22c55e,#06b6d4,#3b82f6)',
+        legend:[['pH 0–3 强酸',   '#ef4444'],['pH 4–6 弱酸','#f59e0b'],
+                ['pH 7 中性',    '#22c55e'],['pH 8–10 弱碱','#06b6d4'],['pH 11–14 强碱','#3b82f6']],
+    },
+
+    'electrochem': {
+        key:'electrochem', label:'电化学', ico:'⚡', desc:'电势差决定战力',
+        badge:'电化学模式',
+        capLabels:['阳','阴'],
+        sides:[
+            {name:'阳极', color:'#fb923c', light:'#fdba74', glyph:'阳',
+             units:[
+                unit('Fe','铁','Fe',10,1,'expand','扩张','部署时同化 1 格中立地','🔶'),
+                unit('Zn','锌','Zn',16,2,'buffer','缓冲','无视对方环境加成','🔶'),
+                unit('Al','铝','Al',24,3,'neutralize','中和','击杀后连带转化 1 格','🔶'),
+                unit('Mg','镁','Mg',34,4,'oxidize','氧化','同化范围 +1','🔶'),
+                unit('Li','锂','Li',46,5,'corrode','强蚀','同化 ×2，破缓冲','🔶'),
+             ]},
+            {name:'阴极', color:'#22d3ee', light:'#a5f3fc', glyph:'阴',
+             units:[
+                unit('C','石墨','C',10,1,'expand','扩张','部署时同化 1 格中立地','🔵'),
+                unit('Cu','铜','Cu',16,2,'buffer','缓冲','无视对方环境加成','🔵'),
+                unit('Ag','银','Ag',24,3,'neutralize','中和','击杀后连带转化 1 格','🔵'),
+                unit('Pt','铂','Pt',34,4,'oxidize','氧化','同化范围 +1','🔵'),
+                unit('Au','金','Au',46,5,'corrode','强蚀','同化 ×2，破缓冲','🔵'),
+             ]},
+        ],
+        metric:'potential', metricName:'电势',
+        envBonus(h){ return Math.min(3, Math.abs(h.potential||0)); },
+        envText(h){ const p = h.potential||0; return 'E '+ (p>0?'+':'') + p.toFixed(1) + 'V'; },
+        nudge(h, owner){
+            h.potential = clamp((h.potential||0) + (owner===1?0.6:-0.6), -2, 2);
+        },
+        neutralized(h){ return Math.abs(h.potential||0) < 0.15; },
+        tint(h){
+            const t = (clamp(h.potential||0,-2,2)+2)/4;
+            const r = Math.round(251 - t*192), g = Math.round(146 - t*35), b = Math.round(60 + t*178);
+            return `rgba(${r},${g},${b},`;
+        },
+        legendBar:'linear-gradient(90deg,#fb923c,#fbbf24,#94a3b8,#67e8f9,#22d3ee)',
+        legend:[['−2V 强还原','#fb923c'],['0V 中性','#94a3b8'],['+2V 强氧化','#22d3ee']],
+    },
+
+    'element': {
+        key:'element', label:'元素争霸', ico:'🔬', desc:'野元素亲和加成',
+        badge:'元素模式',
+        capLabels:['碱','卤'],
+        sides:[
+            {name:'碱金属', color:'#f43f5e', light:'#fda4af', glyph:'碱',
+             units:[
+                unit('Li','锂','Li',10,1,'expand','扩张','部署时同化 1 格中立地','🔴'),
+                unit('Na','钠','Na',16,2,'buffer','缓冲','无视对方环境加成','🔴'),
+                unit('K','钾','K',24,3,'neutralize','中和','击杀后连带转化 1 格','🔴'),
+                unit('Rb','铷','Rb',34,4,'oxidize','氧化','同化范围 +1','🔴'),
+                unit('Cs','铯','Cs',46,5,'corrode','强蚀','同化 ×2，破缓冲','🔴'),
+             ]},
+            {name:'卤素', color:'#22c55e', light:'#86efac', glyph:'卤',
+             units:[
+                unit('I','碘','I₂',10,1,'expand','扩张','部署时同化 1 格中立地','🟢'),
+                unit('Br','溴','Br₂',16,2,'buffer','缓冲','无视对方环境加成','🟢'),
+                unit('Cl','氯','Cl₂',24,3,'neutralize','中和','击杀后连带转化 1 格','🟢'),
+                unit('F','氟','F₂',34,4,'oxidize','氧化','同化范围 +1','🟢'),
+                unit('At','砹','At₂',46,5,'corrode','强蚀','同化 ×2，破缓冲','🟢'),
+             ]},
+        ],
+        metric:'wildElement', metricName:'野元素',
+        envBonus(h){
+            if (!h.wildElement) return 0;
+            const good = (h.owner===1 && ['Li','Na','K'].includes(h.wildElement)) ||
+                         (h.owner===2 && ['F','Cl','Br'].includes(h.wildElement));
+            const bad  = (h.owner===1 && ['F','Cl','Br'].includes(h.wildElement)) ||
+                         (h.owner===2 && ['Li','Na','K'].includes(h.wildElement));
+            return good ? 2 : (bad ? -2 : 0);
+        },
+        envText(h){ return h.wildElement ? h.wildElement : '—'; },
+        nudge(h){ if (h.wildElement && Math.random()<0.35) h.wildElement = null; },
+        neutralized(){ return false; },
+        tint(h){
+            if (!h.wildElement) return 'rgba(148,163,184,';
+            return h.wildElement==='Li'||h.wildElement==='Na'||h.wildElement==='K'
+                ? 'rgba(244,63,94,' : 'rgba(34,197,94,';
+        },
+        legendBar:'linear-gradient(90deg,#f43f5e,#a855f7,#22c55e)',
+        legend:[['碱金属格','#f43f5e'],['惰性/其他','#94a3b8'],['卤素格','#22c55e']],
+    },
+};
+
+const WILD_POOL = ['Li','Na','K','F','Cl','Br','He','Ne','Ar','C','O','S','Fe','Si'];
+
+/* ============================================================
+   2. 六边形数学
+   ============================================================ */
+const SQRT3 = Math.sqrt(3);
+let HEX_R = 26, HEX_W = SQRT3*26, PAD = 10;
+
+function axialToPixel(col,row){
+    const x = HEX_W * (col + 0.5*(row&1)) + HEX_W/2 + PAD;
+    const y = HEX_R * 1.5 * row + HEX_R + PAD;
+    return {x,y};
+}
+function pixelToHex(px,py){
+    const q = (SQRT3/3*(px-PAD-HEX_W/2) - 1/3*(py-PAD-HEX_R)) / HEX_R;
+    const r = (2/3*(py-PAD-HEX_R)) / HEX_R;
+    return roundAxial(q,r);
+}
+function roundAxial(q,r){
+    const s = -q-r;
+    let rq=Math.round(q), rr=Math.round(r), rs=Math.round(s);
+    const dq=Math.abs(rq-q), dr=Math.abs(rr-r), ds=Math.abs(rs-s);
+    if (dq>dr && dq>ds) rq=-rr-rs; else if (dr>ds) rr=-rq-rs;
+    return {col: rq + (rr - (rr&1))/2, row: rr};
+}
+function neighbors(col,row){
+    const p = row & 1;
+    const list = [
+        {col:col+1,row},{col:col+p,row:row-1},{col:col-1+p,row:row-1},
+        {col:col-1,row},{col:col-1+p,row:row+1},{col:col+p,row:row+1},
+    ];
+    return list.filter(n => n.col>=0 && n.col<COLS && n.row>=0 && n.row<ROWS);
+}
+function hexDist(c1,r1,c2,r2){
+    const a1 = c1 - (r1-(r1&1))/2, a2 = c2 - (r2-(r2&1))/2;
+    const dq = a1-a2, dr = r1-r2;
+    return (Math.abs(dq)+Math.abs(dr)+Math.abs(dq+dr))/2;
+}
+
+/* ============================================================
+   3. 状态
+   ============================================================ */
+let G = null;
+
+/* 对局内的异步定时器统一托管：重开/回菜单时一并清理，避免回调打到已清空的 G 上 */
+const GAME_TIMERS = new Set();
+function gset(fn, ms){
+    const id = setTimeout(()=>{ GAME_TIMERS.delete(id); fn(); }, ms);
+    GAME_TIMERS.add(id);
+    return id;
+}
+function clearGameTimers(){
+    GAME_TIMERS.forEach(id=>clearTimeout(id));
+    GAME_TIMERS.clear();
+}
+const UI = {
+    mode: 'acid-base', vsAI: true, diff: 'medium', pass: true,
+    sel: -1, hover: null, legal: new Set(),
+    fx: [], shake: 0, flash: null,
+    sound: true, raf: 0, dirty: true,
+    logSeq: 0,
+};
+
+function newGame(modeKey, vsAI, diff, pass){
+    const M = MODES[modeKey];
+    G = {
+        mode: modeKey, vsAI, diff, pass,
+        hexes: [], cur: 1, turn: 1, phase:'deploy',
+        deployed: 0, over:false, winner:0, reason:'',
+        players:[
+            {res:START_RES, captured:0, kills:0, lost:0},
+            {res:START_RES, captured:0, kills:0, lost:0},
+        ],
+        undo: [], log: [],
+        firstBlood: false,
+    };
+    // 棋盘
+    for (let r=0;r<ROWS;r++){
+        G.hexes[r] = [];
+        for (let c=0;c<COLS;c++){
+            G.hexes[r][c] = {col:c,row:r,owner:0,unit:null,ph:7,potential:0,wildElement:null,cap:0};
+        }
+    }
+    // 首都
+    const caps = [{c:2,r:2},{c:8,r:8}];
+    caps.forEach((p,i)=>{
+        const owner = i+1;
+        const h = G.hexes[p.r][p.c];
+        h.owner = owner; h.cap = owner;
+        h.ph = M.phOf ? M.phOf(owner) : 7;
+        h.potential = owner===1 ? 1.2 : -1.2;
+        // 周边 2 格也归本方
+        neighbors(p.c,p.r).slice(0,2).forEach(n=>{
+            const nh = G.hexes[n.row][n.col];
+            if (nh.owner===0){ nh.owner=owner; nh.ph = M.phOf?M.phOf(owner):7;
+                nh.potential = owner===1?1.2:-1.2; }
         });
     });
-    document.getElementById('passToggle').addEventListener('change', function() {
-        settings.passScreen = this.checked;
-    });
-    document.getElementById('btnRules').addEventListener('click', function() {
-        document.getElementById('rulesScreen').classList.add('show');
-    });
-    document.getElementById('btnRulesClose').addEventListener('click', function() {
-        document.getElementById('rulesScreen').classList.remove('show');
-    });
-    document.getElementById('rulesScreen').addEventListener('click', function(e) {
-        if (e.target === this) this.classList.remove('show');
-    });
-}
-
-window.startScreen = function() {
-    document.getElementById('setupScreen').style.display = 'flex';
-    document.getElementById('gameContainer').style.display = 'none';
-    document.getElementById('goScreen').classList.remove('show');
-    document.getElementById('passScreen').classList.remove('show');
-};
-
-// ==================== 六边形数学 ====================
-const SQRT3 = Math.sqrt(3);
-const HEX_R = 24;           // 六边形半径
-const COLS = 11, ROWS = 11;
-const CX_OFF = 50, CY_OFF = 50;
-
-// 偏移坐标 -> 像素(尖顶六边形)
-function hexToPixel(col, row) {
-    const x = HEX_R * (SQRT3 * col + SQRT3/2 * (row & 1)) + CX_OFF + HEX_R;
-    const y = HEX_R * (1.5 * row) + CY_OFF + HEX_R;
-    return { x, y };
-}
-
-// 像素 -> 偏移坐标
-function pixelToHex(px, py) {
-    const q = (SQRT3/3 * (px - CX_OFF - HEX_R) - 1/3 * (py - CY_OFF - HEX_R)) / HEX_R;
-    const r = (2/3 * (py - CY_OFF - HEX_R)) / HEX_R;
-    return cubeRound(q, r);
-}
-
-function cubeRound(q, r) {
-    const s = -q - r;
-    let rq = Math.round(q), rr = Math.round(r), rs = Math.round(s);
-    const dq = Math.abs(rq - q), dr = Math.abs(rr - r), ds = Math.abs(rs - s);
-    if (dq > dr && dq > ds) rq = -rr - rs;
-    else if (dr > ds) rr = -rq - rs;
-    return { q: rq, r: rr };
-}
-
-function cubeToOffset(q, r) {
-    return { col: q + Math.floor(r / 2), row: r };
-}
-
-function offsetToCube(col, row) {
-    return { q: col - Math.floor(row / 2), r: row };
-}
-
-// 偏移坐标的6个邻居
-function getNeighbors(col, row) {
-    const parity = row & 1;
-    return [
-        { col: col + 1, row: row },
-        { col: col + parity, row: row - 1 },
-        { col: col - 1 + parity, row: row - 1 },
-        { col: col - 1, row: row },
-        { col: col - 1 + parity, row: row + 1 },
-        { col: col + parity, row: row + 1 },
-    ].filter(n => n.col >= 0 && n.col < COLS && n.row >= 0 && n.row < ROWS);
-}
-
-// ==================== 游戏状态 ====================
-const G = {
-    mode: 'acid-base',
-    vsAI: true,
-    aiDiff: 'medium',
-    passScreen: true,
-    hexes: [],          // hexes[row][col]
-    players: [
-        { id:1, name:'酸方', color:'#ef4444', colorBg:'#3b1520', resources:50, colorLight:'#fca5a5' },
-        { id:2, name:'碱方', color:'#3b82f6', colorBg:'#15203b', resources:50, colorLight:'#93c5fd' },
-    ],
-    currentPlayer: 1,
-    turn: 1,
-    phase: 'deploy',        // deploy | reaction | resource
-    deploymentsThisTurn: 0,
-    maxDeploy: 2,
-    selectedUnit: null,
-    hoveredHex: null,
-    gameOver: false,
-    winner: null,
-    log: [],
-    unitIdCounter: 0,
-};
-
-// 初始化棋盘
-function initHexGrid() {
-    G.hexes = [];
-    for (let row = 0; row < ROWS; row++) {
-        G.hexes[row] = [];
-        for (let col = 0; col < COLS; col++) {
-            G.hexes[row][col] = {
-                col, row,
-                owner: 0,
-                unit: null,
-                ph: 7,
-                potential: 0,
-                wildElement: null,
-            };
+    // 元素模式撒野元素
+    if (modeKey==='element'){
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+            const h=G.hexes[r][c];
+            if (h.owner===0 && Math.random()<0.22) h.wildElement = WILD_POOL[rnd(WILD_POOL.length)];
         }
     }
-    // P1首都：左上角
-    setHex(1, 2, 1);
-    setHex(2, 1, 1);
-    setHex(2, 2, 1);
-    getHex(2, 2).isCapital = true;
-    // P2首都：右下角
-    setHex(8, 8, 2);
-    setHex(9, 7, 2);
-    setHex(9, 9, 2);
-    getHex(9, 9).isCapital = true;
-    // 元素争霸：随机散布野元素
-    if (G.mode === 'element') {
-        const wilds = ['C','O','N','S','Fe','Si','P','He','Ne','Ar'];
-        for (let row = 0; row < ROWS; row++) {
-            for (let col = 0; col < COLS; col++) {
-                const h = getHex(col, row);
-                if (h && h.owner === 0 && Math.random() < 0.15) {
-                    h.wildElement = wilds[Math.floor(Math.random() * wilds.length)];
-                }
-            }
-        }
-    }
+    UI.sel = -1; UI.hover = null; UI.fx = []; UI.shake = 0;
+    buildRoster();
+    renderAll();
+    addLog(`⚔️ ${M.label}开局 · ${vsAI?'人机对战':'双人同屏'}`,'turn');
+    addLog(`${M.sides[0].name} 先手，拥有 ${START_RES} 资源`,'sys');
+    saveGame();
+    if (vsAI && G.cur===2) gset(aiTurn, 520);
 }
 
-function getHex(col, row) {
-    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return null;
-    return G.hexes[row][col];
+function getHex(c,r){
+    if (r<0||r>=ROWS||c<0||c>=COLS) return null;
+    return G.hexes[r][c];
 }
-function setHex(col, row, owner) {
-    const h = getHex(col, row);
-    if (h) { h.owner = owner; if (G.mode === 'acid-base') h.ph = owner === 1 ? 3 : (owner === 2 ? 11 : 7); }
+const M = () => MODES[G ? G.mode : 'acid-base'];
+const capPos = owner => owner===1 ? {c:2,r:2} : {c:8,r:8};
+const capHex = owner => getHex(capPos(owner).c, capPos(owner).r);
+
+/* ============================================================
+   4. 战力 / 规则
+   ============================================================ */
+function canDeployAt(hex, pid){
+    if (!hex || hex.unit) return false;
+    if (hex.owner===pid) return true;
+    if (hex.owner!==0) return false;
+    return neighbors(hex.col,hex.row).some(n=>getHex(n.col,n.row).owner===pid);
 }
+function deployCost(unit){ return unit.cost; }
 
-// ==================== 单位数据 ====================
-const MODE_DATA = {
-    'acid-base': {
-        badge: '酸碱模式', badgeClass: 'mode-acid',
-        p1Name: '酸方', p2Name: '碱方',
-        p1Color: '#ef4444', p2Color: '#3b82f6',
-        p1Bg: '#3b1520', p2Bg: '#15203b',
-        p1Units: [
-            { id:'H2CO3', name:'碳酸', formula:'H₂CO₃', cost:10, power:1, emoji:'🧪', desc:'弱酸·廉价扩张' },
-            { id:'HAc', name:'醋酸', formula:'CH₃COOH', cost:18, power:2, emoji:'🧪', desc:'弱酸·性价比' },
-            { id:'HCl', name:'稀盐酸', formula:'HCl', cost:28, power:3, emoji:'🧪', desc:'中强酸·均衡' },
-            { id:'HNO3', name:'稀硝酸', formula:'HNO₃', cost:38, power:4, emoji:'🧪', desc:'强酸·氧化性' },
-            { id:'H2SO4', name:'稀硫酸', formula:'H₂SO₄', cost:48, power:5, emoji:'🧪', desc:'最强酸·脱水性' },
-        ],
-        p2Units: [
-            { id:'Na2CO3', name:'碳酸钠', formula:'Na₂CO₃', cost:10, power:1, emoji:'⚪', desc:'弱碱·廉价扩张' },
-            { id:'NH3', name:'氨水', formula:'NH₃·H₂O', cost:18, power:2, emoji:'💨', desc:'弱碱·性价比' },
-            { id:'NaOH', name:'氢氧化钠', formula:'NaOH', cost:28, power:3, emoji:'⚪', desc:'中强碱·均衡' },
-            { id:'CaOH2', name:'氢氧化钙', formula:'Ca(OH)₂', cost:38, power:4, emoji:'⚪', desc:'强碱·中坚' },
-            { id:'KOH', name:'氢氧化钾', formula:'KOH', cost:48, power:5, emoji:'⚪', desc:'最强碱·腐蚀' },
-        ],
-    },
-    'electrochem': {
-        badge: '电化学模式', badgeClass: 'mode-electro',
-        p1Name: '阳极', p2Name: '阴极',
-        p1Color: '#f97316', p2Color: '#06b6d4',
-        p1Bg: '#3b2010', p2Bg: '#10203b',
-        p1Units: [
-            { id:'Fe', name:'铁', formula:'Fe', cost:10, power:1, emoji:'🔶', desc:'铁阳极·廉价' },
-            { id:'Zn', name:'锌', formula:'Zn', cost:18, power:2, emoji:'🔶', desc:'锌阳极·均衡' },
-            { id:'Al', name:'铝', formula:'Al', cost:28, power:3, emoji:'🔶', desc:'铝阳极·稳定' },
-            { id:'Mg', name:'镁', formula:'Mg', cost:38, power:4, emoji:'🔶', desc:'镁阳极·强力' },
-            { id:'Li', name:'锂', formula:'Li', cost:48, power:5, emoji:'🔶', desc:'锂阳极·最强' },
-        ],
-        p2Units: [
-            { id:'C', name:'石墨', formula:'C', cost:10, power:1, emoji:'🔵', desc:'碳阴极·廉价' },
-            { id:'Cu', name:'铜', formula:'Cu', cost:18, power:2, emoji:'🔵', desc:'铜阴极·均衡' },
-            { id:'Ag', name:'银', formula:'Ag', cost:28, power:3, emoji:'🔵', desc:'银阴极·稳定' },
-            { id:'Pt', name:'铂', formula:'Pt', cost:38, power:4, emoji:'🔵', desc:'铂阴极·催化' },
-            { id:'Au', name:'金', formula:'Au', cost:48, power:5, emoji:'🔵', desc:'金阴极·惰性' },
-        ],
-    },
-    'element': {
-        badge: '元素争霸', badgeClass: 'mode-element',
-        p1Name: '碱金属', p2Name: '卤素',
-        p1Color: '#ef4444', p2Color: '#22c55e',
-        p1Bg: '#3b1520', p2Bg: '#15203b',
-        p1Units: [
-            { id:'Li', name:'锂', formula:'Li', cost:10, power:1, emoji:'🔴', desc:'轻碱金属·廉价' },
-            { id:'Na', name:'钠', formula:'Na', cost:18, power:2, emoji:'🔴', desc:'钠·性价比' },
-            { id:'K', name:'钾', formula:'K', cost:28, power:3, emoji:'🔴', desc:'钾·剧烈' },
-            { id:'Rb', name:'铷', formula:'Rb', cost:38, power:4, emoji:'🔴', desc:'铷·极度活泼' },
-            { id:'Cs', name:'铯', formula:'Cs', cost:48, power:5, emoji:'🔴', desc:'铯·最强碱金属' },
-        ],
-        p2Units: [
-            { id:'I', name:'碘', formula:'I₂', cost:10, power:1, emoji:'🟢', desc:'碘·温和卤素' },
-            { id:'Br', name:'溴', formula:'Br₂', cost:18, power:2, emoji:'🟢', desc:'溴·液态卤素' },
-            { id:'Cl', name:'氯', formula:'Cl₂', cost:28, power:3, emoji:'🟢', desc:'氯·强氧化性' },
-            { id:'F', name:'氟', formula:'F₂', cost:38, power:4, emoji:'🟢', desc:'氟·最强卤素' },
-            { id:'At', name:'砹', formula:'At₂', cost:48, power:5, emoji:'🟢', desc:'砹·稀有卤素' },
-        ],
-    },
-};
+function deploy(hex, unitIdx, pid, silent){
+    const me = G.players[pid-1];
+    const u = M().sides[pid-1].units[unitIdx];
+    if (!u) return false;
+    if (me.res < u.cost){ toast('资源不足：还差 '+(u.cost-me.res)+' ⚡','err'); sfx('err'); return false; }
+    if (!canDeployAt(hex,pid)){ toast('只能部署在自己的领地或相邻中立格','err'); sfx('err'); return false; }
 
-// 元素反应表
-const ELEMENT_REACTIONS = [
-    { a:'Na',b:'Cl',eq:'2Na+Cl₂→2NaCl',saltPower:8 },
-    { a:'Na',b:'Br',eq:'2Na+Br₂→2NaBr',saltPower:7 },
-    { a:'Na',b:'I', eq:'2Na+I₂→2NaI',saltPower:6 },
-    { a:'K', b:'Cl',eq:'2K+Cl₂→2KCl',saltPower:10 },
-    { a:'K', b:'Br',eq:'2K+Br₂→2KBr',saltPower:9 },
-    { a:'K', b:'I', eq:'2K+I₂→2KI',saltPower:8 },
-    { a:'Li',b:'F', eq:'2Li+F₂→2LiF',saltPower:9 },
-    { a:'Li',b:'Cl',eq:'2Li+Cl₂→2LiCl',saltPower:7 },
-    { a:'Li',b:'Br',eq:'2Li+Br₂→2LiBr',saltPower:6 },
-    { a:'Rb',b:'F', eq:'2Rb+F₂→2RbF',saltPower:12 },
-    { a:'Rb',b:'Cl',eq:'2Rb+Cl₂→2RbCl',saltPower:11 },
-    { a:'Rb',b:'Br',eq:'2Rb+Br₂→2RbBr',saltPower:10 },
-    { a:'Cs',b:'F', eq:'2Cs+F₂→2CsF',saltPower:14 },
-    { a:'Cs',b:'Cl',eq:'2Cs+Cl₂→2CsCl',saltPower:13 },
-    { a:'Cs',b:'Br',eq:'2Cs+Br₂→2CsBr',saltPower:12 },
-    { a:'Cs',b:'I', eq:'2Cs+I₂→2CsI',saltPower:10 },
-];
-const EL_RXN_MAP = {};
-ELEMENT_REACTIONS.forEach(r => {
-    const key = [r.a, r.b].sort().join('+');
-    EL_RXN_MAP[key] = r;
-});
-
-// ==================== Canvas 渲染 ====================
-const canvas = document.getElementById('hexCanvas');
-const ctx = canvas.getContext('2d');
-
-function drawCorner(cx, cy, i) {
-    const angle = Math.PI / 180 * (60 * i - 30);
-    return { x: cx + HEX_R * Math.cos(angle), y: cy + HEX_R * Math.sin(angle) };
-}
-
-function drawHexPath(cx, cy) {
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-        const c = drawCorner(cx, cy, i);
-        if (i === 0) ctx.moveTo(c.x, c.y);
-        else ctx.lineTo(c.x, c.y);
-    }
-    ctx.closePath();
-}
-
-function drawBoard() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#060a14';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 绘制所有六边形
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-            const h = getHex(col, row);
-            if (!h) continue;
-            const { x, y } = hexToPixel(col, row);
-            drawHexPath(x, y);
-
-            // 领地填充
-            if (h.owner === 1) {
-                ctx.fillStyle = G.players[0].colorBg;
-                ctx.fill();
-            } else if (h.owner === 2) {
-                ctx.fillStyle = G.players[1].colorBg;
-                ctx.fill();
-            } else {
-                ctx.fillStyle = '#0d1117';
-                ctx.fill();
-            }
-
-            // 边框
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            // 首都高亮
-            if (h.isCapital) {
-                ctx.strokeStyle = h.owner === 1 ? G.players[0].color : (h.owner === 2 ? G.players[1].color : '#fff');
-                ctx.lineWidth = 2;
-                ctx.shadowColor = ctx.strokeStyle;
-                ctx.shadowBlur = 10;
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-                ctx.lineWidth = 1;
-            }
-
-            // 单位
-            if (h.unit) {
-                const p = h.unit.player === 1 ? G.players[0] : G.players[1];
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(x, y - 4, 10, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 10px system-ui';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(h.unit.emoji, x, y - 4);
-                // power
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 7px system-ui';
-                ctx.fillText('P' + h.unit.power, x, y + 8);
-            }
-
-            // 模式特定显示
-            if (G.mode === 'acid-base' && h.owner !== 0) {
-                ctx.fillStyle = h.owner === 1 ? '#fca5a5' : '#93c5fd';
-                ctx.font = '7px system-ui';
-                ctx.fillText('pH' + h.ph, x, y - 13);
-            }
-            if (G.mode === 'electrochem' && h.owner !== 0) {
-                const sign = h.owner === 1 ? '-' : '+';
-                ctx.fillStyle = h.owner === 1 ? '#fdba74' : '#67e8f9';
-                ctx.font = '7px system-ui';
-                ctx.fillText(sign + Math.abs(h.potential || 1), x, y - 13);
-            }
-            if (G.mode === 'element' && h.wildElement) {
-                ctx.fillStyle = '#fbbf24';
-                ctx.font = '7px system-ui';
-                ctx.fillText(h.wildElement, x, y - 13);
-            }
-        }
-    }
-
-    // 悬停高亮
-    if (G.hoveredHex && G.phase === 'deploy') {
-        const hh = G.hoveredHex;
-        const h = getHex(hh.col, hh.row);
-        if (h) {
-            const { x, y } = hexToPixel(hh.col, hh.row);
-            drawHexPath(x, y);
-            ctx.strokeStyle = '#facc15';
-            ctx.lineWidth = 2;
-            ctx.shadowColor = '#facc15';
-            ctx.shadowBlur = 8;
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-        }
-    }
-
-    // 选中单位部署预览
-    if (G.selectedUnit && G.hoveredHex && G.phase === 'deploy') {
-        const h = getHex(G.hoveredHex.col, G.hoveredHex.row);
-        if (h && canDeploy(h, G.currentPlayer)) {
-            const { x, y } = hexToPixel(G.hoveredHex.col, G.hoveredHex.row);
-            ctx.fillStyle = 'rgba(250,204,21,0.3)';
-            drawHexPath(x, y);
-            ctx.fill();
-        }
-    }
-
-    // 回合提示
-    const cp = G.currentPlayer === 1 ? G.players[0] : G.players[1];
-    ctx.fillStyle = cp.color;
-    ctx.font = 'bold 13px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText('▶ ' + cp.name + '的回合 · 选择单位并点击棋盘部署', canvas.width / 2, canvas.height - 8);
-}
-
-// ==================== 游戏逻辑 ====================
-function canDeploy(hex, playerId) {
-    if (!hex) return false;
-    // 格子上已有单位则不能再部署
-    if (hex.unit) return false;
-    // 只能部署在自己的领地或相邻中立格
-    if (hex.owner === playerId) return true;
-    if (hex.owner !== 0) return false;
-    const neighbors = getNeighbors(hex.col, hex.row);
-    return neighbors.some(n => {
-        const nh = getHex(n.col, n.row);
-        return nh && nh.owner === playerId;
+    // 撤销快照
+    G.undo.push({
+        hexes: JSON.parse(JSON.stringify(G.hexes)),
+        res: me.res, deployed: G.deployed, kills: me.kills,
     });
-}
+    if (G.undo.length>6) G.undo.shift();
 
-function deployUnit(col, row, unitType, playerId) {
-    const hex = getHex(col, row);
-    if (!hex || !canDeploy(hex, playerId)) return false;
-    const player = G.players[playerId - 1];
-    if (player.resources < unitType.cost) return false;
-
-    player.resources -= unitType.cost;
-    hex.unit = {
-        player: playerId,
-        typeId: unitType.id,
-        power: unitType.power,
-        emoji: unitType.emoji,
-        name: unitType.name,
-        formula: unitType.formula,
-    };
-    hex.owner = playerId;
-    if (G.mode === 'acid-base') hex.ph = playerId === 1 ? Math.max(0, (hex.ph || 7) - Math.floor(unitType.power/2)) : Math.min(14, (hex.ph || 7) + Math.floor(unitType.power/2));
-    addLog(`${player.name}部署 ${unitType.emoji}${unitType.name}(${unitType.formula}) → ${col},${row}`);
-    G.deploymentsThisTurn++;
-    updateUI();
-    drawBoard();
+    me.res -= u.cost;
+    hex.unit = {player:pid, id:u.id, name:u.name, formula:u.formula, power:u.power, abi:u.ability};
+    hex.owner = pid;
+    M().nudge(hex, pid);
+    G.deployed++;
+    if (!silent){
+        addLog(`▸ ${M().sides[pid-1].name} 部署 ${u.formula} 于 ${hex.col},${hex.row}（−${u.cost}⚡）`);
+        sfx('deploy');
+        pushFx({kind:'pop', c:hex.col, r:hex.row, color:M().sides[pid-1].color, t0:now()});
+    }
+    // 扩张
+    if (u.ability==='expand'){
+        const target = neighbors(hex.col,hex.row)
+            .map(n=>getHex(n.col,n.row))
+            .filter(n=>n && n.owner===0 && !n.unit)[0];
+        if (target){
+            target.owner = pid; M().nudge(target,pid);
+            addLog(`  ↳ 扩张：同化 ${target.col},${target.row}`,'gain');
+            pushFx({kind:'ring', c:target.col, r:target.row, color:M().sides[pid-1].color, t0:now()});
+        }
+    }
+    renderAll(); saveGame();
     return true;
 }
 
-function resolveReactions() {
-    // 收集所有相邻敌对单位对
+function undoDeploy(){
+    if (G.phase!=='deploy') { toast('只能在自己的部署阶段撤销','err'); return; }
+    const snap = G.undo.pop();
+    if (!snap){ toast('没有可撤销的操作','err'); return; }
+    G.hexes = snap.hexes;
+    G.players[G.cur-1].res = snap.res;
+    G.players[G.cur-1].kills = snap.kills;
+    G.deployed = snap.deployed;
+    UI.sel = -1;
+    addLog('↶ 撤销了一次部署','sys');
+    sfx('undo');
+    renderAll(); saveGame();
+}
+
+/* ---------- 反应阶段 ---------- */
+function resolveReactions(){
+    // 收集敌对相邻对
     const pairs = [];
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-            const h = getHex(col, row);
-            if (!h || !h.unit) continue;
-            const neighbors = getNeighbors(col, row);
-            neighbors.forEach(n => {
-                const nh = getHex(n.col, n.row);
-                if (!nh || !nh.unit) return;
-                if (nh.unit.player !== h.unit.player) {
-                    // 避免重复
-                    const key = [col+','+row, n.col+','+n.row].sort().join('|');
-                    if (!pairs.find(p => p.key === key)) {
-                        pairs.push({ key, h1: h, h2: nh, u1: h.unit, u2: nh.unit });
-                    }
-                }
-            });
+    const seen = new Set();
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = getHex(c,r);
+        if (!h.unit) continue;
+        for (const n of neighbors(c,r)){
+            const nh = getHex(n.col,n.row);
+            if (!nh.unit || nh.unit.player===h.unit.player) continue;
+            const key = [c+','+r, n.col+','+n.row].sort().join('|');
+            if (seen.has(key)) continue;
+            seen.add(key);
+            pairs.push({a:h,b:nh});
         }
     }
+    if (!pairs.length) return;
+    pairs.sort((x,y)=> (y.a.unit.power+y.b.unit.power) - (x.a.unit.power+x.b.unit.power));
 
-    // 按power总和从高到低排序结算
-    pairs.sort((a, b) => (b.u1.power + b.u2.power) - (a.u1.power + a.u2.power));
-
-    pairs.forEach(p => {
-        if (!p.h1.unit || !p.h2.unit) return; // 可能在之前的结算中被移除
-        const resolved = resolvePair(p.h1, p.h2);
-        if (resolved) {
-            addLog(resolved, 'reaction');
-        }
-    });
+    let clashes = 0;
+    for (const {a,b} of pairs){
+        if (!a.unit || !b.unit) continue;      // 已被前面的结算清掉
+        const r = resolvePair(a,b);
+        if (r) clashes++;
+    }
+    if (clashes) sfx('clash');
 }
 
-function resolvePair(h1, h2) {
-    const u1 = h1.unit, u2 = h2.unit;
-    if (!u1 || !u2) return null;
-    let eff1 = u1.power, eff2 = u2.power;
+function resolvePair(a,b){
+    const ua = a.unit, ub = b.unit;
+    if (!ua || !ub) return null;
+    let ea = Math.min(3, Math.abs(M().envBonus(a))) + ua.power;
+    let eb = Math.min(3, Math.abs(M().envBonus(b))) + ub.power;
+    if (a.owner===ua.player) ea += 0.5;
+    if (b.owner===ub.player) eb += 0.5;
+    // 缓冲：让对方失去环境加成
+    if (ua.abi==='buffer') eb -= Math.min(3, Math.abs(M().envBonus(b)));
+    if (ub.abi==='buffer') ea -= Math.min(3, Math.abs(M().envBonus(a)));
+    // 强蚀：破缓冲（把被扣掉的环境加成还回去）
+    if (ua.abi==='corrode' && ub.abi==='buffer') eb += Math.min(3, Math.abs(M().envBonus(b)));
+    if (ub.abi==='corrode' && ua.abi==='buffer') ea += Math.min(3, Math.abs(M().envBonus(a)));
 
-    if (G.mode === 'acid-base') {
-        // pH梯度加成
-        eff1 += Math.abs((h1.ph || 7) - 7) * 0.5;
-        eff2 += Math.abs((h2.ph || 7) - 7) * 0.5;
-    }
-    if (G.mode === 'electrochem') {
-        eff1 += Math.abs(h1.potential || 0);
-        eff2 += Math.abs(h2.potential || 0);
-    }
-    if (G.mode === 'element') {
-        // 野元素加成
-        if (h1.wildElement) {
-            if (['C'].includes(h1.wildElement) && u1.player === 1) eff1 += 2;
-            if (['O'].includes(h1.wildElement) && u1.player === 2) eff1 += 2;
-            if (['He','Ne','Ar'].includes(h1.wildElement) && u1.player === 1) eff1 -= 2;
-        }
-        if (h2.wildElement) {
-            if (['C'].includes(h2.wildElement) && u2.player === 1) eff2 += 2;
-            if (['O'].includes(h2.wildElement) && u2.player === 2) eff2 += 2;
-        }
-        // 查反应表
-        const key = [u1.typeId, u2.typeId].sort().join('+');
-        const rxn = EL_RXN_MAP[key];
-        if (rxn) { eff1 += 1; eff2 += 1; }
+    const A = M().sides[ua.player-1], B = M().sides[ub.player-1];
+
+    const winner = (ea>eb) ? a : (eb>ea ? b : null);
+
+    // 视觉
+    pushFx({kind:'lunge', from:{c:a.col,r:a.row}, to:{c:b.col,r:b.row}, color:A.color, t0:now()});
+    pushFx({kind:'lunge', from:{c:b.col,r:b.row}, to:{c:a.col,r:a.row}, color:B.color, t0:now()});
+
+    if (ea===eb){
+        // 同归于尽
+        a.unit = null; b.unit = null;
+        if (!a.cap) a.owner = 0;
+        if (!b.cap) b.owner = 0;
+        addLog(`⚖️ ${ua.formula} ⚔ ${ub.formula} 势均力敌，同归于尽（${ea.toFixed(1)} : ${eb.toFixed(1)}）`,'clash');
+        pushFx({kind:'burst', c:a.col,r:a.row, color:'#fbbf24', t0:now()});
+        pushFx({kind:'burst', c:b.col,r:b.row, color:'#fbbf24', t0:now()});
+        return 'tie';
     }
 
-    if (eff1 > eff2) {
-        h2.unit = null;
-        h2.owner = u1.player;
-        if (G.mode === 'acid-base') h2.ph = u1.player === 1 ? Math.max(0, h2.ph - 2) : Math.min(14, h2.ph + 2);
-        return `${u1.emoji}${u1.name} 击溃 ${u2.emoji}${u2.name}！（${eff1.toFixed(1)} vs ${eff2.toFixed(1)}）`;
-    } else if (eff2 > eff1) {
-        h1.unit = null;
-        h1.owner = u2.player;
-        if (G.mode === 'acid-base') h1.ph = u2.player === 1 ? Math.max(0, h1.ph - 2) : Math.min(14, h1.ph + 2);
-        return `${u2.emoji}${u2.name} 击溃 ${u1.emoji}${u1.name}！（${eff2.toFixed(1)} vs ${eff1.toFixed(1)}）`;
-    } else {
-        // 平局：都摧毁，领地归中
-        h1.unit = null; h2.unit = null;
-        if (G.mode === 'acid-base') {
-            // 中和反应：pH趋向7
-            h1.ph = Math.min(14, Math.max(0, h1.ph + (u2.player === 1 ? -2 : 2))); // 朝7逼近
-            h2.ph = Math.min(14, Math.max(0, h2.ph + (u1.player === 1 ? -2 : 2)));
-            if (h1.ph === 7) { h1.owner = 0; h1.unit = null; }
-            if (h2.ph === 7) { h2.owner = 0; h2.unit = null; }
-        } else {
-            h1.owner = 0;
-            h2.owner = 0;
+    const w = winner, l = winner===a ? b : a;
+    const wu = w.unit, lu = l.unit;
+    const wSide = M().sides[wu.player-1];
+    const lSide = M().sides[lu.player-1];
+
+    // 败方单位阵亡，格子易主
+    l.unit = null;
+    l.owner = wu.player;
+    M().nudge(l, wu.player);
+    G.players[wu.player-1].kills++;
+    G.players[lu.player-1].lost++;
+
+    addLog(`⚔️ ${wu.formula} 击溃 ${lu.formula}（${(winner===a?ea:eb).toFixed(1)} : ${(winner===a?eb:ea).toFixed(1)}）→ 夺取 ${l.col},${l.row}`,'clash');
+    pushFx({kind:'burst', c:l.col,r:l.row, color:wSide.color, t0:now()});
+    pushFx({kind:'float', c:l.col,r:l.row, text:'+1', color:wSide.color, t0:now()});
+
+    // 中和 / 强蚀 连带
+    let extra = 0;
+    if (wu.abi==='neutralize') extra = 1;
+    if (wu.abi==='corrode') extra = 1;
+    if (extra){
+        const around = neighbors(l.col,l.row)
+            .map(n=>getHex(n.col,n.row))
+            .filter(n=>n.owner!==wu.player && !n.unit);
+        for (let i=0;i<extra && i<around.length;i++){
+            around[i].owner = wu.player; M().nudge(around[i], wu.player);
+            pushFx({kind:'ring', c:around[i].col, r:around[i].row, color:wSide.color, t0:now()});
         }
-        return `⚖️ ${u1.emoji}${u1.name} 与 ${u2.emoji}${u2.name} 中和！双双销毁`;
+        if (around.length) addLog(`  ↳ ${wu.abi==='neutralize'?'中和':'强蚀'}：连带转化 ${Math.min(extra,around.length)} 格`,'gain');
     }
+    UI.shake = Math.max(UI.shake, 3);
+    return 'kill';
 }
 
-function resolveAssimilation() {
-    // 收集所有存活单位
+/* ---------- 同化阶段 ---------- */
+function resolveAssimilation(){
     const units = [];
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-            const h = getHex(col, row);
-            if (h && h.unit) {
-                units.push({ col, row, hex: h });
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = getHex(c,r);
+        if (h.unit) units.push(h);
+    }
+    // 稳定顺序：先扫描行，再列（可预测、可复盘）
+    units.sort((x,y)=> (x.row-y.row) || (x.col-y.col));
+
+    let converted = 0;
+    for (const h of units){
+        const u = h.unit;
+        if (!u) continue;
+        let range = 1 + Math.floor((u.power-1)/2);   // 1..3
+        if (u.abi==='oxidize') range += 1;
+        if (u.abi==='corrode') range = Math.floor(range*2);
+
+        let took = 0;
+        const targets = neighbors(h.col,h.row)
+            .map(n=>getHex(n.col,n.row))
+            .filter(n=>n && !n.unit && n.owner!==u.player)
+            .sort((x,y)=> (x.row-y.row)||(x.col-y.col));
+
+        for (const t of targets){
+            if (took>=range) break;
+            // 敌方格子：需要战力压制；中立格：直接同化
+            if (t.owner!==0){
+                const def = 1 + Math.min(3, Math.abs(M().envBonus(t)));
+                if (u.power < def) continue;
             }
+            t.owner = u.player;
+            M().nudge(t, u.player);
+            took++; converted++;
+            pushFx({kind:'ring', c:t.col, r:t.row, color:M().sides[u.player-1].color, t0:now()});
+        }
+        if (took) addLog(`🌀 ${u.formula}(${h.col},${h.row}) 同化 ${took} 格`,'gain');
+    }
+    return converted;
+}
+
+/* ---------- pH / 中性化 ---------- */
+function settleNeutral(){
+    if (G.mode!=='acid-base') return;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = getHex(c,r);
+        if (h.owner!==0 && !h.unit && Math.abs(h.ph-7)<0.6 && !h.cap){
+            h.owner = 0;
         }
     }
+}
 
-    for (const { col, row, hex } of units) {
-        if (!hex.unit) continue;
-        const pwr = Math.floor(hex.unit.power);
-        if (pwr <= 0) continue;
-
-        // 找相邻敌对空地（有颜色的敌方格子但无单位）
-        const neighbors = getNeighbors(col, row);
-        const targets = neighbors
-            .map(n => getHex(n.col, n.row))
-            .filter(nh => nh && nh.owner !== 0 && nh.owner !== hex.unit.player && !nh.unit);
-
-        if (targets.length === 0) continue;
-
-        // 随机选择同化目标，最多pwr个
-        targets.sort(() => Math.random() - 0.5);
-        let count = 0;
-        for (const t of targets) {
-            if (count >= pwr) break;
-            const oldOwner = t.owner;
-            t.owner = hex.unit.player;
-            if (G.mode === 'acid-base') {
-                t.ph = hex.unit.player === 1 ? Math.max(0, t.ph - 2) : Math.min(14, t.ph + 2);
-            }
-            addLog(`🌀 ${hex.unit.emoji}${hex.unit.name}(${col},${row}) 同化了 ${t.col},${t.row}（${G.players[oldOwner-1].name}→${G.players[hex.unit.player-1].name}）`);
+/* ---------- 经济 ---------- */
+function income(pid){
+    let base = 0, bonus = 0, count = 0, units = 0;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = getHex(c,r);
+        if (h.owner===pid){
             count++;
+            if (h.cap===pid) base += 8; else base += 3;
+        }
+        if (h.unit && h.unit.player===pid) units++;
+    }
+    if (G.mode==='acid-base'){
+        // 极端 pH 额外产出
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+            const h = getHex(c,r);
+            if (h.owner===pid) bonus += Math.floor(Math.abs(h.ph-7)/3);
         }
     }
+    const upkeep = units;
+    return {total: base + bonus - upkeep, base, bonus, upkeep, count, units};
+}
+function territory(pid){
+    let n=0;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) if (G.hexes[r][c].owner===pid) n++;
+    return n;
 }
 
-function calcIncome(playerId) {
-    let income = 0;
-    let unitCount = 0;
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-            const h = getHex(col, row);
-            if (h && h.owner === playerId) {
-                income += 2;
-                if (G.mode === 'acid-base') income += Math.floor(Math.abs((h.ph || 7) - 7) / 2);
-                if (G.mode === 'electrochem') income += Math.abs(h.potential || 0);
-                if (h.isCapital) income += 3;
-            }
-            if (h && h.unit && h.unit.player === playerId) unitCount++;
-        }
+/* ---------- 胜负 ---------- */
+function checkWin(){
+    const p1 = territory(1), p2 = territory(2), total = COLS*ROWS;
+    // 首都易主
+    if (capHex(1).owner===2 && !capHex(1).unit) return {w:2, why:'占领了酸方首都'};
+    if (capHex(2).owner===1 && !capHex(2).unit) return {w:1, why:'占领了碱方首都'};
+    if (p1/total >= WIN_RATIO) return {w:1, why:`掌控 ${Math.round(p1/total*100)}% 领地`};
+    if (p2/total >= WIN_RATIO) return {w:2, why:`掌控 ${Math.round(p2/total*100)}% 领地`};
+    if (G.turn > TURN_LIMIT){
+        if (p1>p2) return {w:1, why:`${TURN_LIMIT} 回合后领地领先`};
+        if (p2>p1) return {w:2, why:`${TURN_LIMIT} 回合后领地领先`};
+        return {w:0, why:'回合耗尽，领地相同'};
     }
-    // 单位维护费: 每单位消耗1资源/回合
-    const maintenance = unitCount;
-    return income - maintenance;
+    return null;
 }
 
-function countControlled(playerId) {
-    let count = 0;
-    for (let row = 0; row < ROWS; row++)
-        for (let col = 0; col < COLS; col++)
-            if (getHex(col, row)?.owner === playerId) count++;
-    return count;
-}
-
-function checkWin() {
-    const p1Count = countControlled(1);
-    const p2Count = countControlled(2);
-    const total = COLS * ROWS;
-
-    // 首都检查
-    const p1Cap = getHex(2, 2);
-    const p2Cap = getHex(9, 9);
-    if (p1Cap && p1Cap.owner === 2) return 2;
-    if (p2Cap && p2Cap.owner === 1) return 1;
-
-    // 过半检查
-    if (p1Count > total / 2) return 1;
-    if (p2Count > total / 2) return 2;
-
-    return 0;
-}
-
-// ==================== 回合流程 ====================
-function beginTurn() {
-    if (G.gameOver) return;
-    G.deploymentsThisTurn = 0;
-    G.selectedUnit = null;
+/* ============================================================
+   5. 回合流转
+   ============================================================ */
+function beginTurn(){
+    if (!G || G.over) return;
     G.phase = 'deploy';
+    G.deployed = 0;
+    UI.sel = -1;
+    UI.undoDirty = true;
 
-    // 资源阶段
-    const income = calcIncome(G.currentPlayer);
-    G.players[G.currentPlayer - 1].resources += income;
-    addLog(`${G.players[G.currentPlayer - 1].name} 获得 ${income} ⚡资源 (控制 ${countControlled(G.currentPlayer)} 格)`);
+    const inc = income(G.cur);
+    G.players[G.cur-1].res = Math.max(0, G.players[G.cur-1].res + inc.total);
+    addLog(`── 第 ${G.turn} 回合 · ${M().sides[G.cur-1].name} ──`,'turn');
+    addLog(`  补给 +${inc.total}⚡（领地 ${inc.base}${inc.bonus?` + pH ${inc.bonus}`:''}${inc.upkeep?` − 维护 ${inc.upkeep}`:''}）`,'sys');
+    if (inc.total>0) sfx('coin');
 
-    updateUI();
-    drawBoard();
-
-    // AI回合
-    if (G.vsAI && G.currentPlayer === 2) {
-        setTimeout(() => aiTakeTurn(), 600);
-    }
+    buildRoster();
+    renderAll(); saveGame();
+    if (G.vsAI && G.cur===2) gset(aiTurn, 560);
 }
 
-function endDeployPhase() {
-    if (G.phase !== 'deploy') return;
+function endDeploy(force){
+    if (!G || G.over || G.phase!=='deploy') return;
+    if (!force && G.vsAI && G.cur===2) return;
     G.phase = 'reaction';
-    G.selectedUnit = null;
-    G.deploymentsThisTurn = 0;
+    UI.sel = -1;
+    renderHud();
 
-    addLog('⚗️ 反应阶段：结算相邻敌对单位...');
+    addLog('⚗️ 反应阶段…','sys');
     resolveReactions();
-    addLog('🌀 同化阶段：兵力扩散影响周围格子...');
+    addLog('🌀 同化阶段…','sys');
     resolveAssimilation();
-    // 酸碱模式：pH=7的格子归中
-    if (G.mode === 'acid-base') {
-        for (let row = 0; row < ROWS; row++) {
-            for (let col = 0; col < COLS; col++) {
-                const h = getHex(col, row);
-                if (h && h.owner !== 0 && h.ph === 7 && !h.unit) {
-                    h.owner = 0;
-                    addLog(`🧪 ${col},${row} pH=7 恢复中性`);
-                }
-            }
-        }
-    }
-    drawBoard();
+    settleNeutral();
+    renderAll();
 
-    // 检查胜负
-    const winner = checkWin();
-    if (winner) {
-        G.gameOver = true;
-        G.winner = winner;
-        showGameOver();
+    const w = checkWin();
+    if (w){
+        finish(w.w, w.why);
         return;
     }
 
     G.phase = 'end';
-    // PvP传递遮罩
-    if (!G.vsAI && G.passScreen) {
-        const nextPlayer = G.currentPlayer === 1 ? 2 : 1;
-        document.getElementById('passTitle').textContent = '请将设备交给 ' + G.players[nextPlayer - 1].name;
-        document.getElementById('passScreen').classList.add('show');
-    } else {
-        switchPlayer();
-    }
-}
-
-function switchPlayer() {
-    G.currentPlayer = G.currentPlayer === 1 ? 2 : 1;
-    G.turn++;
-    G.deploymentsThisTurn = 0;
-    G.selectedUnit = null;
-    beginTurn();
-}
-
-// ==================== AI系统 ====================
-// 判断某格是否威胁到AI首都(capital under threat)
-function isNearCap(col, row, playerId, radius) {
-    const capCol = playerId === 1 ? 2 : 9;
-    const capRow = playerId === 1 ? 2 : 9;
-    return Math.abs(col - capCol) + Math.abs(row - capRow) <= radius;
-}
-
-// 统计玩家对AI首都的威胁程度
-function calcCapitalThreat(oppId) {
-    let threat = 0;
-    const ownCapCol = oppId === 1 ? 9 : 2; // AI首都
-    const ownCapRow = oppId === 1 ? 9 : 2;
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-            const h = getHex(col, row);
-            if (!h || !h.unit || h.unit.player !== oppId) continue;
-            const dist = Math.abs(col - ownCapCol) + Math.abs(row - ownCapRow);
-            if (dist <= 6) threat += (7 - dist) * h.unit.power;
-        }
-    }
-    return threat;
-}
-
-function aiTakeTurn() {
-    if (G.gameOver) return;
-    const playerId = 2;
-    const player = G.players[playerId - 1];
-    const oppId = 1;
-    const roster = G.mode === 'acid-base' ? MODE_DATA[G.mode].p2Units :
-                   G.mode === 'electrochem' ? MODE_DATA[G.mode].p2Units :
-                   MODE_DATA[G.mode].p2Units;
-
-    let moves = getAllMoves(playerId, roster);
-    const capThreat = calcCapitalThreat(oppId);
-
-    // === 紧急防守：首都受严重威胁 ===
-    if (capThreat >= 15 && G.aiDiff !== 'easy') {
-        // 只考虑防守首都附近的部署
-        const defMoves = moves.filter(m =>
-            isNearCap(m.col, m.row, playerId, 5) && m.unit.power >= 4
-        );
-        if (defMoves.length > 0) {
-            const best = aiGreedyPick(defMoves, playerId, roster);
-            deployUnit(best.col, best.row, best.unit, playerId);
-            // 第二部署：最贵的防御
-            const moves2 = getAllMoves(playerId, roster).filter(m =>
-                isNearCap(m.col, m.row, playerId, 5)
-            );
-            if (moves2.length > 0) {
-                moves2.sort((a,b) => b.unit.power - a.unit.power);
-                deployUnit(moves2[0].col, moves2[0].row, moves2[0].unit, playerId);
-            }
-            drawBoard(); updateUI();
-            setTimeout(() => endDeployPhase(), 400);
-            return;
-        }
-    }
-
-    if (moves.length === 0) {
-        addLog(G.players[1].name + ' 无合法下法，跳过回合');
-        setTimeout(() => endDeployPhase(), 300);
+    // 双人传递
+    if (!G.vsAI && G.pass){
+        const next = G.cur===1?2:1;
+        $('#passBadge').textContent = M().sides[next-1].glyph;
+        $('#passBadge').style.color = M().sides[next-1].color;
+        $('#passText').textContent = '请将设备交给 ' + M().sides[next-1].name;
+        $('#passScreen').classList.add('show');
+        pendingSwitch = true;
         return;
     }
-
-    // === 前线决战：敌方单位逼近，果断出重兵 ===
-    const nearClashMoves = moves.filter(m => {
-        const neighbors = getNeighbors(m.col, m.row);
-        return neighbors.some(n => {
-            const nh = getHex(n.col, n.row);
-            return nh && nh.unit && nh.unit.player === oppId;
-        });
-    });
-    if (nearClashMoves.length > 0 && G.aiDiff !== 'easy') {
-        // 找到能买得起的最强单位
-        const heavyAffordable = roster.filter(u => player.resources >= u.cost).sort((a, b) => b.power - a.power);
-        if (heavyAffordable.length > 0 && heavyAffordable[0].power >= 4) {
-            const bestUnit = heavyAffordable[0];
-            const clashWithHeavy = nearClashMoves.filter(m => m.unit.id === bestUnit.id);
-            const targetMoves = clashWithHeavy.length > 0 ? clashWithHeavy : nearClashMoves;
-            const best = aiGreedyPick(targetMoves, playerId, roster);
-            if (best) {
-                deployUnit(best.col, best.row, best.unit, playerId);
-                // 第二部署也重兵
-                if (G.deploymentsThisTurn < G.maxDeploy) {
-                    const m2list = getAllMoves(playerId, roster).filter(m => {
-                        const ns = getNeighbors(m.col, m.row);
-                        return ns.some(n => {
-                            const nh2 = getHex(n.col, n.row);
-                            return nh2 && nh2.unit && nh2.unit.player === oppId;
-                        });
-                    });
-                    if (m2list.length > 0) {
-                        m2list.sort((a, b) => b.unit.power - a.unit.power);
-                        deployUnit(m2list[0].col, m2list[0].row, m2list[0].unit, playerId);
-                    }
-                }
-                drawBoard(); updateUI();
-                setTimeout(() => endDeployPhase(), 400);
-                return;
-            }
-        }
-    }
-
-    // === 阶段策略 ===
-    const cheapUnits = roster.filter(u => u.cost <= 18);
-    const midUnits = roster.filter(u => u.cost > 18 && u.cost <= 28);
-    const heavyUnits = roster.filter(u => u.cost >= 38);
-    const maxCostAffordable = roster.filter(u => player.resources >= u.cost).reduce((max, u) => Math.max(max, u.cost), 0);
-
-    // 激进推进：资源 >= 100 且有重型单位可买 → 全力进攻玩家首都
-    if (player.resources >= 100 && heavyUnits.some(u => player.resources >= u.cost) && G.aiDiff !== 'easy') {
-        const atkMoves = moves.filter(m =>
-            m.unit.cost >= 38 &&
-            (isNearCap(m.col, m.row, oppId, 7) || isNearCap(m.col, m.row, playerId, 5))
-        );
-        if (atkMoves.length > 0) {
-            const best = aiGreedyPick(atkMoves, playerId, roster);
-            deployUnit(best.col, best.row, best.unit, playerId);
-            if (G.deploymentsThisTurn < G.maxDeploy) {
-                const atk2 = getAllMoves(playerId, roster).filter(m =>
-                    m.unit.cost >= 38
-                );
-                if (atk2.length > 0) {
-                    atk2.sort((a,b) => b.unit.power - a.unit.power);
-                    deployUnit(atk2[0].col, atk2[0].row, atk2[0].unit, playerId);
-                }
-            }
-            drawBoard(); updateUI();
-            setTimeout(() => endDeployPhase(), 400);
-            return;
-        }
-    }
-
-    // 中期：资源50-100 → 混合中档+扩张
-    if (player.resources >= 50 && G.aiDiff !== 'easy') {
-        // 允许中档单位，保留选择空间
-    }
-
-    // 早期扩张：资源<60 → 只买便宜单位抢地(新价: 10/18)
-    if (player.resources < 60 && G.aiDiff !== 'easy') {
-        const cheapMoves = moves.filter(m => m.unit.cost <= 18);
-        if (cheapMoves.length > 0) moves = cheapMoves;
-    }
-
-    // === 攒资源策略：如果没有好位置，宁可跳过以攒钱买大件 ===
-    let move;
-    switch (G.aiDiff) {
-        case 'easy': move = aiEasy(moves); break;
-        case 'medium': move = aiMedium(moves, playerId, roster); break;
-        case 'hard': move = aiHard(moves, playerId, roster); break;
-        default: move = aiMedium(moves, playerId, roster);
-    }
-
-    // 困难AI：如果最佳着法得分很低且资源<80，攒钱跳过第一次部署
-    if (G.aiDiff === 'hard' && move && player.resources < 80 && maxCostAffordable < 38) {
-        const bestScore = evalMove(move, playerId);
-        if (bestScore < 20 && player.resources < 60) {
-            addLog('🧠 困难AI选择攒资源，跳过部署');
-            move = null; // 跳过第一次部署
-        }
-    }
-
-    if (move) {
-        deployUnit(move.col, move.row, move.unit, playerId);
-        drawBoard();
-    }
-
-    // 第二次部署
-    if (G.deploymentsThisTurn < G.maxDeploy) {
-        let moves2 = getAllMoves(playerId, roster);
-        if (moves2.length > 0) {
-            if (player.resources < 60 && G.aiDiff !== 'easy') {
-                const cheap2 = moves2.filter(m => m.unit.cost <= 18);
-                if (cheap2.length > 0) moves2 = cheap2;
-            }
-            let m2;
-            if (G.aiDiff === 'easy') m2 = aiEasy(moves2);
-            else m2 = aiGreedyPick(moves2, playerId, roster);
-            if (m2) deployUnit(m2.col, m2.row, m2.unit, playerId);
-        }
-    }
-
-    drawBoard();
-    updateUI();
-    setTimeout(() => endDeployPhase(), 400);
+    nextTurn();
 }
 
-function getAllMoves(playerId, roster) {
-    const moves = [];
-    const affordable = roster.filter(u => G.players[playerId - 1].resources >= u.cost);
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-            const h = getHex(col, row);
-            if (!h || !canDeploy(h, playerId)) continue;
-            for (const u of affordable) {
-                moves.push({ col, row, unit: u });
-            }
-        }
-    }
-    return moves;
-}
-
-function aiEasy(moves) {
-    return moves[Math.floor(Math.random() * moves.length)];
-}
-
-function aiGreedyPick(moves, playerId, roster) {
-    let best = null, bestScore = -Infinity;
-    for (const m of moves) {
-        const score = evalMove(m, playerId);
-        if (score > bestScore) { bestScore = score; best = m; }
-    }
-    return best;
-}
-
-function aiMedium(moves, playerId, roster) {
-    return aiGreedyPick(moves, playerId, roster);
-}
-
-function aiHard(moves, playerId, roster) {
-    let best = null, bestScore = -Infinity;
-    for (const m of moves.slice(0, 12)) {
-        const score = evalMoveDeep(m, playerId, roster);
-        if (score > bestScore) { bestScore = score; best = m; }
-    }
-    return best;
-}
-
-function evalMove(move, playerId) {
-    const h = getHex(move.col, move.row);
-    if (!h) return -Infinity;
-    const oppId = playerId === 1 ? 2 : 1;
-    let score = 0;
-    const eff = move.unit.power / Math.max(move.unit.cost, 1);
-
-    // 占领中立格
-    if (h.owner === 0) score += 10 + eff * 10;
-
-    const neighbors = getNeighbors(move.col, move.row);
-    let adjacentEnemy = 0, adjacentOwn = 0, adjacentEnemyUnit = 0, adjacentOwnUnit = 0;
-    neighbors.forEach(n => {
-        const nh = getHex(n.col, n.row);
-        if (!nh) return;
-        if (nh.unit && nh.unit.player !== playerId) {
-            adjacentEnemyUnit++;
-            if (move.unit.power > nh.unit.power) score += move.unit.power * 8;
-            else score += move.unit.power * 3;
-        }
-        if (nh.unit && nh.unit.player === playerId) {
-            adjacentOwnUnit++;
-        }
-        if (nh.owner === oppId) adjacentEnemy++;
-        if (nh.owner === playerId) adjacentOwn++;
-    });
-
-    // 堑壕流：前线扩张分，越高越好（在敌境边缘建立包围圈）
-    score += adjacentEnemy * 15;
-
-    // 内部填充惩罚：周围全是己方/中立，无敌方 → 这是填坑不是推进
-    if (adjacentEnemy === 0 && adjacentOwn >= 3) score -= 18;
-    if (adjacentEnemy === 0 && adjacentOwn >= 5) score -= 30;
-
-    // 集簇惩罚：相邻己方单位太多 → 容易被连锁清光
-    if (adjacentOwnUnit >= 2) score -= adjacentOwnUnit * 10;
-
-    // 阻断对手扩张：如果这格能阻挡玩家接近AI首都
-    const ownCapCol = playerId === 1 ? 2 : 9;
-    const ownCapRow = playerId === 1 ? 2 : 9;
-    const distToOwnCap = Math.abs(move.col - ownCapCol) + Math.abs(move.row - ownCapRow);
-    if (distToOwnCap <= 4 && adjacentEnemy > 0) score += (5 - distToOwnCap) * 12;
-
-    // 逼近玩家首都
-    const oppCapCol = oppId === 1 ? 2 : 9;
-    const oppCapRow = oppId === 1 ? 2 : 9;
-    const distToOppCap = Math.abs(move.col - oppCapCol) + Math.abs(move.row - oppCapRow);
-    if (distToOppCap < 5) score += (5 - distToOppCap) * 8;
-
-    // 前线接敌用重兵加分
-    if (adjacentEnemyUnit > 0 && move.unit.power >= 4) score += 25;
-
-    score += adjacentEnemyUnit * 18;
-    score += eff * 8 - move.unit.cost * 0.05;
-
-    if (distToOwnCap > 6 && adjacentOwn === 0) score -= (distToOwnCap - 6) * 3;
-
-    return score;
-}
-
-function evalMoveDeep(move, playerId, roster) {
-    let score = evalMove(move, playerId);
-    const oppMoves = getAllMoves(3 - playerId, roster);
-    if (oppMoves.length > 0) {
-        let oppBest = -Infinity;
-        for (const om of oppMoves.slice(0, 6)) {
-            const s = evalMove(om, 3 - playerId);
-            if (s > oppBest) oppBest = s;
-        }
-        score -= oppBest * 0.5;
-    }
-    return score;
-}
-
-// ==================== UI更新 ====================
-function updateUI() {
-    document.getElementById('turnNum').textContent = G.turn;
-    document.getElementById('resP1').textContent = G.players[0].resources;
-    document.getElementById('resP2').textContent = G.players[1].resources;
-
-    // 模式徽章
-    const md = MODE_DATA[G.mode];
-    const badge = document.getElementById('modeBadge');
-    badge.textContent = md.badge;
-    badge.className = 'mode-badge ' + md.badgeClass;
-
-    // 单位面板
-    renderUnitPanel();
-
-    // 结束回合按钮
-    const btn = document.getElementById('endBtn');
-    if (btn) {
-        btn.disabled = G.phase !== 'deploy';
-    }
-}
-
-function renderUnitPanel() {
-    const panel = document.getElementById('unitPanel');
-    const md = MODE_DATA[G.mode];
-    const isP1 = G.currentPlayer === 1;
-    const roster = isP1 ? md.p1Units : md.p2Units;
-    const player = G.players[G.currentPlayer - 1];
-
-    let html = `<span class="player-label" style="background:${player.colorBg};color:${player.color}">${player.name}</span>`;
-    roster.forEach(u => {
-        const canBuy = player.resources >= u.cost;
-        const selected = G.selectedUnit && G.selectedUnit.id === u.id ? ' selected' : '';
-        const disabled = !canBuy ? ' disabled' : '';
-        html += `<div class="unit-card${selected}${disabled}" data-uid="${u.id}" onclick="window._selectUnit('${u.id}')">
-            <div class="uc-emoji">${u.emoji}</div>
-            <div class="uc-name">${u.name}</div>
-            <div class="uc-cost">⚡${u.cost}</div>
-            <div class="uc-power">💪${u.power}</div>
-        </div>`;
-    });
-    html += `<button class="btn-end-turn" id="endBtn" onclick="window._endDeploy()">⏭ 结束回合</button>`;
-    panel.innerHTML = html;
-}
-
-function addLog(msg, cls) {
-    G.log.unshift({ msg, cls: cls || '' });
-    if (G.log.length > 30) G.log.length = 30;
-    const el = document.getElementById('logPanel');
-    if (el) {
-        el.innerHTML = G.log.map(l => `<div class="log-item ${l.cls}">${l.msg}</div>`).join('');
-        el.scrollTop = 0;
-    }
-}
-
-function showGameOver() {
-    const winner = G.winner;
-    const wPlayer = G.players[winner - 1];
-    const p1Count = countControlled(1);
-    const p2Count = countControlled(2);
-    const total = COLS * ROWS;
-
-    document.getElementById('goEmoji').textContent = '🏆';
-    document.getElementById('goTitle').innerHTML =
-        `<span style="color:${wPlayer.color}">${wPlayer.name}</span> 征服了棋盘！`;
-    document.getElementById('goDetail').innerHTML = `
-        酸方: ${p1Count}/${total} 格 (${(p1Count/total*100).toFixed(1)}%)<br>
-        碱方: ${p2Count}/${total} 格 (${(p2Count/total*100).toFixed(1)}%)<br>
-        回合数: ${G.turn}
-    `;
-    document.getElementById('goScreen').classList.add('show');
-}
-
-// ==================== 事件处理 ====================
-canvas.addEventListener('mousemove', function(e) {
-    if (G.phase !== 'deploy') return;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const px = (e.clientX - rect.left) * scaleX;
-    const py = (e.clientY - rect.top) * scaleY;
-    const cube = pixelToHex(px, py);
-    const off = cubeToOffset(cube.q, cube.r);
-    const h = getHex(off.col, off.row);
-    if (h && (G.hoveredHex?.col !== off.col || G.hoveredHex?.row !== off.row)) {
-        G.hoveredHex = off;
-        drawBoard();
-    }
-});
-
-canvas.addEventListener('click', function(e) {
-    if (G.phase !== 'deploy' || G.gameOver) return;
-    if (G.vsAI && G.currentPlayer === 2) return; // AI回合不响应
-
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const px = (e.clientX - rect.left) * scaleX;
-    const py = (e.clientY - rect.top) * scaleY;
-    const cube = pixelToHex(px, py);
-    const off = cubeToOffset(cube.q, cube.r);
-    const h = getHex(off.col, off.row);
-    if (!h || !G.selectedUnit) return;
-
-    if (canDeploy(h, G.currentPlayer)) {
-        const md = MODE_DATA[G.mode];
-        const roster = G.currentPlayer === 1 ? md.p1Units : md.p2Units;
-        const unitType = roster.find(u => u.id === G.selectedUnit.id);
-        if (unitType) {
-            const ok = deployUnit(off.col, off.row, unitType, G.currentPlayer);
-            if (ok) {
-                if (G.deploymentsThisTurn >= G.maxDeploy) {
-                    G.selectedUnit = null;
-                    setTimeout(() => endDeployPhase(), 300);
-                }
-                // 选择保留可连续部署，但钱不够时自动清除
-                if (G.selectedUnit && G.players[G.currentPlayer - 1].resources < G.selectedUnit.cost) {
-                    G.selectedUnit = null;
-                }
-                drawBoard();
-            }
-        }
-    }
-});
-
-// 暴露到全局作用域给onclick
-window._selectUnit = function(uid) {
-    if (G.phase !== 'deploy' || G.gameOver) return;
-    const md = MODE_DATA[G.mode];
-    const roster = G.currentPlayer === 1 ? md.p1Units : md.p2Units;
-    const unit = roster.find(u => u.id === uid);
-    if (unit && G.players[G.currentPlayer - 1].resources >= unit.cost) {
-        G.selectedUnit = unit;
-        renderUnitPanel();
-        drawBoard();
-    }
-};
-
-window._endDeploy = function() {
-    if (G.phase === 'deploy') {
-        endDeployPhase();
-    }
-};
-
-document.getElementById('passBtn').addEventListener('click', function() {
-    document.getElementById('passScreen').classList.remove('show');
-    switchPlayer();
-});
-
-// ==================== 初始化 ====================
-document.getElementById('btnStart').addEventListener('click', function() {
-    const mode = settings.mode;
-    const vsAI = settings.vsAI;
-    const aiDiff = settings.aiDiff;
-    const passScreen = settings.passScreen;
-
-    G.mode = mode;
-    G.vsAI = vsAI;
-    G.aiDiff = aiDiff;
-    G.passScreen = passScreen;
-
-    const md = MODE_DATA[mode];
-    G.players[0].name = md.p1Name;
-    G.players[0].color = md.p1Color;
-    G.players[0].colorBg = md.p1Bg;
-    G.players[1].name = md.p2Name;
-    G.players[1].color = md.p2Color;
-    G.players[1].colorBg = md.p2Bg;
-    G.players[0].resources = 50;
-    G.players[1].resources = 50;
-    G.currentPlayer = 1;
-    G.turn = 1;
-    G.gameOver = false;
-    G.winner = null;
-    G.log = [];
-    G.selectedUnit = null;
-    G.deploymentsThisTurn = 0;
-
-    initHexGrid();
-    document.getElementById('setupScreen').style.display = 'none';
-    document.getElementById('gameContainer').style.display = 'block';
-
-    updateUI();
-    drawBoard();
-    addLog('⚗️ 化境争霸开始！' + md.p1Name + ' vs ' + md.p2Name);
-    addLog(G.vsAI ? '🤖 AI难度: ' + G.aiDiff : '🧑‍🤝‍🧑 PvP模式');
-
+let pendingSwitch = false;
+function nextTurn(){
+    G.cur = G.cur===1?2:1;
+    if (G.cur===1) G.turn++;
     beginTurn();
+}
+
+function finish(w, why){
+    G.over = true; G.winner = w; G.reason = why||'';
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    sfx(w===0?'lose':'win');
+    const M0 = M();
+    if (w===0){
+        $('#goCrown').textContent='🤝';
+        $('#goTitle').textContent='平局';
+        $('#goTitle').style.color='var(--text)';
+        $('#goSub').textContent = why;
+    } else {
+        const s = M0.sides[w-1];
+        $('#goCrown').textContent='🏆';
+        $('#goTitle').textContent = s.name + ' 胜利';
+        $('#goTitle').style.color = s.color;
+        $('#goSub').textContent = why;
+    }
+    const st = $('#goStats');
+    st.innerHTML = '';
+    [1,2].forEach(pid=>{
+        const p = G.players[pid-1];
+        const t = territory(pid);
+        const d = document.createElement('div');
+        d.className='go-stat';
+        d.innerHTML = `<div class="k" style="color:${M0.sides[pid-1].color}">${M0.sides[pid-1].name}</div>
+            <div class="v">${Math.round(t/(COLS*ROWS)*100)}% 领地</div>
+            <div class="k" style="margin-top:3px">击杀 ${p.kills} · 阵亡 ${p.lost}</div>`;
+        st.appendChild(d);
+    });
+    $('#goScreen').classList.add('show');
+    renderAll();
+}
+
+/* ============================================================
+   6. AI
+   ============================================================ */
+function aiTurn(){
+    if (!G || G.over || G.cur!==2) return;
+    const pid = 2, me = G.players[1];
+    const units = M().sides[1].units;
+    let guard = 0;
+
+    const pickOne = () => {
+        // 候选：所有可部署格 × 单位
+        const cands = [];
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+            const h = getHex(c,r);
+            if (!canDeployAt(h,pid)) continue;
+            for (let i=0;i<units.length;i++){
+                const u = units[i];
+                if (u.cost > me.res) continue;
+                cands.push({h, i, u, s: aiScore(h,u,pid)});
+            }
+        }
+        if (!cands.length) return null;
+        cands.sort((a,b)=>b.s-a.s);
+        if (G.diff==='easy') return cands[rnd(Math.min(cands.length, 5))];
+        if (G.diff==='medium') return cands[rnd(Math.min(cands.length, 3))];
+        return cands[0];
+    };
+
+    while (G.deployed < MAX_DEPLOY && guard++ < 8){
+        const pick = pickOne();
+        if (!pick) break;
+        if (G.diff==='hard' && pick.s < -4) break;   // 没有好棋就不硬下
+        if (!deploy(pick.h, pick.i, pid, false)) break;
+        renderAll();
+    }
+    gset(()=>{ if (!G || G.over || G.cur!==2) return; endDeploy(true); }, 620);
+}
+
+function aiScore(h, u, pid){
+    const opp = pid===1?2:1;
+    let s = 0;
+    const myCap = capPos(pid), oppCap = capPos(opp);
+
+    let enemyAdj = 0, ownAdj = 0, neutralAdj = 0, enemyUnitAdj = 0;
+    for (const n of neighbors(h.col,h.row)){
+        const nh = getHex(n.col,n.row);
+        if (nh.owner===opp) enemyAdj++;
+        else if (nh.owner===pid) ownAdj++;
+        else neutralAdj++;
+        if (nh.unit && nh.unit.player===opp) enemyUnitAdj++;
+    }
+
+    // 前线价值
+    s += enemyAdj * 3.2 + neutralAdj * 0.7 + ownAdj * 0.3;
+
+    // 能压制的敌人
+    for (const n of neighbors(h.col,h.row)){
+        const nh = getHex(n.col,n.row);
+        if (nh.unit && nh.unit.player===opp){
+            const mine = u.power + Math.min(3,Math.abs(M().envBonus(h)))+(h.owner===pid?0.5:0);
+            const theirs = nh.unit.power + Math.min(3,Math.abs(M().envBonus(nh)))+(nh.owner===opp?0.5:0);
+            s += mine>theirs ? 5.5 : (mine<theirs ? -4.5 : 0.4);
+        }
+    }
+
+    // 首都压力
+    const dOpp = hexDist(h.col,h.row,oppCap.c,oppCap.r);
+    const dOwn = hexDist(h.col,h.row,myCap.c,myCap.r);
+    if (dOpp<=2) s += 7;
+    else if (dOpp<=4) s += 2.5;
+    // 守家：敌方兵力逼近本方首都
+    let threat = 0;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const x = getHex(c,r);
+        if (x.unit && x.unit.player===opp){
+            const d = hexDist(c,r,myCap.c,myCap.r);
+            if (d<=4) threat += (5-d)*1.2;
+        }
+    }
+    if (threat>4 && dOwn<=2) s += threat*0.55;
+    if (dOwn<=1 && enemyUnitAdj>0) s += 3;
+
+    // 成本与战力
+    s += u.power*0.55 - u.cost*0.045;
+
+    // 资源紧张时不乱花钱
+    if (G.players[pid-1].res < 40 && u.cost > 30) s -= 3;
+
+    return s;
+}
+
+/* ============================================================
+   7. 渲染
+   ============================================================ */
+const cv = $('#board');
+const cx = cv.getContext('2d');
+
+function layoutCanvas(){
+    const wrap = cv.parentElement;
+    const avail = Math.max(260, wrap.clientWidth - 12);
+    const nw = COLS + 0.5;
+    let r = avail / (SQRT3*nw + 2*8/ (SQRT3*nw) );
+    // 直接按宽度求 R
+    r = (avail - 2*PAD) / (SQRT3*(COLS+0.5));
+    HEX_R = clamp(r, 11, 34);
+    HEX_W = SQRT3*HEX_R;
+    PAD = Math.round(HEX_R*0.38);
+
+    const w = Math.ceil(HEX_W*(COLS+0.5) + PAD*2);
+    const hgt = Math.ceil(HEX_R*1.5*(ROWS-1) + HEX_R*2 + PAD*2);
+    const dpr = Math.min(window.devicePixelRatio||1, 2.5);
+    cv.style.width = w+'px';
+    cv.style.height = hgt+'px';
+    cv.width = Math.round(w*dpr);
+    cv.height = Math.round(hgt*dpr);
+    cx.setTransform(dpr,0,0,dpr,0,0);
+    UI.dirty = true;
+}
+
+function hexPath(x,y,r){
+    cx.beginPath();
+    for (let i=0;i<6;i++){
+        const a = Math.PI/180*(60*i-30);
+        const px = x + r*Math.cos(a), py = y + r*Math.sin(a);
+        i ? cx.lineTo(px,py) : cx.moveTo(px,py);
+    }
+    cx.closePath();
+}
+
+function draw(){
+    if (!G) return;
+    const mode = M();
+    const W = cv.width/(Math.min(window.devicePixelRatio||1,2.5));
+    const H = cv.height/(Math.min(window.devicePixelRatio||1,2.5));
+
+    cx.clearRect(0,0,W,H);
+
+    // 抖动
+    let ox=0, oy=0;
+    if (UI.shake>0.05){
+        ox = (Math.random()-0.5)*UI.shake*2;
+        oy = (Math.random()-0.5)*UI.shake*2;
+        UI.shake *= 0.86;
+    }
+    cx.save();
+    cx.translate(ox,oy);
+
+    // 背景网格光
+    const bg = cx.createLinearGradient(0,0,W,H);
+    bg.addColorStop(0,'#0a1019'); bg.addColorStop(1,'#070b12');
+    cx.fillStyle = bg; cx.fillRect(-20,-20,W+40,H+40);
+
+    const t = now();
+    const curColor = G ? mode.sides[G.cur-1].color : '#fbbf24';
+
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = getHex(c,r);
+        const p = axialToPixel(c,r);
+        const owner = h.owner;
+        const side = owner ? mode.sides[owner-1] : null;
+
+        // 底色：领地色 + 环境色
+        cx.fillStyle = 'rgba(19,28,42,.72)';
+        hexPath(p.x,p.y,HEX_R-1); cx.fill();
+
+        const envRgba = mode.tint(h);
+        if (side){
+            cx.fillStyle = side.color;
+            cx.globalAlpha = 0.15;
+            hexPath(p.x,p.y,HEX_R-1); cx.fill();
+            cx.globalAlpha = 1;
+        }
+        // 环境色调（pH / 电势）
+        cx.fillStyle = envRgba + (owner? 0.34 : 0.22) + ')';
+        hexPath(p.x,p.y,HEX_R-1.2); cx.fill();
+
+        // 边线
+        hexPath(p.x,p.y,HEX_R-1);
+        cx.lineWidth = owner? 1.8 : 1;
+        cx.strokeStyle = side ? side.color + 'aa' : 'rgba(46,65,82,.85)';
+        cx.stroke();
+
+        // 首都
+        if (h.cap){
+            cx.save();
+            cx.globalAlpha = 0.9;
+            const pulse = 0.5 + 0.5*Math.sin(t/520 + h.cap);
+            cx.strokeStyle = '#fbbf24';
+            cx.lineWidth = 2;
+            hexPath(p.x,p.y,HEX_R-1);
+            cx.shadowColor = '#fbbf24'; cx.shadowBlur = 10 + pulse*8;
+            cx.stroke();
+            cx.restore();
+            cx.fillStyle = '#fbbf24';
+            cx.font = `700 ${Math.round(HEX_R*0.52)}px system-ui`;
+            cx.textAlign='center'; cx.textBaseline='middle';
+            cx.fillText('★', p.x, p.y - HEX_R*0.52);
+        }
+
+        // 野元素标记
+        if (h.wildElement && !h.unit){
+            cx.fillStyle = mode.tint(h)+'0.9)';
+            cx.font = `700 ${Math.round(HEX_R*0.42)}px system-ui`;
+            cx.textAlign='center'; cx.textBaseline='middle';
+            cx.fillText(h.wildElement, p.x, p.y+HEX_R*0.42);
+        }
+
+        // 悬停 / 合法标记
+        if (UI.hover && UI.hover.col===c && UI.hover.row===r){
+            const legal = UI.legal.has(c+','+r);
+            cx.save();
+            hexPath(p.x,p.y,HEX_R-1);
+            cx.lineWidth = 2.4;
+            cx.strokeStyle = legal ? '#34d399' : '#f43f5e';
+            cx.shadowColor = cx.strokeStyle; cx.shadowBlur = 12;
+            cx.stroke();
+            cx.restore();
+            if (legal){
+                cx.fillStyle='rgba(52,211,153,.1)';
+                hexPath(p.x,p.y,HEX_R-1); cx.fill();
+            }
+        } else if (UI.legal.has(c+','+r) && G.phase==='deploy' && UI.sel>=0){
+            cx.save();
+            hexPath(p.x,p.y,HEX_R-2);
+            cx.fillStyle = 'rgba(52,211,153,.13)';
+            cx.fill();
+            cx.lineWidth = 2;
+            cx.strokeStyle = 'rgba(52,211,153,.85)';
+            cx.shadowColor = '#34d399';
+            cx.shadowBlur = 9;
+            cx.stroke();
+            cx.restore();
+            cx.beginPath();
+            cx.arc(p.x, p.y, Math.max(1.7, HEX_R*0.12), 0, 7);
+            cx.fillStyle = 'rgba(52,211,153,.92)';
+            cx.fill();
+        }
+
+        // 单位
+        if (h.unit) drawUnit(p, h.unit, side);
+    }
+
+    // 特效
+    drawFx(t);
+
+    cx.restore();
+
+    // 顶部回合提示（画在画布外，用 DOM）
+    UI.dirty = false;
+}
+
+function drawUnit(p, u, side){
+    const r = HEX_R*0.58;
+    // 光晕
+    const glow = cx.createRadialGradient(p.x,p.y,r*0.2,p.x,p.y,r*1.5);
+    glow.addColorStop(0, side.color+'66');
+    glow.addColorStop(1, side.color+'00');
+    cx.fillStyle = glow;
+    cx.beginPath(); cx.arc(p.x,p.y,r*1.5,0,7); cx.fill();
+
+    // 主体
+    const g = cx.createLinearGradient(p.x,p.y-r,p.x,p.y+r);
+    g.addColorStop(0, side.color);
+    g.addColorStop(1, shade(side.color,-38));
+    cx.fillStyle = g;
+    cx.beginPath(); cx.arc(p.x,p.y,r,0,7); cx.fill();
+
+    cx.lineWidth = 1.6; cx.strokeStyle='rgba(255,255,255,.5)';
+    cx.beginPath(); cx.arc(p.x,p.y,r,0,7); cx.stroke();
+
+    // 公式
+    cx.fillStyle = '#fff';
+    const fs = u.formula.length>4 ? r*0.62 : (u.formula.length>3 ? r*0.78 : r*0.95);
+    cx.font = `800 ${Math.round(fs)}px ui-monospace,monospace`;
+    cx.textAlign='center'; cx.textBaseline='middle';
+    cx.shadowColor='rgba(0,0,0,.5)'; cx.shadowBlur=3;
+    cx.fillText(u.formula, p.x, p.y+0.5);
+    cx.shadowBlur=0;
+
+    // 战力点
+    const n = u.power, gap = 3.4, totalW = (n-1)*gap;
+    for (let i=0;i<n;i++){
+        cx.beginPath();
+        cx.arc(p.x - totalW/2 + i*gap, p.y + r*0.86, 1.5, 0, 7);
+        cx.fillStyle='rgba(255,255,255,.85)'; cx.fill();
+    }
+}
+
+function shade(hex, amt){
+    const n = parseInt(hex.slice(1),16);
+    let r = (n>>16)+amt, g = ((n>>8)&255)+amt, b = (n&255)+amt;
+    r=clamp(r,0,255); g=clamp(g,0,255); b=clamp(b,0,255);
+    return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
+
+function pushFx(o){ UI.fx.push(o); if (UI.fx.length>90) UI.fx.shift(); }
+function drawFx(t){
+    UI.fx = UI.fx.filter(f=> t - f.t0 < 780);
+    for (const f of UI.fx){
+        const k = (t - f.t0)/780;
+        const p = axialToPixel(f.c ?? f.from.c, f.r ?? f.from.r);
+        if (f.kind==='burst'){
+            cx.beginPath();
+            cx.arc(p.x,p.y, HEX_R*(0.5+k*1.8), 0, 7);
+            cx.strokeStyle = f.color + Math.round((1-k)*200).toString(16).padStart(2,'0');
+            cx.lineWidth = 3*(1-k)+0.6; cx.stroke();
+        }
+        else if (f.kind==='ring'){
+            cx.beginPath();
+            cx.arc(p.x,p.y, HEX_R*(0.9 - k*0.5), 0, 7);
+            cx.strokeStyle = f.color + Math.round((1-k)*220).toString(16).padStart(2,'0');
+            cx.lineWidth = 2.5*(1-k)+0.8; cx.stroke();
+        }
+        else if (f.kind==='pop'){
+            cx.beginPath();
+            cx.arc(p.x,p.y, HEX_R*(0.3+k*1.1), 0, 7);
+            cx.fillStyle = f.color + Math.round((1-k)*90).toString(16).padStart(2,'0');
+            cx.fill();
+        }
+        else if (f.kind==='lunge'){
+            const a = axialToPixel(f.from.c,f.from.r), b = axialToPixel(f.to.c,f.to.r);
+            const kk = Math.sin(Math.min(1,k*2.2)*Math.PI);
+            const mx = a.x + (b.x-a.x)*0.42*kk, my = a.y + (b.y-a.y)*0.42*kk;
+            cx.beginPath();
+            cx.moveTo(a.x,a.y); cx.lineTo(mx,my);
+            cx.strokeStyle = f.color + Math.round((1-k)*230).toString(16).padStart(2,'0');
+            cx.lineWidth = 3.4*kk+0.8; cx.lineCap='round'; cx.stroke();
+        }
+        else if (f.kind==='float'){
+            cx.fillStyle = f.color + Math.round((1-k)*255).toString(16).padStart(2,'0');
+            cx.font = `800 ${Math.round(HEX_R*0.7)}px ui-monospace,monospace`;
+            cx.textAlign='center';
+            cx.fillText(f.text, p.x, p.y - HEX_R*0.4 - k*26);
+        }
+    }
+}
+
+let lastDraw = 0;
+function loop(){
+    if (!G){ UI.raf = 0; return; }
+    const t = now();
+    const busy = UI.fx.length || UI.shake>0.05;
+    if (busy || UI.dirty || t-lastDraw > 260){
+        draw(); lastDraw = t;
+    }
+    if (G && !G.over) UI.raf = requestAnimationFrame(loop);
+    else UI.raf = 0;
+}
+function kick(){ if (!UI.raf) UI.raf = requestAnimationFrame(loop); }
+
+/* ============================================================
+   8. DOM 渲染
+   ============================================================ */
+function buildRoster(){
+    const mode = M();
+    const pid = G.cur;
+    const side = mode.sides[pid-1];
+    const me = G.players[pid-1];
+    const wrap = $('#roster');
+    wrap.innerHTML = '';
+    const title = document.createElement('div');
+    title.className='roster-title';
+    title.innerHTML = `<span>单位</span><span>${side.name}</span>`;
+    wrap.appendChild(title);
+
+    side.units.forEach((u,i)=>{
+        const locked = me.res < u.cost;
+        const b = document.createElement('button');
+        b.className = 'unit-card' + (UI.sel===i?' on':'') + (locked?' locked':'');
+        b.style.setProperty('--side-color', side.color);
+        b.dataset.i = i;
+        b.innerHTML = `
+            <div class="uc-row1"><span class="uc-formula">${u.formula}</span><span class="uc-cost mono">${u.cost}</span></div>
+            <div class="uc-row2"><span class="uc-name">${u.name}</span>
+                <span class="uc-pips">${[1,2,3,4,5].map(k=>`<i class="${k<=u.power?'on':''}"></i>`).join('')}</span>
+            </div>
+            <div class="uc-abi"><b>${u.abilityName}</b><span>${locked?'资源不足':u.abilityDesc}</span></div>`;
+        b.addEventListener('click', ()=>{
+            if (G.over) return;
+            if (G.vsAI && G.cur===2) { toast('等待 AI 行动','err'); return; }
+            if (G.phase!=='deploy'){ toast('现在是'+phaseName()+'，无法部署','err'); return; }
+            if (locked){ toast('资源不足：还差 '+(u.cost-me.res)+' ⚡','err'); sfx('err'); return; }
+            UI.sel = (UI.sel===i) ? -1 : i;
+            sfx('tap');
+            renderRoster(); recalcLegal(); kick();
+        });
+        wrap.appendChild(b);
+    });
+}
+function renderRoster(){
+    const mode = M();
+    const pid = G.cur;
+    const side = mode.sides[pid-1];
+    const me = G.players[pid-1];
+    [...$('#roster').children].forEach((el,idx)=>{
+        if (idx===0) { el.querySelector('span:last-child').textContent = side.name; return; }
+        const i = +el.dataset.i;
+        const u = side.units[i];
+        const locked = me.res < u.cost;
+        el.classList.toggle('on', UI.sel===i);
+        el.classList.toggle('locked', locked);
+        el.style.setProperty('--side-color', side.color);
+        const abi = el.querySelector('.uc-abi span');
+        if (abi) abi.textContent = locked ? '资源不足' : u.abilityDesc;
+    });
+}
+
+function recalcLegal(){
+    UI.legal.clear();
+    if (!G || G.phase!=='deploy' || UI.sel<0) return;
+    const pid = G.cur;
+    const myTer = [];
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = G.hexes[r][c];
+        if (h.owner===pid || (h.owner===0 && neighbors(c,r).some(n=>getHex(n.col,n.row).owner===pid))){
+            if (!h.unit) UI.legal.add(c+','+r);
+        }
+    }
+}
+
+function phaseName(){
+    return {deploy:'部署阶段', reaction:'反应阶段', end:'结束'}[G.phase] || '部署阶段';
+}
+
+function renderHud(){
+    const mode = M();
+    [1,2].forEach(pid=>{
+        const side = mode.sides[pid-1];
+        const p = G.players[pid-1];
+        $('#nmP'+pid).textContent = side.name;
+        $('#emP'+pid).textContent = side.glyph;
+        $('#emP'+pid).style.background = side.color;
+        $('#hudP'+pid).style.setProperty('--side-color', side.color);
+        $('#hudP'+pid).classList.toggle('active', G.cur===pid && !G.over);
+        $('#resP'+pid).textContent = p.res;
+        const inc = income(pid);
+        const incEl = $('#incP'+pid);
+        incEl.textContent = (inc.total>=0?'+':'') + inc.total;
+        incEl.className = inc.total>=0 ? 'up' : 'down';
+        const ter = territory(pid);
+        $('#terP'+pid).textContent = Math.round(ter/(COLS*ROWS)*100) + '%';
+        // 首都状态
+        const capEl = $('#capP'+pid);
+        const mine = capHex(pid).owner===pid;
+        const oppCap = capHex(pid===1?2:1).owner===pid;
+        capEl.innerHTML = `<i class="${mine?'':'lost'}"></i><i class="${oppCap?'':'lost'}"></i>`;
+        $('#tagP'+pid).textContent = pid===1?'先手':'后手';
+    });
+    $('#hudTurn').textContent = `第 ${G.turn} 回合`;
+    $('#hudPhase').textContent = G.over ? '已结束' : (G.vsAI && G.cur===2 && G.phase==='deploy' ? 'AI 思考中' : phaseName());
+    $('#hudDeploy').innerHTML = `部署 <b>${G.deployed}/${MAX_DEPLOY}</b>`;
+    $('#btnUndo').disabled = !G.undo.length || G.phase!=='deploy';
+    $('#btnEnd').disabled = G.over || G.phase!=='deploy' || (G.vsAI && G.cur===2);
+}
+function renderLegend(){
+    const mode = M();
+    const el = $('#legend');
+    el.innerHTML = `<div class="lg-scale"><span>${mode.metricName}</span><span class="lg-bar" style="background:${mode.legendBar}"></span></div>`
+        + mode.legend.map(([t,c])=>`<div class="lg-item"><i style="background:${c}"></i>${t}</div>`).join('')
+        + `<div class="lg-item"><i style="background:var(--gold)"></i>★ 首都</div>`;
+}
+function renderAll(){
+    if (!G) return;
+    renderHud(); renderRoster(); renderLegend(); recalcLegal();
+    layoutCanvasIfNeeded(); draw(); kick();
+}
+let lastW = 0;
+function layoutCanvasIfNeeded(){
+    const w = cv.parentElement.clientWidth;
+    if (Math.abs(w-lastW) > 2){ lastW = w; layoutCanvas(); }
+}
+/* 容器尺寸变化（响应式/旋转屏幕/侧栏折叠）时自动重排，避免棋盘被裁切 */
+if (typeof ResizeObserver !== 'undefined'){
+    new ResizeObserver(()=>{ if (!G) return; layoutCanvasIfNeeded(); draw(); }).observe(cv.parentElement);
+}
+
+function addLog(msg, cls){
+    if (!G) return;
+    const box = $('#logList');
+    const d = document.createElement('div');
+    d.className = 'log-item' + (cls?' '+cls:'');
+    d.textContent = msg;
+    box.appendChild(d);
+    while (box.children.length>140) box.removeChild(box.firstChild);
+    box.scrollTop = box.scrollHeight;
+    G.log.push({m:msg, c:cls||''});
+    if (G.log.length>140) G.log.shift();
+}
+
+let toastT = null;
+function toast(msg, kind){
+    const wrap = $('#toasts');
+    const d = document.createElement('div');
+    d.className = 'toast' + (kind?' '+kind:'');
+    d.textContent = msg;
+    wrap.appendChild(d);
+    setTimeout(()=>{ d.classList.add('out'); setTimeout(()=>d.remove(), 260); }, 1500);
+}
+
+/* ============================================================
+   9. 音效（WebAudio，无外部资源）
+   ============================================================ */
+let AC = null;
+function ac(){
+    if (!AC){
+        try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC = null; }
+    }
+    if (AC && AC.state==='suspended') AC.resume();
+    return AC;
+}
+function sfx(name){
+    if (!UI.sound) return;
+    const c = ac(); if (!c) return;
+    const t = c.currentTime;
+    const beep = (freq, dur, type, gain, when)=>{
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = type||'sine';
+        o.frequency.setValueAtTime(freq, t+(when||0));
+        g.gain.setValueAtTime(0.0001, t+(when||0));
+        g.gain.exponentialRampToValueAtTime(gain||0.06, t+(when||0)+0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t+(when||0)+dur);
+        o.connect(g); g.connect(c.destination);
+        o.start(t+(when||0)); o.stop(t+(when||0)+dur+0.02);
+    };
+    switch(name){
+        case 'deploy': beep(420,0.08,'sine',0.05); beep(560,0.09,'sine',0.04,0.05); break;
+        case 'clash':  beep(150,0.16,'sawtooth',0.075); beep(96,0.2,'square',0.05,0.05); break;
+        case 'coin':   beep(880,0.06,'triangle',0.035); beep(1180,0.08,'triangle',0.03,0.05); break;
+        case 'tap':    beep(620,0.035,'sine',0.028); break;
+        case 'err':    beep(150,0.1,'square',0.05); break;
+        case 'undo':   beep(360,0.07,'triangle',0.04); beep(280,0.09,'triangle',0.035,0.05); break;
+        case 'win':    [523,659,784,1046].forEach((f,i)=>beep(f,0.24,'triangle',0.055,i*0.11)); break;
+        case 'lose':   [392,330,262].forEach((f,i)=>beep(f,0.3,'sine',0.05,i*0.13)); break;
+    }
+}
+
+/* ============================================================
+   10. 存档
+   ============================================================ */
+function saveGame(){
+    if (!G || G.over) return;
+    try{
+        const data = {
+            v:2, mode:G.mode, vsAI:G.vsAI, diff:G.diff, pass:G.pass,
+            hexes:G.hexes, cur:G.cur, turn:G.turn, phase:'deploy',
+            deployed:G.deployed, players:G.players, ts:Date.now(),
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    }catch(e){}
+}
+function loadSave(){
+    try{
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        const d = JSON.parse(raw);
+        if (!d || d.v!==2 || !d.hexes) return null;
+        if (Date.now()-d.ts > 7*24*3600*1000) return null;
+        return d;
+    }catch(e){ return null; }
+}
+function resumeGame(d){
+    G = {
+        mode:d.mode, vsAI:d.vsAI, diff:d.diff, pass:d.pass,
+        hexes:d.hexes, cur:d.cur, turn:d.turn, phase:'deploy',
+        deployed:0, over:false, winner:0, reason:'',
+        players:d.players, undo:[], log:[], firstBlood:false,
+    };
+    UI.mode = d.mode;
+    $('#setupScreen').classList.remove('show');
+    $('#game').classList.add('show');
+    buildRoster(); renderAll();
+    addLog('⏱ 已恢复上次对局','sys');
+    if (G.vsAI && G.cur===2) gset(aiTurn, 500);
+}
+
+/* ============================================================
+   11. 交互
+   ============================================================ */
+function canvasPos(e){
+    const rect = cv.getBoundingClientRect();
+    const scaleX = (cv.width/(Math.min(window.devicePixelRatio||1,2.5))) / rect.width;
+    const scaleY = (cv.height/(Math.min(window.devicePixelRatio||1,2.5))) / rect.height;
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY,
+    };
+}
+cv.addEventListener('mousemove', e=>{
+    if (!G) return;
+    const {x,y} = canvasPos(e);
+    const ax = pixelToHex(x,y);
+    const h = getHex(ax.col, ax.row);
+    if (h){
+        if (!UI.hover || UI.hover.col!==ax.col || UI.hover.row!==ax.row){
+            UI.hover = {col:ax.col, row:ax.row};
+            draw(); kick();
+        }
+        cv.style.cursor = (UI.sel>=0 && UI.legal.has(ax.col+','+ax.row)) ? 'pointer' : 'default';
+    }
+});
+cv.addEventListener('mouseleave', ()=>{ UI.hover = null; draw(); kick(); });
+
+cv.addEventListener('click', e=>{
+    if (!G || G.over) return;
+    if (G.vsAI && G.cur===2) { toast('等待 AI 行动','err'); return; }
+    if (G.phase!=='deploy'){ toast('现在是'+phaseName()+'，无法部署','err'); return; }
+    const {x,y} = canvasPos(e);
+    const ax = pixelToHex(x,y);
+    const h = getHex(ax.col, ax.row);
+    if (!h) return;
+    if (UI.sel<0){
+        if (h.unit && h.unit.player===G.cur){
+            toast('已选中 '+h.unit.formula+'（'+h.unit.power+' 战力）','ok');
+            sfx('tap');
+        } else {
+            toast('先在左侧选择要部署的单位','err');
+        }
+        return;
+    }
+    if (G.deployed>=MAX_DEPLOY){ toast('本回合部署次数已用完（'+MAX_DEPLOY+'）','err'); sfx('err'); return; }
+    const ok = deploy(h, UI.sel, G.cur);
+    if (ok){
+        UI.sel = -1;
+        renderRoster(); recalcLegal();
+        if (G.deployed>=MAX_DEPLOY) toast('部署次数已用完，可以结束部署','ok');
+    }
 });
 
-// 设置初始化
-initSetup();
-drawBoard();
+// 触屏
+cv.addEventListener('touchend', e=>{
+    if (!G || G.over) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    e.preventDefault();
+    cv.dispatchEvent(new MouseEvent('click', {clientX:t.clientX, clientY:t.clientY, bubbles:true}));
+}, {passive:false});
+
+window.addEventListener('resize', ()=>{ layoutCanvasIfNeeded(); draw(); });
+
+/* ============================================================
+   12. 设置界面
+   ============================================================ */
+function buildSetup(){
+    const grid = $('#modeGrid');
+    grid.innerHTML = '';
+    Object.values(MODES).forEach(m=>{
+        const b = document.createElement('button');
+        b.className = 'mode-card' + (UI.mode===m.key?' on':'');
+        b.dataset.m = m.key;
+        b.innerHTML = `<div class="mc-ico">${m.ico}</div><div class="mc-name">${m.label}</div><div class="mc-desc">${m.desc}</div>`;
+        b.addEventListener('click', ()=>{
+            UI.mode = m.key;
+            [...grid.children].forEach(x=>x.classList.toggle('on', x.dataset.m===m.key));
+            sfx('tap');
+        });
+        grid.appendChild(b);
+    });
+
+    $('#oppSeg').addEventListener('click', e=>{
+        const b = e.target.closest('button'); if (!b) return;
+        UI.vsAI = b.dataset.vs==='true';
+        [...$('#oppSeg').children].forEach(x=>x.classList.toggle('on', x===b));
+        $('#diffField').style.display = UI.vsAI ? '' : 'none';
+        sfx('tap');
+    });
+    $('#diffSeg').addEventListener('click', e=>{
+        const b = e.target.closest('button'); if (!b) return;
+        UI.diff = b.dataset.diff;
+        [...$('#diffSeg').children].forEach(x=>x.classList.toggle('on', x===b));
+        sfx('tap');
+    });
+    $('#passToggle').addEventListener('change', e=>{ UI.pass = e.target.checked; });
+
+    $('#btnStart').addEventListener('click', ()=>{
+        ac();
+        $('#setupScreen').classList.remove('show');
+        $('#game').classList.add('show');
+        newGame(UI.mode, UI.vsAI, UI.diff, UI.pass);
+        setTimeout(()=>{ layoutCanvas(); lastW = 0; layoutCanvasIfNeeded(); draw(); }, 30);
+    });
+    $('#btnResume').addEventListener('click', ()=>{
+        ac();
+        const d = loadSave();
+        if (d) resumeGame(d); else toast('没有可继续的对局','err');
+    });
+}
+
+/* ============================================================
+   13. 事件绑定
+   ============================================================ */
+function bindGame(){
+    $('#btnEnd').addEventListener('click', ()=>{ endDeploy(); });
+    $('#btnUndo').addEventListener('click', ()=>{ undoDeploy(); });
+    $('#btnClearLog').addEventListener('click', ()=>{ $('#logList').innerHTML=''; });
+    $('#btnRestart').addEventListener('click', ()=>{
+        $('#goScreen').classList.remove('show');
+        $('#passScreen').classList.remove('show');
+        $('#game').classList.remove('show');
+        $('#setupScreen').classList.add('show');
+        $('#btnResume').parentElement.style.display = loadSave()?'':'none';
+        clearGameTimers(); G = null;
+    });
+    const openRules = ()=>$('#rulesScreen').classList.add('show');
+    $('#btnRules').addEventListener('click', openRules);
+    $('#btnRules2').addEventListener('click', openRules);
+    $('#btnRulesClose').addEventListener('click', ()=>$('#rulesScreen').classList.remove('show'));
+    $('#rulesScreen').addEventListener('click', e=>{ if (e.target===e.currentTarget) e.currentTarget.classList.remove('show'); });
+
+    $('#btnSound').addEventListener('click', ()=>{
+        UI.sound = !UI.sound;
+        $('#btnSound').textContent = UI.sound?'🔊':'🔇';
+        try{ localStorage.setItem(SOUND_KEY, UI.sound?'1':'0'); }catch(e){}
+        if (UI.sound){ ac(); sfx('tap'); }
+    });
+
+    $('#btnPassGo').addEventListener('click', ()=>{
+        $('#passScreen').classList.remove('show');
+        if (pendingSwitch){ pendingSwitch = false; nextTurn(); }
+    });
+
+    $('#btnGoSetup').addEventListener('click', ()=>{
+        $('#goScreen').classList.remove('show');
+        $('#game').classList.remove('show');
+        $('#setupScreen').classList.add('show');
+        $('#btnResume').parentElement.style.display = loadSave()?'':'none';
+        clearGameTimers(); G = null;
+    });
+    $('#btnGoAgain').addEventListener('click', ()=>{
+        $('#goScreen').classList.remove('show');
+        newGame(UI.mode, UI.vsAI, UI.diff, UI.pass);
+        setTimeout(()=>{ lastW=0; layoutCanvasIfNeeded(); draw(); }, 30);
+    });
+
+    // 键盘
+    window.addEventListener('keydown', e=>{
+        if (!G) return;
+        if (e.key===' ' && G.phase==='deploy' && !(G.vsAI && G.cur===2)){
+            e.preventDefault(); endDeploy();
+        } else if (e.key==='Escape'){
+            UI.sel=-1; renderRoster(); recalcLegal(); draw();
+        } else if (e.key==='z' && (e.ctrlKey||e.metaKey)){
+            e.preventDefault(); undoDeploy();
+        } else if (e.key>='1' && e.key<='5'){
+            const i = +e.key-1;
+            if (G.phase==='deploy' && M().sides[G.cur-1].units[i]){
+                UI.sel = UI.sel===i?-1:i; renderRoster(); recalcLegal(); sfx('tap'); draw();
+            }
+        }
+    });
+}
+
+/* ============================================================
+   14. 启动
+   ============================================================ */
+function boot(){
+    try{ UI.sound = localStorage.getItem(SOUND_KEY)!=='0'; }catch(e){}
+    $('#btnSound').textContent = UI.sound?'🔊':'🔇';
+    buildSetup();
+    bindGame();
+    const sv = loadSave();
+    if (sv){
+        $('#resumeRow').style.display = '';
+        const p = sv.players, md = MODES[sv.mode];
+        $('#btnResume').textContent = `⏱ 继续上局 · 第 ${sv.turn} 回合（${md.sides[sv.cur-1].name}）`;
+    }
+    // 首屏画个静态棋盘预览
+    setTimeout(()=>{
+        layoutCanvas();
+        if (!G){
+            G = {mode:'acid-base',cur:1,turn:1,phase:'setup',deployed:0,over:false,
+                 hexes:Array.from({length:ROWS},(_,r)=>Array.from({length:COLS},(_,c)=>({
+                    col:c,row:r,owner:0,unit:null,ph:7,potential:0,wildElement:null,cap:0}))),
+                 players:[{res:0,kills:0,lost:0},{res:0,kills:0,lost:0}],undo:[],log:[]};
+            draw(); clearGameTimers(); G = null;
+        }
+    }, 20);
+}
+/* 调试钩子：仅在 URL 带 ?debug 时暴露（便于自动化验证，不影响正式游玩） */
+if (/[?&]debug\b/.test(location.search)){
+    window.__ct = {
+        state: () => G,
+        MODES,
+        newGame,
+        deploy: (c,r,i) => deploy(getHex(c,r), i, G.cur, true),
+        deployFor: (c,r,i,pid) => deploy(getHex(c,r), i, pid, true),
+        endPhase: () => endDeploy(true),
+        ai: () => aiTurn(),
+        income, territory, checkWin, UI,
+        perms: () => [...UI.legal],
+        canDeployAt: (c,r) => canDeployAt(getHex(c,r), G.cur),
+        redraw: () => { UI.dirty = true; draw(); },
+    };
+}
+boot();
+
 })();
 </script>
 </body>
