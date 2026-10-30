@@ -1236,7 +1236,7 @@
                 stop: stopMusic,
                 next: playNextMusic,
                 handleThemeChange: handleThemeChange,
-                autoPlay: autoPlayInitialMusic
+                autoPlay: autoPlayRandomMusic
             };
         }
         // ======================= 分子Canvas动画 =======================
@@ -1746,7 +1746,74 @@
         initCombustionEffects();
         initMusicPlayer();
         initTutorial();
+        initVersionBadge();
     });
+
+    // ======================= 版本号徽标 =======================
+    /* 版本号规则
+       正式版本：[年份].[本年度中型及以上更新次数]
+       快照版本：[年份].[本年度中型及以上更新次数]w[本年度 GitHub 推送次数]-[日期 MMDD]
+       中型及以上更新每年 4 次，落在 2 月 / 5 月 / 10 月 / 12 月（2 次大型 + 2 次中型）。
+       快照版本的前缀指向该快照所属（或即将达成的）那一次中/大型更新。
+       例：2026 年 10 月 30 日发布本年度第 3 次中型及以上更新、累计第 110 次推送
+           → 26.3w110-1030
+       ——每次中/大型更新或推送后，只需改下面这几个数。 */
+    const SITE_VERSION = {
+        year: 2026,        // 年份（显示取后两位：26）
+        updateIndex: 3,    // 本年度中型及以上更新次数（2月#1 / 5月#2 / 10月#3 / 12月#4）
+        pushCount: 180,    // 本年度 GitHub 推送次数
+        date: '1030',      // 最近一次更新日期 MMDD
+        snapshot: true     // true = 快照版本（带 w 段与日期）；false = 正式版本
+    };
+
+    function buildVersionString(v) {
+        const base = String(v.year).slice(-2) + '.' + v.updateIndex;
+        return v.snapshot ? base + 'w' + v.pushCount + '-' + v.date : base;
+    }
+
+    function initVersionBadge() {
+        const badge = document.getElementById('versionBadge');
+        const textEl = document.getElementById('versionText');
+        const ver = buildVersionString(SITE_VERSION);
+
+        if (textEl) textEl.textContent = ver;
+
+        // 科技主题 HUD 内的版本号同步
+        const hud = document.querySelector('.cyber-hud-text');
+        if (hud) hud.textContent = 'SYS://IODINE-LAB ' + ver + ' ▮';
+
+        if (!badge) return;
+        if (!SITE_VERSION.snapshot) badge.classList.add('is-release');
+
+        const ymd = SITE_VERSION.year + '-' + SITE_VERSION.date.slice(0, 2) + '-' + SITE_VERSION.date.slice(2);
+        badge.title = [
+            (SITE_VERSION.snapshot ? '快照版本 ' : '正式版本 ') + ver,
+            '本年度第 ' + SITE_VERSION.updateIndex + ' 次中型及以上更新',
+            SITE_VERSION.snapshot ? '本年度第 ' + SITE_VERSION.pushCount + ' 次 GitHub 推送' : '',
+            '更新日期 ' + ymd,
+            '点击复制版本号'
+        ].filter(Boolean).join('\n');
+        badge.setAttribute('aria-label', '版本号 ' + ver + '，点击复制');
+
+        badge.addEventListener('click', () => {
+            const done = () => {
+                badge.classList.add('copied');
+                setTimeout(() => badge.classList.remove('copied'), 1200);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(ver).then(done).catch(done);
+                return;
+            }
+            const ta = document.createElement('textarea');
+            ta.value = ver;
+            ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch (e) { /* 静默降级 */ }
+            ta.remove();
+            done();
+        });
+    }
 
     // ======================= 新手引导 =======================
     const TUTORIAL_STEPS = [

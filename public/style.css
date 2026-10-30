@@ -444,6 +444,18 @@
         .logo{font-size:1.8rem;font-weight:800;background:var(--header-gradient);background-size:200% auto;background-clip:text;-webkit-background-clip:text;color:transparent;letter-spacing:-0.5px;animation:gradient-flow 4s ease infinite}
 @keyframes gradient-flow{0%,100%{background-position:0% center}50%{background-position:100% center}}
         .nav-right{display:flex;align-items:center;gap:1rem}
+        /* ===== 版本号徽标（位于月读镜球左侧） ===== */
+        .version-badge{display:inline-flex;align-items:center;gap:.45rem;padding:.4rem .72rem;border-radius:999px;border:1px solid var(--border);background:var(--accent-bg);color:var(--text-secondary);cursor:pointer;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;font-size:.76rem;font-weight:600;letter-spacing:.03em;line-height:1;white-space:nowrap;flex:none;position:relative;transition:border-color .25s ease,color .25s ease,transform .25s ease,box-shadow .25s ease}
+        .version-badge:hover{border-color:var(--accent);color:var(--text-primary);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+        .version-badge:active{transform:translateY(0) scale(.97)}
+        .version-badge:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+        .vb-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none;animation:vb-pulse 2.4s ease-in-out infinite}
+        .version-badge.is-release .vb-dot{background:#22c55e;animation:none}
+        @keyframes vb-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.78)}}
+        .vb-text{font-variant-numeric:tabular-nums}
+        .version-badge::after{content:'已复制';position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%) translateY(-4px);padding:.2rem .5rem;border-radius:6px;background:var(--accent);color:#fff;font-family:inherit;font-size:.68rem;letter-spacing:.02em;opacity:0;pointer-events:none;white-space:nowrap;z-index:30;transition:opacity .2s ease,transform .2s ease}
+        .version-badge.copied::after{opacity:1;transform:translateX(-50%) translateY(0)}
+        @media (max-width:640px){.nav-right{flex-wrap:wrap;justify-content:flex-end;row-gap:.5rem}.version-badge{font-size:.7rem;padding:.32rem .56rem;gap:.35rem}.vb-dot{width:6px;height:6px}}
         .theme-toggle,.auth-btn{background:var(--accent-bg);border:none;padding:.5rem 1rem;border-radius:40px;cursor:pointer;font-weight:500;color:var(--accent);transition:all .3s cubic-bezier(.45,.05,.19,1.2);position:relative;overflow:hidden}
         .theme-toggle::before,.auth-btn::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:var(--accent);border-radius:50%;transform:translate(-50%,-50%);transition:width 0.4s ease,height 0.4s ease}
         .theme-toggle:hover::before,.auth-btn:hover::before{width:100%;height:100%}
