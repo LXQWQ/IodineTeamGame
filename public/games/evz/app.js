@@ -307,7 +307,7 @@ function restart(){go=false;gs=true;es=150;sc=0;wv=0;zs=[];els=[];bls=[];ps=[];r
 async function init(){try{await iSp()}catch(e){spOk=false} rSide();upUI();upInvUI();gs=true;gst=performance.now();lf=gst;d('msg').innerHTML='⚛️ 初始：<b>H C Ne</b> | 僵尸死亡产物=真实反应结果 | Na杀水僵尸→NaOH, 酸碱中和→盐+水 | 30秒发育期';fr=requestAnimationFrame(gup)}init();
 
 // ==================== 调试钩子（仅用于自动化验证） ====================
-window.__evz = {
+if(location.search.indexOf('debug')>=0) window.__evz = {
     get s(){
         return {
             es, sc, wv, go, gs,
