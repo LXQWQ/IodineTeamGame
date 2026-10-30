@@ -1480,12 +1480,52 @@ function finish(w, why){
    6. AI
    ============================================================ */
 /* AI 为任意一方挑选一手（不解定时器，便于自动化对局与平衡测算） */
+/* 兵种角色：决定它该站哪儿 */
+function aiRoleOf(u){
+    const a = (u && (u.abi || u.ability)) || '';   // 棋子用 abi，卡池里是 ability
+    if (a==='home')     return 'guard';        // 守城：越靠家越硬
+    if (a==='vanguard') return 'raider';       // 远袭：越离家越猛
+    if (a==='pierce')   return 'breaker';      // 破防：专啃高防目标
+    if (a==='march')    return 'march';        // 行军：自动推进
+    if (a==='support')  return 'anchor';       // 支援：抱团发光环
+    if (a==='expand' || a==='oxidize') return 'grower';  // 铺地
+    return 'flex';
+}
+
+/* 本回合意图：先看清自己是该守还是该攻 */
+function aiIntent(pid){
+    const opp = pid===1?2:1;
+    const myCap = capPos(pid);
+    let threat = 0, enemyNear = 0, guards = 0, ownWalls = 0, ownUnits = 0;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const x = getHex(c,r);
+        if (!x.unit) continue;
+        const d = hexDist(c,r,myCap.c,myCap.r);
+        if (x.unit.player===opp){
+            if (d<=4){ enemyNear++; threat += (5-d); }
+        } else if (x.unit.player===pid){
+            ownUnits++;
+            if (d<=2) guards++;
+            if ((x.unit.abi||x.unit.ability)==='home') ownWalls++;   // 我方已有几堵墙
+        }
+    }
+    const myT = territory(pid), oppT = territory(opp);
+    let mode;
+    if (threat >= 6 && guards < 2) mode = 'defend';       // 家要破了：回去守
+    else if (myT > oppT*1.22 || oppT <= 12) mode = 'press'; // 有优势：压上去斩首
+    else mode = 'expand';                                  // 均势：先铺地
+    return {mode, threat, enemyNear, guards, ownWalls, ownUnits, myT, oppT};
+}
+
+/* AI 为任意一方挑选一手（不解定计时器，便于自动化对局与平衡测算） */
 function aiPlayFor(pid, diff){
     if (!G || G.over) return [];
     diff = diff || G.diff || 'medium';
     const me = G.players[pid-1];
     const units = M().sides[pid-1].units;
     const picks = [];
+    const plan = aiIntent(pid);
+    const used = new Set();
     let guard = 0;
 
     const pickOne = () => {
@@ -1496,12 +1536,14 @@ function aiPlayFor(pid, diff){
             for (let i=0;i<units.length;i++){
                 const u = units[i];
                 if (u.cost > me.res) continue;
-                cands.push({h, i, u, s: aiScore(h,u,pid)});
+                let sc = aiScore(h, u, pid, plan);
+                if (used.has(u.id)) sc -= 2.2;   // 同回合别重复买同一种
+                cands.push({h, i, u, s: sc});
             }
         }
         if (!cands.length) return null;
         cands.sort((a,b)=>b.s-a.s);
-        if (diff==='easy') return cands[rnd(Math.min(cands.length, 5))];
+        if (diff==='easy') return cands[rnd(Math.min(cands.length, 6))];
         if (diff==='medium') return cands[rnd(Math.min(cands.length, 3))];
         return cands[0];
     };
@@ -1512,6 +1554,7 @@ function aiPlayFor(pid, diff){
         if (diff==='hard' && pick.s < -4) break;   // 没有好棋就不硬下
         if (!deploy(pick.h, pick.i, pid, true)) break;
         picks.push(pick.u.id);
+        used.add(pick.u.id);
     }
     return picks;
 }
@@ -1524,12 +1567,14 @@ function aiTurn(){
     gset(()=>{ if (!G || G.over || G.cur!==pid) return; endDeploy(true); }, 620);
 }
 
-function aiScore(h, u, pid){
+/* 单格评分：前线价值 + 真实战斗推演 + 角色契合 + 攻守配比 */
+function aiScore(h, u, pid, plan){
     const opp = pid===1?2:1;
-    let s = 0;
     const myCap = capPos(pid), oppCap = capPos(opp);
+    const role = aiRoleOf(u);
+    let s = 0;
 
-    let enemyAdj = 0, ownAdj = 0, neutralAdj = 0, enemyUnitAdj = 0;
+    let enemyAdj=0, ownAdj=0, neutralAdj=0, enemyUnitAdj=0;
     for (const n of neighbors(h.col,h.row)){
         const nh = getHex(n.col,n.row);
         if (nh.owner===opp) enemyAdj++;
@@ -1538,44 +1583,96 @@ function aiScore(h, u, pid){
         if (nh.unit && nh.unit.player===opp) enemyUnitAdj++;
     }
 
-    // 前线价值
-    s += enemyAdj * 3.2 + neutralAdj * 0.7 + ownAdj * 0.3;
-
-    // 能压制的敌人
-    for (const n of neighbors(h.col,h.row)){
-        const nh = getHex(n.col,n.row);
-        if (nh.unit && nh.unit.player===opp){
-            const mine = (u.atk+u.def)/2 + M().envBonus(h)+(h.owner===pid?1:0)+(h.cap===pid?CAP_DEF:0);
-            const theirs = (nh.unit.atk+nh.unit.def)/2 + M().envBonus(nh)+(nh.owner===opp?1:0)+(nh.cap===opp?CAP_DEF:0);
-            s += mine>theirs ? 5.5 : (mine<theirs ? -4.5 : 0.4);
-        }
-    }
-
-    // 首都压力
     const dOpp = hexDist(h.col,h.row,oppCap.c,oppCap.r);
     const dOwn = hexDist(h.col,h.row,myCap.c,myCap.r);
-    if (dOpp<=2) s += 7;
-    else if (dOpp<=4) s += 2.5;
-    // 守家：敌方兵力逼近本方首都
-    let threat = 0;
-    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
-        const x = getHex(c,r);
-        if (x.unit && x.unit.player===opp){
-            const d = hexDist(c,r,myCap.c,myCap.r);
-            if (d<=4) threat += (5-d)*1.2;
-        }
+    const anchor = Math.max(0, 8-dOwn);          // 越靠自家首都越大
+
+    // 前线价值
+    s += enemyAdj*2.4 + neutralAdj*0.55 + ownAdj*0.4;
+
+    // 真实战斗推演（与引擎同一套 sideScore / 修正项）
+    const ghost = Object.assign({}, u, {abi: u.abi || u.ability, player: pid});
+    const mine = sideScore(ghost, M().envBonus(h), h);
+    for (const n of neighbors(h.col,h.row)){
+        const nh = getHex(n.col,n.row);
+        if (!nh.unit || nh.unit.player!==opp) continue;
+        const foeU = nh.unit;
+        const theirs = sideScore(foeU, M().envBonus(nh), nh);
+        const pierce = (u.abi||u.ability)==='pierce' ? (foeU.def||0)*PIERCE_RATE : 0;
+        const flank  = (foeU.abi!=='taunt') ? Math.max(0, adjacentFoes(nh, opp)-1)*FLANK_PENALTY : 0;
+        const iKill = mine.atk > Math.max(0.1, theirs.def - pierce - flank) * KILL_MARGIN;
+        const iDie  = theirs.atk > mine.def * KILL_MARGIN;
+        if (iKill && !iDie)       s += 9.0;   // 白吃
+        else if (iKill && iDie)   s += 1.0;   // 换掉
+        else if (!iKill && iDie)  s -= 8.0;   // 送人头
+        else                      s += 0.5;   // 僵持
     }
-    if (threat>4 && dOwn<=2) s += threat*0.55;
-    if (dOwn<=1 && enemyUnitAdj>0) s += 3;
 
-    // 成本与战力
-    s += (u.atk*0.5+u.def*0.5)*0.55 - u.cost*0.045;
+    // 角色契合
+    switch(role){
+        case 'guard':
+            // 墙的职责是「守」，不是「冲锋」：按距离硬性分区，近家给大加分、远投重罚
+            s += dOwn<=2 ? 12 : (dOwn<=4 ? 3 : -8);
+            s -= (enemyAdj + neutralAdj)*0.9;
+            if (enemyUnitAdj>0) s += 6;                          // 来犯者已到眼前，贴住它
+            if (h.cap===pid) s += 1;
+            if (dOwn===0) s -= 4;                                // 别把坦克堵在首都上（首都自带 +2.5）
+            if (plan.ownWalls===0 && plan.ownUnits>=2) s += 7;    // 阵中至少要有一堵墙
+            if (plan.ownWalls>=2 && plan.threat<4) s -= 4.5;     // 墙够了自己就收手
+            break;
+        case 'raider':
+            // 快攻手要压到远处：离家越远越好，堆在后方毫无意义
+            s += dOwn>=6 ? 9 : (dOwn>=4 ? 4 : -6);
+            if (dOpp<=3) s += 4;
+            break;
+        case 'breaker': {
+            let bestDef = 0;
+            for (const n of neighbors(h.col,h.row)){
+                const nh = getHex(n.col,n.row);
+                if (nh.unit && nh.unit.player===opp) bestDef = Math.max(bestDef, nh.unit.def||0);
+            }
+            s += dOwn*0.75 + bestDef*1.2;                       // 专找硬骨头
+            break;
+        }
+        case 'march':
+            s += dOwn*0.85 + (neutralAdj+enemyAdj)*0.9;
+            break;
+        case 'anchor':
+            s += ownAdj*1.7 + 2;                                // 抱团
+            break;
+        case 'grower':
+            s += neutralAdj*2.0 + ownAdj*0.5;                   // 铺地
+            break;
+        default:
+            s += (dOpp<=3 ? 2.5 : 0) + neutralAdj*0.7;
+    }
 
-    // 资源紧张时不乱花钱
-    if (G.players[pid-1].res < 40 && u.cost > 30) s -= 3;
+    // 攻守配比
+    if (plan.mode==='defend'){
+        if (dOwn>=4 && role!=='raider') s -= 5.5;               // 家里着火时别往前扔
+        if (role==='guard' && dOwn<=2) s += 6;
+        if (enemyUnitAdj>0 && dOwn<=3) s += 3;
+    } else if (plan.mode==='press'){
+        if (dOpp<=2) s += 6;                                    // 能斩首就斩首
+        else if (dOpp<=4) s += 3;
+        if (role==='raider' || role==='breaker') s += 2.5;
+    } else {
+        // 均势扩张期：先抢地、攒节奏，别把大件坦克停在后方
+        if (neutralAdj>=2) s += 2.5;
+        // 扩张期：已经有守军就不再堆；但留一个「压阵」的坦克是有用的
+        if (plan.enemyNear===0 && role==='guard' && plan.ownWalls>=2) s -= 4;
+        if (plan.enemyNear===0 && u.cost>40 && role!=='guard') s -= 2;
+        if (plan.enemyNear>=2 && dOwn<=2 && role==='guard') s += 2.5;
+    }
+
+    // 性价比：同价位更划算的战力优先
+    s += (u.atk+u.def)*0.42 - u.cost*0.05;
+    if (me_res(pid) < 40 && u.cost > 30) s -= 3;
 
     return s;
 }
+
+function me_res(pid){ return G.players[pid-1].res; }
 
 /* ============================================================
    7. 渲染
@@ -2320,7 +2417,7 @@ if (/[?&]debug\b/.test(location.search)){
         runInfluence: () => resolveInfluence(),
         runMarch: () => resolveMarch(),
         unitScore: (c,r) => { const h = getHex(c,r); return h.unit ? sideScore(h.unit, M().envBonus(h), h) : null; },
-        units: (pid) => M().sides[pid-1].units.map(u=>({id:u.id,name:u.name,atk:u.atk,def:u.def,ability:u.ability,cost:u.cost})),
+        units: (pid) => M().sides[pid-1].units.map(u=>({id:u.id,name:u.name,formula:u.formula,atk:u.atk,def:u.def,ability:u.ability,abi:u.abi,cost:u.cost,power:u.power})),
         hexAt: (c,r) => getHex(c,r),
         setHex: (c,r,obj) => { Object.assign(getHex(c,r), obj); if (obj && 'owner' in obj) getHex(c,r).press = {1:0,2:0}; },
         /* 测试用：不改变棋局，直接算一场对决的双方战力
@@ -2329,6 +2426,12 @@ if (/[?&]debug\b/.test(location.search)){
             _duel(atkA, defA, abiA, envA||0, !!ownA, atkB, defB, abiB, envB||0, !!ownB),
         deployLimit: () => deployLimit(),
         winRatio: () => winRatio(),
+        aiRole: (u) => aiRoleOf(u),
+        aiIntent: (pid) => aiIntent(pid),
+        aiScoreAt: (c,r,idx,pid) => aiScore(getHex(c,r), M().sides[pid-1].units[idx], pid, aiIntent(pid)),
+        capPos: (pid) => capPos(pid),
+        neighbors: (c,r) => neighbors(c,r),
+        hexDist: (a,b,c2,d2) => hexDist(a,b,c2,d2),
         income, territory, checkWin, UI,
         perms: () => [...UI.legal],
         canDeployAt: (c,r) => canDeployAt(getHex(c,r), G.cur),
