@@ -495,7 +495,9 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
         <p><b>② 补偿</b>：领土落后方按差距获得补给（最多 +20），被压制时仍有翻盘资金。</p>
         <p><b>③ 部署</b>：每回合最多部署 2 个（首回合双方各只能部署 1 个），只能放在自己的领地，或与自己领地相邻的中立格。</p>
         <p><b>④ 反应</b>：相邻的敌对单位交战，按战力从高到低结算，胜者吞并对方格子。<b>每个单位每回合只交战一次</b>。</p>
-        <p><b>⑤ 同化</b>：存活的单位把相邻的<b>中立空地</b>转化为自己的领土。<b>敌方领地只能用战斗夺取</b>，不会被同化白拿。</p>
+        <p><b>⑤ 同化</b>：存活的单位把相邻的<b>中立空地</b>转化为自己的领土。</p>
+        <p><b>⑥ 渗透</b>：单位会把周围 6 格里<b>没有驻兵</b>的格子「环境」往自己这侧推——几级兵就能同时影响几格（强蚀/氧化再多 1 格）。同一格被渗透 4 次即易主。</p>
+        <p>这条很关键：敌方没放兵的空地，靠部队在旁边施压就能一步步拿下来，不会出现「明明围住了却打不动」的死局。看棋盘底色就能看出压力方向。</p>
       </div>
       <div class="rule-sec">
         <h3>战力计算</h3>
@@ -624,6 +626,10 @@ const MODES = {
             if (Math.abs(h.ph-7) < 0.4) h.ph = target===1?3:11;
         },
         neutralized(h){ return h.ph!=null && Math.abs(h.ph-7) < 0.6; },
+        // 渗透：每回合把无兵格的 pH 往自己这侧推一小步
+        influence(h, owner){
+            h.ph = clamp((h.ph==null?7:h.ph) + (owner===1?-1.1:1.1), 0, 14);
+        },
         tint(h){ // 单元格底色（按 pH）
             const p = clamp(h.ph==null?7:h.ph, 0, 14);
             const t = p/14;
@@ -664,6 +670,9 @@ const MODES = {
             h.potential = clamp((h.potential||0) + (owner===1?0.6:-0.6), -2, 2);
         },
         neutralized(h){ return Math.abs(h.potential||0) < 0.15; },
+        influence(h, owner){
+            h.potential = clamp((h.potential||0) + (owner===1?-0.35:0.35), -2, 2);
+        },
         tint(h){
             const t = (clamp(h.potential||0,-2,2)+2)/4;
             const r = Math.round(251 - t*192), g = Math.round(146 - t*35), b = Math.round(60 + t*178);
@@ -707,6 +716,11 @@ const MODES = {
         },
         envText(h){ return h.wildElement ? h.wildElement : '—'; },
         nudge(h){ if (h.wildElement && Math.random()<0.35) h.wildElement = null; },
+        influence(h, owner){
+            // 野元素被邻近势力逐步同化（每回合 50% 概率换成本族亲和元素）
+            // 不做必然转化：元素模式没有连续量，瞬间倒戈会让渗透过强
+            if (Math.random() < 0.5) h.wildElement = owner===1 ? 'Na' : 'Cl';
+        },
         neutralized(){ return false; },
         tint(h){
             if (!h.wildElement) return 'rgba(148,163,184,';
@@ -878,6 +892,7 @@ function deploy(hex, unitIdx, pid, silent){
     me.res -= u.cost;
     hex.unit = {player:pid, id:u.id, name:u.name, formula:u.formula, power:u.power, abi:u.ability};
     hex.owner = pid;
+    hex.press = {1:0, 2:0};
     M().nudge(hex, pid);
     G.deployed++;
     if (!silent){
@@ -1016,6 +1031,7 @@ function resolvePair(a,b){
     G.players[wu.player-1].kills++;
     G.players[lu.player-1].lost++;
 
+    l.press = {1:0, 2:0};
     addLog(`⚔️ ${wu.formula} 击溃 ${lu.formula}（${(winner===a?ea:eb).toFixed(1)} : ${(winner===a?eb:ea).toFixed(1)}）→ 夺取 ${l.col},${l.row}`,'clash');
     pushFx({kind:'burst', c:l.col,r:l.row, color:wSide.color, t0:now()});
     pushFx({kind:'float', c:l.col,r:l.row, text:'+1', color:wSide.color, t0:now()});
@@ -1087,6 +1103,63 @@ function settleNeutral(){
             h.owner = 0;
         }
     }
+}
+
+/* ---------- 渗透：无兵格的归属压力 ----------
+   敌方领地若没驻兵，既不能部署也不能交战，会永远打不下来。
+   让每个单位每回合把周围的无兵格「环境」往自己这侧推：
+   阶级越高，能同时影响的格子越多（几级兵影响几个），累计到阈值即易主。 */
+const INFLUENCE_NEED = 4;      // 需要累积的渗透次数
+
+function pressureOf(h){
+    if (!h.press) h.press = {1:0, 2:0};
+    return h.press;
+}
+
+function resolveInfluence(){
+    const units = [];
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = getHex(c,r);
+        if (h.unit) units.push(h);
+    }
+    const flip = (G.turn % 2 === 0);
+    units.sort((x,y)=>{ const d=(x.row-y.row)||(x.col-y.col); return flip?-d:d; });
+
+    let taken = 0;
+    for (const h of units){
+        const u = h.unit;
+        if (!u) continue;
+        // 候选：周围 6 格里，无驻兵、非首都、不是自己的
+        let cands = neighbors(h.col,h.row)
+            .map(n=>getHex(n.col,n.row))
+            .filter(n=>n && !n.unit && !n.cap && n.owner!==u.player);
+        if (!cands.length) continue;
+        // 阶级决定同时影响几格（强蚀/氧化额外 +1）
+        let reach = u.power + ((u.abi==='corrode'||u.abi==='oxidize') ? 1 : 0);
+        reach = Math.min(reach, cands.length);
+        // 随机挑 reach 格
+        for (let i=cands.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [cands[i],cands[j]]=[cands[j],cands[i]]; }
+        const pick = cands.slice(0, reach);
+
+        for (const n of pick){
+            const pr = pressureOf(n);
+            pr[u.player] += 1;
+            pr[3-u.player] = Math.max(0, pr[3-u.player] - 1);
+            M().influence(n, u.player);
+
+            const need = n.owner===0 ? INFLUENCE_NEED-1 : INFLUENCE_NEED;
+            if (pr[u.player] >= need && n.owner !== u.player){
+                const from = n.owner;
+                n.owner = u.player;
+                n.press = {1:0, 2:0};
+                M().nudge(n, u.player);
+                taken++;
+                addLog(`🌫️ ${u.formula} 渗透 ${n.col},${n.row}：${from?M().sides[from-1].name+' → ':''}${M().sides[u.player-1].name} 夺取该格`,'clash');
+                pushFx({kind:'pop', c:n.col, r:n.row, color:M().sides[u.player-1].color, t0:now()});
+            }
+        }
+    }
+    return taken;
 }
 
 /* ---------- 野元素衰减（元素模式） ----------
@@ -1196,6 +1269,9 @@ function endDeploy(force){
     resolveReactions();
     addLog('🌀 同化阶段…','sys');
     resolveAssimilation();
+    addLog('🌫️ 渗透阶段…','sys');
+    const infl = resolveInfluence();
+    if (infl) addLog(`  无驻兵格易主 ${infl} 处`,'sys');
     settleNeutral();
     decayWild();
     renderAll();
@@ -2101,6 +2177,9 @@ if (/[?&]debug\b/.test(location.search)){
         setSim: v => { SIM.on = !!v; },
         aiPid: () => aiPid(),
         isAITurn: () => isAITurn(),
+        runInfluence: () => resolveInfluence(),
+        hexAt: (c,r) => getHex(c,r),
+        setHex: (c,r,obj) => { Object.assign(getHex(c,r), obj); if (obj && 'owner' in obj) getHex(c,r).press = {1:0,2:0}; },
         /* 测试用：不改变棋局，直接算一场对决的双方战力 */
         duel: (pa, aa, ea, ownA, pb, ab, eb, ownB, modeKey) => {
             if (modeKey) { const bak = G && G.mode; if (G) G.mode = modeKey; var r = _duel(pa,aa,ea,ownA,pb,ab,eb,ownB); if (G) G.mode = bak; return r; }
