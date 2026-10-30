@@ -1,88 +1,128 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>碳链工坊 · 3D分子工坊 | 有机合成策略</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🧪</text></svg>">
-        <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>碳链工坊 · Chain Craft | 有机合成解谜</title>
+<meta name="description" content="用真实的有机反应做最少步数的分子合成：Grignard、Aldol、Diels-Alder、酯化……12 个关卡从乙醇做到环酯。">
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<div class="container">
-    <header>
-        <h1>🧪 碳链工坊 · 3D分子工坊 | 有机合成策略</h1>
-        <div class="header-controls">
-            <!-- 音乐播放器 -->
-            <div class="music-player">
-                <button class="music-toggle-btn" id="musicToggleBtn" title="音乐播放控制">
-                    <span class="music-icon">🎵</span>
-                    <span class="music-status" id="musicStatus">暂停</span>
-                </button>
-                <div class="music-dropdown" id="musicDropdown">
-                    <div class="music-header">
-                        <span>🎵 背景音乐</span>
-                        <button class="music-close-btn" id="musicCloseBtn">✕</button>
-                    </div>
-                    <div class="music-controls">
-                        <button class="music-control-btn" id="musicPlayPauseBtn">▶️ 播放</button>
-                        <button class="music-control-btn" id="musicStopBtn">⏹️ 停止</button>
-                        <button class="music-control-btn" id="musicNextBtn">⏭️ 下一首</button>
-                    </div>
-                    <div class="music-volume-control">
-                        <span>🔊 音量</span>
-                        <input type="range" id="musicVolume" min="0" max="100" value="50" class="volume-slider">
-                        <span id="volumeValue">50%</span>
-                    </div>
-                    <div class="music-playlist" id="musicPlaylist">
-                        <!-- 音乐列表将通过JavaScript动态生成 -->
-                    </div>
-                </div>
-            </div>
-            <button class="theme-btn" id="darkModeToggle">🌙 深色模式</button>
-        </div>
-    </header>
-    <div class="game-layout">
-        <div class="molecule-card">
-            <h3>🧬 当前分子 (3D)</h3>
-            <div id="modelContainer" class="model-container"></div>
-            <div class="carbon-count">📊 碳数: <span id="carbonCount">2</span> C</div>
-            <div id="moleculeDetail">--</div>
-        </div>
-        <div class="reactant-panel">
-            <h3>⚗️ 可用反应</h3>
-            <div class="level-bar" id="levelSelect"></div>
-            <div class="reaction-grid" id="reactionGrid"></div>
-            <div id="feedbackMsg" class="feedback">选择反应合成目标分子</div>
-        </div>
-        <div class="resources-panel">
-            <h3>🎯 合成任务</h3>
-            <div id="levelInfo" style="font-weight:bold;margin-bottom:0.4rem;">第1关</div>
-            <div id="targetInfo" style="margin-bottom:0.6rem;">目标: --</div>
-            <div id="scoreDisplay" style="font-size:1.1rem;font-weight:bold;color:var(--accent);margin-bottom:0.4rem;">--</div>
-            <hr style="border:0;border-top:1px solid var(--border);margin:0.5rem 0;">
-            <h4 style="margin-bottom:0.4rem;">📜 合成路径</h4>
-            <div id="historyList" class="history-list" style="max-height:180px;overflow-y:auto;font-size:0.75rem;margin-bottom:0.6rem;"></div>
-            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                <button id="hintBtn" class="game-btn hint-btn">💡 提示(3)</button>
-                <button id="undoBtn" class="game-btn undo-btn">↩ 撤销</button>
-                <button id="resetBtn" class="game-btn reset-btn">🔄 重试</button>
-                <button id="randomBtn" class="game-btn random-btn">🎲 随机</button>
-                <button id="nextLevelBtn" class="game-btn next-btn" style="display:none;">▶ 下一关</button>
-            </div>
-        </div>
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">C<sub>n</sub></div>
+    <div class="brand-txt">
+      <h1>碳链工坊</h1>
+      <p>CHAIN CRAFT · 有机合成解谜</p>
     </div>
-    <footer>⚛️ 反应路径规划 · 有机合成解谜 | BFS最短路径验证 | 3D球棍模型实时更新</footer>
+  </div>
+  <div class="top-right">
+    <div class="level-dots" id="levelDots" aria-label="关卡进度"></div>
+    <button class="icon-btn" id="btnSound" title="音效开关" aria-label="音效开关">🔊</button>
+    <button class="icon-btn" id="btnHelp" title="规则说明" aria-label="规则说明">📖</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- 左：当前分子 -->
+  <section class="panel now">
+    <div class="panel-head">
+      <span class="ph-title">当前分子</span>
+      <span class="ph-badge" id="stepBadge">0 步</span>
+    </div>
+    <div class="mol-stage" id="nowStage"></div>
+    <div class="mol-name" id="nowName">—</div>
+    <div class="mol-desc" id="nowDesc"></div>
+    <div class="chips" id="nowChips"></div>
+  </section>
+
+  <!-- 中：反应卡 + 日志 -->
+  <section class="panel mid">
+    <div class="panel-head">
+      <span class="ph-title">可用反应</span>
+      <span class="ph-hint" id="rxCount"></span>
+    </div>
+    <div class="rxn-grid" id="rxnGrid"></div>
+    <div class="log-card">
+      <div class="log-head"><span>合成日志</span><button class="tiny" id="btnClearLog">清空</button></div>
+      <div class="log-body" id="logBody"></div>
+    </div>
+  </section>
+
+  <!-- 右：目标 + 操作 -->
+  <aside class="panel side">
+    <div class="panel-head">
+      <span class="ph-title">目标分子</span>
+      <span class="ph-badge gold" id="tierBadge">入门</span>
+    </div>
+    <div class="mol-stage small" id="goalStage"></div>
+    <div class="mol-name" id="goalName">—</div>
+    <div class="goal-text" id="goalText"></div>
+
+    <div class="metrics">
+      <div class="metric"><span>当前步数</span><b id="mSteps">0</b></div>
+      <div class="metric"><span>最少步数</span><b id="mOpt">—</b></div>
+      <div class="metric"><span>预估评级</span><b id="mStars">—</b></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" id="btnUndo">↩ 撤销</button>
+      <button class="btn ghost" id="btnHint">💡 提示</button>
+      <button class="btn ghost" id="btnRestart">⟲ 重来</button>
+      <button class="btn primary" id="btnNext" hidden>下一关 →</button>
+    </div>
+    <div class="hint-box" id="hintBox" hidden></div>
+  </aside>
+</main>
+
+<!-- 关卡选择 -->
+<div class="modal" id="levelModal" hidden>
+  <div class="modal-box wide">
+    <div class="modal-head">
+      <h2>选择关卡</h2>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div class="level-grid" id="levelGrid"></div>
+    <p class="modal-foot">三星＝用最少步数完成；通关进度会保存在本机。</p>
+  </div>
 </div>
 
-<script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
-        }
-    }
-</script>
+<!-- 规则 -->
+<div class="modal" id="helpModal" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>怎么玩</h2>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div class="help-body">
+      <p><b>目标</b>：把左边的分子，变成右边那个，<b>步数越少越好</b>。</p>
+      <p><b>一步</b>＝选一张反应卡。卡上会写清可用条件和变化，写着「不可用」的卡片会告诉你缺什么官能团。</p>
+      <p><b>分子</b>由四件事描述：碳数、官能团（-OH 羟基 / =O 羰基 / -CHO 醛基 / -COOH 羧基 / -COO- 酯基 / -O- 醚键 / -X 卤素）、碳碳双键数、环。</p>
+      <p><b>评级</b>：达到最少步数 → ⭐⭐⭐；多 1 步 → ⭐⭐；再多 → ⭐。</p>
+      <p class="dim">所有反应都是课本里的真实反应：Grignard 加成、Aldol 缩合、Williamson 成醚、NaBH₄ 还原、PCC 氧化、Jones 强氧化、酯化、醚水解、Diels-Alder 环加成、催化加氢、烯烃水合、醇脱水、脱羧、光照卤代、卤代烃水解。</p>
+    </div>
+  </div>
+</div>
 
-<script type="module" src="app.js"></script>
+<!-- 通关 -->
+<div class="modal" id="winModal" hidden>
+  <div class="modal-box">
+    <div class="win-trophy">🏆</div>
+    <h2 id="winTitle">合成成功</h2>
+    <div class="win-stars" id="winStars">★★★</div>
+    <p class="win-sub" id="winSub"></p>
+    <div class="win-btns">
+      <button class="btn ghost" id="winRetry">再试一次</button>
+      <button class="btn primary" id="winNext">下一关 →</button>
+    </div>
+  </div>
+</div>
+
+<audio id="sfx" preload="none"></audio>
+<script src="./logic.js"></script>
+<script src="./app.js"></script>
 </body>
 </html>
