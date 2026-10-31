@@ -174,11 +174,18 @@ body{
 }
 .btn-ignite:disabled{background:#241a38;color:var(--txt3);box-shadow:none;cursor:not-allowed}
 .btn-ignite:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 11px 28px rgba(163,230,53,.38)}
-.btn-clear,.btn-end{
+.btn-clear,.btn-end,.btn-swap{
   padding:12px 16px;border-radius:11px;cursor:pointer;font-family:inherit;font-size:13px;
   background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--txt2);transition:.16s;
 }
-.btn-clear:hover,.btn-end:hover{color:var(--txt);border-color:var(--violet)}
+.btn-clear:hover,.btn-end:hover,.btn-swap:not(:disabled):hover{color:var(--txt);border-color:var(--violet)}
+.btn-swap:disabled{opacity:.42;cursor:not-allowed}
+/* 手牌一对都配不上时，换手牌按钮呼吸提示 */
+.btn-swap.need{
+  color:var(--gold);border-color:rgba(250,204,21,.55);background:rgba(250,204,21,.1);
+  animation:pulseSwap 1.5s ease-in-out infinite;
+}
+@keyframes pulseSwap{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.34)}50%{box-shadow:0 0 0 7px rgba(250,204,21,0)}}
 .btn-end{color:var(--cyan);border-color:rgba(34,211,238,.32);background:rgba(34,211,238,.08)}
 .btn-end:hover{background:rgba(34,211,238,.16)}
 

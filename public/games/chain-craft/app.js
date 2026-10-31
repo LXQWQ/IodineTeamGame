@@ -84,127 +84,171 @@
     return null;
   }
 
-  function svgMolecule(mol, opt) {
+function svgMolecule(mol, opt) {
     opt = opt || {};
     const W = opt.w || 300, H = opt.h || 176;
     const accent = opt.accent || '#a78bfa';
     const n = Math.max(1, mol.carbonCount);
     const hasRing = mol.rings && mol.rings.length > 0;
+    const dbl = mol.unsaturation ? mol.unsaturation.length : 0;
+    const gid = 'g' + String(opt.uid || 'x').replace(/[^a-zA-Z0-9]/g, '');
     const parts = [];
     parts.push(`<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" role="img" aria-label="${escapeAttr(mol.getName())}">`);
-    parts.push(`<defs><linearGradient id="g${opt.uid || 'a'}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${accent}" stop-opacity=".30"/>
+    parts.push(`<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${accent}" stop-opacity=".16"/>
       <stop offset="100%" stop-color="${accent}" stop-opacity="0"/></linearGradient></defs>`);
 
-    // 碳骨架顶点
-    let pts = [];
+    /* ── 1. 骨架顶点（骨架式：顶点即碳，不画原子球） ── */
+    const cy = H / 2 + 6;
+    const C = [];                                   // 碳顶点
+    const B = [];                                   // 键 [i, j]
+    let ringMeta = null;
+    let chainStep = 34, chainAmp = 10, bondLen = 36;  // 键长：官能团顶点与碳–碳键等长
     if (hasRing) {
-      const cx = W / 2, cy = H / 2 + 4, r = Math.min(W, H) * 0.26;
+      const r = Math.min(W * 0.175, H * 0.30, 46);
+      const extra = Math.max(0, n - 6);
+      const cx = extra > 0 ? W / 2 - 40 : W / 2;
       for (let i = 0; i < 6; i++) {
         const a = -Math.PI / 2 + i * Math.PI / 3;
-        pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+        C.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
       }
-      // 环上的碳数若大于 6，多出的碳挂在顶端顶点外
-      const extra = Math.max(0, n - 6);
-      for (let i = 0; i < extra; i++) {
-        const dir = i % 2 === 0 ? 1 : -1;
-        pts.push({ x: W / 2 + 34 * (Math.floor(i / 2) + 1) * dir, y: cy - r - 4 - 20 });
+      ringMeta = { cx, cy, r };
+      for (let i = 0; i < 6; i++) B.push([i, (i + 1) % 6, 'ring']);
+      // 环外碳链：从 2 号顶点（右上）沿 30° 延伸
+      if (extra > 0) {
+        let prev = { ...C[2] };
+        const step = Math.min(38, (W - C[2].x - 46) / Math.max(1, extra));
+        for (let i = 0; i < extra; i++) {
+          const ang = (i % 2 === 0 ? -1 : 1) * Math.PI / 6;
+          const px = prev.x + step * Math.cos(ang), py = prev.y + step * Math.sin(ang);
+          C.push({ x: px, y: py });
+          B.push([2 + i, 3 + i, 'chain']);
+          prev = { x: px, y: py };
+        }
       }
     } else {
-      const k = Math.min(n, 14);
-      const stepX = Math.min(52, (W - 84) / Math.max(1, k - 1 || 1));
-      const marginX = (W - stepX * (k - 1)) / 2;
-      const baseY = H / 2 + 10, amp = 26;
-      for (let i = 0; i < k; i++) {
-        pts.push({ x: marginX + stepX * i, y: baseY + (i % 2 ? -amp : 0) });
-      }
+      const k = Math.min(n, 16);
+      // 左右各留出「官能团自身作为一个顶点」所需的空间（键长与 C–C 一致）
+      const step = Math.min(40, (W - 96) / Math.max(1, k - 1));
+      const amp = Math.min(11, step * 0.30);        // ≈30° 锯齿，接近 120° 键角
+      chainStep = step; chainAmp = amp;
+      bondLen = Math.hypot(step, 2 * amp);
+      const x0 = (W - step * (k - 1)) / 2;
+      for (let i = 0; i < k; i++) C.push({ x: x0 + step * i, y: cy + (i % 2 ? -amp : amp) });
+      for (let i = 0; i < k - 1; i++) B.push([i, i + 1, 'chain']);
     }
 
-    // 键
-    const dbl = mol.unsaturation ? mol.unsaturation.length : 0;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const a = pts[i], b = pts[i + 1];
-      const isRingEdge = hasRing && i === pts.length - 2 && pts.length > 6 ? false : hasRing;
-      parts.push(`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"
-        stroke="${COL.bond}" stroke-width="2.2" stroke-linecap="round"/>`);
-      // 双键：前 dbl 条边加一条平行线
-      if (!isRingEdge && i < dbl) {
-        const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
-        const off = 4.2, ux = -dy / len * off, uy = dx / len * off;
-        parts.push(`<line x1="${(a.x + ux).toFixed(1)}" y1="${(a.y + uy).toFixed(1)}"
-          x2="${(b.x - ux * 0.15 + ux).toFixed(1)}" y2="${(b.y - uy * 0.15 + uy).toFixed(1)}"
-          stroke="${COL.bond}" stroke-width="1.8" stroke-linecap="round" opacity=".85"/>`);
-      }
-      if (hasRing && i === pts.length - 1) {
-        const z = pts[0];
-        parts.push(`<line x1="${b.x.toFixed(1)}" y1="${b.y.toFixed(1)}" x2="${z.x.toFixed(1)}" y2="${z.y.toFixed(1)}"
-          stroke="${COL.bond}" stroke-width="2.2" stroke-linecap="round"/>`);
-      }
+    /* ── 2. 键：单线 + 双键平行线（双键放在末尾链段，符合烯烃直觉） ── */
+    const chainBonds = B.filter(b => b[2] === 'chain');
+    const dblSet = new Set();
+    for (let i = 0; i < dbl; i++) {
+      const b = chainBonds[chainBonds.length - 1 - i];
+      if (b) dblSet.add(b[0] + '-' + b[1]);
     }
-
-    // 碳顶点小点
-    pts.forEach((p, i) => {
-      const isEnd = i === 0 || i === pts.length - 1;
-      parts.push(`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isEnd ? 3.6 : 2.6}"
-        fill="${isEnd ? COL.c : '#b9b5d8'}" opacity="${isEnd ? 0.95 : 0.55}"/>`);
+    const drawBond = (a, b, isDouble, trim) => {
+      const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      const t1 = trim ? 0.12 : 0, t2 = trim ? 0.12 : 0;
+      const ax = a.x + dx * t1, ay = a.y + dy * t1;
+      const bx = b.x - dx * t2, by = b.y - dy * t2;
+      parts.push(`<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}"
+        stroke="${COL.bond}" stroke-width="2.1" stroke-linecap="round"/>`);
+      if (isDouble) {
+        const off = 4.3, nx = -uy * off, ny = ux * off;
+        parts.push(`<line x1="${(ax + nx).toFixed(1)}" y1="${(ay + ny).toFixed(1)}"
+          x2="${(bx * 1 + nx).toFixed(1)}" y2="${(by + ny).toFixed(1)}"
+          stroke="${COL.bond}" stroke-width="1.7" stroke-linecap="round" opacity=".9"/>`);
+      }
+    };
+    B.forEach(([i, j]) => {
+      drawBond(C[i], C[j], dblSet.has(i + '-' + j), false);
     });
 
-    // 官能团：按顺序挂在合适顶点（环上向外径向伸出，链上挂在两端）
-    const groups = mol.functionalGroups || [];
-    const ringCx = W / 2, ringCy = H / 2 + 4;
-    // 环上挂点顺序：右上、左上、右下、左下、正下、正上
-    const ringSlot = [1, 0, 2, 5, 3, 4];
-    const chainSlot = [pts.length - 1, 0, pts.length - 2, 1, 2, 3];
-    for (let i = 0; i < groups.length; i++) {
-      const g = groups[i];
-      const info = atomLabelAtom(g);
-      if (!info) continue;
-      let ai, dirX = 1, dirY = -1, ex, ey;
-      if (hasRing) {
-        ai = ringSlot[i % ringSlot.length] % pts.length;
-        const p = pts[ai];
-        // 从环心指向该顶点，向外延伸
-        let vx = p.x - ringCx, vy = p.y - ringCy;
-        const vl = Math.hypot(vx, vy) || 1;
-        vx /= vl; vy /= vl;
-        ex = p.x + 26 * vx; ey = p.y + 26 * vy;
-        dirX = vx >= 0 ? 1 : -1;
-        dirY = vy >= 0 ? 1 : -1;
-      } else {
-        ai = chainSlot[i % chainSlot.length] % pts.length;
-        const p = pts[ai];
-        dirX = ai === 0 ? -1 : 1;
-        dirY = p.y < H / 2 ? -1 : 1;
-        ex = p.x + 30 * dirX; ey = p.y + 26 * dirY;
-      }
-      const p = pts[ai] || pts[pts.length - 1];
-
-      parts.push(`<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}"
-        stroke="${COL.bond}" stroke-width="2.2" stroke-linecap="round"/>`);
-      if (info.double) {
-        const dx = ex - p.x, dy = ey - p.y, len = Math.hypot(dx, dy) || 1;
-        const off = 4, ux = -dy / len * off, uy = dx / len * off;
-        parts.push(`<line x1="${(p.x + ux).toFixed(1)}" y1="${(p.y + uy).toFixed(1)}"
-          x2="${(ex + ux).toFixed(1)}" y2="${(ey + uy).toFixed(1)}"
-          stroke="${COL.bond}" stroke-width="1.8" stroke-linecap="round"/>`);
-      }
-      const tx = hasRing ? ex + 16 * dirX : ex + (dirX > 0 ? 15 : -15) * 0.9;
-      const ty = hasRing ? ey + 4 * dirY + 5 : ey + 5;
-      parts.push(`<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle"
-        font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700"
-        fill="${info.color}">${info.sym}</text>`);
+    /* ── 3. 官能团：短键 + 元素符号，按优先级选挂点，避开彼此 ── */
+    const groups = (mol.functionalGroups || []).filter(g => atomLabelAtom(g));
+    const ringSlot = [0, 2, 4, 1, 3, 5];            // 环上从顶端开始顺时针
+    const used = new Set();
+    const slots = [];
+    if (hasRing) {
+      ringSlot.forEach(i => slots.push({ i, kind: 'ring' }));
+    } else {
+      slots.push({ i: C.length - 1, kind: 'endR' });
+      slots.push({ i: 0, kind: 'endL' });
+      for (let i = 1; i < C.length - 1; i++) slots.push({ i, kind: 'mid', up: i % 2 === 0 });
+      if (C.length === 1) slots.push({ i: 0, kind: 'endR' });
     }
+    // 羰基类：把 =O 与其配对的 -OH / -O- 画在同一个碳上（羧基、醛、酮的标准画法）
+    const keyIdx = groups.indexOf('=O');
+    const pairIdx = groups.findIndex(g => g === '-OH' || g === '-O-' || g === '-CHO');
+    const sharedVertex = (keyIdx >= 0 && pairIdx >= 0 && pairIdx !== keyIdx) ? true : false;
+    let sharedUsed = null;
+    groups.forEach((g, gi) => {
+      const info = atomLabelAtom(g);
+      let slot;
+      if (sharedVertex && (gi === keyIdx || gi === pairIdx)) {
+        if (sharedUsed === null) {
+          sharedUsed = slots.find(s => !used.has(s.i)) || slots[0];
+          used.add(sharedUsed.i);
+        }
+        slot = sharedUsed;
+      } else {
+        slot = slots.find(s => !used.has(s.i)) || slots[gi % slots.length];
+        used.add(slot.i);
+      }
+      const p = C[slot.i] || C[C.length - 1];
+      let vx = 1, vy = 0;
+      if (slot.kind === 'ring' && ringMeta) {
+        vx = p.x - ringMeta.cx; vy = p.y - ringMeta.cy;
+        const l = Math.hypot(vx, vy) || 1; vx /= l; vy /= l;
+      } else if (slot.kind === 'endR') {
+        const q = C[Math.max(0, slot.i - 1)] || p;
+        vx = p.x - q.x; vy = p.y - q.y;
+        const l = Math.hypot(vx, vy) || 1;
+        if (l < 0.5) { vx = 1; vy = -0.6; }
+        else { vx /= l; vy = -(vy / l); }        // 镜像延续，保证第三个点不在一条直线上
+      } else if (slot.kind === 'endL') {
+        const q = C[Math.min(C.length - 1, 1)] || p;
+        vx = p.x - q.x; vy = p.y - q.y;
+        const l = Math.hypot(vx, vy) || 1;
+        if (l < 0.5) { vx = -1; vy = -0.6; }
+        else { vx /= l; vy = -(vy / l); }
+      } else {
+        vx = 0; vy = slot.up ? -1 : 1;
+      }
+      if (sharedVertex && (gi === keyIdx || gi === pairIdx)) {
+        // 共碳二元组：=O 朝上、配对基团朝下（羧基 / 羰基的标准画法）
+        vx = 0; vy = (gi === keyIdx) ? -1 : 1;
+      }
+      /* 官能团自身就是折线上的一个顶点：键长与 C–C 等长，标签居中画在该顶点上 */
+      const glen = slot.kind === 'ring' && ringMeta ? ringMeta.r
+                 : slot.kind === 'mid' ? bondLen * 0.92
+                 : bondLen;
+      const ex = p.x + vx * glen, ey = p.y + vy * glen;
+      const gap = info.sym.length >= 3 ? 15 : 9;      // 键线在标签前收笔
+      const bx = ex - vx * gap, by = ey - vy * gap;
+      parts.push(`<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}"
+        stroke="${COL.bond}" stroke-width="2.1" stroke-linecap="round"/>`);
+      if (info.double) {
+        const off = 4.2, nx = -vy * off, ny = vx * off;
+        parts.push(`<line x1="${(p.x + nx).toFixed(1)}" y1="${(p.y + ny).toFixed(1)}"
+          x2="${(bx + nx).toFixed(1)}" y2="${(by + ny).toFixed(1)}"
+          stroke="${COL.bond}" stroke-width="1.7" stroke-linecap="round" opacity=".9"/>`);
+      }
+      parts.push(`<text x="${ex.toFixed(1)}" y="${(ey + 5).toFixed(1)}" text-anchor="middle"
+        font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14.5" font-weight="700"
+        paint-order="stroke" stroke="#0c0a18" stroke-width="3.6" stroke-linejoin="round"
+        fill="${info.color}">${info.sym}</text>`);
+    });
 
-    // 环标注
+    /* ── 4. 角标：环 / 手性 / 超长链 ── */
     if (hasRing) {
       parts.push(`<text x="${W - 12}" y="22" text-anchor="end" font-size="12" font-weight="700"
         fill="${COL.ring}">${escapeHtml(mol.rings.join(' / '))}</text>`);
     }
-    // 手性
     if (mol.chirality) {
       parts.push(`<text x="12" y="22" font-size="12" font-weight="700" fill="${COL.hi}">${escapeHtml(mol.chirality)}-${escapeHtml(mol.stereochemistry || '')}</text>`);
     }
-    if (n > 14 && !hasRing) {
+    if (n > 16 && !hasRing) {
       parts.push(`<text x="${W - 12}" y="22" text-anchor="end" font-size="12" fill="#9c98bd">…共 ${n} 碳</text>`);
     }
     parts.push('</svg>');
@@ -504,7 +548,13 @@
       set: (c, groups, unsat, rings) => { G.mol = new MOL(c, groups || [], unsat || [], rings || []); renderAll(); return G.mol.getDescription(); },
       win: () => { G.mol = currentLevel().target.clone(); G.steps = G.optimal || 1; finishLevel(); renderAll(); },
       simulate: (id, n) => { for (let i = 0; i < n; i++) { const r = L.RXN_MAP.get(id); applyRxn(r); } },
-      options: () => options(G.mol).map(o => ({ id: o.rxn.id, ok: o.ok, why: o.reason }))
+      options: () => options(G.mol).map(o => ({ id: o.rxn.id, ok: o.ok, why: o.reason })),
+      svg: (mol, opt) => svgMolecule(mol, opt || { w: 300, h: 176 }),
+      mkMol: (c, groups, dbl, rings) => {
+        const un = Array.isArray(dbl) ? dbl
+          : Array.from({ length: Math.max(0, dbl | 0) }, (_, i) => 'C' + (i + 2) + '=C' + (i + 3));
+        return new MOL(c, groups || [], un, rings || []);
+      }
     };
   }
 

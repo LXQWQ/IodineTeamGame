@@ -199,7 +199,7 @@ button:disabled{cursor:not-allowed;opacity:.42}
         <span><b>☢️</b>放射性</span>
         <span><b>◌</b>惰性气体</span>
       </div>
-      <span style="margin-left:auto">掷出 6 激发 · 连三次 6 电离回巢</span>
+      <span style="margin-left:auto">掷出 6 激发 · 连 3 次未出 6 自动保底 · 连三次 6 电离回巢</span>
     </div>
   </section>
 
@@ -258,6 +258,7 @@ button:disabled{cursor:not-allowed;opacity:.42}
     <div style="color:#b9c9dd;font-size:13.5px;line-height:1.85">
       <p style="margin:10px 0"><b>目标</b>：四族竞速，把自己家族的 <b>4 枚元素棋子</b>全部沿周期表轨道跑完一圈，先集齐者胜。</p>
       <p style="margin:10px 0"><b>掷骰</b>：掷出 <b>6</b> 可激发一枚棋子出巢（也可用它移动已出场的棋子）；连掷三次 6 会「过度激发·电离」，最近起飞的棋子被退回基地。</p>
+<p style="margin:10px 0"><b>保底激发</b>：如果你的棋子全都还在基地、且连续 3 次没掷出 6，第 3 次会自动按 6 处理，强制激发一枚棋子出巢 —— 不会出现「别人跑远了、自己还在仓库」的情况。</p>
       <p style="margin:10px 0"><b>碰撞</b>：落在对手棋子所在格，把对手撞回基地；撞上<b>惰性气体格</b>上的棋子会被弹开，无效。同族两子可<b>叠子</b>同行。</p>
       <p style="margin:10px 0"><b>格位</b>：⚗️ 反应的抽一张化学卡片（放热、催化、电解…）；⚡ 催化剂额外前进 3 格；☢️ 放射性后退 3 格；◌ 惰性气体是安全格。</p>
       <p style="margin:10px 0"><b>化学味在哪</b>：四族各代表一条反应活性序列（碱金属 Li→Rb、卤素 F→I…），棋子的「活泼度」会影响碰撞判定——活泼者撞静止者必胜，同为活泼则按 <b>电负性差</b> 裁决。</p>
@@ -647,8 +648,24 @@ function renderAll(){ if(!G) return; renderTop(); renderSide(); draw(); }
 let _forceDie = 0;                 // 仅测试用：下一颗骰子固定点数
 function roll(){
   if(!G || G.phase!=='roll') return;
-  const v = _forceDie || (1 + Math.floor(Math.random()*6));
+  let v = _forceDie || (1 + Math.floor(Math.random()*6));
   _forceDie = 0;
+
+  /* ── 首发保底：连续 3 次没掷出 6 且场上无棋子，强制按 6 处理 ──
+     避免「别人都跑远了，自己一枚都没出仓库」的死局。 */
+  const f0 = me();
+  const onTrack0 = f0.pieces.some(p=>!p.base && !p.done);
+  if(v===6 || onTrack0){
+    f0.stall = 0;
+  }else{
+    f0.stall = (f0.stall||0) + 1;
+    if(f0.stall >= 3 && f0.pieces.some(p=>p.base)){
+      f0.stall = 0;
+      v = 6;
+      log(`⚡ ${f0.name} 保底激发：连续 3 次未掷出 6，强制激发一枚棋子出巢`, 'hl');
+    }
+  }
+
   G.dice = v;
   const die = $('die');
   die.classList.add('rolling');

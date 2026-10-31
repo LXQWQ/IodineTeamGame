@@ -226,6 +226,54 @@ function shuffle(a){
   return a;
 }
 
+/* ═══════════════ 可玩性保底 ═══════════════
+   手牌里若没有任何「能互相反应」的两张物质，双方就会永远打不出伤害 ——
+   每回合抽牌后强制保证至少一对，牌库不配合时用经典配对兜底。 */
+const GUARANTEE_PAIRS = [['HCl','NaOH'], ['H2SO4','NaOH'], ['Na','H2O'], ['HCl','Na2CO3'], ['H2O2','MnO2']];
+let UID_SEQ = 0;
+function newCard(sid){
+  UID_SEQ++;
+  return {type:'sub', sid, uid:'g' + UID_SEQ + '_' + Math.random().toString(36).slice(2, 6)};
+}
+function hasPair(hand){
+  const subs = hand.filter(c => c.type === 'sub');
+  for (let i = 0; i < subs.length; i++)
+    for (let j = i + 1; j < subs.length; j++)
+      if (findReaction(subs[i], subs[j])) return true;
+  return false;
+}
+/* 优先换掉操作卡，其次换掉手牌最后一张（尽量保留已有物质） */
+function swapOutOne(s, card){
+  let oi = s.hand.findIndex(c => c.type === 'op');
+  if (oi < 0) oi = s.hand.length - 1;
+  if (oi < 0){ s.hand.push(card); return; }
+  s.deck.push(s.hand.splice(oi, 1)[0]);
+  s.hand.push(card);
+}
+function ensurePlayable(s){
+  if (hasPair(s.hand)) return;
+  // ① 从牌库里找一张能跟手上物质反应的牌换进来
+  for (let tries = 0; tries < 60 && !hasPair(s.hand); tries++){
+    const subsIn = s.hand.filter(c => c.type === 'sub');
+    let di = -1;
+    for (let i = 0; i < s.deck.length; i++){
+      const c = s.deck[i];
+      if (c.type !== 'sub') continue;
+      if (subsIn.length === 0 || subsIn.some(x => findReaction(x, c))){ di = i; break; }
+    }
+    if (di < 0) break;
+    swapOutOne(s, s.deck.splice(di, 1)[0]);
+  }
+  if (hasPair(s.hand)) return;
+  // ② 牌库也不配合 → 用经典配对兜底（每回合最多造一对）
+  for (const [x, y] of GUARANTEE_PAIRS){
+    const ca = newCard(x), cb = newCard(y);
+    if (!findReaction(ca, cb)) continue;
+    swapOutOne(s, ca); swapOutOne(s, cb);
+    if (hasPair(s.hand)) return;
+  }
+}
+
 function newSide(name, isAI){
   const deck = newDeck();
   const hand = [];
@@ -267,6 +315,7 @@ function drawTo(s, extra = 0){
     }
     s.hand.push(s.deck.pop());
   }
+  ensurePlayable(s);
 }
 function discardCard(s, card){
   s.discard.push({type:card.type, sid:card.sid, oid:card.oid, uid:card.uid});
@@ -471,6 +520,25 @@ function afterResolve(){
 }
 
 /* ═══════════════ 回合 ═══════════════ */
+/* 换手牌：整手退回牌库、重抽一手（1⚡，每回合一次）—— 保底机制之外的显式逃生口 */
+function swapHand(){
+  if (G.over || G.busy || G.cur !== 0) return false;
+  const s = me();
+  if (s.swapped){ toast('本回合已经换过手牌了'); sfx('no'); return false; }
+  if (s.energy < 1){ toast('能量不足（换手牌需要 1⚡）'); sfx('no'); return false; }
+  s.energy -= 1;
+  s.swapped = true;
+  const n = s.hand.length;
+  s.deck.push(...s.hand.splice(0));
+  s.deck = shuffle(s.deck);
+  drawTo(s);
+  ensurePlayable(s);
+  addLog(`🎲 换手牌：退回 ${n} 张、重抽 ${s.hand.length} 张（−1⚡）`, 'me');
+  sfx('place');
+  renderAll();
+  return true;
+}
+
 function endTurn(){
   if (G.over || G.busy || G.cur !== 0) return;
   const s = me();
@@ -557,6 +625,7 @@ function nextRound(){
   if (s.skipEnergy > 0){ gain = Math.max(1, ENERGY_TURN - s.skipEnergy); s.skipEnergy = 0; }
   s.energy = gain;
   s.opCount = 0;
+  s.swapped = false;
   drawTo(s);
   addLog(`── 第 ${G.turn} 回合 · 你的回合 ──`, '');
   renderAll();
@@ -755,6 +824,12 @@ function renderAll(){
 
   // 按钮
   el('btnIgnite').disabled = !(s.slots[0] && s.slots[1]) || G.cur !== 0 || G.over || G.busy;
+  const swapBtn = el('btnSwap');
+  if (swapBtn){
+    const blocked = G.cur !== 0 || G.over || G.busy || s.swapped || s.energy < 1;
+    swapBtn.disabled = blocked;
+    swapBtn.classList.toggle('need', !hasPair(s.hand) && !blocked);
+  }
 
   // 手牌
   const first = s.slots[0] || s.slots[1];
@@ -822,6 +897,7 @@ function bindUI(){
 
   el('btnIgnite').onclick = ignite;
   el('btnClear').onclick = clearLab;
+  if (el('btnSwap')) el('btnSwap').onclick = swapHand;
   el('btnEnd').onclick = endTurn;
   el('btnRules').onclick = () => el('rulesModal').classList.add('show');
   el('btnCloseRules').onclick = () => el('rulesModal').classList.remove('show');

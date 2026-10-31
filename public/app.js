@@ -181,14 +181,14 @@
             { id:9, name:"化学海龟汤", emoji:"🐢", tag:"推理猜谜", desc:"化学版海龟汤！根据谜面推理化学物质/反应/现象，AI主持人月见八千代出题，沉浸式悬疑推理体验。手机电脑均可畅玩！", link:"games/chem-turtle-soup/", newWindow:false },
             { id:10, name:"元素大战僵尸·经典版", emoji:"🧟⚗️", tag:"经典塔防", desc:"经典PvZ式元素塔防！部署碳、镁、钠等元素守卫实验室，重温最初的元素战争。", link:"evz.html", newWindow:false },
             { id:11, name:"化境争霸 · 战争卡牌", emoji:"⚔️🧪", tag:"氧化还原对战", desc:"全新重制的红蓝卡牌战争！50名军团角色（氧化剂vs还原剂）、10种技能（护盾/连击/剧毒/自爆…）、14张反应卡。三线战场，支持人机对战与同屏双人热座PvP！", link:"games/chem-territory-v2/", newWindow:false },
-            { id:12, name:"咒术回战 · 轮回转盘", emoji:"🎡", tag:"穿越生存", desc:"12 连抽定出身，怀玉/宿傩等时间线开局！回合制术式对战：全员先声明术式，再按「使用者速度+技能速度」统一排序结算，行动点决定一回合出手次数；修炼狩猎成长，剧情战败即死。52 种术式含领域展开与极之番，怀玉篇通关可得六眼或甚尔道具，最终新宿决战定结局。支持本地双人对战、存档库与自动 5 倍速。", link:"games/jujutsu-roulette/", newWindow:false }
-
+            { id:12, name:"咒术回战 · 轮回转盘", emoji:"🎡", tag:"穿越生存", desc:"12 连抽定出身，怀玉/宿傩等时间线开局！回合制术式对战：全员先声明术式，再按「使用者速度+技能速度」统一排序结算，行动点决定一回合出手次数；修炼狩猎成长，剧情战败即死。52 种术式含领域展开与极之番，怀玉篇通关可得六眼或甚尔道具，最终新宿决战定结局。支持本地双人对战、存档库与自动 5 倍速。", link:"games/jujutsu-roulette/", newWindow:false },
+            { id:4, name:"碳链工坊", emoji:"🧬", tag:"有机合成解谜", desc:"把起始分子一步步合成到目标分子！16 种真实反应（Grignard 加成、Aldol 缩合、Diels-Alder 成环、Jones 强氧化、光照卤代、脱水成烯……），20 关从醇延长一直做到带环酯；结构式按标准骨架式绘制，每一步都有可用性提示与反应式预览，支持撤销、提示、星级评级与进度存档。", link:"games/chain-craft/", newWindow:false },
+            { id:5, name:"反应对决", emoji:"⚗️", tag:"化学反应卡牌", desc:"60 种物质 × 67 条真实化学方程式驱动的对决策略卡牌！双槽放料即可引发反应，能反应的牌会亮起绿框并实时预览伤害；产物带特效——气体逸出削对手能量、沉淀生成护盾、成水回复生命，配错组合则「逸散」自伤。含 8 种操作卡（加热/通电/催化/加压/冷却/中和/过滤/搅拌）、三档 AI，以及手牌保底与「换手牌」机制，绝不会因手牌无法反应而卡死。", link:"games/reaction-duel/", newWindow:false },
+            { id:6, name:"元素跃迁", emoji:"🎲", tag:"周期表飞行棋", desc:"把元素周期律做成飞行棋！52 格环形赛道，四大家族各 4 枚棋子，掷出 6 才能激发上路；踩到反应格抽化学事件卡（放热前进、催化剂加速、惰性气体冻结……），绕场一周归位，连出三个 6 会被电离回巢，集齐 4 枚触发胜利。", link:"games/element-leap/", newWindow:false },
+            { id:8, name:"离子竞技场", emoji:"⚛️", tag:"动作 RPG", desc:"florr.io 的化学版！操控原子核在水溶液/酸性/碱性/有机/等离子五大区域求生，化学物质化作电子绕核旋转、碰撞伤敌；击杀化合物怪物掉落稀有电子与物质，9 级稀有度、合成台、技能树与自动装备备战一应俱全。", link:"games/ion-arena/", newWindow:false }
         ];
-                const iodineDevGames = [
-            { id:4, name:"碳链工坊", emoji:"🧬⛓", tag:"3D分子工坊", desc:"有机合成策略，构建分子结构，探索化学反应！—— 预计下个大版本重构", link:"games/chain-craft/", newWindow:false },
-            { id:5, name:"反应对决·炼金术士", emoji:"⚗️⚡", tag:"卡牌对战", desc:"真实化学反应驱动的双人对战卡牌游戏！45+化学反应,60种物质,操作卡策略,AI对战。—— 正在修复中", link:"games/reaction-duel/", newWindow:false },
-            { id:6, name:"元素跃迁：周期表飞行棋", emoji:"🎲⚛️", tag:"桌游派对", desc:"融合元素周期律与飞行棋的创意桌游！4大家族16枚棋子，置换反应、化合碰撞、40张反应卡，冲向8电子满壳层！—— 机制改版中", link:"games/element-leap/", newWindow:false },
-            { id:8, name:"离子竞技场", emoji:"⚛️⚡", tag:"动作RPG", desc:"florr.io化学版！控制原子核，电子绕轨道旋转攻击，探索5大化学区域，击杀化合物怪物收集稀有电子，升级解锁更多轨道！—— Godot重构中", link:"games/ion-arena/", newWindow:false }
+        /* 四款「开发中」游戏已全部重构完成并迁入 iodineGames，此数组留空 */
+        const iodineDevGames = [
         ];
                 const toolsGames = [
             { id:1, name:"正多面体与阿基米德多面体 3D 展示", emoji:"🔷", tag:"3D几何", desc:"交互式3D展示正多面体（柏拉图立体）与阿基米德多面体，支持旋转缩放，探索化学晶体学中的几何结构！", link:"tools/polyhedrons/", newWindow:false },
@@ -468,6 +468,59 @@
 <circle cx="26" cy="34" r="2.4" fill="#e01e37" opacity="0"><animate attributeName="opacity" values="0;.95;0" dur="2.2s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;-7 -9" dur="2.2s" repeatCount="indefinite"/></circle>
 <circle cx="96" cy="88" r="2.2" fill="#a855f7" opacity="0"><animate attributeName="opacity" values="0;.9;0" dur="2.6s" begin=".9s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;7 9" dur="2.6s" begin=".9s" repeatCount="indefinite"/></circle>
 <circle cx="98" cy="32" r="1.8" fill="#ffd166" opacity="0"><animate attributeName="opacity" values="0;.85;0" dur="3s" begin="1.6s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;6 -8" dur="3s" begin="1.6s" repeatCount="indefinite"/></circle>
+</svg></div>`,
+            /* —— 四款重构完成的游戏：原创 SVG 图标（碳链 / 对决 / 跃迁 / 竞技场）—— */
+            4: `<div class="gi gi-chaincraft"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<linearGradient id="ccBond" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="50%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#f0abfc"/></linearGradient>
+<radialGradient id="ccC" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#f8fafc"/><stop offset="45%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#334155"/></radialGradient>
+<radialGradient id="ccOH" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#fff"/><stop offset="45%" stop-color="#f87171"/><stop offset="100%" stop-color="#7f1d1d"/></radialGradient>
+<radialGradient id="ccGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#a78bfa" stop-opacity=".5"/><stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="60" cy="60" rx="48" ry="42" fill="url(#ccGlow)"/>
+<path id="ccPath" d="M22 78 L42 44 L62 78 L82 44 L98 70" fill="none" stroke="url(#ccBond)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<g fill="url(#ccC)"><circle cx="22" cy="78" r="7"/><circle cx="42" cy="44" r="7"/><circle cx="62" cy="78" r="7"/><circle cx="82" cy="44" r="7"/></g>
+<circle cx="99" cy="71" r="10" fill="url(#ccOH)"/>
+<text x="99" y="75" text-anchor="middle" font-size="8.5" font-weight="700" fill="#fff" font-family="ui-monospace,monospace">OH</text>
+<circle r="3.6" fill="#e0f2fe"><animateMotion dur="2.8s" repeatCount="indefinite" rotate="auto"><mpath href="#ccPath"/></animateMotion></circle>
+</svg></div>`,
+            5: `<div class="gi gi-duel"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="dlR" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#fecaca"/><stop offset="45%" stop-color="#ef4444"/><stop offset="100%" stop-color="#7f1d1d"/></radialGradient>
+<radialGradient id="dlB" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#bfdbfe"/><stop offset="45%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1e3a8a"/></radialGradient>
+<linearGradient id="dlZap" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fef9c3"/><stop offset="55%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient>
+<radialGradient id="dlGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fbbf24" stop-opacity=".5"/><stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="60" cy="62" rx="48" ry="40" fill="url(#dlGlow)"><animate attributeName="rx" values="42;50;42" dur="2.6s" repeatCount="indefinite"/></ellipse>
+<circle cx="30" cy="64" r="16" fill="url(#dlR)"><animate attributeName="r" values="16;17.6;16" dur="2.2s" repeatCount="indefinite"/></circle>
+<circle cx="90" cy="64" r="16" fill="url(#dlB)"><animate attributeName="r" values="16;17.6;16" dur="2.2s" begin="1.1s" repeatCount="indefinite"/></circle>
+<path d="M66 30 L46 63 h12 l-5 27 21-33H62 Z" fill="url(#dlZap)" stroke="#fffbeb" stroke-width="1.2" stroke-linejoin="round"><animate attributeName="opacity" values=".62;1;.62" dur="1.7s" repeatCount="indefinite"/></path>
+</svg></div>`,
+            6: `<div class="gi gi-leap"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<linearGradient id="lpDie" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fde68a"/><stop offset="55%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#b45309"/></linearGradient>
+<radialGradient id="lpGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fbbf24" stop-opacity=".48"/><stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="60" cy="60" rx="48" ry="42" fill="url(#lpGlow)"/>
+<ellipse cx="60" cy="60" rx="45" ry="21" fill="none" stroke="#fcd34d" stroke-opacity=".6" stroke-width="2" stroke-dasharray="5 7"><animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="9s" repeatCount="indefinite"/></ellipse>
+<rect x="37" y="37" width="46" height="46" rx="12" fill="url(#lpDie)" stroke="#78350f" stroke-width="2"/>
+<g fill="#3b1d05"><circle cx="48" cy="48" r="3.8"/><circle cx="72" cy="48" r="3.8"/><circle cx="60" cy="60" r="3.8"/><circle cx="48" cy="72" r="3.8"/><circle cx="72" cy="72" r="3.8"/></g>
+<circle cx="17" cy="33" r="6" fill="#f87171"/><circle cx="103" cy="33" r="6" fill="#60a5fa"/>
+<circle cx="17" cy="89" r="6" fill="#facc15"/><circle cx="103" cy="89" r="6" fill="#34d399"/>
+</svg></div>`,
+            8: `<div class="gi gi-arena"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="arCore" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#fef9c3"/><stop offset="40%" stop-color="#facc15"/><stop offset="100%" stop-color="#a16207"/></radialGradient>
+<radialGradient id="arGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#22d3ee" stop-opacity=".42"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="60" cy="60" rx="52" ry="46" fill="url(#arGlow)"/>
+<circle cx="60" cy="60" r="43" fill="none" stroke="#22d3ee" stroke-opacity=".38" stroke-width="2" stroke-dasharray="4 8"><animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="13s" repeatCount="indefinite"/></circle>
+<g><animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="5.2s" repeatCount="indefinite"/>
+<circle cx="60" cy="17" r="6.5" fill="#f87171"/><circle cx="97" cy="77" r="6.5" fill="#60a5fa"/><circle cx="23" cy="77" r="6.5" fill="#a78bfa"/></g>
+<g><animateTransform attributeName="transform" type="rotate" from="360 60 60" to="0 60 60" dur="8s" repeatCount="indefinite"/>
+<circle cx="60" cy="30" r="4" fill="#34d399" opacity=".85"/></g>
+<circle cx="60" cy="60" r="15" fill="url(#arCore)"/>
+<circle cx="60" cy="60" r="15" fill="none" stroke="#78350f" stroke-opacity=".45" stroke-width="1.5"/>
 </svg></div>`
         };
 
@@ -1763,7 +1816,7 @@
     const SITE_VERSION = {
         year: 2026,        // 年份（显示取后两位：26）
         updateIndex: 3,    // 本年度中型及以上更新次数（2月#1 / 5月#2 / 10月#3 / 12月#4）
-        pushCount: 193,    // 本年度 GitHub 推送次数（每次提交推送都要 +1）
+        pushCount: 194,    // 本年度 GitHub 推送次数（每次提交推送都要 +1）
         date: '1031',      // 最近一次更新日期 MMDD
         snapshot: true     // true = 快照版本（带 w 段与日期）；false = 正式版本
     };

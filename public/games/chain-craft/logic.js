@@ -80,7 +80,7 @@ const REACTIONS = [
     eq: 'R-MgX + C=O → R–C(OH)R′',
     short: '+2C　羰基→羟基',
     desc: '格氏试剂进攻羰基，碳链延长 2 个碳并生成醇。所有增碳反应里最直接的一步。',
-    check: m => m.hasCarbonyl() && m.carbonCount >= 2,
+    check: m => m.hasCarbonyl() && m.carbonCount >= 2 && m.carbonCount + 2 <= CARBON_MAX,
     why: m => m.hasCarbonyl() ? '需要至少 2 个碳' : '分子缺少羰基（C=O / -CHO / -COOH）',
     apply: m => {
       const r = m.clone();
@@ -109,8 +109,8 @@ const REACTIONS = [
     eq: 'R-OH + R′-X → R-O-R′',
     short: '+2C　-OH→-O-',
     desc: '醇钠与卤代烃发生 SN2，把羟基变成醚键并延长碳链。',
-    check: m => m.hasHydroxyl(),
-    why: () => '需要羟基 -OH',
+    check: m => m.hasHydroxyl() && m.carbonCount + 2 <= CARBON_MAX,
+    why: m => m.hasHydroxyl() ? '碳数已达上限' : '需要羟基 -OH',
     apply: m => {
       const r = m.clone();
       r.carbonCount += 2;
@@ -224,7 +224,7 @@ const REACTIONS = [
     apply: m => {
       const r = m.clone();
       r.remove('-OH');
-      r.unsaturation.push('C' + r.carbonCount + '=C' + (r.carbonCount + 1));
+      r.unsaturation.push('C' + Math.max(1, r.carbonCount - 1) + '=C' + r.carbonCount);
       return r;
     }
   },
@@ -373,10 +373,58 @@ const LEVELS = [
     target: new MoleculeState(6, ['-COO-'], [], ['六元环']),
     hint: '成环后碳数已经够，把官能团一步步推向酯基。'
   },
+  {
+    id: 13, tier: '入门', title: '烯到醇', goal: '给双键加一次水，把烯变成醇',
+    start: new MoleculeState(3, [], ['C1=C2']),
+    target: new MoleculeState(3, ['-OH']),
+    hint: '加水反应既消耗一个双键，又补上一个羟基。'
+  },
+  {
+    id: 14, tier: '入门', title: '卤代再水解', goal: '从烷烃出发，经卤代烃做出一元醇',
+    start: new MoleculeState(2, []),
+    target: new MoleculeState(2, ['-OH']),
+    hint: '先光照卤代引入 -X，再碱性水解把 -X 换回 -OH。'
+  },
+  {
+    id: 15, tier: '入门', title: '脱水成烯', goal: '把醇脱水做成烯烃',
+    start: new MoleculeState(4, ['-OH']),
+    target: new MoleculeState(4, [], ['C3=C4']),
+    hint: '脱水反应去掉 -OH，同时在末端两个碳之间生成一个双键。'
+  },
+  {
+    id: 16, tier: '进阶', title: '醛到羧酸', goal: '把醛直接氧化成羧酸',
+    start: new MoleculeState(3, ['-CHO']),
+    target: new MoleculeState(3, ['-COOH']),
+    hint: '醛氧化成酸是单向的，不用先还原成醇。'
+  },
+  {
+    id: 17, tier: '进阶', title: '醚的合成', goal: '用 Williamson 成醚把醇延长成醚',
+    start: new MoleculeState(2, ['-OH']),
+    target: new MoleculeState(4, ['-O-']),
+    hint: 'Williamson 会加 2 个碳并把 -OH 变成醚键 -O-。'
+  },
+  {
+    id: 18, tier: '高级', title: '酮还原再脱水', goal: '把酮变成烯烃',
+    start: new MoleculeState(4, ['=O']),
+    target: new MoleculeState(4, [], ['C3=C4']),
+    hint: '先还原成醇，再脱水生成双键。'
+  },
+  {
+    id: 19, tier: '高级', title: '羧酸补羟基成酯', goal: '给带双键的羧酸补上羟基，再酯化',
+    start: new MoleculeState(4, ['-COOH'], ['C1=C2']),
+    target: new MoleculeState(4, ['-COO-']),
+    hint: '水合反应能同时消耗双键并补上 -OH，凑齐酯化条件。'
+  },
+  {
+    id: 20, tier: '大师', title: '终局：八碳环酯', goal: '从 4 碳二烯做出 8 碳的环状酯',
+    start: new MoleculeState(4, [], ['C1=C2', 'C3=C4']),
+    target: new MoleculeState(8, ['-COO-'], [], ['六元环']),
+    hint: '成环后碳数还不够，用 Grignard 或 Williamson 继续加碳，最后凑齐羧基与羟基。'
+  }
 ];
 
 /* ---------------- BFS 最优路径 ---------------- */
-function findOptimalPath(startMol, targetMol, maxDepth = 6) {
+function findOptimalPath(startMol, targetMol, maxDepth = 8) {
   if (startMol.equals(targetMol)) return [];
   const seen = new Set([startMol.key()]);
   const q = [{ mol: startMol.clone(), path: [] }];
@@ -401,7 +449,7 @@ function findOptimalPath(startMol, targetMol, maxDepth = 6) {
 const OPTIMAL_CACHE = new Map();
 function optimalSteps(level) {
   if (OPTIMAL_CACHE.has(level.id)) return OPTIMAL_CACHE.get(level.id);
-  const p = findOptimalPath(level.start, level.target, 6);
+  const p = findOptimalPath(level.start, level.target, 8);
   const n = p ? p.length : null;
   OPTIMAL_CACHE.set(level.id, n);
   return n;
