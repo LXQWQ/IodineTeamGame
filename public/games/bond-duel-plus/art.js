@@ -1,9 +1,11 @@
 /* Original procedural character art. Anchor: centre of feet, facing right. */
 (() => {
  const palette={H:['#dce9d7','#7b9f91','#e9c779'],O:['#8ccbc8','#3f7576','#d7f0d6'],Na:['#c2c7b1','#747d69','#e7ba5a'],Cl:['#bdcc79','#657a3d','#e2e9b1'],C:['#8b9990','#343f39','#d1e4da'],Fe:['#b68b71','#614b3f','#e5be82'],
-  Mg:['#e2e9e6','#7c8a85','#c8f0e6'],Al:['#cfd8dd','#6f7d86','#a8c6d8'],Si:['#a9b4bc','#4a5560','#7fd4c9'],P:['#e7e0c6','#7d7150','#f2d46b'],S:['#efe08a','#8a7a2e','#ffe066'],Cu:['#d9a486','#7a4630','#6fc4a4']};
+  Mg:['#e2e9e6','#7c8a85','#c8f0e6'],Al:['#cfd8dd','#6f7d86','#a8c6d8'],Si:['#a9b4bc','#4a5560','#7fd4c9'],P:['#e7e0c6','#7d7150','#f2d46b'],S:['#efe08a','#8a7a2e','#ffe066'],Cu:['#d9a486','#7a4630','#6fc4a4'],
+  N:['#cfe0ea','#5a7386','#9fd8f5'],K:['#d8d2c8','#6b6459','#c9a6f0'],Ca:['#e6e4dc','#8a8677','#f0e2a8'],Zn:['#cfd6d9','#6d7b82','#9fe0c8'],
+  Ag:['#e4e8ea','#7d878c','#d8eef7'],Hg:['#dfe3e6','#6f787c','#b7c9d4'],Pb:['#c9cdd2','#5f666d','#a8b4c0'],I:['#e3d6ef','#6d5480','#c79ef0']};
  function actor(ctx,f,t=0,scale=1){
-  const [light,dark,accent]=palette[f.id], gas=f.id==='O'||f.id==='Cl', heavy=f.id==='Fe';
+  const [light,dark,accent]=palette[f.id], gas=f.id==='O'||f.id==='Cl'||f.id==='N'||f.id==='Hg', heavy=f.id==='Fe'||f.id==='Ca'||f.id==='Pb';
   const walk=Math.abs(f.vx||0)>.5&&!f.guard, phase=t*.19, bob=gas?Math.sin(t*.045)*3:walk?Math.abs(Math.sin(phase))*2:Math.sin(t*.035)*1.2;
   const attack=f.attack&&f.attack.age<19, thrust=attack?Math.sin(Math.min(1,f.attack.age/12)*Math.PI)*31:0;
   ctx.save();ctx.scale(scale,scale);ctx.translate(0,bob);ctx.lineJoin='round';ctx.lineCap='round';

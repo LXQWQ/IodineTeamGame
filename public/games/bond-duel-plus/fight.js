@@ -71,7 +71,10 @@
       buff: o.buff || null,
       reagent: o.reagent || null,
       noHot: !!o.noHot,
-      require: o.require || null
+      require: o.require || null,
+      drain: o.drain || 0,            // 命中后按伤害比例回复自身稳定度（汞齐化 / 原电池）
+      markScale: o.markScale || 0,    // 目标带「标记」时，每层额外增伤比例
+      noKb: !!o.noKb                  // 命中不产生击退（铅室压制）
     };
   }
 
@@ -119,7 +122,7 @@
       moves: {
         s1: mv({ name: '扩散突袭', cost: 20, startup: 5, active: 6, recovery: 12, dmg: 12, hitbox: { x: 26, y: 34, w: 62, h: 48 }, hitstun: 16, blockstun: 10, hitstop: 4, kb: { x: 3.6 }, meterGain: 8, inv: [0, 16], dash: { vx: 13, frames: 14 }, guard: 'mid', note: '位移技；起手有无敌帧' }),
         s2: mv({ name: '爆鸣冲击', cost: 34, startup: 9, active: 3, recovery: 20, dmg: 26, hitbox: { x: 30, y: 20, w: 118, h: 86 }, hitstun: 22, blockstun: 13, hitstop: 7, kb: { x: 6.4, y: -3.2 }, meterGain: 10, guard: 'mid', juggle: 2, log: '点火装置：2H₂ + O₂ → 2H₂O', note: '近距离爆发，判定范围大' }),
-        ult: mv({ name: '氢氧燃爆', cost: 80, meterCost: 50, startup: 14, active: 6, recovery: 30, dmg: 42, hitbox: { x: 10, y: -6, w: 200, h: 150 }, hitstun: 30, blockstun: 16, hitstop: 9, kb: { x: 9, y: -4 }, meterGain: 0, guard: 'mid', juggle: 3, selfDmg: 12, log: '氢氧燃烧，释放化学能；本招不涉及核聚变。', note: '超必杀，近距离爆发也伤及自身' })
+        ult: mv({ name: '氢氧燃爆', cost: 80, meterCost: 50, startup: 14, active: 6, recovery: 30, dmg: 42, hitbox: { x: 10, y: -6, w: 200, h: 150 }, hitstun: 30, blockstun: 16, hitstop: 9, kb: { x: 9, y: -4 }, meterGain: 0, guard: 'mid', juggle: 3, selfDmg: 10, log: '氢氧燃烧，释放化学能；本招不涉及核聚变。', note: '超必杀，近距离爆发也伤及自身' })
       }
     },
     O: {
@@ -168,7 +171,7 @@
     },
     Fe: {
       name: '铁', sym: 'Fe', type: '重装', archetype: 'heavy',
-      max: 1320, speed: 4.2, jump: 12.7, w: 76, h: 148, style: '金属 / 重装',
+      max: 1300, speed: 4.2, jump: 12.7, w: 76, h: 148, style: '金属 / 重装',
       formula: 'Fe', role: '金属 / 重装', tip: '重拳范围更大、收招更慢。先防御，再反击。',
       desc: '高稳定重装；可钝化，并在 Fe²⁺/Fe³⁺ 红氧体系间切换。',
       moves: {
@@ -181,7 +184,7 @@
     /* ── 新增 6 位 ── */
     Mg: {
       name: '镁', sym: 'Mg', type: '灼烧', archetype: 'burst',
-      max: 880, speed: 5.5, jump: 14.8, w: 70, h: 142, style: '活泼金属 / 眩光',
+      max: 900, speed: 5.5, jump: 14.8, w: 70, h: 142, style: '活泼金属 / 眩光',
       formula: 'Mg', role: '金属 / 灼烧', tip: '白光一闪，灼烧累加；别在对手气槽满硬拼。',
       desc: '燃烧时发出耀眼白光，氧化放热极强。',
       moves: {
@@ -192,7 +195,7 @@
     },
     Al: {
       name: '铝', sym: 'Al', type: '壁垒', archetype: 'heavy',
-      max: 1180, speed: 4.6, jump: 13, w: 74, h: 146, style: '两性金属 / 壁垒',
+      max: 1200, speed: 4.6, jump: 13, w: 74, h: 146, style: '两性金属 / 壁垒',
       formula: 'Al', role: '金属 / 壁垒', tip: '氧化膜挡住一次破防；两性金属对酸碱都不怕。',
       desc: '表面致密氧化膜，抗腐蚀；遇强碱强酸也会溶解。',
       moves: {
@@ -214,7 +217,7 @@
     },
     P: {
       name: '磷', sym: 'P', type: '自燃', archetype: 'control',
-      max: 860, speed: 5.6, jump: 14.6, w: 70, h: 142, style: '白磷 / 自燃',
+      max: 880, speed: 5.6, jump: 14.6, w: 70, h: 142, style: '白磷 / 自燃',
       formula: 'P₄', role: '非金属 / 自燃', tip: '白磷在空气中自燃；贴身就点着，别拖。',
       desc: '白磷常温自燃，红磷需点燃；毒性另计。',
       moves: {
@@ -244,6 +247,177 @@
         s2: mv({ name: '导电连锁', cost: 30, startup: 9, active: 2, recovery: 16, dmg: 0, hitbox: null, meterGain: 9, spawn: { at: 9, type: 'proj', proj: 'cu', spd: 11, dmg: 18, r: 12, opt: { chemical: true }, chain: true }, log: '铜是良导体：电流沿导路传递，可越过一次。' }),
         ult: mv({ name: '电解洪流', cost: 74, meterCost: 50, startup: 14, active: 5, recovery: 26, dmg: 43, hitbox: { x: 10, y: 8, w: 196, h: 156 }, hitstun: 28, blockstun: 15, hitstop: 8, kb: { x: 7.8, y: -3.4 }, meterGain: 0, guard: 'mid', juggle: 2, log: '2CuSO₄ + 2H₂O →(电解) 2Cu + O₂↑ + 2H₂SO₄。' })
       }
+    },
+
+    /* ── 新增 8 位（PLUS 版扩充） ───────────────────────────── */
+
+    N: {
+      name: '氮', sym: 'N', type: '压制', archetype: 'pressure',
+      max: 1020, speed: 5.4, jump: 15, w: 70, h: 143,
+      style: '惰性 / 低温', formula: 'N₂', role: '非金属 / 低温',
+      tip: '液氮铺地拖慢对手；氮封让你吃化学攻击不心疼。',
+      desc: 'N₂ 极度惰性 —— 它不参与反应，只负责把战场降温。',
+      noBurn: true,
+      moves: {
+        s1: mv({ name: '液氮喷流', cost: 26, startup: 9, active: 3, recovery: 16, dmg: 6,
+          hitbox: { x: 28, y: 30, w: 110, h: 100 }, hitstun: 16, blockstun: 10, hitstop: 5,
+          kb: { x: 2.4 }, meterGain: 8, guard: 'mid',
+          spawn: { at: 9, type: 'zone', kind: 'ln2', dur: 280, w: 260, h: 200, ox: 16, oy: -200, dmg: 3, continuous: true, onEnter: 'freeze' },
+          log: '液氮 −196 ℃：区域内持续冻伤，且被冻者受击更疼、机动更慢。' }),
+        s2: mv({ name: '氮封保护', cost: 24, startup: 7, active: 1, recovery: 12, dmg: 0, hitbox: null,
+          meterGain: 7, buff: { passive: 280, passiveShield: 1 },
+          log: '惰性氮气覆盖：挡下一次化学侵蚀。' }),
+        ult: mv({ name: '低温脆裂', cost: 76, meterCost: 50, startup: 14, active: 5, recovery: 26, dmg: 40,
+          hitbox: { x: 12, y: 10, w: 190, h: 154 }, hitstun: 28, blockstun: 15, hitstop: 8,
+          kb: { x: 8, y: -3.4 }, meterGain: 0, guard: 'mid', juggle: 2, onHit: 'freeze',
+          log: '材料在低温下变脆：冲击更易致裂，命中后附加冻伤。' })
+      }
+    },
+
+    K: {
+      name: '钾', sym: 'K', type: '爆发', archetype: 'burst',
+      max: 760, speed: 6.0, jump: 15.4, w: 70, h: 141,
+      style: '碱金属 / 爆燃', formula: 'K', role: '金属 / 爆燃',
+      tip: '比钠更烈，也比钠更脆；水区里一次就能翻盘。',
+      desc: '钾比钠更活泼，遇水反应剧烈到会自燃，代价是本体更脆弱。',
+      moves: {
+        s1: mv({ name: '钾片投掷', cost: 18, startup: 6, active: 2, recovery: 14, dmg: 0, hitbox: null, meterGain: 7,
+          spawn: { at: 6, type: 'proj', proj: 'k', spd: 11, dmg: 18, r: 13, opt: { chemical: true } },
+          note: '飞射物，命中附着' }),
+        s2: mv({ name: '水上爆燃', cost: 30, startup: 11, active: 6, recovery: 24, dmg: 40,
+          hitbox: { x: 14, y: 20, w: 170, h: 140 }, hitstun: 26, blockstun: 15, hitstop: 9,
+          kb: { x: 8.4, y: -4 }, meterGain: 11, selfDmg: 14, guard: 'mid', juggle: 3, require: 'water',
+          log: '2K + 2H₂O → 2KOH + H₂↑：比钠更剧烈，常伴随爆燃，自身也受反噬。' }),
+        ult: mv({ name: '紫色焰光', cost: 70, meterCost: 50, startup: 12, active: 2, recovery: 24, dmg: 0, hitbox: null, meterGain: 0,
+          spawn: { at: 12, type: 'zone', kind: 'kGlow', dur: 230, w: 600, h: 280, ox: -300, oy: -280, dmg: 6, continuous: true, onEnter: 'blind' },
+          log: '钾的焰色反应呈紫色：强光致盲，同时区域灼伤。' })
+      }
+    },
+
+    Ca: {
+      name: '钙', sym: 'Ca', type: '堡垒', archetype: 'heavy',
+      max: 1400, speed: 3.9, jump: 12.2, w: 78, h: 150,
+      style: '碱土 / 堡垒', formula: 'Ca', role: '金属 / 堡垒',
+      tip: '全场最厚稳定度；先立墙，再用石灰水反打。',
+      desc: '碱土金属：骨骼、贝壳与石灰岩的骨架，护盾最厚、脚步最慢。',
+      moves: {
+        s1: mv({ name: '石灰岩壁', cost: 26, startup: 9, active: 1, recovery: 13, dmg: 0, hitbox: null, meterGain: 6,
+          buff: { passive: 340, passiveShield: 1, armor: 200 },
+          log: 'CaCO₃ 沉积层：抗一次化学侵蚀，并短暂霸体。' }),
+        s2: mv({ name: '石灰水沉淀', cost: 30, startup: 10, active: 4, recovery: 18, dmg: 20,
+          hitbox: { x: 26, y: 40, w: 104, h: 78 }, hitstun: 20, blockstun: 12, hitstop: 6,
+          kb: { x: 3.4 }, meterGain: 9, guard: 'low', onHit: 'precip',
+          log: 'Ca(OH)₂ + CO₂ → CaCO₃↓ + H₂O：低段命中，沉淀拖慢对手。' }),
+        ult: mv({ name: '钙焰长明', cost: 78, meterCost: 50, startup: 16, active: 5, recovery: 28, dmg: 44,
+          hitbox: { x: 10, y: 8, w: 204, h: 160 }, hitstun: 30, blockstun: 16, hitstop: 9,
+          kb: { x: 8.8, y: -3.8 }, meterGain: 0, guard: 'mid', juggle: 3,
+          log: '钙的焰色反应呈砖红色：大范围压制。' })
+      }
+    },
+
+    Zn: {
+      name: '锌', sym: 'Zn', type: '牺牲', archetype: 'shift',
+      max: 1120, speed: 4.9, jump: 13.6, w: 74, h: 146,
+      style: '两性 / 牺牲阳极', formula: 'Zn', role: '金属 / 牺牲阳极',
+      tip: '镀层替你挨刀；护盾在手时尽管压上去换血。',
+      desc: '比铁活泼的金属：牺牲自己保护他人 —— 这正是镀锌防腐的原理。',
+      moves: {
+        s1: mv({ name: '镀锌层', cost: 22, startup: 6, active: 1, recovery: 12, dmg: 0, hitbox: null, meterGain: 6,
+          buff: { sacrifice: 90, armor: 150 },
+          log: '热镀锌：锌层优先被腐蚀，替基体先挨伤害。' }),
+        s2: mv({ name: '原电池放电', cost: 32, startup: 9, active: 2, recovery: 16, dmg: 0, hitbox: null, meterGain: 10,
+          spawn: { at: 9, type: 'proj', proj: 'zn', spd: 9, dmg: 22, r: 14, opt: { chemical: true, oxidation: true } },
+          drain: 0.5, log: 'Zn-Cu 原电池：电子定向流动，伤害的一部分回补自身。' }),
+        ult: mv({ name: '牺牲阳极', cost: 76, meterCost: 50, startup: 15, active: 5, recovery: 27, dmg: 42,
+          hitbox: { x: 12, y: 10, w: 192, h: 156 }, hitstun: 28, blockstun: 15, hitstop: 8,
+          kb: { x: 8, y: -3.4 }, meterGain: 0, guard: 'mid', juggle: 2, selfDmg: 8, drain: 0.6,
+          log: '牺牲阳极法：锌主动失去电子保护基体 —— 以自身为代价换回血线。' })
+      }
+    },
+
+    Ag: {
+      name: '银', sym: 'Ag', type: '催化', archetype: 'pressure',
+      max: 980, speed: 5.7, jump: 14.8, w: 70, h: 143,
+      style: '贵金属 / 催化', formula: 'Ag', role: '金属 / 催化',
+      tip: '先叠标记，再用终式引爆；层数越高越狠。',
+      desc: '催化剂的典型：自身不被消耗，却让反应一轮比一轮快。',
+      moves: {
+        s1: mv({ name: '银镜析出', cost: 20, startup: 6, active: 3, recovery: 13, dmg: 14,
+          hitbox: { x: 30, y: 36, w: 72, h: 58 }, hitstun: 16, blockstun: 10, hitstop: 4,
+          kb: { x: 2.8 }, meterGain: 8, guard: 'mid', onHit: 'mark',
+          log: '银镜反应：Ag⁺ 被还原成银，标记附着在目标表面。' }),
+        s2: mv({ name: '硝酸银刻蚀', cost: 32, startup: 10, active: 2, recovery: 16, dmg: 0, hitbox: null, meterGain: 9, reagent: 'silver',
+          spawn: { at: 10, type: 'proj', proj: 'agno3', spd: 10, dmg: 20, r: 14, opt: { chemical: true, corrosive: true } },
+          log: 'AgNO₃ 具腐蚀性：蛋白质变性、创面染黑。' }),
+        ult: mv({ name: '催化爆发', cost: 74, meterCost: 50, startup: 13, active: 5, recovery: 26, dmg: 34,
+          hitbox: { x: 12, y: 10, w: 188, h: 154 }, hitstun: 28, blockstun: 15, hitstop: 8,
+          kb: { x: 8, y: -3.4 }, meterGain: 0, guard: 'mid', juggle: 2, markScale: 0.35,
+          log: '催化循环：每层标记让反应速率上一阶 —— 层数越多，终式越重。' })
+      }
+    },
+
+    Hg: {
+      name: '汞', sym: 'Hg', type: '流控', archetype: 'control',
+      max: 900, speed: 5.0, jump: 13.2, w: 70, h: 138,
+      style: '液态金属 / 中毒', formula: 'Hg', role: '金属 / 液态',
+      tip: '滑移躲开重招，用汞蒸气慢慢磨；汞齐化还能抽走对手血线。',
+      desc: '常温下唯一的液态金属：会流动、有毒，也能与其他金属形成汞齐。',
+      moves: {
+        s1: mv({ name: '汞滴滑移', cost: 20, startup: 5, active: 1, recovery: 12, dmg: 0, hitbox: null, meterGain: 6,
+          inv: [0, 20], dash: { vx: 14, frames: 14 }, buff: { graphite: 200 },
+          log: '液态流动：本招无敌位移，并短暂加速。' }),
+        s2: mv({ name: '汞蒸气', cost: 32, startup: 10, active: 2, recovery: 17, dmg: 0, hitbox: null, meterGain: 9,
+          spawn: { at: 10, type: 'zone', kind: 'hgvap', dur: 250, w: 240, h: 190, ox: 18, oy: -190, dmg: 4, continuous: true, onEnter: 'poison', opt: { chemical: true } },
+          log: '汞蒸气吸入即中毒：区域内持续掉血。' }),
+        ult: mv({ name: '汞齐化', cost: 74, meterCost: 50, startup: 14, active: 5, recovery: 26, dmg: 38,
+          hitbox: { x: 12, y: 10, w: 186, h: 152 }, hitstun: 28, blockstun: 15, hitstop: 8,
+          kb: { x: 7.4, y: -3 }, meterGain: 0, guard: 'mid', juggle: 2, drain: 0.85,
+          log: '汞与多数金属形成汞齐：夺取对方骨架，大量转化为自身稳定度。' })
+      }
+    },
+
+    Pb: {
+      name: '铅', sym: 'Pb', type: '霸体', archetype: 'heavy',
+      max: 1450, speed: 3.4, jump: 11.6, w: 80, h: 152,
+      style: '重金属 / 屏蔽', formula: 'Pb', role: '金属 / 屏蔽',
+      tip: '铅板一立，谁都推不动你；用慢速重锤换血。',
+      desc: '密度大、能屏蔽辐射：整套阵容里最硬的一堵墙。',
+      moves: {
+        s1: mv({ name: '铅板护体', cost: 24, startup: 8, active: 1, recovery: 14, dmg: 0, hitbox: null, meterGain: 6,
+          buff: { armor: 260, passive: 200, passiveShield: 1 },
+          log: '铅板致密：击退被大幅削弱，并挡下一次化学侵蚀。' }),
+        s2: mv({ name: '铅锤下压', cost: 32, startup: 12, active: 4, recovery: 20, dmg: 26,
+          hitbox: { x: 20, y: 16, w: 120, h: 120 }, hitstun: 24, blockstun: 14, hitstop: 8,
+          kb: { x: 5.2, y: -2 }, meterGain: 10, guard: 'mid', juggle: 1,
+          log: '高密度锤击：伤害不算最高，但几乎打不退人。' }),
+        ult: mv({ name: '铅室压制', cost: 80, meterCost: 50, startup: 17, active: 5, recovery: 30, dmg: 46,
+          hitbox: { x: 8, y: 6, w: 210, h: 164 }, hitstun: 32, blockstun: 17, hitstop: 10,
+          kb: { x: 7, y: -3 }, meterGain: 0, guard: 'mid', juggle: 2, noKb: true,
+          log: '铅室屏蔽：以密度换压制，命中后对手被钉在原地。' })
+      }
+    },
+
+    I: {
+      name: '碘', sym: 'I', type: '标记', archetype: 'control',
+      max: 940, speed: 5.5, jump: 14.6, w: 70, h: 142,
+      style: '卤素 / 升华', formula: 'I₂', role: '非金属 / 升华',
+      tip: '蒸气里叠标记，遇淀粉显蓝色；层数越高终式越痛。',
+      desc: '紫黑色固体，受热易升华；遇淀粉显深蓝是它的招牌检验。',
+      moves: {
+        s1: mv({ name: '碘蒸气', cost: 26, startup: 9, active: 3, recovery: 16, dmg: 5,
+          hitbox: { x: 28, y: 30, w: 104, h: 96 }, hitstun: 16, blockstun: 10, hitstop: 5,
+          kb: { x: 2.4 }, meterGain: 8, guard: 'mid',
+          spawn: { at: 9, type: 'zone', kind: 'i2', dur: 270, w: 250, h: 200, ox: 16, oy: -200, dmg: 3, continuous: true, onEnter: 'mark', opt: { chemical: true } },
+          log: 'I₂ 易升华：紫烟滞留，接触即留下标记。' }),
+        s2: mv({ name: '淀粉显色', cost: 28, startup: 8, active: 3, recovery: 15, dmg: 16,
+          hitbox: { x: 30, y: 34, w: 88, h: 66 }, hitstun: 18, blockstun: 11, hitstop: 5,
+          kb: { x: 3 }, meterGain: 9, guard: 'mid', onHit: 'mark',
+          log: 'I₂ + 淀粉 → 深蓝色：再叠一层标记，为终式蓄势。' }),
+        ult: mv({ name: '升华爆雾', cost: 72, meterCost: 50, startup: 13, active: 6, recovery: 26, dmg: 30,
+          hitbox: { x: 10, y: 8, w: 196, h: 158 }, hitstun: 28, blockstun: 15, hitstop: 8,
+          kb: { x: 7.6, y: -3.2 }, meterGain: 0, guard: 'mid', juggle: 2, markScale: 0.5,
+          log: '受热急剧升华：标记层数直接转化为冲击强度。' })
+      }
     }
   };
 
@@ -271,7 +445,8 @@
       action: null, actionPrev: null,
       hitstun: 0, blockstun: 0, hitstop: 0, inv: 0, flash: 0,
       juggle: 0, combo: 0, comboT: 0,
-      buffs: { diamond: 0, graphite: 0, fe3: false, passive: 0, passiveShield: 0 },
+      buffs: { diamond: 0, graphite: 0, fe3: false, passive: 0, passiveShield: 0, armor: 0, sacrifice: 0 },
+      noBurn: !!d.noBurn,
       statuses: [],
       cd: { l: 0, s1: 0, s2: 0, ult: 0 },
       reagents: { water: 2, silver: 1, acid: 2, redox: 4 },
@@ -322,6 +497,15 @@
     else f.statuses.push({ type, dur, pow: pow || 1, t: 0 });
   }
   function hasStatus(f, t) { return f.statuses.some(s => s.type === t && s.dur > 0); }
+  /* 银 / 碘的「标记」：可叠加到 5 层，是终式增伤的唯一来源 */
+  function addMark(f, n) {
+    const z = f.statuses.find(s => s.type === 'mark');
+    const add = n || 1;
+    if (z) { z.dur = 300; z.pow = Math.min(5, z.pow + add); return z.pow; }
+    f.statuses.push({ type: 'mark', dur: 300, pow: Math.min(5, add), t: 0 });
+    return Math.min(5, add);
+  }
+  function markCount(f) { const z = f.statuses.find(s => s.type === 'mark' && s.dur > 0); return z ? z.pow : 0; }
   function rectsOverlap(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
 
   function hurtbox(f) {
@@ -436,6 +620,8 @@
       if (move.buff.diamond) { f.buffs.diamond = move.buff.diamond; f.buffs.graphite = 0; }
       if (move.buff.graphite) { f.buffs.graphite = move.buff.graphite; f.buffs.diamond = 0; }
       if (move.buff.passive) { f.buffs.passive = move.buff.passive; f.buffs.passiveShield = move.buff.passiveShield || 1; }
+      if (move.buff.armor) f.buffs.armor = move.buff.armor;
+      if (move.buff.sacrifice) f.buffs.sacrifice = (f.buffs.sacrifice || 0) + move.buff.sacrifice;
     }
     if (move.selfDmg) {
       f.stable = clamp(f.stable - move.selfDmg, 0, f.max);
@@ -509,6 +695,8 @@
     if (o.oxidation && STAGES[m.stage].cold) mul *= 0.8;
     if (o.flame && m.zones.some(z => z.kind === 'oxygen' && rectsOverlap(target, z))) mul *= 1.5;
     mul *= STAGES[m.stage].dmgMul || 1;
+    if (hasStatus(target, 'freeze')) mul *= 1.10;                     // 低温脆化：受击更疼
+    if (o.markScale) { const mk = markCount(target); if (mk) mul *= 1 + mk * o.markScale; }
 
     // 连段衰减
     if (!blocked && attacker && attacker.combo > 0) {
@@ -526,12 +714,23 @@
       return 0;
     }
 
-    const actual = Math.min(target.stable, Math.max(0, raw * mul));
+    let actual = Math.min(target.stable, Math.max(0, raw * mul));
+    // 镀锌牺牲层：优先扣护盾，扣完才吃稳定度（不格挡时才生效）
+    if (!blocked && target.buffs.sacrifice > 0) {
+      const absorb = Math.min(target.buffs.sacrifice, actual);
+      target.buffs.sacrifice -= absorb; actual -= absorb;
+      m.numbers.push({ x: target.x + target.w / 2, y: target.y + 26, text: '镀层 −' + Math.round(absorb), life: 38, color: '#9fc8d8' });
+    }
     target.stable = clamp(target.stable - actual, 0, target.max);
     target.flash = 7;
 
     if (attacker) attacker.meter = clamp(attacker.meter + (blocked ? (o.meterGain || 6) * 0.35 : (o.meterGain || 6)), 0, METER_MAX);
     if (target.meter < METER_MAX) target.meter = clamp(target.meter + Math.min(6, actual * 0.09), 0, METER_MAX);
+    if (attacker && o.drain && !blocked && actual > 0) {
+      const heal = actual * o.drain;
+      attacker.stable = clamp(attacker.stable + heal, 0, attacker.max);
+      m.numbers.push({ x: attacker.x + attacker.w / 2, y: attacker.y + 4, text: '+' + Math.round(heal), life: 36, color: '#8fd6c2' });
+    }
 
     if (blocked) {
       target.blockstun = Math.max(target.blockstun, o.blockstun || 9);
@@ -560,6 +759,8 @@
       target.action = null;
       target.kb = (o.kb && o.kb.x ? o.kb.x : 3) * dir;
       if (o.kb && o.kb.y) target.vy = o.kb.y;
+      if (target.buffs.armor > 0) { target.kb *= 0.35; if (o.kb && o.kb.y) target.vy = o.kb.y * 0.3; }
+      if (o.noKb) target.kb *= 0.2;
       if (attacker) {
         // 持续伤害（dot / 区域 tick）不计入连段，避免被每 18 帧的沼泽刷成几十 hit
         if (!o.dot) {
@@ -587,11 +788,13 @@
   }
 
   function applyOnHit(m, target, attacker, kind) {
-    if (kind === 'burn') addStatus(target, 'oxidation', 180, 1);
+    if (kind === 'burn' && !target.noBurn) addStatus(target, 'oxidation', 180, 1);
     if (kind === 'precip') addStatus(target, 'precip', 150, 1);
     if (kind === 'poison') addStatus(target, 'poison', 160, 0.7);
     if (kind === 'corrosion') addStatus(target, 'corrosion', 150, 0.8);
     if (kind === 'blind') addStatus(target, 'blind', 150, 1);
+    if (kind === 'freeze') addStatus(target, 'freeze', 150, 1);
+    if (kind === 'mark') addMark(target, 1);
   }
 
   /* ─────────────────────────── 每帧：角色推进 ─────────────────────────── */
@@ -649,6 +852,7 @@
     if (f.buffs.diamond > 0) f.buffs.diamond--;
     if (f.buffs.graphite > 0) f.buffs.graphite--;
     if (f.buffs.passive > 0) { f.buffs.passive--; if (f.buffs.passive === 0) f.buffs.passiveShield = 0; }
+    if (f.buffs.armor > 0) f.buffs.armor--;
     if (!hasStatus(f, 'passive')) f.buffs.passiveShield = Math.min(f.buffs.passiveShield, 1);
     f.guardMeter = clamp(f.guardMeter + GUARD_REGEN, 0, GUARD_MAX);
     f.meter = clamp(f.meter + (m.mode === 'training' ? 0.8 : 0.05) * (STAGES[m.stage].cold ? 0.65 : 1) * (f.id === 'Si' ? 2 : 1), 0, METER_MAX);
@@ -667,7 +871,7 @@
     if (f.ko) return;
 
     // 物理
-    const slow = hasStatus(f, 'precip') ? 0.55 : 1;
+    const slow = (hasStatus(f, 'precip') ? 0.55 : 1) * (hasStatus(f, 'freeze') ? 0.62 : 1);
     const cold = STAGES[m.stage].cold ? 0.88 : 1;
     const gmul = f.buffs.graphite > 0 ? 1.3 : 1;
     if (f.state !== 'attack' && f.hitstun <= 0 && f.blockstun <= 0) {
