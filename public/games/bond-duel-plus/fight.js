@@ -551,6 +551,7 @@
       intro: mode === 'training' ? 0 : 70,
       fx: [], numbers: [], zones: [], projectiles: [], log: [],
       water: 0, waterT: 0,
+      dashes: [],
       prevIn: { p: emptyInput(), e: emptyInput() },
       seed: opts.seed || 481927,
       rng: null, zapT: 0, callout: 0, calloutText: '',
@@ -606,7 +607,7 @@
     m.p.opp = m.e; m.e.opp = m.p;
     m.timer = ROUND_SECONDS * FPS;
     m.hitstop = 0; m.shake = 0; m.zones = []; m.projectiles = []; m.fx = []; m.numbers = [];
-    m.water = 0; m.waterT = 0; m.roundOver = false; m.roundWinner = null;
+    m.water = 0; m.waterT = 0; m.dashes = []; m.roundOver = false; m.roundWinner = null;
     m.frame = 0; m.comboOwner = null; m.maxCombo = 0; m.zapT = 0;
     m.round = keep.round;
     if (m.mode !== 'training') m.intro = 70;
@@ -815,7 +816,7 @@
       target.guardMeter = clamp(target.guardMeter - GUARD_CHIP, 0, GUARD_MAX);
       m.hitstop = Math.max(m.hitstop, 2);
       m.shake = Math.max(m.shake, 2);
-      m.numbers.push({ x: target.x + target.w / 2, y: target.y + 12, text: '格挡 ' + Math.round(actual), life: 40, color: '#b8c8a2' });
+      m.numbers.push({ x: target.x + target.w / 2, y: target.y + 12, text: String(Math.round(actual)), life: 40, color: '#b8c8a2', minor: true });
       // 完美防御：命中前 3 帧内才按下防御
       if (target.justGuarded > 0) {
         target.stable = clamp(target.stable + actual * 0.9, 0, target.max);
@@ -1075,7 +1076,8 @@
       if (!f.tapTrack) f.tapTrack = { dir: 0, at: -99 };
       if (f.tapTrack.dir === dir && m.frame - f.tapTrack.at < 15) {
         f.vx = dir * 14; f.inv = Math.max(f.inv, 10); f.dashT = 10;
-        m.numbers.push({ x: f.x + f.w / 2, y: f.y + f.h - 30, text: dir > 0 ? '前冲' : '后撤', life: 26, color: '#9ec9c0', minor: true });
+        // 位移不再弹「前冲/后撤」文字（那是调试字样），改为残影 + 气流线特效
+        m.dashes.push({ x: f.x + f.w / 2, y: f.y, face: f.face, dir, life: 20, max: 20, side: f === m.p ? 'p' : 'e' });
         f.tapTrack.at = -99;
       } else f.tapTrack = { dir, at: m.frame };
     }
@@ -1110,7 +1112,7 @@
     if (f.blockHeld && inp.s2 && !prev.s2 && f.meter >= 50 && !f.action) {
       f.meter -= 50; f.blockHeld = false; f.guardMeter = GUARD_MAX;
       startAction(m, f, 's1');
-      m.numbers.push({ x: f.x + f.w / 2, y: f.y - 8, text: '防御反击', life: 44, color: '#8fd6c2' });
+      m.numbers.push({ x: f.x + f.w / 2, y: f.y - 8, text: 'GUARD COUNTER', life: 44, color: '#8fd6c2' });
     }
   }
 
@@ -1241,6 +1243,8 @@
     m.fx = m.fx.filter(f => f.life > 0);
     for (const n of m.numbers) { n.y -= 0.65; n.life--; }
     m.numbers = m.numbers.filter(n => n.life > 0);
+    for (const d of m.dashes) d.life--;
+    m.dashes = m.dashes.filter(d => d.life > 0);
     m.shake *= 0.8;
     if (m.callout > 0) m.callout--;
 

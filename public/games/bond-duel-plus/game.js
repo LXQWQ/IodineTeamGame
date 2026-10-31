@@ -373,6 +373,97 @@
     catalyst: { sky: ['#1c1720', '#0f0b12'], floor: '#241d2a', line: '#5a3f6a', far: '#2c2334' }
   };
 
+  /* 普通实验室：水槽（玻璃槽 + 水位 + 龙头 + 气泡）—— 这是「水槽/空气」里的水槽 */
+  function drawSink() {
+    const x = 40, top = F.GROUND - 118, w = 116, h = 96;
+    X.save();
+    // 支架
+    X.fillStyle = '#2f4440';
+    X.fillRect(x + 8, top + h, 10, F.GROUND - (top + h));
+    X.fillRect(x + w - 18, top + h, 10, F.GROUND - (top + h));
+    X.fillRect(x, top + h, w, 7);
+    // 玻璃槽本体
+    X.fillStyle = 'rgba(150,200,205,0.10)';
+    X.fillRect(x, top, w, h);
+    X.strokeStyle = 'rgba(180,230,230,0.55)'; X.lineWidth = 2;
+    X.strokeRect(x, top, w, h);
+    // 水位（水区存在时液面轻微波动，否则静止）
+    const lvl = 0.62 + (S.match && S.match.water > 0 ? Math.sin(S.t / 7) * 0.02 : 0);
+    const wy = top + h * (1 - lvl);
+    const wg = X.createLinearGradient(0, wy, 0, top + h);
+    wg.addColorStop(0, 'rgba(120,205,220,0.42)');
+    wg.addColorStop(1, 'rgba(60,130,160,0.30)');
+    X.fillStyle = wg;
+    X.beginPath();
+    X.moveTo(x + 2, wy);
+    for (let i = 0; i <= 10; i++) {
+      const px = x + 2 + (w - 4) * (i / 10);
+      X.lineTo(px, wy + Math.sin(S.t / 14 + i * 0.8) * 2.2);
+    }
+    X.lineTo(x + w - 2, top + h - 2); X.lineTo(x + 2, top + h - 2);
+    X.closePath(); X.fill();
+    // 气泡
+    X.fillStyle = 'rgba(200,240,245,0.35)';
+    for (let i = 0; i < 5; i++) {
+      const bx = x + 16 + ((i * 27 + (S.t * 0.35) % w) % (w - 32));
+      const by = top + h - 8 - ((S.t * 0.9 + i * 31) % (h * lvl - 14));
+      X.beginPath(); X.arc(bx, by, 1.8 + (i % 2), 0, Math.PI * 2); X.fill();
+    }
+    // 龙头
+    X.strokeStyle = '#8fb6ae'; X.lineWidth = 5; X.lineCap = 'round';
+    X.beginPath();
+    X.moveTo(x + w * 0.5, top - 34);
+    X.lineTo(x + w * 0.5, top - 12);
+    X.lineTo(x + w * 0.5 + 22, top - 12);
+    X.stroke();
+    X.beginPath(); X.moveTo(x + w * 0.5, top - 34); X.lineTo(x + w * 0.5, top - 52); X.stroke();
+    X.lineCap = 'butt';
+    // 标签
+    X.fillStyle = 'rgba(200,240,235,0.62)';
+    X.font = '600 11px "IBM Plex Mono", monospace';
+    X.textAlign = 'center';
+    X.fillText('H₂O 水槽', x + w / 2, top - 62);
+    X.restore();
+  }
+
+  /* 高温坩埚台：陶坩埚 + 上升热浪 */
+  function drawCrucible() {
+    const x = 118, base = F.GROUND, w = 120, h = 74;
+    X.save();
+    X.fillStyle = '#3a2418';
+    X.beginPath(); X.ellipse(x + w / 2, base, w * 0.55, 12, 0, 0, Math.PI * 2); X.fill();
+    X.fillStyle = '#4a2c1c';
+    X.beginPath();
+    X.moveTo(x, base - 6); X.lineTo(x + 16, base - h); X.lineTo(x + w - 16, base - h); X.lineTo(x + w, base - 6);
+    X.closePath(); X.fill();
+    X.fillStyle = 'rgba(255,150,60,0.55)';
+    X.beginPath(); X.ellipse(x + w / 2, base - h + 2, w * 0.36, 8, 0, 0, Math.PI * 2); X.fill();
+    for (let i = 0; i < 7; i++) {
+      X.globalAlpha = 0.16 + (i % 3) * 0.05;
+      X.fillStyle = '#ff9a4d';
+      const t = (S.t * 0.8 + i * 40) % 120;
+      X.beginPath();
+      X.ellipse(x + 30 + i * 13 + Math.sin((S.t + i * 30) / 22) * 5, base - h - t, 7 - i * 0.5, 16 - i, 0, 0, Math.PI * 2);
+      X.fill();
+    }
+    X.restore();
+  }
+
+  /* 低温液氮舱：立式杜瓦罐 + 冷雾 */
+  function drawTank() {
+    const x = 112, base = F.GROUND, w = 96, h = 150;
+    X.save();
+    X.fillStyle = 'rgba(150,200,235,0.12)';
+    X.fillRect(x, base - h, w, h);
+    X.strokeStyle = 'rgba(170,215,245,0.5)'; X.lineWidth = 2;
+    X.strokeRect(x, base - h, w, h);
+    X.fillStyle = 'rgba(180,225,255,0.20)';
+    X.fillRect(x + 2, base - h * 0.55, w - 4, h * 0.55 - 2);
+    X.fillStyle = 'rgba(210,240,255,0.14)';
+    X.fillRect(x - 6, base - h - 12, w + 12, 14);
+    X.restore();
+  }
+
   function drawBg(stage) {
     const p = STAGE_PAINT[stage] || STAGE_PAINT.lab;
     const g = X.createLinearGradient(0, 0, 0, H);
@@ -387,6 +478,11 @@
       X.fillRect(60 + i * 210, F.GROUND - h - 30, w, h);
     }
     X.globalAlpha = 1;
+
+    // ── 场景前景道具（每座场地一件身份物品）──
+    if (stage === 'lab') drawSink();
+    else if (stage === 'hot') drawCrucible();
+    else if (stage === 'cold') drawTank();
 
     // 地面
     X.fillStyle = p.floor;
@@ -425,6 +521,38 @@
       X.fillStyle = 'rgba(170,120,220,0.10)';
       for (let i = 0; i < 6; i++) X.fillRect(120 + i * 170, F.GROUND - 26, 120, 26);
     }
+  }
+
+  /* 冲刺残影 + 气流线（替代原来的「前冲/后撤」文字） */
+  function drawDashes(m) {
+    if (!m.dashes || !m.dashes.length) return;
+    m.dashes.forEach((d) => {
+      const k = d.life / d.max;                     // 1 → 0
+      const back = d.dir * (1 - k) * 16;            // 随残影淡出向后拖
+      const x = d.x - d.dir * 26 - back;
+      X.save();
+      // 残影：3 层递减透明度的影子
+      for (let i = 3; i >= 1; i--) {
+        X.globalAlpha = k * 0.55 * (i / 3);
+        X.fillStyle = d.side === 'p' ? '#9fd8d0' : '#e6a68c';
+        X.beginPath();
+        X.ellipse(x + i * d.dir * 7, d.y + 82, 17 - i * 2, 60 - i * 6, 0, 0, Math.PI * 2);
+        X.fill();
+      }
+      // 气流线：身后 4 条短线
+      X.globalAlpha = k * 0.8;
+      X.strokeStyle = d.side === 'p' ? '#d8fff4' : '#ffdcc2';
+      X.lineWidth = 2;
+      for (let i = 0; i < 4; i++) {
+        const ly = d.y + 34 + i * 26;
+        const len = 16 + (i % 2) * 12;
+        X.beginPath();
+        X.moveTo(x - d.dir * (8 + i * 5), ly);
+        X.lineTo(x - d.dir * (8 + i * 5 + len * k), ly);
+        X.stroke();
+      }
+      X.restore();
+    });
   }
 
   function drawZones(m) {
@@ -469,19 +597,37 @@
   function drawFx(m) {
     m.fx.forEach((f) => {
       const k = f.max ? f.life / f.max : 1;
+      const col = f.color || '#fff';
       X.save();
-      X.globalAlpha = Math.max(0, k) * 0.8;
-      X.fillStyle = f.color || '#fff';
-      X.beginPath(); X.arc(f.x, f.y, Math.max(1, 5 * k + 2), 0, Math.PI * 2); X.fill();
+      // 核心闪光
+      X.globalAlpha = Math.max(0, k) * 0.9;
+      X.fillStyle = col;
+      X.beginPath(); X.arc(f.x, f.y, Math.max(1, 4.5 * k + 1.6), 0, Math.PI * 2); X.fill();
+      // 方向性火花：沿速度反方向的短放射线
+      X.globalAlpha = Math.max(0, k) * 0.7;
+      X.strokeStyle = col; X.lineWidth = 1.6;
+      const ang = Math.atan2(f.vy, f.vx) || 0;
+      for (let i = 0; i < 5; i++) {
+        const a = ang + (i - 2) * 0.42;
+        const r0 = 4 + 3 * (1 - k), r1 = r0 + 9 * k + 5;
+        X.beginPath();
+        X.moveTo(f.x + Math.cos(a) * r0, f.y + Math.sin(a) * r0);
+        X.lineTo(f.x + Math.cos(a) * r1, f.y + Math.sin(a) * r1);
+        X.stroke();
+      }
       X.restore();
     });
     m.numbers.forEach((n) => {
       const k = n.life / 60;
       X.save();
       X.globalAlpha = Math.max(0, Math.min(1, k * 1.6));
-      X.fillStyle = n.color || '#ffd479';
-      X.font = '800 22px "IBM Plex Mono", monospace';
+      const big = !n.minor;
+      X.font = (big ? '800 22px ' : '700 13px ') + '"IBM Plex Mono", monospace';
       X.textAlign = 'center';
+      X.lineWidth = big ? 4 : 3;
+      X.strokeStyle = 'rgba(8,10,9,0.85)';
+      X.strokeText(n.text, n.x, n.y - (1 - k) * 26);
+      X.fillStyle = n.color || '#ffd479';
       X.fillText(n.text, n.x, n.y - (1 - k) * 26);
       X.restore();
     });
@@ -518,20 +664,51 @@
     X.fill();
     X.restore();
 
-    // 状态文字
-    const tags = [];
-    if (f.state === 'hitstun') tags.push('受击');
-    if (f.state === 'blockstun') tags.push('格挡');
-    if (f.blockHeld) tags.push('防御中');
-    if (f.juggle > 0) tags.push('浮空' + f.juggle);
-    if (tags.length) {
+    // 状态不再用文字标注（读起来像调试信息），改为视觉符号
+    const cx2 = f.x + f.w / 2, cy2 = f.y + f.h * 0.45;
+    if (f.blockHeld || f.state === 'blockstun') {
+      // 格挡：身前一道弧形护盾，完美防御时更亮
+      const strong = f.justGuarded > 0 || f.state === 'blockstun';
       X.save();
-      X.fillStyle = 'rgba(240,240,240,0.8)';
-      X.font = '600 12px "IBM Plex Mono", monospace';
-      X.textAlign = 'center';
-      X.fillText(tags.join(' · '), f.x + f.w / 2, f.y - 12);
+      X.globalAlpha = strong ? 0.85 : 0.45;
+      X.strokeStyle = strong ? '#ffe9a8' : '#bfe6dd';
+      X.lineWidth = strong ? 4 : 2.5;
+      // 护盾画在「面朝方向」那一侧
+      const a0 = f.face >= 0 ? -1.15 : Math.PI - 1.15;
+      const a1 = f.face >= 0 ? 1.15 : Math.PI + 1.15;
+      X.beginPath();
+      X.arc(cx2, cy2, f.w * 0.72, a0, a1);
+      X.stroke();
+      X.globalAlpha = strong ? 0.18 : 0.09;
+      X.fillStyle = strong ? '#ffe9a8' : '#bfe6dd';
+      X.beginPath();
+      X.arc(cx2, cy2, f.w * 0.72, a0, a1);
+      X.closePath();
+      X.fill();
       X.restore();
     }
+    if (f.juggle > 0) {
+      // 浮空：脚下旋转的能量环
+      X.save();
+      X.globalAlpha = 0.55;
+      X.strokeStyle = '#ffd479';
+      X.lineWidth = 2;
+      X.beginPath();
+      X.ellipse(cx2, f.y + f.h + 8, f.w * 0.5, 8, 0, 0, Math.PI * 2);
+      X.stroke();
+      X.restore();
+    }
+    if (f.state === 'hitstun' && f.hitstun > 2) {
+      // 受击：躯干处一闪白
+      X.save();
+      X.globalAlpha = 0.22 + 0.18 * Math.sin(S.t / 3);
+      X.fillStyle = '#fff';
+      X.beginPath();
+      X.ellipse(cx2, f.y + f.h * 0.5, f.w * 0.34, f.h * 0.3, 0, 0, Math.PI * 2);
+      X.fill();
+      X.restore();
+    }
+
   }
 
   function draw() {
@@ -545,6 +722,7 @@
     if (shake > 0) X.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
 
     drawZones(m);
+    drawDashes(m);
     drawFighter(m.p, 1);
     drawFighter(m.e, 1);
     drawProjectiles(m);
