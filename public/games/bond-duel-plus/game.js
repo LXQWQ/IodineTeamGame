@@ -149,16 +149,16 @@
     if (mv) {
       mv.innerHTML = '';
       const list = [
-        ['普攻', '连击 · 三连', 0],
-        ['技能Ⅰ', d.moves?.s1?.name || '—', d.moves?.s1?.cost || 0],
-        ['技能Ⅱ', d.moves?.s2?.name || '—', d.moves?.s2?.cost || 0],
-        ['终式', d.moves?.ult?.name || '—', d.moves?.ult?.cost || 0]
+        ['J', '连击 · 三连', 0, '轻攻击三段 · 命中可续接'],
+        ['K', d.moves?.s1?.name || '—', d.moves?.s1?.cost || 0, d.moves?.s1?.note || '突进 / 位移技'],
+        ['L', d.moves?.s2?.name || '—', d.moves?.s2?.cost || 0, d.moves?.s2?.note || '主力输出技'],
+        ['U', d.moves?.ult?.name || '—', d.moves?.ult?.cost || 0, d.moves?.ult?.note || '超必杀 · 需气槽']
       ];
-      list.forEach(([k, name, cost]) => {
+      list.forEach(([key, name, cost, note]) => {
         const row = document.createElement('div');
         row.className = 'move-item';
-        row.innerHTML = '<kbd>' + (k === '普攻' ? 'J' : k === '技能Ⅰ' ? 'K' : k === '技能Ⅱ' ? 'L' : 'U') + '</kbd>' +
-          '<span><b>' + name + '</b><small>' + k + '</small></span>' +
+        row.innerHTML = '<kbd>' + key + '</kbd>' +
+          '<span><b>' + name + '</b><small>' + note + '</small></span>' +
           '<span class="cost">' + (cost || '—') + '</span>';
         mv.appendChild(row);
       });
@@ -239,6 +239,29 @@
   }
 
   /* ---------------- 战斗流程 ---------------- */
+  const SLOT_OF = { k: 's1', l: 's2', u: 'ult' };
+
+  function syncMoveNames(id) {
+    const d = fdata(id);
+    if (!d || !d.moves) return;
+    document.querySelectorAll('#touch .actions .ctrl[data-key]').forEach((el) => {
+      const key = el.dataset.key;
+      const b = el.querySelector('b');
+      const sm = el.querySelector('small');
+      if (key === 'j') {
+        if (b) b.textContent = '连击 · 三连';
+        if (sm) sm.textContent = '轻攻击·可续接';
+        el.setAttribute('title', '连击 · 三连：轻攻击三段，命中后可继续出招');
+        return;
+      }
+      const m = d.moves[SLOT_OF[key]];
+      if (!m) return;
+      if (b) b.textContent = m.name;
+      if (sm) sm.textContent = '耗能 ' + m.cost + (m.meterCost ? ' · 气 ' + m.meterCost : '');
+      el.setAttribute('title', m.name + '：' + (m.note || '') + (m.log ? '\n' + m.log : ''));
+    });
+  }
+
   function startMatch() {
     S.match = F.createMatch({
       p: S.pickP, e: S.pickE, stage: S.pickStage, mode: S.mode,
@@ -255,6 +278,7 @@
     if (mn) mn.textContent = MODE_LABEL[S.mode] || S.mode;
     const cl = $('conditions');
     if (cl) cl.textContent = st ? (st.icon + ' ' + st.name + ' · ' + (st.tip || st.note || '')) : '';
+    syncMoveNames(S.pickP);
     syncHud(true);
     if (!S.raf) loop(performance.now());
   }
@@ -462,6 +486,8 @@
   function drawFighter(f, scale) {
     X.save();
     X.translate(f.x + f.w / 2, f.y + f.h);
+    // 朝向：art.js 画的是「朝右」原型，文字内部已用 f.face 反镜像
+    if (f.face < 0) X.scale(-1, 1);
     X.scale(scale, scale);
     if (f.flash > 0) X.globalAlpha = 0.85;
     if (f.inv > 0) X.globalAlpha = 0.6;

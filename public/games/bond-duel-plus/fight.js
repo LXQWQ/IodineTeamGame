@@ -978,7 +978,9 @@
     f.inputHeld = true;
     const dir = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
     f.inputDir = dir;
-    if (dir !== 0) f.face = f === m.p ? sign(f.opp.x - f.x) : sign(f.opp.x - f.x);
+    // 朝向：始终面向对手（出招中锁定朝向，避免判定翻转）
+    const wantFace = sign(f.opp.x - f.x);
+    if (wantFace !== 0 && !f.action) f.face = wantFace;
 
     f.crouch = !!inp.down && f.onGround && !f.action;
     f.blockHeld = !!inp.block && f.onGround && f.hitstun <= 0 && f.blockstun <= 0 && !f.action;
