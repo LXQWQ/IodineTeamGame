@@ -22,3 +22,23 @@
 # 不要把 .git / 源码 / 配置类路径下发（当前 public/ 目录已天然隔离，这里是兜底）
 /.git/*
   X-Robots-Tag: noindex
+
+# 主题背景等大体量美术素材：给长缓存，配合首页的 prefetch 做预热。
+# 不加这条时 Cloudflare 默认是 max-age=0, must-revalidate，每次切主题都要发
+# 一次 304 校验（约 300 字节 + 一次 RTT）；加了之后预热过一次就能直接复用。
+/effects/*
+  Cache-Control: public, max-age=604800
+
+# 首页 favicon 图标（内容不变，可长缓存）
+/favicon.ico
+  Cache-Control: public, max-age=604800
+/favicon-16.png
+  Cache-Control: public, max-age=604800
+/favicon-32.png
+  Cache-Control: public, max-age=604800
+/favicon-48.png
+  Cache-Control: public, max-age=604800
+/favicon.png
+  Cache-Control: public, max-age=604800
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800

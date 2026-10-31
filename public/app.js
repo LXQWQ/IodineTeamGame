@@ -1835,7 +1835,34 @@
         initMusicPlayer();
         initTutorial();
         initVersionBadge();
+        preloadThemeBackdrops();
     });
+
+    // ======================= 主题背景预载 =======================
+    /* 月读主题的固定背景 effects/tsukuyomi-bg.png 有 3.6MB，平时只写在 CSS 的
+       body[data-theme="tsukuyomi"]::before 里 —— 浏览器要等切到月读的那一刻
+       才开始下载，于是背景得慢慢渗出来。这里在首屏空闲时先主动拉一次（并解码），
+       写进 HTTP/内存缓存；之后切主题只是从缓存里取，几乎瞬间到位。 */
+    const THEME_BACKDROPS = ['effects/tsukuyomi-bg.png'];
+
+    function preloadThemeBackdrops() {
+        const warm = () => {
+            THEME_BACKDROPS.forEach((src) => {
+                const img = new Image();
+                img.decoding = 'async';
+                img.onload = () => {
+                    // 解码也提前做完，避免切主题时第一帧掉帧
+                    if (typeof img.decode === 'function') img.decode().catch(() => {});
+                };
+                img.src = src;
+            });
+        };
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(warm, { timeout: 3000 });
+        } else {
+            setTimeout(warm, 1200);
+        }
+    }
 
     // ======================= 版本号徽标 =======================
     /* 版本号规则
@@ -1851,7 +1878,7 @@
     const SITE_VERSION = {
         year: 2026,        // 年份（显示取后两位：26）
         updateIndex: 3,    // 本年度中型及以上更新次数（2月#1 / 5月#2 / 10月#3 / 12月#4）
-        pushCount: 203,    // 本年度 GitHub 推送次数（每次提交推送都要 +1）
+        pushCount: 204,    // 本年度 GitHub 推送次数（每次提交推送都要 +1）
         date: '1031',      // 最近一次更新日期 MMDD
         snapshot: true     // true = 快照版本（带 w 段与日期）；false = 正式版本
     };

@@ -10,6 +10,8 @@
     <link rel="shortcut icon" href="favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <meta name="theme-color" content="#6c4cc4">
+    <!-- 月读主题的固定背景有 3.6MB，平时不会加载；首屏就开始预热，切主题时直接命中缓存 -->
+    <link rel="prefetch" as="image" href="effects/tsukuyomi-bg.png">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
