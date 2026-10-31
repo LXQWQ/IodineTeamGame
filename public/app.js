@@ -185,7 +185,9 @@
             { id:4, name:"碳链工坊", emoji:"🧬", tag:"有机合成解谜", desc:"把起始分子一步步合成到目标分子！16 种真实反应（Grignard 加成、Aldol 缩合、Diels-Alder 成环、Jones 强氧化、光照卤代、脱水成烯……），20 关从醇延长一直做到带环酯；结构式按标准骨架式绘制，每一步都有可用性提示与反应式预览，支持撤销、提示、星级评级与进度存档。", link:"games/chain-craft/", newWindow:false },
             { id:5, name:"反应对决", emoji:"⚗️", tag:"化学反应卡牌", desc:"60 种物质 × 67 条真实化学方程式驱动的对决策略卡牌！双槽放料即可引发反应，能反应的牌会亮起绿框并实时预览伤害；产物带特效——气体逸出削对手能量、沉淀生成护盾、成水回复生命，配错组合则「逸散」自伤。含 8 种操作卡（加热/通电/催化/加压/冷却/中和/过滤/搅拌）、三档 AI，以及手牌保底与「换手牌」机制，绝不会因手牌无法反应而卡死。", link:"games/reaction-duel/", newWindow:false },
             { id:6, name:"元素跃迁", emoji:"🎲", tag:"周期表飞行棋", desc:"把元素周期律做成飞行棋！52 格环形赛道，四大家族各 4 枚棋子，掷出 6 才能激发上路；踩到反应格抽化学事件卡（放热前进、催化剂加速、惰性气体冻结……），绕场一周归位，连出三个 6 会被电离回巢，集齐 4 枚触发胜利。", link:"games/element-leap/", newWindow:false },
-            { id:8, name:"离子竞技场", emoji:"⚛️", tag:"动作 RPG", desc:"florr.io 的化学版！操控原子核在水溶液/酸性/碱性/有机/等离子五大区域求生，化学物质化作电子绕核旋转、碰撞伤敌；击杀化合物怪物掉落稀有电子与物质，9 级稀有度、合成台、技能树与自动装备备战一应俱全。", link:"games/ion-arena/", newWindow:false }
+            { id:8, name:"离子竞技场", emoji:"⚛️", tag:"动作 RPG", desc:"florr.io 的化学版！操控原子核在水溶液/酸性/碱性/有机/等离子五大区域求生，化学物质化作电子绕核旋转、碰撞伤敌；击杀化合物怪物掉落稀有电子与物质，9 级稀有度、合成台、技能树与自动装备备战一应俱全。", link:"games/ion-arena/", newWindow:false },
+            { id:14, name:"键能对决 PLUS", emoji:"⚔️", tag:"格斗对战", desc:"基于氢队《键能对决》改编：12 位元素角色 × 6 座反应舱，帧精确的连段、取消、投技与防御分级；气槽超必、三局两胜、稳定度判定，三档 AI 与同屏双人。", link:"games/bond-duel-plus/", newWindow:false },
+            { id:15, name:"元素自走棋", emoji:"♟️", tag:"策略自走棋", desc:"6×8 棋盘上的元素军团！招募 12 种元素、三层羁绊（族 / 周期 / 区块）自动生效，电负性差 ≥1.8 的相邻单位触发离子键合击；商店刷新、合成升星、人口上限随等级成长，逐回合对抗越来越强的对手。", link:"games/element-autochess/", newWindow:false }
         ];
         /* 四款「开发中」游戏已全部重构完成并迁入 iodineGames，此数组留空 */
         const iodineDevGames = [
@@ -295,25 +297,6 @@
 <ellipse cx="60" cy="27" rx="19" ry="3.4" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2"/>
 <path d="M45.5 33 v38" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" opacity=".28"/>
 </g></svg></div>`,
-            4: `<div class="gi gi-chain"><svg viewBox="0 0 120 120" aria-hidden="true">
-<defs>
-<radialGradient id="chC" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#f1f5f9"/><stop offset="52%" stop-color="#8b9cb3"/><stop offset="100%" stop-color="#2b3a4d"/></radialGradient>
-<radialGradient id="chNew" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#ffe4e6"/><stop offset="52%" stop-color="#fb7185"/><stop offset="100%" stop-color="#881337"/></radialGradient>
-<radialGradient id="chH" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#ffffff"/><stop offset="55%" stop-color="#bae6fd"/><stop offset="100%" stop-color="#0369a1"/></radialGradient>
-<filter id="chBlur" x="-90%" y="-90%" width="280%" height="280%"><feGaussianBlur stdDeviation="3.2"/></filter>
-</defs>
-<g transform="translate(60 62)"><g><animateTransform attributeName="transform" type="rotate" values="-6;6;-6" dur="7s" repeatCount="indefinite"/>
-<g transform="translate(-60 -62)">
-<path d="M26 76 L42 50 L58 76 L74 50 L90 76" fill="none" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity=".92"/>
-<circle cx="26" cy="76" r="8" fill="url(#chC)"/>
-<circle cx="42" cy="50" r="8" fill="url(#chC)"/>
-<circle cx="58" cy="76" r="8" fill="url(#chC)"/>
-<circle cx="74" cy="50" r="8" fill="url(#chC)"/>
-<circle cx="20" cy="52" r="3.4" fill="url(#chH)" opacity=".9"/>
-<circle cx="30" cy="46" r="3" fill="url(#chH)" opacity=".75"/>
-<g transform="translate(90 76)"><circle r="14" fill="#fb7185" opacity=".35" filter="url(#chBlur)"/><circle r="8" fill="url(#chNew)"/><animateTransform attributeName="transform" type="scale" values="1;1.14;1" dur="2.6s" repeatCount="indefinite" additive="sum"/></g>
-</g></g></g>
-</svg></div>`,
             7: `<div class="gi gi-chemv1"><svg viewBox="0 0 120 120" aria-hidden="true">
 <defs>
 <radialGradient id="ctRed" cx="35%" cy="28%" r="80%"><stop offset="0%" stop-color="#ff9aa2"/><stop offset="55%" stop-color="#ff4655"/><stop offset="100%" stop-color="#8c1220"/></radialGradient>
@@ -521,7 +504,59 @@
 <circle cx="60" cy="30" r="4" fill="#34d399" opacity=".85"/></g>
 <circle cx="60" cy="60" r="15" fill="url(#arCore)"/>
 <circle cx="60" cy="60" r="15" fill="none" stroke="#78350f" stroke-opacity=".45" stroke-width="1.5"/>
-</svg></div>`
+</svg></div>`,
+            14: `<div class="gi gi-duel-plus"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="dpRed" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#ffd7c2"/><stop offset="45%" stop-color="#f97316"/><stop offset="100%" stop-color="#7c2d12"/></radialGradient>
+<radialGradient id="dpBlue" cx="35%" cy="30%" r="75%"><stop offset="0%" stop-color="#d6f1ff"/><stop offset="45%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0c4a6e"/></radialGradient>
+<linearGradient id="dpSpark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fffbe8"/><stop offset="45%" stop-color="#fde047"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient>
+<radialGradient id="dpFlash" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff8d6" stop-opacity=".95"/><stop offset="55%" stop-color="#fbbf24" stop-opacity=".45"/><stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/></radialGradient>
+</defs>
+<circle cx="60" cy="60" r="52" fill="url(#dpFlash)" opacity=".55"><animate attributeName="opacity" values=".3;.8;.3" dur="1.1s" repeatCount="indefinite"/></circle>
+<circle cx="60" cy="60" r="47" fill="none" stroke="#fbbf24" stroke-opacity=".30" stroke-width="1.6" stroke-dasharray="3 10"><animateTransform attributeName="transform" type="rotate" from="360 60 60" to="0 60 60" dur="18s" repeatCount="indefinite"/></circle>
+<g><animateTransform attributeName="transform" type="translate" values="0 0;-7 0;0 0" dur="1.4s" repeatCount="indefinite"/>
+<path d="M16 44 Q10 60 16 76" fill="none" stroke="#f97316" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/>
+<circle cx="34" cy="60" r="20" fill="url(#dpRed)" stroke="#fdba74" stroke-width="1.6"/>
+<path d="M25 53 L43 53 M25 60 L40 60 M25 67 L43 67" stroke="#7c2d12" stroke-width="2.8" stroke-linecap="round" opacity=".5"/>
+</g>
+<g><animateTransform attributeName="transform" type="translate" values="0 0;7 0;0 0" dur="1.4s" repeatCount="indefinite"/>
+<path d="M104 44 Q110 60 104 76" fill="none" stroke="#38bdf8" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/>
+<circle cx="86" cy="60" r="20" fill="url(#dpBlue)" stroke="#7dd3fc" stroke-width="1.6"/>
+<path d="M77 53 L95 53 M80 60 L95 60 M77 67 L95 67" stroke="#0c4a6e" stroke-width="2.8" stroke-linecap="round" opacity=".5"/>
+</g>
+<path d="M62 24 L52 56 L61 56 L55 96 L74 52 L64 52 Z" fill="url(#dpSpark)" stroke="#fffbeb" stroke-width="1.4" stroke-linejoin="round"><animate attributeName="opacity" values=".7;1;.7" dur=".8s" repeatCount="indefinite"/></path>
+<g stroke="#fde047" stroke-width="2" stroke-linecap="round" opacity=".85"><animate attributeName="opacity" values=".35;.95;.35" dur="1s" repeatCount="indefinite"/>
+<path d="M60 6 L60 15"/><path d="M60 105 L60 114"/><path d="M14 60 L23 60"/><path d="M97 60 L106 60"/>
+</g>
+</svg></div>`,
+            15: `<div class="gi gi-autochess"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<linearGradient id="acTileA" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#2b5464"/><stop offset="100%" stop-color="#11222a"/></linearGradient>
+<linearGradient id="acTileB" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b7c91"/><stop offset="100%" stop-color="#1a3a46"/></linearGradient>
+<radialGradient id="acGold" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#fff6d0"/><stop offset="46%" stop-color="#f0c04a"/><stop offset="100%" stop-color="#96600a"/></radialGradient>
+<radialGradient id="acCyan" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#e8feff"/><stop offset="50%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0a6076"/></radialGradient>
+<radialGradient id="acHalo" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#22d3ee" stop-opacity=".30"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+</defs>
+<circle cx="60" cy="64" r="50" fill="url(#acHalo)"/>
+<g transform="translate(60 64) rotate(45) scale(1.50 .80)" stroke="#63a7bd" stroke-opacity=".7" stroke-width="1.1">
+<rect x="-31" y="-31" width="20" height="20" fill="url(#acTileA)"/><rect x="-11" y="-31" width="20" height="20" fill="url(#acTileB)"/><rect x="9" y="-31" width="20" height="20" fill="url(#acTileA)"/>
+<rect x="-31" y="-11" width="20" height="20" fill="url(#acTileB)"/><rect x="-11" y="-11" width="20" height="20" fill="url(#acTileA)"/><rect x="9" y="-11" width="20" height="20" fill="url(#acTileB)"/>
+<rect x="-31" y="9" width="20" height="20" fill="url(#acTileA)"/><rect x="-11" y="9" width="20" height="20" fill="url(#acTileB)"/><rect x="9" y="9" width="20" height="20" fill="url(#acTileA)"/>
+<rect x="-11" y="-11" width="20" height="20" fill="none" stroke="#f0c04a" stroke-width="2.2" stroke-opacity=".95"/>
+</g>
+<circle cx="38" cy="52" r="8.5" fill="url(#acCyan)" stroke="#bff4fd" stroke-width="1.2"/>
+<text x="38" y="55.5" text-anchor="middle" font-family="Rajdhani,system-ui" font-size="10" font-weight="700" fill="#06333e">O</text>
+<circle cx="82" cy="52" r="8.5" fill="url(#acCyan)" stroke="#bff4fd" stroke-width="1.2"/>
+<text x="82" y="55.5" text-anchor="middle" font-family="Rajdhani,system-ui" font-size="10" font-weight="700" fill="#06333e">H</text>
+<circle cx="60" cy="64" r="9" fill="url(#acGold)" stroke="#fde68a" stroke-width="1.3"/>
+<text x="60" y="67.5" text-anchor="middle" font-family="Rajdhani,system-ui" font-size="8.5" font-weight="800" fill="#3b2506">Cl</text>
+<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -3.5;0 0" dur="2s" repeatCount="indefinite"/>
+<circle cx="60" cy="32" r="11" fill="url(#acGold)" stroke="#fffbe8" stroke-width="1.5"/>
+<text x="60" y="36.5" text-anchor="middle" font-family="Rajdhani,system-ui" font-size="12.5" font-weight="800" fill="#3b2506">C</text>
+</g>
+<path d="M60 43 L60 55" stroke="#f0c04a" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".8" stroke-dasharray="2 3"/>
+<g stroke="#22d3ee" stroke-opacity=".55" stroke-width="1.7" fill="none" stroke-linecap="round"><path d="M17 27 L26 27 M17 27 L17 36"/><path d="M103 97 L94 97 M103 97 L103 88"/></g>
+</svg></div>`,
         };
 
 
@@ -1816,7 +1851,7 @@
     const SITE_VERSION = {
         year: 2026,        // 年份（显示取后两位：26）
         updateIndex: 3,    // 本年度中型及以上更新次数（2月#1 / 5月#2 / 10月#3 / 12月#4）
-        pushCount: 196,    // 本年度 GitHub 推送次数（每次提交推送都要 +1）
+        pushCount: 197,    // 本年度 GitHub 推送次数（每次提交推送都要 +1）
         date: '1031',      // 最近一次更新日期 MMDD
         snapshot: true     // true = 快照版本（带 w 段与日期）；false = 正式版本
     };

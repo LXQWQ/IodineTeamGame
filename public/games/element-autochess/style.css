@@ -1,0 +1,298 @@
+/* 元素自走棋 · 碘队游戏工坊
+   真实化学性质改成的自走棋：12 元素、双轴羁绊、电负性离子键合击。 */
+
+:root{
+  --bg:#0b1013;
+  --bg2:#0f161a;
+  --panel:#131c21;
+  --panel2:#172229;
+  --line:#22323b;
+  --ink:#dbe9ee;
+  --dim:#7f96a1;
+  --gold:#f0c04a;
+  --hp:#4ade80;
+  --hp2:#22a05a;
+  --mana:#60a5fa;
+  --bad:#f87171;
+  --allyA:#1b3a2c;
+  --allyB:#24503a;
+  --enemyA:#3a1b22;
+  --enemyB:#50242c;
+  --radius:10px;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1100px 600px at 50% -160px, #16242c 0%, transparent 70%),
+    linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);
+  color:var(--ink);
+  font:14px/1.5 "Noto Sans SC","Segoe UI",system-ui,-apple-system,sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+h1,h2,h3,p{margin:0}
+
+.app{
+  max-width:1340px;
+  margin:0 auto;
+  padding:14px 16px 20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-height:100vh;
+}
+
+/* ---------------- 顶栏 ---------------- */
+.topbar{
+  display:flex;align-items:center;gap:16px;
+  padding:10px 14px;
+  background:linear-gradient(180deg,rgba(23,34,41,.92),rgba(19,28,33,.92));
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+}
+.brand{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.brand-mark{
+  width:38px;height:38px;border-radius:9px;
+  display:grid;place-items:center;
+  font-size:20px;
+  color:#0b1013;
+  background:linear-gradient(140deg,#f0c04a,#f59e0b);
+  box-shadow:0 4px 16px rgba(240,192,74,.25);
+}
+.brand b{display:block;font-size:16px;letter-spacing:.04em}
+.brand small{display:block;font-size:9.5px;letter-spacing:.22em;color:var(--dim)}
+
+.stats{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 auto;justify-content:center}
+.stat{
+  padding:4px 10px;border-radius:999px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  font-size:12px;color:var(--dim);
+  white-space:nowrap;
+}
+.stat.gold{color:var(--gold);border-color:rgba(240,192,74,.35)}
+.stat.hp{color:var(--hp);border-color:rgba(74,222,128,.3)}
+.stat.flash{animation:statFlash .5s ease}
+@keyframes statFlash{0%{background:#28404b}100%{background:var(--panel)}}
+
+.top-actions{display:flex;gap:8px;flex:0 0 auto}
+.quiet{
+  background:transparent;border:1px solid var(--line);
+  border-radius:8px;padding:6px 12px;color:var(--dim);
+  transition:.15s;
+}
+.quiet:hover{color:var(--ink);border-color:#35505c}
+
+/* ---------------- 主体三栏 ---------------- */
+.stage{
+  display:grid;
+  grid-template-columns:240px minmax(0,1fr) 260px;
+  gap:12px;
+  align-items:start;
+  flex:1 1 auto;
+}
+.panel{
+  background:linear-gradient(180deg,rgba(23,34,41,.75),rgba(19,28,33,.75));
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:12px;
+  display:flex;flex-direction:column;gap:10px;
+  min-height:0;
+}
+.panel h2{
+  font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);display:flex;align-items:baseline;gap:8px;
+}
+.panel h2 small{font-size:10px;letter-spacing:.06em;color:#5c7480;text-transform:none}
+
+/* 羁绊 */
+.trait-list{display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:430px;padding-right:5px}
+.trait{
+  padding:7px 9px;border-radius:8px;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-left:3px solid #33505d;
+  font-size:12px;
+}
+.trait.on{border-left-color:var(--gold);background:#1b2620}
+.trait .tl{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.trait .tl b{font-size:12.5px}
+.trait .tl i{font-style:normal;color:var(--dim);font-size:11px}
+.trait .td{color:#8ea7b3;font-size:11px;margin-top:2px}
+.trait.on .td{color:#bfe2c9}
+.trait .tiers{display:flex;gap:4px;margin-top:5px}
+.trait .tiers span{
+  flex:1;height:3px;border-radius:2px;background:#24343c;
+}
+.trait .tiers span.hit{background:var(--gold)}
+.traits-note{
+  border-top:1px dashed var(--line);padding-top:8px;
+  font-size:11px;color:var(--dim);line-height:1.6;
+}
+.traits-note b{color:#9ec9d8;font-weight:600}
+
+/* 棋盘 */
+.board-wrap{display:flex;flex-direction:column;gap:8px;align-items:center;min-width:0}
+.board-head{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;color:var(--dim);
+}
+.phase-tag{
+  padding:3px 10px;border-radius:999px;
+  background:rgba(74,222,128,.12);color:var(--hp);
+  border:1px solid rgba(74,222,128,.3);
+  font-size:11px;letter-spacing:.08em;
+}
+.phase-tag.combat{background:rgba(248,113,113,.12);color:var(--bad);border-color:rgba(248,113,113,.32)}
+canvas#board{
+  width:100%;max-width:490px;height:auto;display:block;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#0a1013;
+  box-shadow:0 10px 30px rgba(0,0,0,.45) inset;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.bench-head{
+  width:100%;display:flex;justify-content:space-between;align-items:baseline;
+  font-size:11px;color:var(--dim);letter-spacing:.1em;
+}
+.bench-head small{letter-spacing:0;color:#5c7480}
+.bench{
+  width:100%;display:flex;gap:6px;flex-wrap:wrap;
+  min-height:54px;padding:6px;
+  background:rgba(15,22,26,.8);
+  border:1px solid var(--line);border-radius:10px;
+}
+.bench .empty{font-size:11px;color:#4c626d;padding:12px 8px}
+
+/* 单位小卡（备战席 / 商店共用底） */
+.ucard{
+  position:relative;
+  width:52px;height:52px;flex:0 0 auto;
+  border-radius:9px;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,#1a262d,#131c21);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1px;
+  transition:transform .12s,border-color .12s,box-shadow .12s;
+  user-select:none;
+}
+.ucard:hover{transform:translateY(-2px);border-color:#3d5b68}
+.ucard .sym{font-size:17px;font-weight:700;line-height:1}
+.ucard .nm{font-size:9.5px;color:var(--dim)}
+.ucard .st{font-size:8.5px;letter-spacing:-1px;color:var(--gold);line-height:1}
+.ucard.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(240,192,74,.25)}
+.ucard.cost1{border-bottom:2px solid #6b7280}
+.ucard.cost2{border-bottom:2px solid #34d399}
+.ucard.cost3{border-bottom:2px solid #60a5fa}
+.ucard.cost4{border-bottom:2px solid #c084fc}
+.ucard.cost5{border-bottom:2px solid #f0c04a}
+
+/* 战报 */
+.log{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#9db4bf;overflow:auto;max-height:520px}
+.log div{padding:3px 6px;border-radius:5px;background:rgba(23,34,41,.6)}
+.log div.hl{color:var(--gold);background:rgba(240,192,74,.08)}
+.log div.bad{color:var(--bad);background:rgba(248,113,113,.08)}
+
+/* ---------------- 招募栏 ---------------- */
+.shopbar{
+  display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;
+  padding:12px;
+  background:linear-gradient(180deg,rgba(23,34,41,.92),rgba(19,28,33,.92));
+  border:1px solid var(--line);border-radius:var(--radius);
+}
+.shop-main{min-width:0;display:flex;flex-direction:column;gap:8px}
+.shop-head{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.14em;color:var(--dim)}
+.shop-head small{letter-spacing:0;color:#5c7480;font-size:10.5px}
+.shop{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.shop .ucard{width:auto;height:64px;cursor:pointer}
+.shop .ucard .sym{font-size:20px}
+.shop .ucard .nm{font-size:10.5px}
+.shop .ucard .price{
+  position:absolute;top:-6px;right:-4px;
+  min-width:18px;height:18px;padding:0 4px;
+  border-radius:9px;background:var(--gold);color:#131c21;
+  font-size:10.5px;font-weight:700;display:grid;place-items:center;
+}
+.shop .ucard.empty{background:repeating-linear-gradient(45deg,#141d22,#141d22 6px,#111a1e 6px,#111a1e 12px);border-style:dashed}
+.shop .ucard.cant{opacity:.42}
+
+.shop-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+.act{
+  padding:9px 12px;border-radius:9px;
+  background:var(--panel2);border:1px solid var(--line);
+  transition:.15s;font-size:12.5px;
+}
+.act:hover{border-color:#3d5b68;background:#1d2b33}
+.act b{color:var(--gold);font-weight:700}
+.act.quiet{color:var(--dim)}
+.act.fight{
+  grid-column:1 / -1;
+  background:linear-gradient(140deg,#f0c04a,#f59e0b);
+  color:#131c21;font-weight:700;border:none;
+  box-shadow:0 6px 18px rgba(240,192,74,.22);
+}
+.act.fight:hover{filter:brightness(1.06)}
+.act:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------------- overlay ---------------- */
+.overlay{
+  position:fixed;inset:0;z-index:60;
+  display:grid;place-items:center;
+  background:rgba(6,10,12,.78);
+  backdrop-filter:blur(6px);
+  padding:20px;
+}
+.overlay[hidden]{display:none}
+.overlay-card{
+  width:min(520px,100%);
+  background:linear-gradient(180deg,#182530,#111a1f);
+  border:1px solid #2b4250;
+  border-radius:16px;
+  padding:24px;
+  text-align:center;
+  box-shadow:0 24px 70px rgba(0,0,0,.6);
+}
+.eyebrow{font-size:10px;letter-spacing:.28em;color:var(--dim);margin-bottom:8px}
+.overlay-card h2{font-size:22px;margin-bottom:8px}
+.overlay-card p{color:#a6bcc6;font-size:13px;line-height:1.7}
+.ov-stats{display:flex;justify-content:center;gap:14px;margin:16px 0;flex-wrap:wrap;font-size:12px;color:var(--dim)}
+.ov-stats b{color:var(--ink);font-size:15px}
+.ov-actions{display:flex;gap:10px;justify-content:center;margin-top:6px}
+.ov-actions .act{min-width:120px}
+
+.error-banner{
+  position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+  z-index:80;max-width:90vw;
+  padding:10px 16px;border-radius:10px;
+  background:#3a1b22;border:1px solid #f87171;color:#ffd9d9;font-size:12.5px;
+}
+.error-banner[hidden]{display:none}
+
+/* ---------------- 响应式 ---------------- */
+@media (max-width:1080px){
+  .stage{grid-template-columns:200px minmax(0,1fr)}
+  .log-panel{display:none}
+  .shopbar{grid-template-columns:minmax(0,1fr)}
+  .shop-actions{grid-template-columns:repeat(4,1fr)}
+  .act.fight{grid-column:auto}
+}
+@media (max-width:760px){
+  .app{padding:10px 10px 16px;gap:10px}
+  .topbar{flex-wrap:wrap;gap:10px}
+  .stats{order:3;width:100%;justify-content:flex-start;overflow:auto}
+  .stage{grid-template-columns:minmax(0,1fr)}
+  .traits-panel{order:2}
+  .trait-list{max-height:150px;flex-direction:row;flex-wrap:wrap}
+  .trait{flex:1 1 46%}
+  .board-wrap{order:1}
+  .shop{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+  .shop .ucard{height:58px}
+  .shop .ucard .sym{font-size:17px}
+  .shop-actions{grid-template-columns:repeat(2,1fr)}
+  .act.fight{grid-column:1 / -1}
+}

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>元素自走棋 · 碘队游戏工坊</title>
+<meta name="description" content="元素自走棋：12 种元素、双轴羁绊、电负性离子键合击。用化学性质打一局八人棋。">
+<link rel="stylesheet" href="style.css?v=0.1">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">⚛</span><div><b>元素自走棋</b><small>ELEMENT AUTOCHESS</small></div></div>
+    <div class="stats" id="stats">
+      <span class="stat" id="stRound">回合 1</span>
+      <span class="stat gold" id="stGold">金币 0</span>
+      <span class="stat hp" id="stHp">血量 100</span>
+      <span class="stat" id="stLevel">等级 2</span>
+      <span class="stat" id="stTraits">羁绊 0</span>
+      <span class="stat" id="stBoard">上阵 0/3</span>
+    </div>
+    <div class="top-actions">
+      <button id="helpBtn" class="quiet">玩法</button>
+      <button id="restartBtn" class="quiet">重开</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <aside class="panel traits-panel">
+      <h2>羁绊 <small id="traitHint">同族 / 同周期</small></h2>
+      <div id="traitList" class="trait-list"></div>
+      <div class="traits-note">
+        <p><b>电负性离子键</b>：相邻两枚友军电负性差 ≥ 1.8 时触发合击，伤害 ×1.35。</p>
+      </div>
+    </aside>
+
+    <section class="board-wrap">
+      <div class="board-head">
+        <span id="phaseTag" class="phase-tag">备战</span>
+        <span id="enemyTag" class="enemy-tag">对手：第 1 回合</span>
+      </div>
+      <canvas id="board" width="490" height="660"></canvas>
+      <div class="bench-head"><span>备战席</span><small id="benchHint">点击选中，再点棋盘落子</small></div>
+      <div id="bench" class="bench"></div>
+    </section>
+
+    <aside class="panel log-panel">
+      <h2>战报</h2>
+      <div id="log" class="log"></div>
+    </aside>
+  </main>
+
+  <footer class="shopbar">
+    <div class="shop-main">
+      <div class="shop-head">
+        <span>招募</span>
+        <small id="oddsHint">概率随等级变化</small>
+      </div>
+      <div id="shop" class="shop"></div>
+    </div>
+    <div class="shop-actions">
+      <button id="rerollBtn" class="act">刷新 <b id="rerollCost">2</b></button>
+      <button id="xpBtn" class="act">升级 <b id="xpCost">4</b></button>
+      <button id="lockBtn" class="act quiet">锁定</button>
+      <button id="fightBtn" class="act fight">开始战斗 →</button>
+    </div>
+  </footer>
+
+</div>
+
+<div id="overlay" class="overlay" hidden>
+  <div class="overlay-card">
+    <div id="ovEyebrow" class="eyebrow">ELEMENT AUTOCHESS</div>
+    <h2 id="ovTitle">元素自走棋</h2>
+    <p id="ovBody">用 12 种元素组队，靠羁绊与阵型打穿 40 回合。</p>
+    <div id="ovStats" class="ov-stats"></div>
+    <div class="ov-actions">
+      <button id="ovPrimary" class="act fight">开始</button>
+      <button id="ovSecondary" class="act quiet">重开</button>
+    </div>
+  </div>
+</div>
+
+<div id="errorBanner" class="error-banner" hidden></div>
+
+<script src="logic.js?v=0.1"></script>
+<script src="app.js?v=0.1"></script>
+</body>
+</html>
