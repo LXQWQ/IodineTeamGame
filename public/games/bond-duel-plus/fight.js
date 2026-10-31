@@ -421,6 +421,82 @@
     }
   };
 
+  /* ─────────── 标准动作库：每位角色再加 4 招（蹲攻 / 跳攻 / 冲刺攻击 / 上挑） ─────────── */
+  // 说明：这 4 招由「定位 × 元素」派生，全部走同一套判定与取消规则，
+  //       名字与注释按元素定制；与 s1/s2/ult 一起构成每位角色 10 个招式动作。
+  const EXTRA_NAMES = {
+    H: ['氢焰低扫', '浮空爆燃', '疾冲燃点', '上挑燃弧'],
+    O: ['助燃下扫', '氧化俯冲', '助燃突进', '氧气上涌'],
+    Na: ['钠焰低扫', '熔滴坠落', '钠火冲刺', '焰光上挑'],
+    Cl: ['氯气低喷', '毒雾下压', '氯化突刺', '氯气上挑'],
+    C: ['石墨低扫', '晶格砸击', '碳链突进', '石墨上撩'],
+    Fe: ['铁壁低撞', '铁拳重砸', '铁壁撞击', '铁肩上挑'],
+    Mg: ['镁光低扫', '白焰坠落', '镁光冲刺', '白光上挑'],
+    Al: ['铝刃低削', '铝片俯冲', '铝刃突刺', '铝刃上撩'],
+    Si: ['晶格低扫', '硅片坠落', '硅晶突进', '晶格上挑'],
+    P: ['磷火低扫', '磷光坠击', '磷火冲刺', '磷火上挑'],
+    S: ['硫纹低扫', '硫雾下压', '硫磺突进', '硫焰上挑'],
+    Cu: ['铜绿低扫', '铜球坠落', '铜绿突进', '铜球上挑'],
+    N: ['霜刃低扫', '液氮俯冲', '霜冻突进', '霜刃上挑'],
+    K: ['钾焰低扫', '钾火坠击', '钾焰冲刺', '钾焰上挑'],
+    Ca: ['石灰低撞', '岩块坠落', '岩壁突进', '岩壁上顶'],
+    Zn: ['锌刃低削', '锌片俯冲', '镀锌突进', '锌刃上挑'],
+    Ag: ['银刃低割', '银镜俯冲', '银光突刺', '银刃上挑'],
+    Hg: ['汞滴低扫', '汞珠坠击', '汞流滑进', '汞滴上挑'],
+    Pb: ['铅块低撞', '铅锤坠击', '铅体重撞', '铅锤上挑'],
+    I: ['碘雾低扫', '碘晶坠落', '碘雾突进', '碘晶上挑']
+  };
+  const EXTRA_TUNE = {
+    rush: { cr: [5, 4, 10, 11], air: [4, 6, 8, 15], dash: [3, 5, 13, 14], launch: [7, 4, 15, 9] },
+    pressure: { cr: [5, 4, 10, 12], air: [4, 6, 8, 16], dash: [3, 5, 13, 15], launch: [7, 4, 15, 10] },
+    burst: { cr: [5, 4, 11, 13], air: [4, 7, 9, 17], dash: [3, 5, 14, 16], launch: [7, 4, 16, 10] },
+    control: { cr: [5, 4, 10, 10], air: [4, 6, 8, 14], dash: [3, 5, 13, 13], launch: [7, 4, 15, 9] },
+    shift: { cr: [5, 4, 10, 12], air: [4, 6, 8, 15], dash: [3, 5, 13, 15], launch: [7, 4, 15, 10] },
+    heavy: { cr: [7, 4, 13, 16], air: [5, 6, 10, 19], dash: [4, 5, 15, 17], launch: [8, 4, 17, 12] }
+  };
+  Object.keys(FIGHTERS).forEach((id) => {
+    const d = FIGHTERS[id];
+    const nm = EXTRA_NAMES[id] || ['下段扫', '空中击', '冲刺撞', '上挑'];
+    const t = EXTRA_TUNE[d.archetype] || EXTRA_TUNE.rush;
+
+    // ① 蹲攻击：低段，只能蹲防
+    d.moves.cr = mv({
+      name: nm[0], cost: 0, startup: t.cr[0], active: t.cr[1], recovery: t.cr[2], dmg: t.cr[3],
+      hitbox: { x: 4, y: 86, w: 100, h: 46 }, guard: 'low',
+      hitstun: 15, blockstun: 8, hitstop: 4, kb: { x: 2.4, y: 0 }, meterGain: 4,
+      note: '下段扫击 · 只能蹲防',
+      log: nm[0] + '：低段扫击，站防挡不住，须蹲防。'
+    });
+
+    // ② 跳跃攻击：空中中段，只能站防
+    d.moves.air = mv({
+      name: nm[1], cost: 0, startup: t.air[0], active: t.air[1], recovery: t.air[2], dmg: t.air[3],
+      hitbox: { x: 2, y: 30, w: 104, h: 64 }, guard: 'high',
+      hitstun: 16, blockstun: 9, hitstop: 5, kb: { x: 3.0, y: 0 }, meterGain: 5, air: true,
+      note: '空中中段 · 只能站防',
+      log: nm[1] + '：空中中段，蹲防挡不住。'
+    });
+
+    // ③ 冲刺攻击：突进位移，命中后可续接上挑
+    d.moves.dash = mv({
+      name: nm[2], cost: 0, startup: t.dash[0], active: t.dash[1], recovery: t.dash[2], dmg: t.dash[3],
+      hitbox: { x: 10, y: 34, w: 104, h: 66 }, guard: 'mid',
+      hitstun: 17, blockstun: 10, hitstop: 5, kb: { x: 4.2, y: 0 }, meterGain: 6,
+      dash: { vx: 9, frames: 8 }, cancelInto: ['launch', 's1'],
+      note: '突进撞击 · 命中可接上挑',
+      log: nm[2] + '：前冲撞击，命中后可直接接上挑。'
+    });
+
+    // ④ 上挑：浮空起手，把对手打起来接空中连段
+    d.moves.launch = mv({
+      name: nm[3], cost: 12, startup: t.launch[0], active: t.launch[1], recovery: t.launch[2], dmg: t.launch[3],
+      hitbox: { x: 6, y: 12, w: 92, h: 96 }, guard: 'mid',
+      hitstun: 24, blockstun: 12, hitstop: 6, kb: { x: 2.0, y: -13 }, juggle: 2, meterGain: 7,
+      cancelInto: ['air', 's1'], note: '上挑浮空 · 接空中连段',
+      log: nm[3] + '：上挑把对手打浮空，立刻接空中攻击。'
+    });
+  });
+
   /* ─────────────────────────── 6 座场景 ─────────────────────────── */
   const STAGES = {
     lab: { name: '普通实验室', icon: 'H₂O', note: '水槽 / 空气', tip: '普攻击破水槽后形成水区', rate: 1, dmgMul: 1 },
@@ -580,6 +656,8 @@
 
   function moveAllowed(m, f, key, move) {
     if (move.cost && f.meter < 0) return 'no';
+    if ((key === 'air') && f.onGround) return 'no';
+    if ((key === 'cr' || key === 'launch') && !f.onGround) return 'no';
     if (f.cd[key] > 0) return 'cooldown';
     if (key === 'ult' && f.meter < (move.meterCost || 50)) return 'meter';
     if (move.meterCost && f.meter < move.meterCost) return 'meter';
@@ -1008,16 +1086,23 @@
     // 取消窗口内允许出必杀
     const canActNow = !f.action || (f.canCancelUntil && m.frame <= f.canCancelUntil);
 
-    // 轻攻击（连打链）
+    // 轻攻击：按环境自动分派（地面连段 / 下蹲低段 / 空中中段 / 冲刺突进）
     if (inp.light && !prev.light && canActNow) {
-      if (startAction(m, f, 'l')) { /* ok */ }
+      // 投技：防御 + 轻攻击同按（近身）—— 必须优先于普通轻攻击，否则永远进不到这个分支
+      if (inp.block && f.onGround) {
+        const td = Math.abs((f.opp.x + f.opp.w / 2) - (f.x + f.w / 2));
+        if (td < 70 && doThrow(m, f)) return;
+      }
+      if (!f.onGround) startAction(m, f, 'air');
+      else if (f.crouch) startAction(m, f, 'cr');
+      else if ((f.dashT || 0) > 0) startAction(m, f, 'dash');
+      else startAction(m, f, 'l');
     }
-    // 投技：block + light 同按（近身）
-    else if (inp.block && inp.light && !prev.light && canActNow) {
-      const dist = Math.abs((f.opp.x + f.opp.w / 2) - (f.x + f.w / 2));
-      if (dist < 70) { doThrow(m, f); }
+    // 上挑：下 + 技能Ⅰ；其余情况仍是技能Ⅰ
+    if (inp.s1 && !prev.s1 && canActNow) {
+      if (inp.down && f.onGround) startAction(m, f, 'launch');
+      else startAction(m, f, 's1');
     }
-    if (inp.s1 && !prev.s1 && canActNow) startAction(m, f, 's1');
     if (inp.s2 && !prev.s2 && canActNow) startAction(m, f, 's2');
     if (inp.ult && !prev.ult && canActNow) startAction(m, f, 'ult');
 

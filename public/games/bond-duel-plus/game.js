@@ -150,6 +150,10 @@
       mv.innerHTML = '';
       const list = [
         ['J', '连击 · 三连', 0, '轻攻击三段 · 命中可续接'],
+        ['S+J', d.moves?.cr?.name || '—', 0, '蹲攻 · 下段，只能蹲防'],
+        ['空中J', d.moves?.air?.name || '—', 0, '跳攻 · 中段，只能站防'],
+        ['冲刺J', d.moves?.dash?.name || '—', 0, '冲刺攻击 · 突进追击'],
+        ['S+K', d.moves?.launch?.name || '—', d.moves?.launch?.cost || 0, '上挑 · 把对手打浮空'],
         ['K', d.moves?.s1?.name || '—', d.moves?.s1?.cost || 0, d.moves?.s1?.note || '突进 / 位移技'],
         ['L', d.moves?.s2?.name || '—', d.moves?.s2?.cost || 0, d.moves?.s2?.note || '主力输出技'],
         ['U', d.moves?.ult?.name || '—', d.moves?.ult?.cost || 0, d.moves?.ult?.note || '超必杀 · 需气槽']
@@ -251,14 +255,25 @@
       if (key === 'j') {
         if (b) b.textContent = '连击 · 三连';
         if (sm) sm.textContent = '轻攻击·可续接';
-        el.setAttribute('title', '连击 · 三连：轻攻击三段，命中后可继续出招');
+        el.setAttribute('title',
+          '轻攻击键按状态自动分派：\n' +
+          '· 站立 → 连击 · 三连（三段，命中可继续出招）\n' +
+          '· 下蹲 → ' + (d.moves?.cr?.name || '蹲攻') + '（下段，只能蹲防）\n' +
+          '· 空中 → ' + (d.moves?.air?.name || '跳攻') + '（中段，只能站防）\n' +
+          '· 冲刺中 → ' + (d.moves?.dash?.name || '冲刺攻击') + '（带前冲位移）\n' +
+          '· 防御中贴身 → 投技（18 点，不可防御）');
         return;
       }
       const m = d.moves[SLOT_OF[key]];
       if (!m) return;
       if (b) b.textContent = m.name;
       if (sm) sm.textContent = '耗能 ' + m.cost + (m.meterCost ? ' · 气 ' + m.meterCost : '');
-      el.setAttribute('title', m.name + '：' + (m.note || '') + (m.log ? '\n' + m.log : ''));
+      let tip = m.name + '：' + (m.note || '') + (m.log ? '\n' + m.log : '');
+      if (key === 'k' && d.moves?.launch) {
+        tip += '\n\n按住 S（下）再按 K → ' + d.moves.launch.name +
+          '：上挑，把对手打浮空（耗能 ' + d.moves.launch.cost + '）';
+      }
+      el.setAttribute('title', tip);
     });
   }
 

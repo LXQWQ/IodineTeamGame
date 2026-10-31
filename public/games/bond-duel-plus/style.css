@@ -23,3 +23,7 @@
   .meter-row .meter-tag,.wins-row .meter-tag{display:none}
   #round .round-of{font-size:8px}
 }
+
+/* 招式表：支持 S+J / 空中J 这类多字符按键，避免折行 */
+.move-item { grid-template-columns: 56px minmax(0, 1fr) 50px; }
+.move-item kbd { white-space: nowrap; font-size: 10px; letter-spacing: 0; }
