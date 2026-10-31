@@ -1089,12 +1089,14 @@
     const canActNow = !f.action || (f.canCancelUntil && m.frame <= f.canCancelUntil);
 
     // 轻攻击：按环境自动分派（地面连段 / 下蹲低段 / 空中中段 / 冲刺突进）
+    // 投技：防御 + 轻攻击同按（近身）—— 必须优先于普通轻攻击，否则永远进不到这个分支。
+    // 兼容两种来源：game.js 会把 block+light 归一成 inp.throw（保留 light 不清零），逻辑层也能直接判 block+light。
+    const wantThrow = !!inp.throw || (inp.light && !prev.light && canActNow && inp.block && f.onGround);
+    if (wantThrow && canActNow && f.onGround && f.hitstun <= 0 && f.blockstun <= 0) {
+      const td = Math.abs((f.opp.x + f.opp.w / 2) - (f.x + f.w / 2));
+      if (td < 70 && doThrow(m, f)) return;
+    }
     if (inp.light && !prev.light && canActNow) {
-      // 投技：防御 + 轻攻击同按（近身）—— 必须优先于普通轻攻击，否则永远进不到这个分支
-      if (inp.block && f.onGround) {
-        const td = Math.abs((f.opp.x + f.opp.w / 2) - (f.x + f.w / 2));
-        if (td < 70 && doThrow(m, f)) return;
-      }
       if (!f.onGround) startAction(m, f, 'air');
       else if (f.crouch) startAction(m, f, 'cr');
       else if ((f.dashT || 0) > 0) startAction(m, f, 'dash');

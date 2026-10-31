@@ -30,14 +30,14 @@
   const S = {
     pickP: 'H', pickE: 'O', pickStage: 'lab', mode: 'normal',
     sound: false, match: null, raf: 0, acc: 0, last: 0, hudT: 0, t: 0,
-    sources: new Map(), buffer: {}, started: false
+    sources: new Map(), latch: new Set(), buffer: {}, started: false
   };
 
   const KEYMAP = {
-    a: 'left', d: 'right', w: 'up', s: 'block',
+    a: 'left', d: 'right', w: 'up', s: 'block', x: 'down',
     j: 'light', k: 's1', l: 's2', u: 'ult'
   };
-  const GLYPH = { left: '←', right: '→', up: '↑', block: '防', light: 'J', s1: 'K', s2: 'L', ult: 'U' };
+  const GLYPH = { left: '←', right: '→', up: '↑', down: '↓', block: '防', light: 'J', s1: 'K', s2: 'L', ult: 'U' };
 
   /* ---------------- 工具 ---------------- */
   function fighterIds() {
@@ -189,7 +189,8 @@
   function setInput(action, down, source) {
     let set = S.sources.get(action);
     if (!set) { set = new Set(); S.sources.set(action, set); }
-    if (down) set.add(source); else set.delete(source);
+    if (down) { set.add(source); if (S.latch) S.latch.add(action); }
+    else set.delete(source);
     // 高亮触屏键
     document.querySelectorAll('.ctrl[data-key]').forEach((el) => {
       const k = KEYMAP[el.dataset.key];
@@ -198,16 +199,24 @@
   }
   function readInput() {
     const inp = F.emptyInput();
+    // 按住状态 + 本帧之前按下过的「锁存」：一次 rAF 最多跑 8 个固定步长，
+    // 快速点按（pointerdown/up 落在同一 rAF 内）会被中间帧漏掉，故用锁存保证至少被消费一次。
     S.sources.forEach((set, action) => { if (set.size && action in inp) inp[action] = true; });
-    if (inp.block && inp.light) { inp.throw = true; inp.light = false; }
+    if (S.latch.size) {
+      S.latch.forEach((action) => { if (action in inp) inp[action] = true; });
+      S.latch.clear();
+    }
+    // 防御 + 轻攻击 = 投技：不清掉 light，交给 fight.js 优先判定（throw 只加在按下那一帧的边沿上）
+    if (inp.block && inp.light) inp.throw = true;
     return inp;
   }
   function releaseAll() {
     S.sources.forEach((set) => set.clear());
+    if (S.latch) S.latch.clear();
     document.querySelectorAll('.ctrl[data-key]').forEach((el) => el.classList.remove('on'));
   }
 
-  const KEY_ALIAS = { arrowleft: 'a', arrowright: 'd', arrowup: 'w', arrowdown: 's', ' ': 'w' };
+  const KEY_ALIAS = { arrowleft: 'a', arrowright: 'd', arrowup: 'w', arrowdown: 'x', ' ': 'w' };
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { togglePause(); return; }
     const k = KEY_ALIAS[e.key.toLowerCase()] || e.key.toLowerCase();
@@ -555,31 +564,192 @@
     });
   }
 
+  /* ---------------- 领域（雾化体积渲染） ---------------- */
+  // 确定性伪随机：同一 index/seed 每帧结果一致，避免粒子抖动
+  function zRand(i, s) {
+    const v = Math.sin(i * 127.1 + s * 311.7) * 43758.5453;
+    return v - Math.floor(v);
+  }
+  // 每个 kind 的调色板（base 主色、core 亮核、edge 边缘）
+  const ZONE_PALETTE = {
+    chlorine: { base: [180, 226, 120], core: [232, 255, 190] },
+    ozone: { base: [150, 205, 245], core: [220, 240, 255] },
+    oxygen: { base: [150, 205, 245], core: [220, 240, 255] },
+    agcl: { base: [214, 214, 226], core: [255, 255, 255] },
+    hgvap: { base: [190, 172, 214], core: [236, 226, 248] },
+    phosphine: { base: [150, 226, 178], core: [206, 255, 216] },
+    water: { base: [96, 178, 232], core: [196, 234, 255] },
+    flame: { base: [240, 148, 92], core: [255, 224, 176] },
+    cold: { base: [146, 196, 236], core: [226, 246, 255] },
+    electro: { base: [158, 176, 252], core: [230, 238, 255] },
+    catalyst: { base: [212, 176, 118], core: [252, 232, 190] }
+  };
+
+  // 柔和的椭圆薄纱：四边都渐隐，不依赖 destination-in（避免误擦已绘内容）
+  function zoneVeil(x, y, w, h, rgb, aTop, aBot) {
+    const g = X.createRadialGradient(x + w / 2, y + h * 0.62, 0, x + w / 2, y + h * 0.62, Math.max(w, h) * 0.62);
+    g.addColorStop(0, 'rgba(' + rgb + ',' + aBot + ')');
+    g.addColorStop(0.55, 'rgba(' + rgb + ',' + ((aTop + aBot) / 2) + ')');
+    g.addColorStop(1, 'rgba(' + rgb + ',0)');
+    X.fillStyle = g;
+    X.beginPath();
+    X.ellipse(x + w / 2, y + h * 0.62, w * 0.62, h * 0.68, 0, 0, Math.PI * 2);
+    X.fill();
+  }
+
   function drawZones(m) {
-    m.zones.forEach((z) => {
-      const life = z.max ? Math.max(0, 1 - z.t / z.max) : 1;
-      const owner = z.owner === 'p' ? '90,190,230' : '230,120,90';
+    const now = S.t || 0;
+    m.zones.forEach((z, zi) => {
+      const total = z.max || 1;
+      const remain = Math.max(0, Math.min(1, 1 - z.t / total));
+      const born = Math.max(0, Math.min(1, (z.t || 0) / 8));       // 出生 8 帧淡入
+      const fade = remain * born;
+      if (fade <= 0.01) return;
+      const pal = ZONE_PALETTE[z.kind] || { base: z.owner === 'p' ? [120, 196, 236] : [236, 150, 118], core: [255, 240, 230] };
+      const own = z.owner === 'p' ? [128, 202, 240] : [240, 152, 120];
+      const cx = z.x + z.w / 2;
+      const cy = z.y + z.h / 2;
+      const pulse = 0.5 + 0.5 * Math.sin(now / 620 + zi * 1.7);
+
       X.save();
-      X.globalAlpha = 0.16 + life * 0.14;
-      X.fillStyle = 'rgb(' + owner + ')';
-      X.fillRect(z.x, z.y, z.w, z.h);
-      X.globalAlpha = 0.7;
-      X.strokeStyle = 'rgb(' + owner + ')';
-      X.lineWidth = 1.5;
-      X.setLineDash([6, 5]);
-      X.strokeRect(z.x, z.y, z.w, z.h);
-      X.setLineDash([]);
-      X.globalAlpha = 0.85;
-      X.fillStyle = 'rgba(240,240,240,0.75)';
-      X.font = '600 12px "IBM Plex Mono", monospace';
-      X.fillText(KIND_LABEL[z.kind] || z.kind, z.x + 8, z.y + 16);
+      // ① 体积底色：中心亮、边缘散，模拟雾气占体积
+      const rd = X.createRadialGradient(cx, cy + z.h * 0.12, Math.min(z.w, z.h) * 0.05, cx, cy, Math.max(z.w, z.h) * 0.72);
+      rd.addColorStop(0, 'rgba(' + pal.core.join(',') + ',' + (0.1 + 0.1 * fade).toFixed(3) + ')');
+      rd.addColorStop(0.45, 'rgba(' + pal.base.join(',') + ',' + (0.085 * fade + 0.02).toFixed(3) + ')');
+      rd.addColorStop(1, 'rgba(' + pal.base.join(',') + ',0)');
+      X.fillStyle = rd;
+      X.fillRect(z.x - z.w * 0.18, z.y - z.h * 0.18, z.w * 1.36, z.h * 1.36);
+
+      // ② 隶属方薄纱（区分敌我，但不做矩形块）
+      X.globalAlpha = 1;
+      zoneVeil(z.x, z.y, z.w, z.h, own.join(','), 0.05 * fade, 0.1 * fade);
+
+      // ③ 按 kind 的差异化细节
+      const k = z.kind;
+      if (k === 'water') {
+        // 液面：两道正弦波纹 + 上升气泡 + 高光
+        for (let i = 0; i < 2; i++) {
+          const ly = z.y + z.h * (0.86 - i * 0.16);
+          X.beginPath();
+          for (let dx = 0; dx <= z.w; dx += 6) {
+            const yy = ly + Math.sin((dx / 26) + now / 460 + i * 1.9 + zi) * (2.2 + i * 0.8);
+            if (dx === 0) X.moveTo(z.x + dx, yy); else X.lineTo(z.x + dx, yy);
+          }
+          X.strokeStyle = 'rgba(' + pal.core.join(',') + ',' + (0.28 * fade).toFixed(3) + ')';
+          X.lineWidth = 1.6 - i * 0.4;
+          X.stroke();
+        }
+        for (let i = 0; i < 5; i++) {
+          const ph = zRand(i, zi) * Math.PI * 2;
+          const bx = z.x + z.w * (0.12 + 0.76 * zRand(i + 9, zi));
+          const prog = ((now / 1500 + zRand(i + 3, zi)) % 1);
+          const by = z.y + z.h * (0.94 - prog * 0.8);
+          const r = 1.6 + zRand(i + 5, zi) * 2.2;
+          X.beginPath();
+          X.arc(bx + Math.sin(ph + now / 700) * 3, by, r, 0, Math.PI * 2);
+          X.fillStyle = 'rgba(' + pal.core.join(',') + ',' + (0.34 * fade * (1 - prog)).toFixed(3) + ')';
+          X.fill();
+        }
+      } else if (k === 'flame') {
+        // 火焰：上升余烬 + 底部暖核
+        const gb = X.createLinearGradient(0, z.y + z.h, 0, z.y + z.h * 0.45);
+        gb.addColorStop(0, 'rgba(255,196,120,' + (0.26 * fade).toFixed(3) + ')');
+        gb.addColorStop(1, 'rgba(255,120,60,0)');
+        X.fillStyle = gb;
+        X.fillRect(z.x, z.y + z.h * 0.45, z.w, z.h * 0.55);
+        for (let i = 0; i < 9; i++) {
+          const prog = ((now / 1100 + zRand(i, zi)) % 1);
+          const ex = cx + (zRand(i + 2, zi) - 0.5) * z.w * 0.8 + Math.sin(now / 300 + i) * 5;
+          const ey = z.y + z.h * (1.02 - prog * 1.0);
+          const r = 2.4 * (1 - prog * 0.6);
+          X.beginPath();
+          X.arc(ex, ey, r, 0, Math.PI * 2);
+          X.fillStyle = 'rgba(255,' + Math.round(170 + 70 * (1 - prog)) + ',120,' + (0.5 * fade * (1 - prog)).toFixed(3) + ')';
+          X.fill();
+        }
+      } else if (k === 'electro') {
+        // 电场：三道锯齿弧光 + 电荷核
+        for (let i = 0; i < 3; i++) {
+          const seed = zi * 7 + i * 13 + Math.floor(now / 90);
+          X.beginPath();
+          const ax = z.x + z.w * (0.2 + 0.3 * i);
+          let px = ax, py = z.y + z.h * 0.92;
+          X.moveTo(px, py);
+          for (let s = 1; s <= 6; s++) {
+            px = ax + (zRand(seed + s, i) - 0.5) * z.w * 0.5;
+            py = z.y + z.h * (0.92 - s * 0.14);
+            X.lineTo(px, py);
+          }
+          X.strokeStyle = 'rgba(' + pal.core.join(',') + ',' + (0.5 * fade).toFixed(3) + ')';
+          X.lineWidth = 1.5;
+          X.shadowColor = 'rgba(180,200,255,' + (0.7 * fade).toFixed(3) + ')';
+          X.shadowBlur = 8;
+          X.stroke();
+          X.shadowBlur = 0;
+        }
+      } else if (k === 'cold') {
+        // 低温：六角霜晶 + 下沉冰雾
+        for (let i = 0; i < 4; i++) {
+          const sx = z.x + z.w * (0.16 + 0.66 * zRand(i, zi));
+          const sy = z.y + z.h * (0.2 + 0.6 * zRand(i + 4, zi));
+          const r = 4 + zRand(i + 8, zi) * 4;
+          X.strokeStyle = 'rgba(' + pal.core.join(',') + ',' + (0.4 * fade * (0.6 + 0.4 * pulse)).toFixed(3) + ')';
+          X.lineWidth = 1;
+          for (let a = 0; a < 6; a++) {
+            const ang = a * Math.PI / 3 + now / 4200;
+            X.beginPath();
+            X.moveTo(sx, sy);
+            X.lineTo(sx + Math.cos(ang) * r, sy + Math.sin(ang) * r);
+            X.stroke();
+          }
+        }
+        const gc = X.createLinearGradient(0, z.y, 0, z.y + z.h);
+        gc.addColorStop(0, 'rgba(210,240,255,' + (0.14 * fade).toFixed(3) + ')');
+        gc.addColorStop(1, 'rgba(150,200,240,0)');
+        X.fillStyle = gc;
+        X.fillRect(z.x, z.y, z.w, z.h);
+      } else if (k === 'catalyst') {
+        // 催化床：晶格点阵微光
+        const cols = 5, rows = 4;
+        for (let gy = 0; gy < rows; gy++) {
+          for (let gx = 0; gx < cols; gx++) {
+            const px = z.x + z.w * (0.14 + 0.72 * (gx / (cols - 1)));
+            const py = z.y + z.h * (0.3 + 0.6 * (gy / (rows - 1)));
+            const tw = 0.5 + 0.5 * Math.sin(now / 380 + gx * 0.9 + gy * 1.3 + zi);
+            X.beginPath();
+            X.arc(px, py, 1.5 + tw * 1.4, 0, Math.PI * 2);
+            X.fillStyle = 'rgba(' + pal.core.join(',') + ',' + (0.15 + 0.35 * tw * fade).toFixed(3) + ')';
+            X.fill();
+          }
+        }
+      } else {
+        // 气体（chlorine / ozone / oxygen / phosphine / hgvap / agcl / 未知）：上浮雾团
+        for (let i = 0; i < 6; i++) {
+          const prog = ((now / 2200 + zRand(i, zi)) % 1);
+          const wx = z.x + z.w * (0.1 + 0.8 * zRand(i + 11, zi)) + Math.sin(now / 900 + i * 2.1) * z.w * 0.05;
+          const wy = z.y + z.h * (0.96 - prog * 0.92);
+          const r = z.w * (0.16 + 0.12 * zRand(i + 6, zi)) * (1 - prog * 0.35);
+          const gw = X.createRadialGradient(wx, wy, 0, wx, wy, r);
+          const a = 0.13 * fade * Math.sin(Math.PI * prog);
+          gw.addColorStop(0, 'rgba(' + pal.base.join(',') + ',' + a.toFixed(3) + ')');
+          gw.addColorStop(1, 'rgba(' + pal.base.join(',') + ',0)');
+          X.fillStyle = gw;
+          X.beginPath();
+          X.arc(wx, wy, r, 0, Math.PI * 2);
+          X.fill();
+        }
+      }
+
+      // ④ 接地扩散阴影，让区域「落在」地面上而不是浮贴
+      const gy2 = Math.min(z.y + z.h, F.GROUND);
+      const gshine = X.createLinearGradient(0, gy2 - 26, 0, gy2);
+      gshine.addColorStop(0, 'rgba(' + pal.base.join(',') + ',0)');
+      gshine.addColorStop(1, 'rgba(' + pal.base.join(',') + ',' + (0.15 * fade).toFixed(3) + ')');
+      X.fillStyle = gshine;
+      X.fillRect(z.x, gy2 - 26, z.w, 26);
       X.restore();
     });
   }
-  const KIND_LABEL = {
-    water: '水区', chlorine: '氯气', ozone: '臭氧', acid: '酸雾', alkali: '碱雾',
-    flame: '高温区', cold: '低温区', electro: '电场', catalyst: '催化床', salt: '盐桥'
-  };
 
   function drawProjectiles(m) {
     m.projectiles.forEach((p) => {
