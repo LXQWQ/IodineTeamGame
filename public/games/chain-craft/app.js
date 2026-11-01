@@ -524,6 +524,11 @@ function svgMolecule(mol, opt) {
     $('#goalName').textContent = lv.target.getName();
     $('#tierBadge').textContent = lv.tier;
     $('#goalText').textContent = lv.goal || '';
+    const pt = $('#pointLine');
+    if (pt) {
+      if (lv.point) { pt.textContent = lv.point; pt.hidden = false; }
+      else { pt.textContent = ''; pt.hidden = true; }
+    }
   }
 
   function chip(text, kind) {
@@ -772,7 +777,8 @@ function svgMolecule(mol, opt) {
       apply: id => { const r = L.RXN_MAP.get(id); return r ? applyRxn(r) : false; },
       undo, hint: doHint, restart: () => restartCurrent(),
       goto: n => startLevel(typeof n === 'number' ? n : LV.findIndex(l => l.id === n)),
-      set: (c, groups, unsat, rings) => { G.mol = new MOL(c, groups || [], unsat || [], rings || []); renderAll(); return G.mol.getDescription(); },
+      hash: applyHash,
+    set: (c, groups, unsat, rings) => { G.mol = new MOL(c, groups || [], unsat || [], rings || []); renderAll(); return G.mol.getDescription(); },
       win: () => { G.mol = currentLevel().target.clone(); G.steps = G.optimal || 1; finishLevel(); renderAll(); },
       simulate: (id, n) => { for (let i = 0; i < n; i++) { const r = L.RXN_MAP.get(id); applyRxn(r); } },
       options: () => options(G.mol).map(o => ({ id: o.rxn.id, ok: o.ok, why: o.reason })),
@@ -810,12 +816,35 @@ function svgMolecule(mol, opt) {
   }
 
   /* ---------------- 启动 ---------------- */
+  /* 深链接：#c=6&p=1 → 第 6 章第 1 题（章节与题号均 1 基）。
+     Cloudflare 未配置 SPA fallback，故只能用 hash，服务端零改动。 */
+  function applyHash() {
+    const raw = String(location.hash || '').replace(/^#/, '');
+    if (!raw) return false;
+    if (raw === 'book') { renderBook(); openModal('#bookModal'); return true; }
+    const q = {};
+    raw.split('&').forEach(kv => {
+      const i = kv.indexOf('=');
+      if (i > 0) q[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1));
+    });
+    const no = Number(q.c), pz = Number(q.p);
+    if (!no || !isFinite(no)) return false;
+    if (!BOOK_API || !BOOK_API.BOOKS) return false;
+    const book = BOOK_API.BOOKS[0];
+    if (!book) return false;
+    const ch = book.chapters.find(x => x.no === no);
+    if (!ch) return false;
+    startPuzzle(book.id, no, Math.max(1, isFinite(pz) ? pz : 1) - 1);
+    return true;
+  }
+
   function boot() {
     loadProgress();
     $('#btnSound').textContent = G.sound ? '🔊' : '🔇';
     bind();
-    startLevel(0);
+    if (!applyHash()) startLevel(0);
     exposeDebug();
+    window.addEventListener('hashchange', () => { applyHash(); });
     window.addEventListener('error', e => {
       pushLog('⚠ ' + (e.message || '脚本错误'), 'no');
       renderLog();

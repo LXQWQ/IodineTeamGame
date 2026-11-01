@@ -370,6 +370,46 @@
     return { start, target: cur };
   }
 
+  /* ---------- 策展题库（curated.js）：按章附真实知识点出题 ---------- */
+  function curatedList(bookId, no) {
+    const C = root.CURATED;
+    if (!C || bookId !== 'clayden2e') return [];
+    const raw = C[no];
+    if (!raw || !raw.length) return [];
+    const out = [], seen = new Set();
+    for (let i = 0; i < raw.length; i++) {
+      const item = raw[i];
+      const from = item[0], steps = item[1], note = item[2] || '';
+      let mol;
+      const sp = v => (v || '').split(',').map(x => x.trim()).filter(Boolean);
+      try { mol = S(from[0], sp(from[1]), sp(from[2]), sp(from[3])); }
+      catch (e) { continue; }
+      if (!mol.carbonCount) continue;
+      let cur = mol.clone(), ok = true;
+      for (const rid of steps) {
+        const r = root.RXN_MAP.get(rid);
+        if (!r || !r.check(cur)) { ok = false; break; }
+        cur = r.apply(cur);
+      }
+      if (!ok || cur.carbonCount < 1 || cur.carbonCount > CARBON_MAX) continue;
+      const k = cur.key();
+      if (seen.has(k) || cur.equals(mol)) continue;
+      const path = findOptimalPath(mol, cur, 8);
+      if (!path || !path.length) continue;
+      seen.add(k);
+      out.push({
+        no: out.length + 1,
+        start: mol,
+        target: cur,
+        optimal: path.length,
+        via: path,
+        note: note,
+        curated: true
+      });
+    }
+    return out;
+  }
+
   function genChapter(bookId, no) {
     const book = BOOK_MAP.get(bookId) || CLAYDEN;
     const ch = book.chapters.find(c => c.no === no);
@@ -380,6 +420,14 @@
     const rng = mulberry32(hashStr(ck) ^ 0x9e3779b9);
     const out = [], seen = new Set();
     let guard = 0;
+
+    /* 一、策展题优先：每一条都对应本书本章的真实知识点 */
+    for (const c of curatedList(bookId, no)) {
+      seen.add(c.target.key());
+      out.push(c);
+    }
+    /* 策展题比原设定题量多时，以策展题数为准，保证章节卡片显示的题量与实玩一致 */
+    if (out.length > ch.total) ch.total = out.length;
     /* 三轮：先按本章难度区间，题量不足时逐步放宽步数，扩大去重空间 */
     const spans = [[ch.depth[0], ch.depth[1]], [ch.depth[0], ch.depth[1] + 1], [ch.depth[0], ch.depth[1] + 2]];
     for (const [lo, hi] of spans) {
@@ -399,7 +447,9 @@
           start: w.start,
           target: w.target,
           optimal: path.length,
-          via: path
+          via: path,
+          note: '',
+          curated: false
         });
       }
       if (out.length >= ch.total) break;
@@ -414,6 +464,7 @@
     const p = list[idx];
     if (!p) return null;
     const ch = (BOOK_MAP.get(bookId) || CLAYDEN).chapters.find(c => c.no === no);
+    const viaTxt = p.via.map(id => (root.RXN_MAP.get(id) || {}).name).join(' → ');
     return {
       id: 'b' + no + '-' + p.no,
       tier: '第 ' + no + ' 章',
@@ -421,8 +472,9 @@
       goal: '把 ' + p.start.getName() + ' 变成 ' + p.target.getName(),
       start: p.start.clone(),
       target: p.target.clone(),
-      hint: '先想逆合成：目标分子最后一步通常是什么反应？本章可用反应：' +
-        p.via.map(id => (root.RXN_MAP.get(id) || {}).name).join(' → ') + '（提示已给出最优路径，尽量自己推）',
+      point: p.note || '',
+      hint: (p.note ? '考点：' + p.note + '。' : '先想逆合成：目标分子最后一步通常是什么反应？') +
+        '最优路径：' + viaTxt + '（提示已给出路径，尽量自己推）',
       optimal: p.optimal,
       bookId: bookId,
       chapterNo: no,
@@ -500,7 +552,7 @@
     BOOKS, BOOK_MAP, CLAYDEN, EXTRA,
     EXTRA_REACTION_COUNT: EXTRA.length,
     PASS_SCORE,
-    genChapter, puzzleToLevel, scoreOf, starsOf,
+    genChapter, puzzleToLevel, scoreOf, starsOf, curatedList,
     BookProgress, chapterUnlocked, unlockedUpTo,
     totalPuzzles: () => BOOKS.reduce((a, b) => a + b.chapters.reduce((x, c) => x + c.n, 0), 0)
   };

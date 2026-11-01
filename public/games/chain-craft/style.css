@@ -291,3 +291,16 @@ body{
 .win-btns .btn.primary{grid-column:auto}
 
 [hidden]{display:none !important}
+
+/* 教材主线：目标分子的考点说明 */
+.goal-point {
+  margin-top: 6px;
+  padding: 6px 9px;
+  border-left: 2px solid rgba(167,139,250,.55);
+  border-radius: 4px;
+  background: rgba(167,139,250,.08);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: rgba(226,220,245,.86);
+}
+.goal-point[hidden] { display: none; }
