@@ -517,12 +517,16 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:none;backgroun
         <p><b>先锋</b>：<b>离本王城越远攻击越高</b>（每格 +0.16）——推得越深越致命，但脱离本土也没有驻防加成。</p>
         <p><b>行军</b>：每回合自动朝敌方首都推进 1 格，不花部署次数。适合铺前线，但会被正面拦住。</p>
         <p><b>氧化</b>：同化范围 +1，铺场效率高。</p>
-        <p><b>守土</b>：<b>越靠近本王城防御越高</b>（每格 +0.18）——回防时硬得离谱，远征就只剩半条命。</p>
+        <p><b>守土</b>：<b>越靠近本王城防御越高</b>（每格 +0.18，<b>最多 +0.9</b>）——回防很硬，但不再是绝对防御。每方<b>最多同时驻留 2 个守土单位</b>：围一圈坦克把王城封死的老套路已经行不通。</p>
         <p><b>支援</b>：相邻友军攻击 +0.8（最多 +2）。本身很脆，但它能把一支杂兵变成破防线。</p>
-        <p><b>穿刺</b>：无视目标 35% 的<b>基础防御</b>——专门拆坦克。</p>
+        <p><b>穿刺</b>：无视目标 <b>45%</b> 的<b>基础防御</b>——配合夹击，它是唯一能正面拆开守土坦克的兵。</p>
         <p><b>强蚀</b>：同化范围 ×2，且「缓冲」对强蚀无效。</p>
         <h3>全局机制：两面夹击</h3>
         <p>目标被<b>两支以上敌军</b>贴身时，每多一支就<b>防御 −1.2</b>。所以再贵的顶级兵被围住也会被啃掉——这就是「不计得失全押」不再稳赢的原因。</p>
+        <h3>全局机制：围攻王城</h3>
+        <p>敌方王城格<b>没有驻兵</b>时也能被「渗透」拿下，但需要<b>两倍</b>压力（累积 8 次）。贴着王城的部队每回合都会往里施加压力 —— 所以单纯用坦克围住自己的王城并不安全：要么放兵守城（会被打），要么看着它被一点点围下来。</p>
+        <h3>AI 会做什么</h3>
+        <p>AI 每回合先判断局势，日志里会打出这一回合的战术：<b>回防固守 / 集中兵力破城 / 压境斩首 / 扩张铺地</b>。<b>集中兵力</b>时它会把部队刻意摞在同一路去吃夹击、优先带穿刺兵拆墙，而不是把兵撒得到处都是。</p>
       </div>
       <div class="rule-sec">
         <h3>三种模式</h3>
@@ -593,7 +597,10 @@ const FLANK_PENALTY = 1.2;     // 两面夹击：目标每多一个相邻敌军�
 const HOME_PER_TILE = 0.18;    // 守土：离本王城每近 1 格，防御 +
 const VANGUARD_PER_TILE = 0.16;// 先锋：离本王城每远 1 格，攻击 +
 const SUPPORT_ATK = 0.8;       // 支援：每个相邻友军给攻击 +
-const PIERCE_RATE = 0.35;      // 穿刺：无视目标这个比例的防御
+const PIERCE_RATE = 0.45;      // 穿刺：无视目标这个比例的防御（能真正拆掉贴城守土）
+const HOME_BONUS_CAP = 0.9;    // 守土加成上限：原 (8-dOwn)×0.18 最高 +1.44，会变成绝对防御
+const HOME_UNIT_CAP = 2;       // 每方同时最多驻留的守土单位：直接封掉「王城围一圈坦克」
+const CAP_SIEGE_MULT = 2;      // 围攻首都：无驻兵的首都格要累积 2 倍渗透压力才会易主
 const MAX_DEPLOY = 2;
 const FIRST_TURN_DEPLOY = 1;   // 先手首回合只部署 1 个，抑制滚雪球
 const CAP_DEF = 2.5;           // 首都驻防加成（斩首不再一次战力胜利就成立）
@@ -622,9 +629,9 @@ const MODES = {
                 unit('HCl','盐酸','HCl',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🧪'),
                 unit('H2SO3','亚硫酸','H₂SO₃',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🧪'),
                 unit('HNO3','硝酸','HNO₃',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🧪'),
-                unit('H3PO4','磷酸','H₃PO₄',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🧪'),
+                unit('H3PO4','磷酸','H₃PO₄',36,3,2.0,7.0,'home','守土','近城加防（≤+0.9，每方限 2 个）','🧪'),
                 unit('H2C2O4','草酸','H₂C₂O₄',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🧪'),
-                unit('HClO4','高氯酸','HClO₄',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🧪'),
+                unit('HClO4','高氯酸','HClO₄',46,4,7.0,2.4,'pierce','穿刺','无视目标 45% 防御','🧪'),
                 unit('H2SO4','硫酸','H₂SO₄',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🧪'),
              ]},
             {name:'碱方', color:'#3b82f6', light:'#93c5fd', glyph:'碱',
@@ -634,9 +641,9 @@ const MODES = {
                 unit('NaOH','氢氧化钠','NaOH',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','⚪'),
                 unit('BaOH2','氢氧化钡','Ba(OH)₂',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','⚪'),
                 unit('K2CO3','碳酸钾','K₂CO₃',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','⚪'),
-                unit('CaOH2','氢氧化钙','Ca(OH)₂',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','⚪'),
+                unit('CaOH2','氢氧化钙','Ca(OH)₂',36,3,2.0,7.0,'home','守土','近城加防（≤+0.9，每方限 2 个）','⚪'),
                 unit('Na3PO4','磷酸钠','Na₃PO₄',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','⚪'),
-                unit('CsOH','氢氧化铯','CsOH',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','⚪'),
+                unit('CsOH','氢氧化铯','CsOH',46,4,7.0,2.4,'pierce','穿刺','无视目标 45% 防御','⚪'),
                 unit('KOH','氢氧化钾','KOH',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','⚪'),
              ]},
         ],
@@ -679,9 +686,9 @@ const MODES = {
                 unit('Mg','镁','Mg',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🔶'),
                 unit('Fe','铁','Fe',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🔶'),
                 unit('Ni','镍','Ni',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🔶'),
-                unit('Sn','锡','Sn',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🔶'),
+                unit('Sn','锡','Sn',36,3,2.0,7.0,'home','守土','近城加防（≤+0.9，每方限 2 个）','🔶'),
                 unit('Pb','铅','Pb',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🔶'),
-                unit('Ti','钛','Ti',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🔶'),
+                unit('Ti','钛','Ti',46,4,7.0,2.4,'pierce','穿刺','无视目标 45% 防御','🔶'),
                 unit('Cu','铜','Cu',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🔶'),
              ]},
             {name:'阴极', color:'#22d3ee', light:'#a5f3fc', glyph:'阴',
@@ -691,9 +698,9 @@ const MODES = {
                 unit('Hg','汞','Hg',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🔵'),
                 unit('Pt','铂','Pt',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🔵'),
                 unit('Pd','钯','Pd',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🔵'),
-                unit('Rh','铑','Rh',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🔵'),
+                unit('Rh','铑','Rh',36,3,2.0,7.0,'home','守土','近城加防（≤+0.9，每方限 2 个）','🔵'),
                 unit('Ir','铱','Ir',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🔵'),
-                unit('Au','金','Au',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🔵'),
+                unit('Au','金','Au',46,4,7.0,2.4,'pierce','穿刺','无视目标 45% 防御','🔵'),
                 unit('W','钨','W',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🔵'),
              ]},
         ],
@@ -728,9 +735,9 @@ const MODES = {
                 unit('K','钾','K',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🔴'),
                 unit('Rb','铷','Rb',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🔴'),
                 unit('Cs','铯','Cs',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🔴'),
-                unit('Fr','钫','Fr',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🔴'),
+                unit('Fr','钫','Fr',36,3,2.0,7.0,'home','守土','近城加防（≤+0.9，每方限 2 个）','🔴'),
                 unit('Mg','镁','Mg',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🔴'),
-                unit('Ca','钙','Ca',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🔴'),
+                unit('Ca','钙','Ca',46,4,7.0,2.4,'pierce','穿刺','无视目标 45% 防御','🔴'),
                 unit('Sr','锶','Sr',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🔴'),
              ]},
             {name:'卤素', color:'#22c55e', light:'#86efac', glyph:'卤',
@@ -740,9 +747,9 @@ const MODES = {
                 unit('Cl','氯','Cl₂',22,2,4.6,1.8,'vanguard','先锋','离本王城越远攻击越强','🟢'),
                 unit('At','砹','At₂',28,3,3.0,3.2,'march','行军','每回合自动向敌方推进 1 格','🟢'),
                 unit('F','氟','F₂',32,3,3.6,4.6,'oxidize','氧化','同化范围 +1','🟢'),
-                unit('S','硫','S₈',36,3,2.0,7.0,'home','守土','越靠近本王城防御越高','🟢'),
+                unit('S','硫','S₈',36,3,2.0,7.0,'home','守土','近城加防（≤+0.9，每方限 2 个）','🟢'),
                 unit('Se','硒','Se',40,4,2.4,4.0,'support','支援','相邻友军攻击 +0.8','🟢'),
-                unit('Te','碲','Te',46,4,7.0,2.4,'pierce','穿刺','无视目标 35% 防御','🟢'),
+                unit('Te','碲','Te',46,4,7.0,2.4,'pierce','穿刺','无视目标 45% 防御','🟢'),
                 unit('N','氮','N₂',52,5,6.6,5.4,'corrode','强蚀','同化 ×2，缓冲失效','🟢'),
              ]},
         ],
@@ -917,12 +924,26 @@ function deployLimit(){
     return (G.turn===1) ? FIRST_TURN_DEPLOY : MAX_DEPLOY;
 }
 
+/* 守土单位计数：限制「王城围一圈坦克」的死局 */
+function homeCountOf(pid){
+    let n = 0;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const h = getHex(c,r);
+        if (h.unit && h.unit.player===pid && h.unit.abi==='home') n++;
+    }
+    return n;
+}
+function homeCappedFor(pid, u){
+    return ((u && (u.ability==='home' || u.abi==='home'))) && homeCountOf(pid) >= HOME_UNIT_CAP;
+}
+
 function deploy(hex, unitIdx, pid, silent){
     const me = G.players[pid-1];
     const u = M().sides[pid-1].units[unitIdx];
     if (!u) return false;
     if (me.res < u.cost){ toast('资源不足：还差 '+(u.cost-me.res)+' ⚡','err'); sfx('err'); return false; }
     if (!canDeployAt(hex,pid)){ toast('只能部署在自己的领地或相邻中立格','err'); sfx('err'); return false; }
+    if (homeCappedFor(pid, u)){ toast(`守土单位最多同时驻留 ${HOME_UNIT_CAP} 个`,'err'); sfx('err'); return false; }
 
     // 撤销快照
     if (!SIM.on) G.undo.push({
@@ -1045,7 +1066,7 @@ function sideScore(u, env0, h){
     if (h.owner===u.player) def += 1;             // 本土驻防
     if (h.cap===u.player)   def += CAP_DEF;       // 首都驻防
     if (u.abi==='vanguard') atk += dOwn * VANGUARD_PER_TILE;                    // 先锋：离家越远越猛
-    if (u.abi==='home')     def += Math.max(0, 8-dOwn) * HOME_PER_TILE;          // 守土：守家越近越硬
+    if (u.abi==='home')     def += Math.min(HOME_BONUS_CAP, Math.max(0, 8-dOwn) * HOME_PER_TILE);  // 守土：守家越近越硬（封顶）
     atk += supportBonus(h, u.player);
     return {atk, def};
 }
@@ -1269,7 +1290,7 @@ function resolveInfluence(){
         // 候选：周围 6 格里，无驻兵、非首都、不是自己的
         let cands = neighbors(h.col,h.row)
             .map(n=>getHex(n.col,n.row))
-            .filter(n=>n && !n.unit && !n.cap && n.owner!==u.player);
+            .filter(n=>n && !n.unit && n.owner!==u.player);
         if (!cands.length) continue;
         // 阶级决定同时影响几格（强蚀/氧化额外 +1）
         let reach = u.power + ((u.abi==='corrode'||u.abi==='oxidize') ? 1 : 0);
@@ -1284,14 +1305,18 @@ function resolveInfluence(){
             pr[3-u.player] = Math.max(0, pr[3-u.player] - 1);
             M().influence(n, u.player);
 
-            const need = n.owner===0 ? INFLUENCE_NEED-1 : INFLUENCE_NEED;
+            // 敌方「无驻兵的首都格」也能被围下来，但要 2 倍压力（CAP_SIEGE_MULT）
+            const need = n.cap ? INFLUENCE_NEED*CAP_SIEGE_MULT
+                       : (n.owner===0 ? INFLUENCE_NEED-1 : INFLUENCE_NEED);
             if (pr[u.player] >= need && n.owner !== u.player){
                 const from = n.owner;
                 n.owner = u.player;
                 n.press = {1:0, 2:0};
                 M().nudge(n, u.player);
                 taken++;
-                addLog(`🌫️ ${u.formula} 渗透 ${n.col},${n.row}：${from?M().sides[from-1].name+' → ':''}${M().sides[u.player-1].name} 夺取该格`,'clash');
+                addLog(n.cap
+                    ? `🏰 围攻得手！${u.formula} 拿下 ${n.col},${n.row} 的敌方王城`
+                    : `🌫️ ${u.formula} 渗透 ${n.col},${n.row}：${from?M().sides[from-1].name+' → ':''}${M().sides[u.player-1].name} 夺取该格`, n.cap?'clash':'clash');
                 pushFx({kind:'pop', c:n.col, r:n.row, color:M().sides[u.player-1].color, t0:now()});
             }
         }
@@ -1510,11 +1535,27 @@ function aiIntent(pid){
         }
     }
     const myT = territory(pid), oppT = territory(opp);
+    /* 攻城侦察：我方已压到敌城下几个兵、敌方王城周围守军几层、王城本身有没有驻兵 */
+    const oppCap = capPos(opp);
+    let mySiegers = 0, capRing = 0;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+        const x = getHex(c,r);
+        if (!x.unit) continue;
+        const d = hexDist(c,r,oppCap.c,oppCap.r);
+        if (x.unit.player===pid && d<=3) mySiegers++;
+        else if (x.unit.player===opp && d<=1) capRing++;
+    }
+    const oppCapHex = capHexOf(opp);
+    const capGuard = (oppCapHex && oppCapHex.unit && oppCapHex.unit.player===opp) ? 1 : 0;
+
     let mode;
-    if (threat >= 6 && guards < 2) mode = 'defend';       // 家要破了：回去守
-    else if (myT > oppT*1.22 || oppT <= 12) mode = 'press'; // 有优势：压上去斩首
-    else mode = 'expand';                                  // 均势：先铺地
-    return {mode, threat, enemyNear, guards, ownWalls, ownUnits, myT, oppT};
+    if (threat >= 6 && guards < 2) mode = 'defend';              // 家要破了：回去守
+    else if (mySiegers >= 2 && capRing <= 3) mode = 'siege';     // 已压到城下、守军不厚：集中兵力破城
+    else if (myT > oppT*1.22 || oppT <= 12) mode = 'press';      // 有优势：压上去斩首
+    else mode = 'expand';                                        // 均势：先铺地
+    const tactic = {defend:'回防固守', siege:'集中兵力破城', press:'压境斩首', expand:'扩张铺地'}[mode];
+    return {mode, tactic, threat, enemyNear, guards, ownWalls, ownUnits, myT, oppT,
+            mySiegers, capRing, capGuard};
 }
 
 /* AI 为任意一方挑选一手（不解定计时器，便于自动化对局与平衡测算） */
@@ -1562,6 +1603,9 @@ function aiPlayFor(pid, diff){
 function aiTurn(){
     const pid = aiPid();
     if (!G || G.over || !pid || G.cur!==pid) return;
+    const plan = aiIntent(pid);
+    const camp = M().sides[pid-1].name;
+    addLog(`🧠 ${camp} 战术：${plan.tactic}　（城下兵力 ${plan.mySiegers} ／ 敌城守军 ${plan.capRing}${plan.capGuard?'，王城有驻兵':'，王城空虚'}）`,'sys');
     aiPlayFor(pid, G.diff);
     renderAll();
     gset(()=>{ if (!G || G.over || G.cur!==pid) return; endDeploy(true); }, 620);
@@ -1574,13 +1618,14 @@ function aiScore(h, u, pid, plan){
     const role = aiRoleOf(u);
     let s = 0;
 
-    let enemyAdj=0, ownAdj=0, neutralAdj=0, enemyUnitAdj=0;
+    let enemyAdj=0, ownAdj=0, neutralAdj=0, enemyUnitAdj=0, ownUnitAdj=0;
     for (const n of neighbors(h.col,h.row)){
         const nh = getHex(n.col,n.row);
         if (nh.owner===opp) enemyAdj++;
         else if (nh.owner===pid) ownAdj++;
         else neutralAdj++;
         if (nh.unit && nh.unit.player===opp) enemyUnitAdj++;
+        if (nh.unit && nh.unit.player===pid) ownUnitAdj++;
     }
 
     const dOpp = hexDist(h.col,h.row,oppCap.c,oppCap.r);
@@ -1589,6 +1634,11 @@ function aiScore(h, u, pid, plan){
 
     // 前线价值
     s += enemyAdj*2.4 + neutralAdj*0.55 + ownAdj*0.4;
+
+    // 集中兵力（自动集结）：贴着自家部队落子——集群才能吃夹击、才能顶穿一条线
+    s += ownUnitAdj * (plan.mode==='siege' ? 3.0 : 1.7);
+    if (ownUnitAdj>=2) s += 1.5;                       // 三兵成组，矛头成型
+    if (role==='pierce' && ownUnitAdj>=1) s += 1.2;    // 穿刺跟着主力走
 
     // 真实战斗推演（与引擎同一套 sideScore / 修正项）
     const ghost = Object.assign({}, u, {abi: u.abi || u.ability, player: pid});
@@ -1599,7 +1649,8 @@ function aiScore(h, u, pid, plan){
         const foeU = nh.unit;
         const theirs = sideScore(foeU, M().envBonus(nh), nh);
         const pierce = (u.abi||u.ability)==='pierce' ? (foeU.def||0)*PIERCE_RATE : 0;
-        const flank  = (foeU.abi!=='taunt') ? Math.max(0, adjacentFoes(nh, opp)-1)*FLANK_PENALTY : 0;
+        // 夹击预判：这一手落下去，贴住该敌军的我方单位又多一支 → 夹击 -1.2 生效
+        const flank  = (foeU.abi!=='taunt') ? Math.max(0, adjacentFoes(nh, opp))*FLANK_PENALTY : 0;
         const iKill = mine.atk > Math.max(0.1, theirs.def - pierce - flank) * KILL_MARGIN;
         const iDie  = theirs.atk > mine.def * KILL_MARGIN;
         if (iKill && !iDie)       s += 9.0;   // 白吃
@@ -1618,7 +1669,8 @@ function aiScore(h, u, pid, plan){
             if (h.cap===pid) s += 1;
             if (dOwn===0) s -= 4;                                // 别把坦克堵在首都上（首都自带 +2.5）
             if (plan.ownWalls===0 && plan.ownUnits>=2) s += 7;    // 阵中至少要有一堵墙
-            if (plan.ownWalls>=2 && plan.threat<4) s -= 4.5;     // 墙够了自己就收手
+            if (plan.ownWalls>=HOME_UNIT_CAP) s -= 7;            // 已到守土上限，再堆也不会被采纳
+            else if (plan.ownWalls>=1 && plan.threat<4) s -= 3;  // 墙够了自己就收手
             break;
         case 'raider':
             // 快攻手要压到远处：离家越远越好，堆在后方毫无意义
@@ -1652,6 +1704,15 @@ function aiScore(h, u, pid, plan){
         if (dOwn>=4 && role!=='raider') s -= 5.5;               // 家里着火时别往前扔
         if (role==='guard' && dOwn<=2) s += 6;
         if (enemyUnitAdj>0 && dOwn<=3) s += 3;
+    } else if (plan.mode==='siege'){
+        // 集中兵力破城：全员往敌王城方向摞，穿刺当矛头，坦克不许来
+        if (dOpp<=1) s += 10;                                   // 贴住敌王城
+        else if (dOpp<=3) s += 4;
+        if (role==='breaker') s += 5;                           // 穿刺拆墙主力
+        if (role==='raider') s += 2;
+        if (role==='guard') s -= 8;                             // 攻城别带坦克
+        if (plan.capGuard===0 && dOpp<=1) s += 6;               // 王城空虚：贴上去就有围城压力
+        if (plan.capRing>0 && enemyUnitAdj>0 && dOpp<=2) s += 2; // 先啃掉城墙
     } else if (plan.mode==='press'){
         if (dOpp<=2) s += 6;                                    // 能斩首就斩首
         else if (dOpp<=4) s += 3;
@@ -1660,10 +1721,13 @@ function aiScore(h, u, pid, plan){
         // 均势扩张期：先抢地、攒节奏，别把大件坦克停在后方
         if (neutralAdj>=2) s += 2.5;
         // 扩张期：已经有守军就不再堆；但留一个「压阵」的坦克是有用的
-        if (plan.enemyNear===0 && role==='guard' && plan.ownWalls>=2) s -= 4;
+        if (plan.enemyNear===0 && role==='guard' && plan.ownWalls>=1) s -= 4;
         if (plan.enemyNear===0 && u.cost>40 && role!=='guard') s -= 2;
         if (plan.enemyNear>=2 && dOwn<=2 && role==='guard') s += 2.5;
     }
+
+    // 守土已满：绝不再选（deploy 会拒绝，选它等于白白浪费一次部署）
+    if (homeCappedFor(pid, u)) return -999;
 
     // 性价比：同价位更划算的战力优先
     s += (u.atk+u.def)*0.42 - u.cost*0.05;
@@ -1950,7 +2014,8 @@ function buildRoster(){
     wrap.appendChild(title);
 
     side.units.forEach((u,i)=>{
-        const locked = me.res < u.cost;
+        const capped = homeCappedFor(pid, u);
+        const locked = me.res < u.cost || capped;
         const b = document.createElement('button');
         b.className = 'unit-card' + (UI.sel===i?' on':'') + (locked?' locked':'');
         b.style.setProperty('--side-color', side.color);
@@ -1960,11 +2025,12 @@ function buildRoster(){
             <div class="uc-row2"><span class="uc-name">${u.name}</span>
                 <span class="uc-stats"><b class="atk">⚔${u.atk.toFixed(1)}</b><b class="def">🛡${u.def.toFixed(1)}</b></span>
             </div>
-            <div class="uc-abi"><b>${u.abilityName}</b><span>${locked?'资源不足':u.abilityDesc}</span></div>`;
+            <div class="uc-abi"><b>${u.abilityName}</b><span>${capped?`守土已满（${HOME_UNIT_CAP}）`:(locked?'资源不足':u.abilityDesc)}</span></div>`;
         b.addEventListener('click', ()=>{
             if (G.over) return;
             if (isAITurn()) { toast('等待 AI 行动','err'); return; }
             if (G.phase!=='deploy'){ toast('现在是'+phaseName()+'，无法部署','err'); return; }
+            if (capped){ toast(`守土单位最多同时驻留 ${HOME_UNIT_CAP} 个`,'err'); sfx('err'); return; }
             if (locked){ toast('资源不足：还差 '+(u.cost-me.res)+' ⚡','err'); sfx('err'); return; }
             UI.sel = (UI.sel===i) ? -1 : i;
             sfx('tap');
@@ -1982,12 +2048,13 @@ function renderRoster(){
         if (idx===0) { el.querySelector('span:last-child').textContent = side.name; return; }
         const i = +el.dataset.i;
         const u = side.units[i];
-        const locked = me.res < u.cost;
+        const capped = homeCappedFor(pid, u);
+        const locked = me.res < u.cost || capped;
         el.classList.toggle('on', UI.sel===i);
         el.classList.toggle('locked', locked);
         el.style.setProperty('--side-color', side.color);
         const abi = el.querySelector('.uc-abi span');
-        if (abi) abi.textContent = locked ? '资源不足' : u.abilityDesc;
+        if (abi) abi.textContent = capped ? `守土已满（${HOME_UNIT_CAP}）` : (locked ? '资源不足' : u.abilityDesc);
     });
 }
 
