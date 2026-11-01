@@ -150,10 +150,10 @@
       mv.innerHTML = '';
       const list = [
         ['J', '连击 · 三连', 0, '轻攻击三段 · 命中可续接'],
-        ['S+J', d.moves?.cr?.name || '—', 0, '蹲攻 · 下段，只能蹲防'],
+        ['X+J', d.moves?.cr?.name || '—', 0, '蹲攻 · 下段，只能蹲防'],
         ['空中J', d.moves?.air?.name || '—', 0, '跳攻 · 中段，只能站防'],
         ['冲刺J', d.moves?.dash?.name || '—', 0, '冲刺攻击 · 突进追击'],
-        ['S+K', d.moves?.launch?.name || '—', d.moves?.launch?.cost || 0, '上挑 · 把对手打浮空'],
+        ['X+K', d.moves?.launch?.name || '—', d.moves?.launch?.cost || 0, '上挑 · 把对手打浮空'],
         ['K', d.moves?.s1?.name || '—', d.moves?.s1?.cost || 0, d.moves?.s1?.note || '突进 / 位移技'],
         ['L', d.moves?.s2?.name || '—', d.moves?.s2?.cost || 0, d.moves?.s2?.note || '主力输出技'],
         ['U', d.moves?.ult?.name || '—', d.moves?.ult?.cost || 0, d.moves?.ult?.note || '超必杀 · 需气槽']
@@ -201,14 +201,21 @@
     const inp = F.emptyInput();
     // 按住状态 + 本帧之前按下过的「锁存」：一次 rAF 最多跑 8 个固定步长，
     // 快速点按（pointerdown/up 落在同一 rAF 内）会被中间帧漏掉，故用锁存保证至少被消费一次。
+    // 注意：锁存的清空移到 loop() —— 只有真正被 fight.js 吃进去的那一帧才清，
+    // 否则打在 hitstop / 入场倒计时帧上的按键会被静默吞掉（表现为「普攻经常打不出来」）。
     S.sources.forEach((set, action) => { if (set.size && action in inp) inp[action] = true; });
-    if (S.latch.size) {
-      S.latch.forEach((action) => { if (action in inp) inp[action] = true; });
-      S.latch.clear();
-    }
+    if (S.latch.size) S.latch.forEach((action) => { if (action in inp) inp[action] = true; });
     // 防御 + 轻攻击 = 投技：不清掉 light，交给 fight.js 优先判定（throw 只加在按下那一帧的边沿上）
     if (inp.block && inp.light) inp.throw = true;
     return inp;
+  }
+  function clearLatch() { if (S.latch) S.latch.clear(); }
+  // 推进一个固定步长：fight.js 在 hitstop / 入场倒计时帧会直接 return、不处理输入，
+  // 只有「这一帧真的接受操作」时才清掉锁存，避免按键被吞。
+  function simStep(m) {
+    const frozen = m.hitstop > 0 || m.intro > 0;
+    F.step(m, readInput(), null);
+    if (!frozen) clearLatch();
   }
   function releaseAll() {
     S.sources.forEach((set) => set.clear());
@@ -362,7 +369,7 @@
       S.acc += dt;
       let guard = 0;
       while (S.acc >= STEP && guard++ < 8) {
-        F.step(m, readInput(), null);
+        simStep(m);
         S.acc -= STEP;
       }
       if (m.over && !showResult.done) { showResult.done = true; showResult(); }
@@ -1027,7 +1034,7 @@
       ids: fighterIds,
       stages: stageIds,
       start(opts) { Object.assign(S, opts || {}); startMatch(); return S.match; },
-      step(n) { const m = S.match; for (let i = 0; i < (n || 1); i++) F.step(m, readInput(), null); return m; },
+      step(n) { const m = S.match; for (let i = 0; i < (n || 1); i++) simStep(m); },
       input(inp) { S.sources.clear(); Object.entries(inp || {}).forEach(([k, v]) => { if (v) setInput(k, true, 'test'); }); },
       draw, syncHud, back: backToLobby
     };
