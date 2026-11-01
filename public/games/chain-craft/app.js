@@ -637,8 +637,12 @@ function svgMolecule(mol, opt) {
     if (!BOOK_API) { $('#bookSub').textContent = '教材数据未加载（book.js 缺失）'; return; }
     const bk = BOOK_API.BOOK_MAP.get('clayden2e');
     if (!bk) return;
+    /* 题量以 curated.js 的静态条目数为准（43 章 x 10 = 430），避免与实玩不符 */
+    const CUR = (typeof window !== 'undefined' && window.CURATED) || {};
     let passedN = 0, totalQ = 0;
     bk.chapters.forEach(ch => {
+      const n = (CUR[ch.no] || []).length;
+      if (n) ch.total = n;
       totalQ += ch.total;
       if (chapRec(bk.id, ch.no).best >= BOOK_API.PASS_SCORE) passedN++;
     });

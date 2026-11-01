@@ -392,7 +392,9 @@
         cur = r.apply(cur);
       }
       if (!ok || cur.carbonCount < 1 || cur.carbonCount > CARBON_MAX) continue;
-      const k = cur.key();
+      /* 去重键用「起点>终点」而不是只看终点：同一章里「不同起点 -> 同一目标」
+         是完全不同的合成题，只按终点去重会误删大量题 */
+      const k = mol.key() + '>' + cur.key();
       if (seen.has(k) || cur.equals(mol)) continue;
       const path = findOptimalPath(mol, cur, 8);
       if (!path || !path.length) continue;
@@ -428,32 +430,9 @@
     }
     /* 策展题比原设定题量多时，以策展题数为准，保证章节卡片显示的题量与实玩一致 */
     if (out.length > ch.total) ch.total = out.length;
-    /* 三轮：先按本章难度区间，题量不足时逐步放宽步数，扩大去重空间 */
-    const spans = [[ch.depth[0], ch.depth[1]], [ch.depth[0], ch.depth[1] + 1], [ch.depth[0], ch.depth[1] + 2]];
-    for (const [lo, hi] of spans) {
-      while (out.length < ch.total && guard < ch.total * 200) {
-        guard++;
-        const span = hi - lo;
-        const steps = lo + Math.floor(rng() * (span + 1));
-        const w = walkOnce(rng, ch, steps);
-        if (!w) continue;
-        const k = w.target.key();
-        if (seen.has(k)) continue;
-        const path = findOptimalPath(w.start, w.target, 8);
-        if (!path || path.length < 2) continue;
-        seen.add(k);
-        out.push({
-          no: out.length + 1,
-          start: w.start,
-          target: w.target,
-          optimal: path.length,
-          via: path,
-          note: '',
-          curated: false
-        });
-      }
-      if (out.length >= ch.total) break;
-    }
+    /* 二、题量以策展题为准：不再随机兜底，保证「章节卡片显示题量 = 实际可玩题量」 */
+    out.forEach((p, i) => { p.no = i + 1; });
+    ch.total = out.length;
     PUZZLE_CACHE.set(ck, out);
     return out;
   }

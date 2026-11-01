@@ -65,8 +65,15 @@ class MoleculeState {
     if (has('-CHO')) return stem + '醛';
     if (has('=O') && has('-OH')) return '羟基' + stem + '酮';
     if (has('=O')) return stem + '酮';
+    // 氰基优先级高于羟基：羟基己腈不能叫成「己醇」
+    if (has('-CN')) return (has('-OH') ? '羟基' : '') + stem + (this.rings.length ? '环' : '') + '腈';
     if (has('-O-')) return '二' + stem + '醚';
     if (has('-OH')) return stem + '醇';
+    // 硝基 / 缩醛 / 亚胺：缺了命名会让「硝化」类题目出现「把环己烷变成环己烷」
+    if (has('-NO2') && this.rings.length) return '硝基' + stem + '环烃';
+    if (has('-NO2')) return '硝基' + stem + '烷';
+    if (has('缩醛')) return stem + '醛缩醛';
+    if (has('=N-')) return stem + '亚胺';
     if (this.rings.length) return stem + '环烃';
     if (this.unsaturation.length) return stem + '烯';
     return stem + '烷';
