@@ -20,6 +20,7 @@
   </div>
   <div class="top-right">
     <div class="level-dots" id="levelDots" aria-label="关卡进度"></div>
+    <button class="icon-btn" id="btnBook" title="教材主线" aria-label="教材主线">📚</button>
     <button class="icon-btn" id="btnSound" title="音效开关" aria-label="音效开关">🔊</button>
     <button class="icon-btn" id="btnHelp" title="规则说明" aria-label="规则说明">📖</button>
   </div>
@@ -90,6 +91,19 @@
   </div>
 </div>
 
+<!-- 教材主线：章节地图 -->
+<div class="modal" id="bookModal" hidden>
+  <div class="modal-box wide">
+    <div class="modal-head">
+      <h2>📚 教材主线</h2>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <p class="book-sub" id="bookSub"></p>
+    <div class="chapter-grid" id="chapterGrid"></div>
+    <p class="modal-foot">每一章都从该书的知识点自动出题：先想逆合成，再用本章反应一步步推过去。上一章均分 ≥ 80 分解锁下一章。</p>
+  </div>
+</div>
+
 <!-- 规则 -->
 <div class="modal" id="helpModal" hidden>
   <div class="modal-box">
@@ -123,6 +137,7 @@
 
 <audio id="sfx" preload="none"></audio>
 <script src="./logic.js"></script>
-<script src="./app.js"></script>
+<script src="./book.js"></script>
+    <script src="./app.js"></script>
 </body>
 </html>

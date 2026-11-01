@@ -23,6 +23,13 @@
     sound: true,
     optimal: null,
     progress: {},     // id -> {stars, best}
+    /* 教材主线 */
+    mode: 'free',     // 'free' 自由关卡 | 'book' 教材章节
+    bookId: null,
+    chapterNo: null,
+    puzzleIdx: 0,
+    chapterScores: [],  // 本章每题最好得分
+    winAction: null,    // 胜利弹窗按钮的语义：retry / next / nextChapter / map
   };
 
   const $ = s => document.querySelector(s);
@@ -81,6 +88,10 @@
     if (g === '-COO-') return { sym: 'COO', color: COL.o, ester: true };
     if (g === '-O-') return { sym: 'O', color: COL.o, ether: true };
     if (g === '-X') return { sym: 'Cl', color: COL.x };
+    if (g === '-CN') return { sym: 'CN', color: COL.x };
+    if (g === '=N-') return { sym: 'N', color: '#8fb4ff' };
+    if (g === '-NO2') return { sym: 'NO₂', color: COL.o };
+    if (g === '缩醛') return { sym: 'O,O', color: COL.x };
     return null;
   }
 
@@ -277,9 +288,47 @@ function svgMolecule(mol, opt) {
   }
 
   /* ---------------- 关卡 ---------------- */
-  function currentLevel() { return LV[G.levelIdx]; }
+  /* ============================================================
+   * 教材主线（book.js 提供 BOOKS / genChapter / puzzleToLevel / 计分与解锁）
+   * ============================================================ */
+  const BOOK_API = window.BOOKS ? window : null;
+  let BOOK_PUZZLES = [];          // 当前章节已包装成 LEVEL 形状的题目
+
+  function bookLevels(bookId, no) {
+    if (!BOOK_API) return [];
+    const raw = BOOK_API.genChapter(bookId, no) || [];
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+      const lv = BOOK_API.puzzleToLevel(bookId, no, i);
+      if (lv) out.push(lv);
+    }
+    return out;
+  }
+  function currentBookLevel() { return BOOK_PUZZLES[G.puzzleIdx] || null; }
+  function currentLevel() { return G.mode === 'book' ? currentBookLevel() : LV[G.levelIdx]; }
+  function restartCurrent() {
+    return G.mode === 'book' ? startPuzzle(G.bookId, G.chapterNo, G.puzzleIdx) : startLevel(G.levelIdx);
+  }
+  function bookMeta() {
+    return (BOOK_API && G.bookId && BOOK_API.BOOK_MAP) ? BOOK_API.BOOK_MAP.get(G.bookId) : null;
+  }
+  function chapterInfo() {
+    const bk = bookMeta();
+    if (!bk || !G.chapterNo) return null;
+    return bk.chapters.find(c => c.no === G.chapterNo) || null;
+  }
+  function recordedScores() { return G.chapterScores.filter(x => typeof x === 'number'); }
+  /* 章节成绩（未打过时给零值，避免 null 访问） */
+  function chapRec(bookId, no) {
+    return (BOOK_API && BOOK_API.BookProgress.get(bookId, no)) || { best: 0, done: 0 };
+  }
+  function chapterAvg() {
+    const a = recordedScores();
+    return a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : 0;
+  }
 
   function startLevel(idx) {
+    G.mode = 'free';
     const max = LV.length - 1;
     G.levelIdx = Math.max(0, Math.min(max, idx));
     const lv = currentLevel();
@@ -293,6 +342,74 @@ function svgMolecule(mol, opt) {
     pushLog(`第 ${lv.id} 关 · ${lv.title}`, 'sys');
     pushLog(`起始 ${lv.start.getName()}（${lv.start.getDescription()}）`, 'dim');
     renderAll();
+  }
+
+  /* 开一章：清空本章得分、从第 1 题开始 */
+  function startChapter(bookId, no) {
+    BOOK_PUZZLES = bookLevels(bookId, no);
+    if (!BOOK_PUZZLES.length) { pushLog('⚠ 本章题目生成失败', 'no'); renderLog(); return false; }
+    G.mode = 'book';
+    G.bookId = bookId;
+    G.chapterNo = no;
+    G.chapterScores = [];
+    startPuzzle(bookId, no, 0);
+    return true;
+  }
+
+  /* 开本章第 idx 题 */
+  function startPuzzle(bookId, no, idx) {
+    closeModals();
+    if (G.bookId !== bookId || G.chapterNo !== no) BOOK_PUZZLES = bookLevels(bookId, no);
+    G.mode = 'book';
+    G.bookId = bookId;
+    G.chapterNo = no;
+    G.puzzleIdx = Math.max(0, Math.min(BOOK_PUZZLES.length - 1, idx));
+    const lv = currentBookLevel();
+    if (!lv) { pushLog('⚠ 题目不存在', 'no'); renderLog(); return; }
+    G.mol = lv.start.clone();
+    G.steps = 0;
+    G.history = [];
+    G.hintUsed = false;
+    G.solved = false;
+    G.log = [];
+    G.optimal = lv.optimal || optSteps(lv);
+    pushLog(`📚 第 ${no} 章 · 第 ${G.puzzleIdx + 1}/${BOOK_PUZZLES.length} 题`, 'sys');
+    pushLog(`起始 ${lv.start.getName()}（${lv.start.getDescription()}）`, 'dim');
+    renderAll();
+  }
+
+  function nextPuzzleOrChapter() {
+    const last = G.puzzleIdx >= BOOK_PUZZLES.length - 1;
+    if (!last) { startPuzzle(G.bookId, G.chapterNo, G.puzzleIdx + 1); return; }
+    finishChapter();
+  }
+
+  /* 章结算：记录平均分，判断是否解锁下一章 */
+  function finishChapter() {
+    const bk = bookMeta();
+    const ch = chapterInfo();
+    if (!bk || !ch) return;
+    const avg = chapterAvg();
+    BOOK_API.BookProgress.record(bk.id, ch.no, avg);
+    const rec = BOOK_API.BookProgress.get(bk.id, ch.no);
+    const passed = avg >= BOOK_API.PASS_SCORE;
+    const nextNo = ch.no + 1;
+    const hasNext = nextNo <= bk.chapters.length;
+    const nextOpen = hasNext && BOOK_API.chapterUnlocked(bk.id, nextNo);
+    G.winAction = hasNext && nextOpen ? 'nextChapter' : 'map';
+    sfx.win();
+    pushLog(`📚 第 ${ch.no} 章完成：平均 ${avg} 分（${recordedScores().length} 题）${passed ? ' · 已解锁下一章' : ' · 未达标（需 ' + BOOK_API.PASS_SCORE + ' 分）'}`, passed ? 'win' : 'no');
+    $('#winTitle').textContent = `第 ${ch.no} 章 · ${ch.cn}`;
+    const st = BOOK_API.starsOf(avg);
+    $('#winStars').textContent = '★'.repeat(st) + '☆'.repeat(3 - st);
+    $('#winSub').textContent = passed
+      ? `平均 ${avg} 分（${recordedScores().length} 题，最佳 ${rec.best} 分）。${nextOpen && hasNext ? '已解锁第 ' + nextNo + ' 章。' : '你已通关全书！'}`
+      : `平均 ${avg} 分（${recordedScores().length} 题），未达 ${BOOK_API.PASS_SCORE} 分。重玩本章可刷新最好成绩。`;
+    $('#winRetry').textContent = '重玩本章';
+    $('#winNext').textContent = nextOpen && hasNext ? '下一章 →' : '章节地图';
+    $('#winNext').hidden = false;
+    renderAll();
+    openModal('#winModal');
   }
 
   function pushLog(text, kind) {
@@ -329,6 +446,16 @@ function svgMolecule(mol, opt) {
   function finishLevel() {
     G.solved = true;
     const lv = currentLevel();
+    if (G.mode === 'book') {
+      const score = BOOK_API.scoreOf(G.steps, G.optimal);
+      const i = G.puzzleIdx;
+      G.chapterScores[i] = Math.max(G.chapterScores[i] || 0, score);
+      sfx.win();
+      pushLog(`🏆 第 ${i + 1} 题完成：${G.steps} 步（最少 ${G.optimal} 步）→ ${score} 分`, 'win');
+      renderAll();
+      showWinBook(score);
+      return;
+    }
     const st = starsFor(G.steps, G.optimal);
     const prev = G.progress[lv.id];
     if (!prev || st > prev.stars || (st === prev.stars && G.steps < (prev.best || 99))) {
@@ -441,7 +568,11 @@ function svgMolecule(mol, opt) {
       $('#mStars').textContent = '★'.repeat(capped) + '☆'.repeat(3 - capped);
     }
     const hint = $('#hintBox'); if (!G.hintUsed) hint.hidden = true;
-    $('#btnNext').hidden = !G.solved || G.levelIdx >= LV.length - 1;
+    if (G.mode === 'book') {
+      $('#btnNext').hidden = !G.solved;
+    } else {
+      $('#btnNext').hidden = !G.solved || G.levelIdx >= LV.length - 1;
+    }
   }
 
   function renderLog() {
@@ -457,6 +588,18 @@ function svgMolecule(mol, opt) {
   function renderDots() {
     const dots = $('#levelDots');
     dots.innerHTML = '';
+    if (G.mode === 'book') {
+      BOOK_PUZZLES.forEach((lv, i) => {
+        const d = el('button', 'dot' + (i === G.puzzleIdx ? ' cur' : '')
+          + (typeof G.chapterScores[i] === 'number' ? ' done' : ''));
+        d.type = 'button';
+        d.title = `第 ${G.chapterNo} 章 · 第 ${i + 1} 题${typeof G.chapterScores[i] === 'number' ? '（' + G.chapterScores[i] + ' 分）' : ''}`;
+        d.setAttribute('aria-label', d.title);
+        d.addEventListener('click', () => { closeModals(); startPuzzle(G.bookId, G.chapterNo, i); });
+        dots.appendChild(d);
+      });
+      return;
+    }
     LV.forEach((lv, i) => {
       const p = G.progress[lv.id];
       const d = el('button', 'dot' + (i === G.levelIdx ? ' cur' : '') + (p ? ' done' : ''));
@@ -484,6 +627,48 @@ function svgMolecule(mol, opt) {
     }
   }
 
+  /* 教材章节地图 */
+  function renderBook() {
+    if (!BOOK_API) { $('#bookSub').textContent = '教材数据未加载（book.js 缺失）'; return; }
+    const bk = BOOK_API.BOOK_MAP.get('clayden2e');
+    if (!bk) return;
+    let passedN = 0, totalQ = 0;
+    bk.chapters.forEach(ch => {
+      totalQ += ch.total;
+      if (chapRec(bk.id, ch.no).best >= BOOK_API.PASS_SCORE) passedN++;
+    });
+    const unlocked = BOOK_API.unlockedUpTo(bk.id);
+    $('#bookSub').textContent =
+      `${bk.title} · 共 ${bk.chapters.length} 章 / ${totalQ} 题 · 已通关 ${passedN} 章 · ` +
+      `当前解锁到第 ${unlocked} 章（上一章均分 ≥ ${BOOK_API.PASS_SCORE} 才解锁下一章）`;
+    const grid = $('#chapterGrid');
+    grid.innerHTML = '';
+    bk.chapters.forEach(ch => {
+      const rec = chapRec(bk.id, ch.no);
+      const open = BOOK_API.chapterUnlocked(bk.id, ch.no);
+      const passed = rec.best >= BOOK_API.PASS_SCORE;
+      const b = el('button', 'chap' + (open ? '' : ' locked') + (passed ? ' passed' : ''));
+      b.type = 'button';
+      b.innerHTML = `<span class="chap-no">第 ${ch.no} 章</span>` +
+        `<span class="chap-cn">${escapeHtml(ch.cn)}</span>` +
+        `<span class="chap-en">${escapeHtml(ch.en)}</span>` +
+        `<span class="chap-meta">${ch.total} 题 · ${rec.best ? '最佳 ' + rec.best + ' 分' : '未挑战'}` +
+        `${passed ? ' ✓' : ''}${open ? '' : ' 🔒'}</span>`;
+      b.addEventListener('click', () => {
+        if (!open) {
+          const prev = chapRec(bk.id, ch.no - 1).best;
+          $('#bookSub').textContent =
+            `🔒 第 ${ch.no} 章未解锁：先把第 ${ch.no - 1} 章打到 ${BOOK_API.PASS_SCORE} 分以上（当前 ${prev} 分）。`;
+          sfx.no();
+          return;
+        }
+        closeModals();
+        startChapter(bk.id, ch.no);
+      });
+      grid.appendChild(b);
+    });
+  }
+
   /* ---------------- 弹窗 ---------------- */
   function openModal(id) { const m = $(id); if (m) m.hidden = false; }
   function closeModals() { $$('.modal').forEach(m => m.hidden = true); }
@@ -500,14 +685,56 @@ function svgMolecule(mol, opt) {
     openModal('#winModal');
   }
 
+  /* 教材模式：逐题弹窗 */
+  function showWinBook(score) {
+    const lv = currentLevel();
+    const total = BOOK_PUZZLES.length;
+    const last = G.puzzleIdx >= total - 1;
+    const st = BOOK_API.starsOf(score);
+    const avg = chapterAvg();
+    const cheer = st >= 3 ? '（完美）' : st >= 2 ? '（稳）' : '（还能再优化一步）';
+    $('#winTitle').textContent = `${lv.target.getName()} 合成完成`;
+    $('#winStars').textContent = '★'.repeat(st) + '☆'.repeat(3 - st);
+    $('#winSub').textContent =
+      `本题 ${G.steps} 步（最少 ${G.optimal} 步）→ ${score} 分 · ` +
+      `第 ${G.puzzleIdx + 1}/${total} 题 · 本章均分 ${avg}` +
+      (last ? '' : cheer);
+    $('#winRetry').textContent = '重试本题';
+    $('#winNext').textContent = last ? '章结算 →' : '下一题 →';
+    $('#winNext').hidden = false;
+    G.winAction = last ? 'chapter' : 'next';
+    openModal('#winModal');
+  }
+
   /* ---------------- 事件 ---------------- */
   function bind() {
     $('#btnUndo').addEventListener('click', undo);
     $('#btnHint').addEventListener('click', doHint);
-    $('#btnRestart').addEventListener('click', () => startLevel(G.levelIdx));
-    $('#btnNext').addEventListener('click', () => startLevel(G.levelIdx + 1));
-    $('#winRetry').addEventListener('click', () => { closeModals(); startLevel(G.levelIdx); });
-    $('#winNext').addEventListener('click', () => { closeModals(); startLevel(G.levelIdx + 1); });
+    $('#btnRestart').addEventListener('click', () => restartCurrent());
+    $('#btnNext').addEventListener('click', () => {
+      if (G.mode === 'book') { nextPuzzleOrChapter(); return; }
+      startLevel(G.levelIdx + 1);
+    });
+    $('#winRetry').addEventListener('click', () => {
+      closeModals();
+      if (G.mode === 'book') {
+        if (G.winAction === 'nextChapter' || G.winAction === 'map') { startChapter(G.bookId, G.chapterNo); return; }
+        startPuzzle(G.bookId, G.chapterNo, G.puzzleIdx);
+        return;
+      }
+      startLevel(G.levelIdx);
+    });
+    $('#winNext').addEventListener('click', () => {
+      closeModals();
+      if (G.mode === 'book') {
+        if (G.winAction === 'next') { startPuzzle(G.bookId, G.chapterNo, G.puzzleIdx + 1); return; }
+        if (G.winAction === 'chapter') { finishChapter(); return; }
+        if (G.winAction === 'nextChapter') { startChapter(G.bookId, G.chapterNo + 1); return; }
+        renderBook(); openModal('#bookModal'); return;
+      }
+      startLevel(G.levelIdx + 1);
+    });
+    $('#btnBook').addEventListener('click', () => { renderBook(); openModal('#bookModal'); });
     $('#btnClearLog').addEventListener('click', () => { G.log = []; renderLog(); });
     $('#btnHelp').addEventListener('click', () => openModal('#helpModal'));
     $('#btnSound').addEventListener('click', e => {
@@ -521,7 +748,7 @@ function svgMolecule(mol, opt) {
       if (e.key === 'Escape') closeModals();
       if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
       if (e.key === 'h') doHint();
-      if (e.key === 'r') startLevel(G.levelIdx);
+      if (e.key === 'r') restartCurrent();
       if (/^[1-9]$/.test(e.key)) {
         const o = options(G.mol).filter(o => o.ok)[parseInt(e.key, 10) - 1];
         if (o) applyRxn(o.rxn);
@@ -543,7 +770,7 @@ function svgMolecule(mol, opt) {
       }),
       levels: () => LV.map(l => ({ id: l.id, tier: l.tier, title: l.title, from: l.start.getDescription(), to: l.target.getDescription(), optimal: optSteps(l) })),
       apply: id => { const r = L.RXN_MAP.get(id); return r ? applyRxn(r) : false; },
-      undo, hint: doHint, restart: () => startLevel(G.levelIdx),
+      undo, hint: doHint, restart: () => restartCurrent(),
       goto: n => startLevel(typeof n === 'number' ? n : LV.findIndex(l => l.id === n)),
       set: (c, groups, unsat, rings) => { G.mol = new MOL(c, groups || [], unsat || [], rings || []); renderAll(); return G.mol.getDescription(); },
       win: () => { G.mol = currentLevel().target.clone(); G.steps = G.optimal || 1; finishLevel(); renderAll(); },
@@ -554,7 +781,31 @@ function svgMolecule(mol, opt) {
         const un = Array.isArray(dbl) ? dbl
           : Array.from({ length: Math.max(0, dbl | 0) }, (_, i) => 'C' + (i + 2) + '=C' + (i + 3));
         return new MOL(c, groups || [], un, rings || []);
-      }
+      },
+      book: () => (BOOK_API ? {
+        mode: G.mode, bookId: G.bookId, chapterNo: G.chapterNo, puzzleIdx: G.puzzleIdx,
+        puzzles: BOOK_PUZZLES.length, scores: recordedScores(), avg: chapterAvg(),
+        total: BOOK_API.totalPuzzles(),
+        chapters: BOOK_API.BOOK_MAP.get('clayden2e').chapters.length,
+        unlocked: BOOK_API.unlockedUpTo('clayden2e'),
+        pass: BOOK_API.PASS_SCORE, extraRxns: BOOK_API.EXTRA_REACTION_COUNT, allRxns: RXNS.length
+      } : null),
+      chapter: (no, i) => {
+        const ok = startChapter('clayden2e', no);
+        if (ok && typeof i === 'number') startPuzzle('clayden2e', no, i);
+        renderAll();
+        return !!ok;
+      },
+      bookLevel: () => {
+        if (G.mode !== 'book') return null;
+        const lv = currentLevel();
+        return lv ? {
+          title: lv.title, goal: lv.goal, from: lv.start.getDescription(),
+          to: lv.target.getDescription(), optimal: G.optimal, via: lv.hint
+        } : null;
+      },
+      map: () => { renderBook(); openModal('#bookModal'); return true; },
+      chapNo: n => { const b = BOOK_API.BOOK_MAP.get('clayden2e'); return b && b.chapters[n] ? b.chapters[n] : null; }
     };
   }
 
