@@ -507,18 +507,643 @@
     catalyst: { name: '催化剂床', icon: 'Cat.', note: '催化剂 / 常温', tip: '招式恢复 -20%，伤害 -10%', rate: 1, dmgMul: 0.9, fastRecover: 0.8 }
   };
 
-  /* ─────────────────────────── 角色实例 ─────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════════════════
+   * 战斗内核 2.0 —— 显式伤害管线
+   * --------------------------------------------------------------------------
+   * 旧版把减伤 / 格挡 / 连段 / 护甲 / 持续伤害全塞进一个 damage() 里，
+   * 通道不清、顺序不明、每次都要重新四舍五入、命中容易重复结算。
+   *
+   * 新版把「一次命中」拆成固定顺序的 12 个阶段，每个阶段写入 pack.trace：
+   *   { phase, accepted, reason }
+   * 测试与 debug 面板可以直接断言阶段顺序与每阶段结果。
+   *
+   *   packet      构造伤害包（通道取整，非法值归零）
+   *   hit         命中判定（对局是否结束 / 目标是否还能吃伤害）
+   *   invuln      无敌 / 闪避
+   *   guard       防御判定（攻击高度 × 防御姿态 × 是否在空中 → 查表）
+   *   breakcheck  破防检查（这次格挡会不会把 guardMeter 打空）
+   *   split       通道分解（direct 吃连段衰减/高度/破防/状态乘子，chip 固定比例）
+   *   apply       逐通道应用（每通道单独 clamp 到剩余稳定度，溢出不得串通道）
+   *   meter       削韧 / 气槽结算
+   *   stun        硬直 / 击退 / 浮空计数
+   *   combo       连段计数（只有真正的 direct 命中才计数）
+   *   hitstop     顿帧 / 震屏
+   *   events      事件入队（飘字 / 粒子 / 日志 / 状态）
+   *
+   * 五条通道（任何一条都不能重复计入另一条）：
+   *   direct 普通/技能/超必的直接伤害 —— 吃连段衰减、高度克制、格挡减伤
+   *   chip   格挡时的固定削量 —— 不吃连段衰减，破防时不再额外叠加
+   *   dot    中毒 / 燃烧 / 区域等持续伤害 —— 不吃连段衰减、不计连段、不顿帧
+   *   true   真伤（场景电击等） —— 无视防御值
+   *   self   自伤 / 反噬（超必过载） —— 从攻击方自己身上扣
+   *
+   * 数值：所有乘子写成整数比 { n, d }，每个通道结算只做一次 Math.round，
+   *       关键路径没有 Math.random（随机只出现在 AI 决策，走 mulberry(seed)）。
+   * ══════════════════════════════════════════════════════════════════════════ */
+
+  /* ---------------- 整数比（有理数）运算 ---------------- */
+  /* 伤害数值只在最后一步 round 一次，1000 次重复结算不会漂移。 */
+  function R(n, d) { return { n: n == null ? 1 : n, d: d == null ? 1 : d }; }
+  const R1 = R(1, 1);
+  function rmul() {
+    let n = 1;
+    let d = 1;
+    for (let i = 0; i < arguments.length; i += 1) {
+      const r = arguments[i];
+      if (!r) continue;
+      n *= r.n;
+      d *= r.d;
+    }
+    return R(n, d);
+  }
+  function rapply(amount, r) {
+    if (!r) return Math.round(amount);
+    return Math.round((amount * r.n) / r.d);
+  }
+  function posInt(v) { return v > 0 ? Math.round(v) : 0; }
+
+  /* ---------------- 通道 / 管线阶段 ---------------- */
+  const CHANNELS = ['direct', 'chip', 'dot', 'true', 'self'];
+  const PIPELINE = [
+    'packet', 'hit', 'invuln', 'guard', 'breakcheck', 'split',
+    'apply', 'meter', 'stun', 'combo', 'hitstop', 'events'
+  ];
+
+  /* ---------------- 高度三角：攻击高度 × 防御姿态 × 是否在空中 ----------------
+   * stand  站防    crouch 蹲防    air 空中（一律不可防）
+   * low     下段：只被蹲防挡住
+   * high    中段：只被站防挡住（跳攻 / 空袭）
+   * mid     通防：站防蹲防都能挡
+   * overhead 上段穿透：格挡无效
+   * unblockable 投技 / 不可防御
+   */
+  const HEIGHT_TABLE = {
+    low: { stand: false, crouch: true, air: false, label: '下段（只被蹲防挡）' },
+    high: { stand: true, crouch: false, air: false, label: '中段（只被站防挡）' },
+    mid: { stand: true, crouch: true, air: false, label: '通防' },
+    overhead: { stand: false, crouch: false, air: false, label: '上段穿透（格挡无效）' },
+    unblockable: { stand: false, crouch: false, air: false, label: '不可防御' }
+  };
+
+  function stanceOf(f) {
+    if (!f) return 'air';
+    if (!f.onGround) return 'air';
+    return f.crouch ? 'crouch' : 'stand';
+  }
+  function heightOf(name) { return HEIGHT_TABLE[name] ? name : 'mid'; }
+  /* 查表：返回该高度在该姿态下能否被格挡 */
+  function canBlockHeight(height, stance) {
+    const row = HEIGHT_TABLE[heightOf(height)];
+    return !!row[stance || 'stand'];
+  }
+
+  /* ---------------- 连段衰减：按「本次连段真实命中序号」取值 ----------------
+   * 第 1 hit → COMBO_SCALE[0]，第 2 hit → COMBO_SCALE[1] …
+   * dot / chip / 破防窗口内的追击都不推进序号，也不吃衰减。
+   */
+  const COMBO_RATIOS = COMBO_SCALE.map((v) => R(Math.round(v * 1000), 1000));
+  const COMBO_WINDOW = 70;          // 超过 70 帧没再命中 → 新一轮连段
+  function comboScaleFor(hitIndex) {
+    const idx = clamp(hitIndex - 1, 0, COMBO_RATIOS.length - 1);
+    return COMBO_RATIOS[idx];
+  }
+
+  /* ---------------- 格挡 / 破防数值表 ---------------- */
+  const CHIP_RATIO = R(14, 100);      // 格挡只吃 14% 的固定削量
+  const GUARD_COST_BASE = 6;          // 每招基础削韧
+  const GUARD_COST_PER = R(13, 16);   // 每点伤害 0.8125 削韧
+  const GUARD_COST_MIN = 4;
+  const GUARD_COST_MAX = 48;
+  const BREAK_BONUS = R(15, 10);      // 破防窗口内 direct ×1.5
+  const BREAK_WINDOW = 45;            // 破防窗口（帧）
+  const GUARD_BREAK_STUN = 40;        // 破防硬直
+  const JUGGLE_CHIP = 1;              // 浮空追打超限后只剩的少量削量
+
+  /* ---------------- 全局伤害系数 ----------------
+   * 角色血量在 900–1300 量级（数据区数值，不改），而招式 dmg 仍是旧表的个位数：
+   * 不放大时 60 秒最多打掉四成血，KO 永远不出现、只能靠计时判定收尾，手感很闷。
+   * 2.6 倍后实测「主动进攻 81–92 秒内以 KO 收尾三局两胜」，节奏对得上。
+   * 只作用于「招式产生的伤害」入口（招式 spec / 投技 spec），
+   * 手工构造的 buildPack 不受影响 —— 管线本身的单测因此仍然按原数值断言。
+   */
+  const DMG_SCALE = R(26, 10);
+  function scaleDamage(v) { return rapply(posInt(v), DMG_SCALE); }
+
+  function guardCostFor(dmg, mods) {
+    const raw = GUARD_COST_BASE + rapply(posInt(dmg), GUARD_COST_PER);
+    const scaled = mods && mods.guard ? rapply(raw, mods.guard) : raw;
+    return clamp(scaled, GUARD_COST_MIN, GUARD_COST_MAX);
+  }
+
+  /* ---------------- 气槽收益表（命中 / 被打 / 格挡各一处，集中在此） ---------------- */
+  const METER_TABLE = {
+    attackHit: R(100, 100),    // 攻击方命中：move.meterGain × 1.0
+    attackBlock: R(35, 100),   // 攻击方被格挡：× 0.35
+    takenScale: R(9, 100),     // 受方：伤害 × 0.09
+    takenCap: 6,               // 受方单次上限
+    perfectGuard: 15,
+    guardCancel: 50,
+    throwCost: 25,
+    regen: 0.05,
+    regenTraining: 0.8,
+    regenCold: R(65, 100),
+    regenSi: 2
+  };
+
+  /* ---------------- 场景修正器表（唯一一处应用点） ----------------
+   * 六条场景规则全部落成数据，伤害管线里只查一次表，不再散落 if。
+   *   hot       削弱低温招式        moveMul.cold
+   *   cold      压制放热招式        moveMul.hot + dot 降低
+   *   sealed    限制气体招式        moveMul.gas + 区域持续延长
+   *   electro   带电招式加成        moveMul.charged
+   *   catalyst  降低技能消耗        cost + recover（并略降伤害）
+   *   lab       水槽：普攻破水成水区，钠遇水燃爆 moveMul.ignite
+   */
+  const STAGE_MODS = {
+    lab: {
+      id: 'lab', tag: '水槽 / 空气',
+      direct: R1, chip: R1, dot: R1, guard: R1, meter: R1, zone: R1, cost: R1, recover: R1,
+      moveMul: { ignite: R(125, 100) }, waterSink: true
+    },
+    hot: {
+      id: 'hot', tag: '高温',
+      direct: R1, chip: R1, dot: R1, guard: R1, meter: R1, zone: R1, cost: R1, recover: R1,
+      moveMul: { cold: R(85, 100) }, waterSink: false
+    },
+    sealed: {
+      id: 'sealed', tag: '密闭',
+      direct: R1, chip: R1, dot: R1, guard: R1, meter: R1, zone: R(125, 100), cost: R1, recover: R1,
+      moveMul: { gas: R(80, 100) }, waterSink: false
+    },
+    cold: {
+      id: 'cold', tag: '低温',
+      direct: R1, chip: R1, dot: R(90, 100), guard: R1, meter: R(65, 100), zone: R1, cost: R1, recover: R1,
+      moveMul: { hot: R(85, 100) }, waterSink: false
+    },
+    electro: {
+      id: 'electro', tag: '通电',
+      direct: R1, chip: R1, dot: R1, guard: R1, meter: R1, zone: R1, cost: R1, recover: R1,
+      moveMul: { charged: R(115, 100) }, waterSink: false
+    },
+    catalyst: {
+      id: 'catalyst', tag: '催化',
+      direct: R(90, 100), chip: R(90, 100), dot: R1, guard: R(90, 100), meter: R1, zone: R1,
+      cost: R(85, 100), recover: R(80, 100), moveMul: {}, waterSink: false
+    }
+  };
+  function stageMods(m) { return STAGE_MODS[m && m.stage] || STAGE_MODS.lab; }
+
+  /* 元素属性标签：场景修正器按标签匹配 */
+  const FIGHTER_TAGS = {
+    cold: { N: 1 },
+    hot: { H: 1, Na: 1, Mg: 1, P: 1, K: 1, Ca: 1 },
+    gas: { O: 1, Cl: 1, N: 1, Hg: 1, S: 1, P: 1 },
+    charged: { Cu: 1, Zn: 1, Ag: 1, Na: 1, K: 1, Ca: 1, Mg: 1, Al: 1, Pb: 1, Fe: 1, I: 1 }
+  };
+  const GAS_ZONES = { oxygen: 1, ozone: 1, chlorine: 1, phosphine: 1, h2s: 1, hgvap: 1, i2: 1, agcl: 1, hclo: 1 };
+  const OXIDIZABLE = { C: 1, H: 1, Na: 1, Mg: 1, P: 1 };
+  const WATER_SINK_DUR = 600;
+
+  /* 招式标签：cold / hot / gas / charged / skill / ignite，场景表按标签取乘子 */
+  function moveTags(m, f, move, key) {
+    const tags = [];
+    if (!move) return tags;
+    const k = key || '';
+    if (move.onHit === 'freeze' || FIGHTER_TAGS.cold[f.id]) tags.push('cold');
+    if (move.onHit === 'burn' || FIGHTER_TAGS.hot[f.id]) tags.push('hot');
+    const sp = move.spawn;
+    if (sp && ((sp.type === 'zone' && GAS_ZONES[sp.kind]) || (sp.type === 'proj' && GAS_ZONES[sp.proj]))) tags.push('gas');
+    else if (FIGHTER_TAGS.gas[f.id] && (k === 's1' || k === 's2' || k === 'ult')) tags.push('gas');
+    if (FIGHTER_TAGS.charged[f.id]) tags.push('charged');
+    if (k === 's1' || k === 's2' || k === 'ult') tags.push('skill');
+    if (f.id === 'Na' && move.require === 'water' && m && m.water > 0) tags.push('ignite');
+    return tags;
+  }
+
+  /* ---------------- 伤害包 ---------------- */
+  function buildPack(m, target, attacker, spec) {
+    const s = spec || {};
+    const pack = {
+      channels: {
+        direct: posInt(s.direct),
+        chip: posInt(s.chip),
+        dot: posInt(s.dot),
+        true: posInt(s.true),
+        self: posInt(s.self)
+      },
+      meta: {
+        moveKey: s.moveKey || 'none',
+        height: heightOf(s.height),
+        guard: false,                 // 本包是否被格挡（guard 阶段写回）
+        scaledHit: 0,                 // 本次 direct 用的是第几 hit 的衰减（0 = 未衰减）
+        source: s.source || 'hit',
+        tags: s.tags ? s.tags.slice() : [],
+        breakBonus: false,
+        juggleCapped: false,
+        stage: m ? m.stage : 'lab'
+      },
+      ctx: {
+        hitstun: s.hitstun == null ? 14 : s.hitstun,
+        blockstun: s.blockstun == null ? 9 : s.blockstun,
+        hitstop: s.hitstop == null ? 5 : s.hitstop,
+        kb: s.kb || { x: 3, y: 0 },
+        meterGain: s.meterGain == null ? 6 : s.meterGain,
+        onHit: s.onHit || null,
+        drain: s.drain || 0,
+        markScale: s.markScale || 0,
+        noKb: !!s.noKb,
+        chemical: !!s.chemical,
+        oxidation: !!s.oxidation,
+        flame: !!s.flame,
+        heavy: !!s.heavy,
+        zone: !!s.zone,
+        blockable: s.blockable !== false
+      },
+      trace: []
+    };
+    return pack;
+  }
+
+  function hasZone(m, kind, box) {
+    if (!m || !m.zones) return false;
+    for (let i = 0; i < m.zones.length; i += 1) {
+      const z = m.zones[i];
+      if (z.kind === kind && (!box || rectsOverlap(box, z))) return true;
+    }
+    return false;
+  }
+
+  /* ══════════════════════════ 命中结算管线 ══════════════════════════ */
+  /* 固定顺序，每阶段返回 { phase, accepted, reason }；任一阶段判否即短路。 */
+  function resolveHit(m, target, attacker, pack) {
+    const out = {
+      accepted: false,
+      blocked: false,
+      broke: false,
+      juggled: false,
+      channels: pack.channels,
+      applied: { direct: 0, chip: 0, dot: 0, true: 0, self: 0 },
+      total: 0,
+      hitIndex: 0,
+      combo: attacker ? attacker.combo : 0,
+      phases: pack.trace
+    };
+    const trace = (phase, accepted, reason, extra) => {
+      const rec = { phase, accepted: !!accepted, reason: reason || 'ok' };
+      if (extra) Object.assign(rec, extra);
+      pack.trace.push(rec);
+      return rec.accepted;
+    };
+    const mods = stageMods(m);
+    const ctx = pack.ctx;
+    const meta = pack.meta;
+    const pureSelf = pack.channels.direct + pack.channels.chip + pack.channels.dot + pack.channels.true === 0;
+
+    /* 1) packet ------------------------------------------------------------ */
+    let sumIn = 0;
+    for (let i = 0; i < CHANNELS.length; i += 1) {
+      const k = CHANNELS[i];
+      pack.channels[k] = posInt(pack.channels[k]);
+      sumIn += pack.channels[k];
+    }
+    if (!trace('packet', sumIn > 0, sumIn > 0 ? 'ok' : 'empty', { sum: sumIn })) return out;
+
+    /* 2) hit --------------------------------------------------------------- */
+    if (!trace('hit', !!target && !m.over && !target.ko && target.stable > 0,
+      m.over ? 'match-over' : !target ? 'no-target' : target.ko || target.stable <= 0 ? 'target-down' : 'ok')) {
+      return out;
+    }
+
+    /* 3) invuln ------------------------------------------------------------ */
+    if (target.inv > 0 && !pureSelf) {
+      trace('invuln', false, 'invuln', { inv: target.inv });
+      return out;
+    }
+    trace('invuln', true, pureSelf ? 'self-bypass' : 'ok', { inv: target.inv });
+
+    /* 4) guard：高度 × 姿态 × 空中 查表 ------------------------------------ */
+    const stance = stanceOf(target);
+    const height = meta.height;
+    const facingAttacker = attacker
+      ? sign((attacker.x + attacker.w / 2) - (target.x + target.w / 2)) === target.face
+      : true;
+    const wantsBlock = !!target.blockHeld && target.onGround && target.hitstun <= 0 && target.blockstun <= 0;
+    const canBlock = wantsBlock && facingAttacker && ctx.blockable !== false;
+    const blocked = canBlock && pack.channels.direct > 0 && canBlockHeight(height, stance);
+    meta.guard = blocked;
+    out.blocked = blocked;
+    trace('guard', true, blocked ? 'blocked' : (canBlock ? 'guard-miss:' + height + '/' + stance : 'no-guard'), {
+      height: height, stance: stance, facing: facingAttacker
+    });
+
+    /* 5) breakcheck：这次格挡是否打空防御值 ------------------------------- */
+    const guardCost = guardCostFor(pack.channels.direct > 0 ? pack.channels.direct : pack.channels.chip, mods);
+    const willBreak = blocked && target.guardMeter <= guardCost;
+    const inBreakWindow = target.guardBroken > 0;
+    trace('breakcheck', true, blocked ? (willBreak ? 'break' : 'hold') : 'n/a', {
+      guardCost, willBreak, breakWindow: inBreakWindow
+    });
+
+    /* 6) split：通道分解 --------------------------------------------------- */
+    /* 6a) 钝化膜：吸收一次化学攻击（不格挡时） */
+    if (ctx.chemical && !blocked && !pureSelf && target.buffs.passiveShield > 0) {
+      target.buffs.passiveShield = 0;
+      target.buffs.passive = 0;
+      target.statuses = target.statuses.filter((s) => s.type !== 'passive');
+      for (let i = 0; i < CHANNELS.length; i += 1) pack.channels[CHANNELS[i]] = 0;
+      trace('split', true, 'passive-absorb');
+      out.accepted = true;
+      trace('apply', true, 'absorbed');
+      trace('meter', true, 'noop');
+      trace('stun', true, 'noop');
+      trace('combo', true, 'noop');
+      trace('hitstop', true, 'noop');
+      pushEvents(m, target, attacker, pack, out, 'passive');
+      trace('events', true, 'passive');
+      return out;
+    }
+
+    /* 6b) 格挡时 direct 转成 chip（固定比例，不吃连段衰减、不吃破防加成） */
+    if (blocked) {
+      pack.channels.chip += rapply(pack.channels.direct, CHIP_RATIO);
+      pack.channels.direct = 0;
+    }
+
+    /* 6c) 浮空追打上限：超过 JUGGLE_MAX 后不再有 direct 伤害 */
+    if (pack.channels.direct > 0 && !target.onGround && target.juggle >= JUGGLE_MAX) {
+      pack.channels.chip += JUGGLE_CHIP;
+      pack.channels.direct = 0;
+      out.juggled = true;
+      meta.juggleCapped = true;
+    }
+
+    /* 6d) direct 乘子链：连段衰减 → 场景标签 → 场景通用 → 破防 → 状态 */
+    let ratio = R1;
+    const comboEligible = !meta.juggleCapped && pack.channels.direct > 0 && !blocked;
+    if (comboEligible && attacker && !inBreakWindow) {
+      const fresh = m.frame - (attacker.lastHitFrame == null ? -9999 : attacker.lastHitFrame) <= COMBO_WINDOW;
+      const hitIndex = (fresh ? attacker.combo : 0) + 1;
+      meta.scaledHit = hitIndex;
+      out.hitIndex = hitIndex;
+      ratio = rmul(ratio, comboScaleFor(hitIndex));
+    }
+    if (inBreakWindow && pack.channels.direct > 0) {
+      ratio = rmul(ratio, BREAK_BONUS);        // 破防窗口：追击 ×1.5，且不吃连段衰减
+      meta.breakBonus = true;
+    }
+    if (pack.channels.direct > 0) {
+      for (let i = 0; i < meta.tags.length; i += 1) {
+        const tm = mods.moveMul[meta.tags[i]];
+        if (tm) ratio = rmul(ratio, tm);
+      }
+      ratio = rmul(ratio, mods.direct);
+      if (ctx.zone) ratio = rmul(ratio, mods.zone);
+      if (target.buffs.diamond > 0 && !ctx.chemical && !ctx.oxidation) ratio = rmul(ratio, R(62, 100));
+      if (hasStatus(target, 'oxidation')) ratio = rmul(ratio, R(112, 100));
+      if (ctx.oxidation && OXIDIZABLE[target.id]) ratio = rmul(ratio, R(118, 100));
+      const flame = STAGES[m.stage] && STAGES[m.stage].flame;
+      if (ctx.flame && flame) ratio = rmul(ratio, R(Math.round(flame * 100), 100));
+      if (ctx.flame && hasZone(m, 'oxygen', target)) ratio = rmul(ratio, R(150, 100));
+      if (hasStatus(target, 'freeze')) ratio = rmul(ratio, R(110, 100));
+      if (ctx.markScale) {
+        const mk = markCount(target);
+        if (mk) ratio = rmul(ratio, R(100 + Math.round(mk * ctx.markScale * 100), 100));
+      }
+      pack.channels.direct = posInt(rapply(pack.channels.direct, ratio));
+    }
+    if (pack.channels.chip > 0 && blocked) pack.channels.chip = posInt(rapply(pack.channels.chip, mods.chip));
+    if (pack.channels.dot > 0) pack.channels.dot = posInt(rapply(pack.channels.dot, ctx.zone ? rmul(mods.dot, mods.zone) : mods.dot));
+    meta.ratio = ratio;
+    trace('split', true, 'ok', { direct: pack.channels.direct, chip: pack.channels.chip, scaledHit: meta.scaledHit });
+
+    /* 7) apply：逐通道应用，每通道单独 clamp 到剩余稳定度 ------------------ */
+    const applyOrder = ['direct', 'chip', 'dot', 'true'];
+    for (let i = 0; i < applyOrder.length; i += 1) {
+      const k = applyOrder[i];
+      const amt = pack.channels[k];
+      if (amt <= 0) continue;
+      let left = amt;
+      if (k === 'direct' && !blocked && target.buffs.sacrifice > 0) {
+        const absorb = Math.min(target.buffs.sacrifice, left);
+        target.buffs.sacrifice -= absorb;
+        left -= absorb;
+        if (absorb > 0) {
+          m.numbers.push({
+            x: target.x + target.w / 2, y: target.y + 26,
+            text: '镀层 −' + absorb, life: 38, color: '#9fc8d8', minor: true
+          });
+        }
+      }
+      const room = Math.max(0, target.stable);
+      const applied = Math.min(left, room);
+      out.applied[k] = applied;
+      target.stable = Math.max(0, target.stable - applied);
+    }
+    /* self 通道：从攻击方自己身上扣，同样单独 clamp */
+    if (pack.channels.self > 0 && attacker) {
+      const room = Math.max(0, attacker.stable);
+      const applied = Math.min(pack.channels.self, room);
+      out.applied.self = applied;
+      attacker.stable = Math.max(0, attacker.stable - applied);
+    }
+    out.total = out.applied.direct + out.applied.chip + out.applied.dot + out.applied.true + out.applied.self;
+    if (target.stable <= 0) target.stable = 0;
+    if (target.flash != null) target.flash = 7;
+    trace('apply', true, 'ok', {
+      direct: out.applied.direct, chip: out.applied.chip, dot: out.applied.dot,
+      true: out.applied.true, self: out.applied.self
+    });
+
+    /* 8) meter：削韧 + 气槽 ------------------------------------------------- */
+    if (attacker && attacker !== target) {
+      const baseGain = blocked ? rapply(ctx.meterGain, METER_TABLE.attackBlock) : rapply(ctx.meterGain, METER_TABLE.attackHit);
+      attacker.meter = clamp(attacker.meter + rapply(baseGain, mods.meter), 0, METER_MAX);
+    }
+    const takenAmount = out.applied.direct + out.applied.chip + out.applied.dot + out.applied.true;
+    const takenGain = takenAmount > 0
+      ? Math.min(METER_TABLE.takenCap, Math.max(1,
+        rapply(takenAmount, METER_TABLE.takenScale)))
+      : 0;
+    target.meter = clamp(target.meter + takenGain, 0, METER_MAX);
+    if (blocked) {
+      target.guardMeter = clamp(target.guardMeter - guardCost, 0, GUARD_MAX);
+      /* 完美防御：命中前 3 帧内才按下防御 */
+      if (target.justGuarded > 0) {
+        target.stable = clamp(target.stable + out.applied.chip, 0, target.max);
+        out.applied.chip = 0;
+        target.meter = clamp(target.meter + METER_TABLE.perfectGuard, 0, METER_MAX);
+        target.guardMeter = GUARD_MAX;
+        target.justGuarded = 0;
+        target.perfectGuardFx = 52;
+        logLine(m, '完美防御：削量回补，气槽 +' + METER_TABLE.perfectGuard);
+      }
+    }
+    if (attacker && ctx.drain && !blocked && out.applied.direct > 0) {
+      const heal = Math.round(out.applied.direct * ctx.drain);
+      attacker.stable = clamp(attacker.stable + heal, 0, attacker.max);
+      m.numbers.push({
+        x: attacker.x + attacker.w / 2, y: attacker.y + 4,
+        text: '+' + heal, life: 36, color: '#8fd6c2', minor: true
+      });
+    }
+    trace('meter', true, 'ok', { guardCost: blocked ? guardCost : 0, guardMeter: Math.round(target.guardMeter) });
+
+    /* 9) stun：硬直 / 击退 / 浮空 ------------------------------------------ */
+    const isDot = meta.source === 'dot';
+    const dir = attacker ? sign((attacker.x + attacker.w / 2) - (target.x + target.w / 2)) || 1 : 1;
+    if (blocked) {
+      target.blockstun = Math.max(target.blockstun, ctx.blockstun);
+      if (willBreak) {
+        out.broke = true;
+        target.guardMeter = 0;
+        target.guardBroken = BREAK_WINDOW;
+        target.hitstun = Math.max(target.hitstun, GUARD_BREAK_STUN);
+        target.blockstun = 0;
+        target.blockHeld = false;
+        target.state = 'hitstun';
+        target.stateT = 0;
+        target.action = null;
+        trace('stun', true, 'guard-break', { stun: GUARD_BREAK_STUN });
+        m.numbers.push({
+          x: target.x + target.w / 2, y: target.y - 10,
+          text: '破防 ×1.5', life: 60, color: '#e79a6a'
+        });
+        logLine(m, '破防！防御值归零，硬直 ' + GUARD_BREAK_STUN + ' 帧，破防窗口内追击伤害 ×1.5');
+      } else {
+        trace('stun', true, 'blockstun', { stun: ctx.blockstun });
+      }
+    } else if (!isDot) {
+      if (out.applied.direct + out.applied.chip > 0 || pack.channels.true > 0) {
+        target.hitstun = Math.max(target.hitstun, ctx.hitstun);
+        target.state = 'hitstun';
+        target.stateT = 0;
+        target.action = null;
+        target.hitThisAction = false;
+        target.kb = (ctx.kb && ctx.kb.x ? ctx.kb.x : 3) * dir;
+        if (ctx.kb && ctx.kb.y) target.vy = ctx.kb.y;
+        if (target.buffs.armor > 0) {
+          target.kb *= 0.35;
+          if (ctx.kb && ctx.kb.y) target.vy = ctx.kb.y * 0.3;
+        }
+        if (ctx.noKb) target.kb *= 0.2;
+        if (!target.onGround && !out.juggled) {
+          target.juggle = Math.min(JUGGLE_MAX, target.juggle + 1);
+          if (target.juggle >= JUGGLE_MAX) target.vy = Math.max(target.vy, 1.5);
+        }
+        trace('stun', true, out.juggled ? 'juggle-capped' : 'hitstun', { stun: ctx.hitstun, juggle: target.juggle });
+      } else {
+        trace('stun', true, 'no-damage');
+      }
+    } else {
+      trace('stun', true, 'dot-no-stun');
+    }
+
+    /* 10) combo：只有真正的 direct 命中才推进连段 -------------------------- */
+    if (attacker && attacker !== target && !blocked && !isDot && out.applied.direct > 0 && !inBreakWindow) {
+      attacker.combo = clamp(out.hitIndex || 1, 1, COMBO_CAP);
+      attacker.lastHitFrame = m.frame;
+      out.combo = attacker.combo;
+      if (attacker === m.p) {
+        m.callout = 45;
+        m.calloutText = attacker.combo > 1 ? attacker.combo + ' HITS' : 'HIT';
+      }
+      m.maxCombo = Math.max(m.maxCombo, attacker.combo);
+      m.comboOwner = attacker === m.p ? 'p' : 'e';
+      trace('combo', true, 'counted', { combo: attacker.combo });
+    } else {
+      trace('combo', true, inBreakWindow ? 'break-window' : (blocked ? 'blocked' : isDot ? 'dot' : 'no-hit'));
+    }
+
+    /* 11) hitstop ---------------------------------------------------------- */
+    if (!isDot && (out.applied.direct + out.applied.chip + out.applied.true) > 0) {
+      m.hitstop = Math.max(m.hitstop, ctx.hitstop);
+      m.shake = Math.max(m.shake, ctx.heavy ? 7 : blocked ? 2 : 3);
+      trace('hitstop', true, 'ok', { hitstop: m.hitstop });
+    } else {
+      trace('hitstop', true, 'none');
+    }
+
+    /* 12) events ----------------------------------------------------------- */
+    out.accepted = true;
+    pushEvents(m, target, attacker, pack, out, 'hit');
+    trace('events', true, 'queued', {
+      numbers: m.numbers.length, fx: m.fx.length, log: m.log.length
+    });
+    return out;
+  }
+
+  /* 事件入队：飘字 / 粒子 / 日志 / 命中附加状态 */
+  function pushEvents(m, target, attacker, pack, out, mode) {
+    const ctx = pack.ctx;
+    if (mode === 'passive') {
+      m.numbers.push({
+        x: target.x + target.w / 2, y: target.y + 20,
+        text: '钝化', life: 44, color: '#e9c779', minor: true
+      });
+      logLine(m, '钝化膜吸收一次化学攻击');
+      return;
+    }
+    if (out.applied.direct > 0) {
+      m.numbers.push({
+        x: target.x + target.w / 2, y: target.y + 8,
+        text: String(out.applied.direct), life: 42, color: '#f2d990'
+      });
+      for (let i = 0; i < 10; i += 1) {
+        m.fx.push({
+          x: target.x + target.w / 2, y: target.y + 50,
+          vx: Math.cos(i * 0.63) * (2 + (i % 4)),
+          vy: Math.sin(i * 0.63) * (2 + (i % 3)) - 1,
+          life: 20 + (i % 7), max: 27, color: '#e9c779'
+        });
+      }
+      if (ctx.onHit) applyOnHit(m, target, attacker, ctx.onHit);
+    }
+    if (out.applied.chip > 0) {
+      m.numbers.push({
+        x: target.x + target.w / 2, y: target.y + 12,
+        text: String(out.applied.chip), life: 40, color: '#b8c8a2', minor: true
+      });
+    }
+    if (out.applied.dot > 0) {
+      m.numbers.push({
+        x: target.x + target.w / 2, y: target.y + 30,
+        text: String(out.applied.dot), life: 34, color: '#c9a6f0', minor: true
+      });
+    }
+    if (out.applied.true > 0) {
+      m.numbers.push({
+        x: target.x + target.w / 2, y: target.y + 4,
+        text: String(out.applied.true), life: 40, color: '#8ec9c7'
+      });
+    }
+    if (out.applied.self > 0 && attacker) {
+      m.numbers.push({
+        x: attacker.x + attacker.w / 2, y: attacker.y + 10,
+        text: '反噬 ' + out.applied.self, life: 40, color: '#c98a7a', minor: true
+      });
+    }
+  }
+
+  /* ══════════════════════════ 角色实例 ══════════════════════════ */
+  /* 角色主色（与 art.js palette 首色一致；渲染层读 f.color 时有兜底） */
+  const FIGHTER_COLORS = {
+    H: '#dce9d7', O: '#8ccbc8', Na: '#c2c7b1', Cl: '#bdcc79', C: '#8b9990',
+    Fe: '#b68b71', Mg: '#e2e9e6', Al: '#cfd8dd', Si: '#a9b4bc', P: '#e7e0c6',
+    S: '#efe08a', Cu: '#d9a486', N: '#cfe0ea', K: '#d8d2c8', Ca: '#e6e4dc',
+    Zn: '#cfd6d9', Ag: '#e4e8ea', Hg: '#dfe3e6', Pb: '#c9cdd2', I: '#e3d6ef'
+  };
+
   function makeFighter(id, x, face, isAI) {
     const d = FIGHTERS[id];
     if (!d) throw new Error('unknown fighter ' + id);
-    return {
+    const f = {
       id, name: d.name, sym: d.sym, type: d.type, archetype: d.archetype,
       x, y: GROUND - d.h, w: d.w, h: d.h,
-      vx: 0, vy: 0, face, onGround: true,
+      vx: 0, vy: 0, kb: 0, face, onGround: true,
       max: d.max, stable: d.max, speed: d.speed, jump: d.jump,
-      meter: 0, guardMeter: GUARD_MAX,
+      meter: 0, guardMeter: GUARD_MAX, guardBroken: 0, guardAcc: 0,
       state: 'idle', stateT: 0,
-      action: null, actionPrev: null,
+      action: null, actionPrev: null, canCancelUntil: -1, selfPaidFor: null,
       hitstun: 0, blockstun: 0, hitstop: 0, inv: 0, flash: 0,
       juggle: 0, combo: 0, comboT: 0,
       buffs: { diamond: 0, graphite: 0, fe3: false, passive: 0, passiveShield: 0, armor: 0, sacrifice: 0 },
@@ -526,18 +1151,31 @@
       statuses: [],
       cd: { l: 0, s1: 0, s2: 0, ult: 0 },
       reagents: { water: 2, silver: 1, acid: 2, redox: 4 },
-      isAI, aiMemory: { think: 20, guardTime: 0, move: 0, lastDir: 0, taps: [], want: null },
-      lastHitFrame: -999, hitThisAction: false,
+      isAI, aiMemory: { think: 20, guardTime: 0, move: 0, lastDir: 0, taps: [], want: null, cached: null },
+      lastHitFrame: -9999, hitThisAction: false,
       justGuarded: 0, guardHeld: 0,
       wins: 0, ko: false,
-      lightChain: 0, lightT: 0
+      lightChain: 0, lightT: 0,
+      crouch: false, blockHeld: false, inputHeld: false, inputDir: 0,
+      dashT: 0, tapT: 0, lastTapDir: 0, lastTapFrame: -99,
+      perfectGuardFx: 0,
+      color: FIGHTER_COLORS[id] || '#dce9d7'
     };
+    /* life 是 stable 的渲染别名：HUD / 血条沿用旧字段名 */
+    Object.defineProperty(f, 'life', {
+      enumerable: true,
+      get: function () { return f.stable; },
+      set: function (v) { f.stable = v; }
+    });
+    return f;
   }
 
-  /* ─────────────────────────── 对局实例 ─────────────────────────── */
+  /* ══════════════════════════ 对局实例 ══════════════════════════ */
   function createMatch(opts) {
     opts = opts || {};
-    const pid = opts.p || 'H', eid = opts.e || 'Fe', stage = opts.stage || 'lab';
+    const pid = opts.p || 'H';
+    const eid = opts.e || 'Fe';
+    const stage = opts.stage || 'lab';
     const mode = opts.mode || 'normal';        // easy | normal | hard | training | pvp
     const best = opts.roundsToWin || ROUNDS_TO_WIN;
     const m = {
@@ -547,7 +1185,7 @@
       frame: 0, round: 1, timer: ROUND_SECONDS * FPS,
       best, roundsToWin: best,
       hitstop: 0, shake: 0, over: false, paused: false,
-      winner: null, endReason: '', roundOver: false, roundWinner: null,
+      winner: null, endReason: '', roundOver: false, roundWinner: null, lastRound: null,
       intro: mode === 'training' ? 0 : 70,
       fx: [], numbers: [], zones: [], projectiles: [], log: [],
       water: 0, waterT: 0,
@@ -555,34 +1193,39 @@
       prevIn: { p: emptyInput(), e: emptyInput() },
       seed: opts.seed || 481927,
       rng: null, zapT: 0, callout: 0, calloutText: '',
-      comboOwner: null, maxCombo: 0
+      comboOwner: null, maxCombo: 0,
+      lastBlockReason: ''
     };
     m.rng = mulberry(m.seed);
-    m.p.opp = m.e; m.e.opp = m.p;
+    m.p.opp = m.e;
+    m.e.opp = m.p;
     return m;
   }
 
   function emptyInput() {
-    return { left: false, right: false, up: false, down: false, light: false, s1: false, s2: false, ult: false, block: false, throw: false };
+    return {
+      left: false, right: false, up: false, down: false,
+      light: false, s1: false, s2: false, ult: false, block: false, throw: false
+    };
   }
 
-  /* ─────────────────────────── 小工具 ─────────────────────────── */
+  /* ══════════════════════════ 小工具 ══════════════════════════ */
   function logLine(m, s) { if (!s) return; m.log.unshift(s); if (m.log.length > 80) m.log.length = 80; }
   function addStatus(f, type, dur, pow) {
-    const z = f.statuses.find(s => s.type === type);
+    const z = f.statuses.find((s) => s.type === type);
     if (z) { z.dur = Math.max(z.dur, dur); z.pow = Math.max(z.pow, pow || 1); }
     else f.statuses.push({ type, dur, pow: pow || 1, t: 0 });
   }
-  function hasStatus(f, t) { return f.statuses.some(s => s.type === t && s.dur > 0); }
+  function hasStatus(f, t) { return f.statuses.some((s) => s.type === t && s.dur > 0); }
   /* 银 / 碘的「标记」：可叠加到 5 层，是终式增伤的唯一来源 */
   function addMark(f, n) {
-    const z = f.statuses.find(s => s.type === 'mark');
+    const z = f.statuses.find((s) => s.type === 'mark');
     const add = n || 1;
     if (z) { z.dur = 300; z.pow = Math.min(5, z.pow + add); return z.pow; }
     f.statuses.push({ type: 'mark', dur: 300, pow: Math.min(5, add), t: 0 });
     return Math.min(5, add);
   }
-  function markCount(f) { const z = f.statuses.find(s => s.type === 'mark' && s.dur > 0); return z ? z.pow : 0; }
+  function markCount(f) { const z = f.statuses.find((s) => s.type === 'mark' && s.dur > 0); return z ? z.pow : 0; }
   function rectsOverlap(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
 
   function hurtbox(f) {
@@ -593,54 +1236,71 @@
   }
   function hitboxWorld(f, hb) {
     // hb 以「角色左上角 + 面向」定义：x 表示从角色前缘往前的距离
-    const w = hb.w, y = f.y + hb.y;
+    const w = hb.w;
+    const y = f.y + hb.y;
     const x = f.face > 0 ? f.x + hb.x : f.x + f.w - hb.x - w;
     return { x, y, w, h: hb.h };
   }
+  function isNeutral(f) { return f.hitstun <= 0 && f.blockstun <= 0 && f.state === 'idle'; }
 
-  /* ─────────────────────────── 回合/对局流程 ─────────────────────────── */
+  /* ══════════════════════════ 回合 / 对局流程 ══════════════════════════ */
   function resetRound(m) {
     const keep = { p: m.p.wins, e: m.e.wins, round: m.round };
-    const pid = m.p.id, eid = m.e.id;
-    m.p = makeFighter(pid, 250, 1, false); m.p.wins = keep.p;
-    m.e = makeFighter(eid, 950, -1, m.mode !== 'pvp'); m.e.wins = keep.e;
-    m.p.opp = m.e; m.e.opp = m.p;
+    const pid = m.p.id;
+    const eid = m.e.id;
+    m.p = makeFighter(pid, 250, 1, false);
+    m.p.wins = keep.p;
+    m.e = makeFighter(eid, 950, -1, m.mode !== 'pvp');
+    m.e.wins = keep.e;
+    m.p.opp = m.e;
+    m.e.opp = m.p;
     m.timer = ROUND_SECONDS * FPS;
-    m.hitstop = 0; m.shake = 0; m.zones = []; m.projectiles = []; m.fx = []; m.numbers = [];
-    m.water = 0; m.waterT = 0; m.dashes = []; m.roundOver = false; m.roundWinner = null;
+    m.hitstop = 0; m.shake = 0;
+    m.zones = []; m.projectiles = []; m.fx = []; m.numbers = [];
+    m.water = 0; m.waterT = 0; m.dashes = [];
+    m.roundOver = false; m.roundWinner = null; m.lastRound = null;
     m.frame = 0; m.comboOwner = null; m.maxCombo = 0; m.zapT = 0;
+    m.callout = 0; m.calloutText = '';
     m.round = keep.round;
     if (m.mode !== 'training') m.intro = 70;
   }
 
   function startRound(m) {
     m.intro = m.mode === 'training' ? 0 : 70;
-    m.roundOver = false; m.roundWinner = null;
+    m.roundOver = false;
+    m.roundWinner = null;
   }
 
   function finishRound(m, winner, reason) {
     if (m.roundOver) return;
-    m.roundOver = true; m.roundWinner = winner; m.endReason = reason;
-    m.lastRound = { round: m.round, winner: winner, reason: reason };
-    if (winner === 'p') m.p.wins++;
-    else if (winner === 'e') m.e.wins++;
-    logLine(m, (winner === 'p' ? '你赢下第 ' : winner === 'e' ? '对手赢下第 ' : '第 ') + m.round + ' 回合' + (reason === 'time' ? '（时间到，按稳定度比例判定）' : reason === 'ko' ? '（稳定度归零）' : '（平局）'));
+    m.roundOver = true;
+    m.roundWinner = winner;
+    m.endReason = reason;
+    m.lastRound = { round: m.round, winner, reason };
+    if (winner === 'p') m.p.wins += 1;
+    else if (winner === 'e') m.e.wins += 1;
+    logLine(m,
+      (winner === 'p' ? '你赢下第 ' : winner === 'e' ? '对手赢下第 ' : '第 ') + m.round + ' 回合' +
+      (reason === 'time' ? '（时间到，按稳定度比例判定）' : reason === 'ko' ? '（稳定度归零）' : '（平局）'));
     if (m.p.wins >= m.roundsToWin || m.e.wins >= m.roundsToWin) {
       m.over = true;
       m.winner = m.p.wins > m.e.wins ? 'p' : m.e.wins > m.p.wins ? 'e' : 'draw';
     } else {
-      m.round++;
+      m.round += 1;
       const carry = { p: Math.min(m.p.meter, 50), e: Math.min(m.e.meter, 50) };
       resetRound(m);
-      m.p.meter = carry.p; m.e.meter = carry.e;
+      m.p.meter = carry.p;
+      m.e.meter = carry.e;
       // resetRound 会清空 roundWinner，这里补回本回合判定，供 HUD / 测试读取
-      m.roundWinner = winner; m.endReason = reason;
+      m.roundWinner = winner;
+      m.endReason = reason;
     }
   }
 
-  /* ─────────────────────────── 输入 → 状态机 ─────────────────────────── */
+  /* ══════════════════════════ 输入 → 状态机 ══════════════════════════ */
   function canAct(f) {
-    return !f.ko && f.hitstun <= 0 && f.blockstun <= 0 && f.hitstop <= 0 && f.state !== 'attack' && f.state !== 'knockdown';
+    return !f.ko && f.hitstun <= 0 && f.blockstun <= 0 && f.hitstop <= 0 &&
+      f.state !== 'attack' && f.state !== 'knockdown';
   }
 
   function pickMove(f, key) {
@@ -655,13 +1315,21 @@
     return { move: mv0, idx: 0 };
   }
 
+  /* 气槽消耗：catalyst 场景降低技能消耗（唯一一处应用点） */
+  function moveCost(m, move) {
+    if (!move || !move.meterCost) return 0;
+    const mods = stageMods(m);
+    return Math.max(1, rapply(move.meterCost, mods.cost));
+  }
+
   function moveAllowed(m, f, key, move) {
-    if (move.cost && f.meter < 0) return 'no';
-    if ((key === 'air') && f.onGround) return 'no';
+    if (!move) return 'no';
+    if (key === 'air' && f.onGround) return 'no';
     if ((key === 'cr' || key === 'launch') && !f.onGround) return 'no';
     if (f.cd[key] > 0) return 'cooldown';
-    if (key === 'ult' && f.meter < (move.meterCost || 50)) return 'meter';
-    if (move.meterCost && f.meter < move.meterCost) return 'meter';
+    const cost = moveCost(m, move);
+    if (key === 'ult' && f.meter < (cost || 50)) return 'meter';
+    if (cost && f.meter < cost) return 'meter';
     if (move.reagent && f.reagents[move.reagent] <= 0) return 'reagent';
     if (move.noHot && m.stage === 'hot') return 'stage';
     if (move.require === 'water' && !(m.stage === 'lab' && m.water > 0)) return 'water';
@@ -677,10 +1345,13 @@
       if (f === m.p) m.lastBlockReason = why;
       return false;
     }
-    if (move.meterCost) f.meter = clamp(f.meter - move.meterCost, 0, METER_MAX);
-    if (move.reagent) f.reagents[move.reagent]--;
+    const cost = moveCost(m, move);
+    if (cost) f.meter = clamp(f.meter - cost, 0, METER_MAX);
+    if (move.reagent) f.reagents[move.reagent] -= 1;
     if (key !== 'l') {
-      const rate = (STAGES[m.stage].rate || 1) * (STAGES[m.stage].fastRecover || 1);
+      const mods = stageMods(m);
+      const rec = mods.recover || R1;
+      const rate = (STAGES[m.stage].rate || 1) * (rec.n / rec.d);
       const base = move.startup + move.active + move.recovery;
       f.cd[key] = Math.round(base * (key === 'ult' ? 3 : 1.35) * rate);
     }
@@ -691,8 +1362,10 @@
       hasHit: false, spawned: false,
       chainUsed: false
     };
-    f.state = 'attack'; f.stateT = 0;
+    f.state = 'attack';
+    f.stateT = 0;
     f.hitThisAction = false;
+    f.selfPaidFor = null;
     if (move.dash) { f.vx = f.face * move.dash.vx; f.dashT = move.dash.frames; }
     if (move.inv) f.inv = Math.max(f.inv, move.inv[1]);
     if (move.buff) {
@@ -701,10 +1374,6 @@
       if (move.buff.passive) { f.buffs.passive = move.buff.passive; f.buffs.passiveShield = move.buff.passiveShield || 1; }
       if (move.buff.armor) f.buffs.armor = move.buff.armor;
       if (move.buff.sacrifice) f.buffs.sacrifice = (f.buffs.sacrifice || 0) + move.buff.sacrifice;
-    }
-    if (move.selfDmg) {
-      f.stable = clamp(f.stable - move.selfDmg, 0, f.max);
-      m.numbers.push({ x: f.x + f.w / 2, y: f.y + 10, text: String(move.selfDmg), life: 40, color: '#c98a7a', minor: true });
     }
     if (move.log) logLine(m, move.log);
     if (key === 'l') { f.lightChain = picked.idx + 1; f.lightT = 22; }
@@ -716,154 +1385,85 @@
     const sp = move.spawn;
     if (!sp) return;
     const foe = f.opp;
+    const mods = stageMods(m);
     if (sp.type === 'proj') {
       m.projectiles.push({
-        owner: f, kind: sp.proj, x: f.x + f.w / 2 + f.face * 42, y: f.y + 52,
+        owner: f, kind: sp.proj,
+        x: f.x + f.w / 2 + f.face * 42, y: f.y + 52,
         vx: f.face * sp.spd, life: 150, r: sp.r || 10, dmg: sp.dmg || 0,
         opt: sp.opt || {}, chain: !!sp.chain, hitSet: new Set()
       });
       return;
     }
-    // zone
-    let zx, zy;
-    const dur = Math.round((sp.dur || 120) * (STAGES[m.stage].rate || 1));
+    /* zone */
+    let zx;
+    let zy;
+    const dur = Math.round((sp.dur || 120) * (STAGES[m.stage].rate || 1) * (mods.zone.n / mods.zone.d));
+    const zw = sp.w || 160;
     if (sp.atTarget) {
-      zx = clamp(foe.x + foe.w / 2 - (sp.w || 160) / 2, WALL, STAGE_W - WALL - (sp.w || 160));
+      zx = clamp(foe.x + foe.w / 2 - zw / 2, WALL, STAGE_W - WALL - zw);
       zy = m.ground - (sp.h || 70) - 5;
     } else {
       const ox = sp.ox || 0;
-      zx = f.face > 0 ? f.x + f.w / 2 + ox : f.x + f.w / 2 - ox - (sp.w || 160);
+      zx = f.face > 0 ? f.x + f.w / 2 + ox : f.x + f.w / 2 - ox - zw;
       // 区域一律贴地：底边落在 m.ground，h 为高度，lift 抬升（正数向上）
       zy = m.ground - (sp.h || 160) - (sp.lift || 0);
     }
     m.zones.push({
-      owner: f, kind: sp.kind, x: zx, y: zy, w: sp.w || 160, h: sp.h || 160,
+      owner: f, kind: sp.kind, x: zx, y: zy, w: zw, h: sp.h || 160,
       dur, max: dur, t: 0, dmg: sp.dmg || 0, continuous: !!sp.continuous,
       opt: sp.opt || {}, onEnter: sp.onEnter || null, struck: false, tick: 0
     });
+    if (mods.zone && mods.zone.n !== mods.zone.d) {
+      logLine(m, '密闭反应舱：气体滞留，' + (sp.kind || '区域') + ' 持续 +25%');
+    }
   }
 
-  /* ─────────────────────────── 命中结算 ─────────────────────────── */
+  /* ══════════════════════════ 兼容入口：damage() ══════════════════════════ */
+  /* 老调用方（飞射物 / 区域 / 投技 / 状态 tick）继续走这个入口，
+   * 内部只是「构造伤害包 → 跑管线」，返回实际扣掉的总量。 */
   function damage(m, target, attacker, raw, o) {
-    o = o || {};
-    if (m.over || target.ko) return 0;
-    if (target.inv > 0) return 0;
+    const opt = o || {};
+    const isDot = !!opt.dot;
+    const trueDmg = opt.trueDmg || opt.true || 0;
+    const pack = buildPack(m, target, attacker, {
+      direct: isDot || trueDmg ? 0 : raw,
+      dot: isDot ? raw : 0,
+      true: trueDmg || 0,
+      height: opt.guard || 'mid',
+      moveKey: opt.moveKey || opt.source || 'hit',
+      source: isDot ? 'dot' : 'hit',
+      tags: opt.tags || [],
+      hitstun: opt.hitstun,
+      blockstun: opt.blockstun,
+      hitstop: opt.hitstop,
+      kb: opt.kb,
+      meterGain: opt.meterGain,
+      onHit: opt.onHit,
+      drain: opt.drain,
+      markScale: opt.markScale,
+      noKb: opt.noKb,
+      zone: opt.zone,
+      chemical: opt.chemical,
+      oxidation: opt.oxidation,
+      flame: opt.flame,
+      heavy: opt.heavy,
+      blockable: opt.blockable
+    });
+    return resolveHit(m, target, attacker, pack).total;
+  }
 
-    const dir = attacker ? sign(attacker.x + attacker.w / 2 - (target.x + target.w / 2)) : 1;
-    // 目标必须“面向攻击者”，否则背对时不吃格挡收益
-    const facingAttacker = attacker ? sign(attacker.x + attacker.w / 2 - (target.x + target.w / 2)) === target.face : true;
+  /* 场景电击 / 强制真伤：无视防御值与格挡 */
+  function trueDamage(m, target, amount, source) {
+    const pack = buildPack(m, target, null, { true: amount, source: source || 'true', moveKey: 'true' });
+    return resolveHit(m, target, null, pack).total;
+  }
 
-    // 防御判定：站防吃 high/mid，蹲防吃 low/mid，空中不可防
-    let blocked = false;
-    const wantBlock = target.blockHeld && target.onGround && target.hitstun <= 0;
-    if (wantBlock && o.guard !== 'unblockable') {
-      const lvl = o.guard || 'mid';
-      if (lvl === 'mid') blocked = true;
-      else if (lvl === 'high') blocked = !target.crouch;
-      else if (lvl === 'low') blocked = target.crouch;
-      // 必须面向攻击者
-      if (blocked && attacker && !facingAttacker) blocked = false;
-    }
-
-    let mul = 1;
-    if (blocked) mul *= 0.14;                                  // 格挡只吃 14% 削量
-    if (target.buffs.diamond && !o.chemical && !o.oxidation) mul *= 0.62;
-    if (hasStatus(target, 'oxidation')) mul *= 1.12;
-    if (o.oxidation && (target.id === 'C' || target.id === 'H' || target.id === 'Na' || target.id === 'Mg' || target.id === 'P')) mul *= 1.18;
-    if (o.flame && STAGES[m.stage].flame) mul *= STAGES[m.stage].flame;
-    if (o.oxidation && STAGES[m.stage].cold) mul *= 0.8;
-    if (o.flame && m.zones.some(z => z.kind === 'oxygen' && rectsOverlap(target, z))) mul *= 1.5;
-    mul *= STAGES[m.stage].dmgMul || 1;
-    if (hasStatus(target, 'freeze')) mul *= 1.10;                     // 低温脆化：受击更疼
-    if (o.markScale) { const mk = markCount(target); if (mk) mul *= 1 + mk * o.markScale; }
-
-    // 连段衰减
-    if (!blocked && attacker && attacker.combo > 0) {
-      const idx = clamp(attacker.combo, 0, COMBO_SCALE.length - 1);
-      mul *= COMBO_SCALE[idx];
-    }
-
-    // 钝化膜吸收一次化学攻击
-    if (target.buffs.passiveShield > 0 && (o.chemical || o.corrosive || o.oxidation) && !blocked) {
-      target.buffs.passiveShield = 0;
-      target.buffs.passive = 0;
-      target.statuses = target.statuses.filter(s => s.type !== 'passive');
-      m.numbers.push({ x: target.x + target.w / 2, y: target.y + 20, text: '钝化', life: 44, color: '#e9c779' });
-      logLine(m, '钝化膜吸收一次化学攻击');
-      return 0;
-    }
-
-    let actual = Math.min(target.stable, Math.max(0, raw * mul));
-    // 镀锌牺牲层：优先扣护盾，扣完才吃稳定度（不格挡时才生效）
-    if (!blocked && target.buffs.sacrifice > 0) {
-      const absorb = Math.min(target.buffs.sacrifice, actual);
-      target.buffs.sacrifice -= absorb; actual -= absorb;
-      m.numbers.push({ x: target.x + target.w / 2, y: target.y + 26, text: '镀层 −' + Math.round(absorb), life: 38, color: '#9fc8d8' });
-    }
-    target.stable = clamp(target.stable - actual, 0, target.max);
-    target.flash = 7;
-
-    if (attacker) attacker.meter = clamp(attacker.meter + (blocked ? (o.meterGain || 6) * 0.35 : (o.meterGain || 6)), 0, METER_MAX);
-    if (target.meter < METER_MAX) target.meter = clamp(target.meter + Math.min(6, actual * 0.09), 0, METER_MAX);
-    if (attacker && o.drain && !blocked && actual > 0) {
-      const heal = actual * o.drain;
-      attacker.stable = clamp(attacker.stable + heal, 0, attacker.max);
-      m.numbers.push({ x: attacker.x + attacker.w / 2, y: attacker.y + 4, text: '+' + Math.round(heal), life: 36, color: '#8fd6c2' });
-    }
-
-    if (blocked) {
-      target.blockstun = Math.max(target.blockstun, o.blockstun || 9);
-      target.guardMeter = clamp(target.guardMeter - GUARD_CHIP, 0, GUARD_MAX);
-      m.hitstop = Math.max(m.hitstop, 2);
-      m.shake = Math.max(m.shake, 2);
-      m.numbers.push({ x: target.x + target.w / 2, y: target.y + 12, text: String(Math.round(actual)), life: 40, color: '#b8c8a2', minor: true });
-      // 完美防御：命中前 3 帧内才按下防御
-      if (target.justGuarded > 0) {
-        target.stable = clamp(target.stable + actual * 0.9, 0, target.max);
-        target.meter = clamp(target.meter + 15, 0, METER_MAX);
-        target.guardMeter = GUARD_MAX;
-        m.numbers.push({ x: target.x + target.w / 2, y: target.y - 6, text: '完美防御', life: 52, color: '#8fd6c2' });
-        logLine(m, '完美防御：削量回补 + 气槽 +15');
-        target.justGuarded = 0;
-      }
-      if (target.guardMeter <= 0) {
-        target.guardMeter = GUARD_MAX;
-        target.hitstun = 40; target.state = 'hitstun'; target.blockHeld = false;
-        m.numbers.push({ x: target.x + target.w / 2, y: target.y - 10, text: '破防', life: 60, color: '#e79a6a' });
-        logLine(m, '破防！防御值归零，硬直 40 帧');
-      }
-    } else if (!o.dot) {
-      target.hitstun = Math.max(target.hitstun, o.hitstun || 14);
-      target.state = 'hitstun'; target.stateT = 0;
-      target.action = null;
-      target.kb = (o.kb && o.kb.x ? o.kb.x : 3) * dir;
-      if (o.kb && o.kb.y) target.vy = o.kb.y;
-      if (target.buffs.armor > 0) { target.kb *= 0.35; if (o.kb && o.kb.y) target.vy = o.kb.y * 0.3; }
-      if (o.noKb) target.kb *= 0.2;
-      if (attacker) {
-        // 持续伤害（dot / 区域 tick）不计入连段，避免被每 18 帧的沼泽刷成几十 hit
-        if (!o.dot) {
-          attacker.combo = (m.frame - attacker.lastHitFrame < 70) ? Math.min(COMBO_CAP, attacker.combo + 1) : 1;
-          attacker.lastHitFrame = m.frame;
-        }
-        if (attacker === m.p && !o.dot) {
-          m.callout = 45;
-          m.calloutText = attacker.combo > 1 ? attacker.combo + ' HITS' : 'HIT';
-        }
-        if (!o.dot) m.maxCombo = Math.max(m.maxCombo, attacker.combo);
-      }
-      m.hitstop = Math.max(m.hitstop, o.hitstop || 5);
-      m.shake = Math.max(m.shake, o.heavy ? 7 : 3);
-      m.numbers.push({ x: target.x + target.w / 2, y: target.y + 8, text: String(Math.round(actual)), life: 42, color: '#f2d990' });
-      // 浮空追打计数（上限 JUGGLE_MAX，超出后不再抬升、下落加速）
-      if (!target.onGround) {
-        target.juggle = Math.min(JUGGLE_MAX + 1, target.juggle + 1);
-        if (target.juggle > JUGGLE_MAX) { target.vy = Math.min(target.vy, 2); target.juggle = JUGGLE_MAX + 1; }
-      }
-      if (o.onHit) applyOnHit(m, target, attacker, o.onHit);
-      for (let i = 0; i < 10; i++) m.fx.push({ x: target.x + target.w / 2, y: target.y + 50, vx: Math.cos(i * 0.63) * (2 + i % 4), vy: Math.sin(i * 0.63) * (2 + i % 3) - 1, life: 20 + i % 7, max: 27, color: '#e9c779' });
-    }
-    return actual;
+  /* 自伤 / 反噬：只走 self 通道，从自己身上扣 */
+  function selfDamage(m, f, amount, source) {
+    if (!(amount > 0)) return 0;
+    const pack = buildPack(m, f, f, { self: amount, source: source || 'self', moveKey: 'self' });
+    return resolveHit(m, f, f, pack).applied.self;
   }
 
   function applyOnHit(m, target, attacker, kind) {
@@ -876,50 +1476,101 @@
     if (kind === 'mark') addMark(target, 1);
   }
 
-  /* ─────────────────────────── 每帧：角色推进 ─────────────────────────── */
+  /* ══════════════════════════ 水槽（lab 场景规则） ══════════════════════════ */
+  /* 普攻（站/蹲/冲刺轻击）挥到水面 → 水槽破裂，留下水区；
+   * 钠系「遇水燃爆」因此可用，命中水区时再吃 ignite 乘子。 */
+  function maybeBreakSink(m, f, a) {
+    const mods = stageMods(m);
+    if (!mods.waterSink) return;
+    if (m.water > 0) return;
+    if (!(a.key === 'l' || a.key === 'cr' || a.key === 'dash')) return;
+    if (a.phase !== 'active') return;
+    const zw = 180;
+    const zh = 90;
+    const zx = clamp(f.x + f.w / 2 + f.face * 40 - zw / 2, WALL, STAGE_W - WALL - zw);
+    m.water = WATER_SINK_DUR;
+    m.waterT = 0;
+    m.zones.push({
+      owner: f, kind: 'water', x: zx, y: m.ground - zh, w: zw, h: zh,
+      dur: WATER_SINK_DUR, max: WATER_SINK_DUR, t: 0, dmg: 0, continuous: false,
+      opt: {}, onEnter: null, struck: true, tick: 0
+    });
+    m.numbers.push({
+      x: zx + zw / 2, y: m.ground - zh - 12,
+      text: '水槽破裂 · 水区', life: 52, color: '#8fd6c2', minor: true
+    });
+    logLine(m, '普攻击破水槽：形成水区，钠系「遇水燃爆」可用。');
+  }
+
+  /* ══════════════════════════ 每帧：角色推进 ══════════════════════════ */
   function updateAction(m, f) {
     const a = f.action;
     if (!a) return;
-    a.age++;
-    const { startup, active, recovery } = a.frames;
+    a.age += 1;
+    const fr = a.frames;
 
-    if (a.age <= startup) a.phase = 'startup';
-    else if (a.age <= startup + active) a.phase = 'active';
+    if (a.age <= fr.startup) a.phase = 'startup';
+    else if (a.age <= fr.startup + fr.active) a.phase = 'active';
     else a.phase = 'recovery';
 
-    // 位移
-    if (a.move.dash && f.dashT > 0) { f.dashT--; f.vx = f.face * a.move.dash.vx; }
+    /* 位移 */
+    if (a.move.dash && f.dashT > 0) { f.dashT -= 1; f.vx = f.face * a.move.dash.vx; }
 
-    // 生成物
-    if (a.move.spawn && !a.spawned && a.age >= a.move.spawn.at) { a.spawned = true; spawnFromMove(m, f, a.move); }
+    /* 超必过载：self 通道在起手结束时一次性结算（也走管线） */
+    if (a.move.selfDmg && f.selfPaidFor !== a && a.age >= Math.max(1, fr.startup)) {
+      f.selfPaidFor = a;
+      selfDamage(m, f, a.move.selfDmg, 'overload');
+    }
 
-    // 判定
+    /* 生成物 */
+    if (a.move.spawn && !a.spawned && a.age >= a.move.spawn.at) {
+      a.spawned = true;
+      spawnFromMove(m, f, a.move);
+    }
+
+    /* 场景：lab 水槽 */
+    maybeBreakSink(m, f, a);
+
+    /* 判定：每次出招只结算一次（hasHit 锁） */
     if (a.phase === 'active' && a.move.hitbox && !a.hasHit) {
       const hb = hitboxWorld(f, a.move.hitbox);
       const foe = f.opp;
       if (rectsOverlap(hb, hurtbox(foe))) {
         a.hasHit = true;
-        const dealt = damage(m, foe, f, a.move.dmg, {
-          guard: a.move.guard, hitstun: a.move.hitstun, blockstun: a.move.blockstun,
-          hitstop: a.move.hitstop, kb: a.move.kb, meterGain: a.move.meterGain,
-          chemical: true, heavy: (a.move.hitstop || 0) >= 6,
-          onHit: a.move.onHit === 'burn' ? 'burn' : a.move.onHit
+        const move = a.move;
+        const pack = buildPack(m, foe, f, {
+          direct: scaleDamage(move.dmg),
+          height: move.guard,
+          moveKey: a.key,
+          source: 'move',
+          tags: moveTags(m, f, move, a.key),
+          hitstun: move.hitstun,
+          blockstun: move.blockstun,
+          hitstop: move.hitstop,
+          kb: move.kb,
+          meterGain: move.meterGain,
+          onHit: move.onHit,
+          drain: move.drain,
+          markScale: move.markScale,
+          noKb: move.noKb,
+          chemical: !!move.onHit,
+          heavy: (move.hitstop || 0) >= 6
         });
-        if (dealt > 0) {
-          // 命中后取消窗口
-          if (a.move.cancelInto.length) f.canCancelUntil = m.frame + 12;
-        }
+        const res = resolveHit(m, foe, f, pack);
+        if (res.accepted && move.cancelInto.length) f.canCancelUntil = m.frame + 12;
       }
     }
 
-    if (a.age >= startup + active + recovery) {
-      f.action = null; f.state = f.onGround ? 'idle' : 'jump'; f.stateT = 0;
+    if (a.age >= fr.startup + fr.active + fr.recovery) {
+      f.action = null;
+      f.state = f.onGround ? 'idle' : 'jump';
+      f.stateT = 0;
       f.dashT = 0;
     }
   }
 
   function updateFighter(m, f, other) {
-    // 计时器
+    /* 计时器 */
     for (const k of ['l', 's1', 's2', 'ult']) f.cd[k] = Math.max(0, f.cd[k] - 1);
     f.inv = Math.max(0, f.inv - 1);
     f.flash = Math.max(0, f.flash - 1);
@@ -927,34 +1578,49 @@
     f.hitstun = Math.max(0, f.hitstun - 1);
     f.blockstun = Math.max(0, f.blockstun - 1);
     f.justGuarded = Math.max(0, f.justGuarded - 1);
-    if (f.lightT > 0) { f.lightT--; if (f.lightT === 0) f.lightChain = 0; }
-    if (f.buffs.diamond > 0) f.buffs.diamond--;
-    if (f.buffs.graphite > 0) f.buffs.graphite--;
-    if (f.buffs.passive > 0) { f.buffs.passive--; if (f.buffs.passive === 0) f.buffs.passiveShield = 0; }
-    if (f.buffs.armor > 0) f.buffs.armor--;
+    if (f.perfectGuardFx > 0) f.perfectGuardFx -= 1;
+    if (f.lightT > 0) { f.lightT -= 1; if (f.lightT === 0) f.lightChain = 0; }
+    if (f.buffs.diamond > 0) f.buffs.diamond -= 1;
+    if (f.buffs.graphite > 0) f.buffs.graphite -= 1;
+    if (f.buffs.passive > 0) { f.buffs.passive -= 1; if (f.buffs.passive === 0) f.buffs.passiveShield = 0; }
+    if (f.buffs.armor > 0) f.buffs.armor -= 1;
     if (!hasStatus(f, 'passive')) f.buffs.passiveShield = Math.min(f.buffs.passiveShield, 1);
-    f.guardMeter = clamp(f.guardMeter + GUARD_REGEN, 0, GUARD_MAX);
-    f.meter = clamp(f.meter + (m.mode === 'training' ? 0.8 : 0.05) * (STAGES[m.stage].cold ? 0.65 : 1) * (f.id === 'Si' ? 2 : 1), 0, METER_MAX);
-    if (f.shakeT > 0) f.shakeT--;
 
-    // 状态伤害
+    /* 破防窗口 */
+    if (f.guardBroken > 0) {
+      f.guardBroken -= 1;
+      if (f.guardBroken === 0) { f.guardMeter = GUARD_MAX; logLine(m, '防御值恢复：破防窗口结束'); }
+    } else {
+      f.guardMeter = clamp(f.guardMeter + GUARD_REGEN, 0, GUARD_MAX);
+    }
+
+    /* 气槽自然回复 */
+    const mods = stageMods(m);
+    const regenBase = m.mode === 'training' ? METER_TABLE.regenTraining : METER_TABLE.regen;
+    const meterRatio = mods.meter ? mods.meter.n / mods.meter.d : 1;
+    const regen = regenBase * (f.id === 'Si' ? METER_TABLE.regenSi : 1) * meterRatio;
+    f.meter = clamp(f.meter + regen, 0, METER_MAX);
+
+    /* 状态：持续时间伤害（dot 通道：不计连段、不顿帧、不产生硬直） */
     for (const s of f.statuses) {
-      s.dur--; s.t++;
+      s.dur -= 1;
+      s.t += 1;
       if ((s.type === 'corrosion' || s.type === 'poison') && s.t >= 30) {
         s.t = 0;
-        damage(m, f, null, 2.5 * s.pow, { chemical: true, dot: true });
+        const tick = Math.max(1, Math.round((s.pow * 5) / 2));
+        damage(m, f, null, tick, { chemical: true, dot: true, source: 'status' });
       }
     }
-    f.statuses = f.statuses.filter(s => s.dur > 0);
+    f.statuses = f.statuses.filter((s) => s.dur > 0);
 
     if (f.ko) return;
 
-    // 物理
+    /* 物理 */
     const slow = (hasStatus(f, 'precip') ? 0.55 : 1) * (hasStatus(f, 'freeze') ? 0.62 : 1);
-    const cold = STAGES[m.stage].cold ? 0.88 : 1;
+    const coldMul = STAGES[m.stage].cold ? 0.88 : 1;
     const gmul = f.buffs.graphite > 0 ? 1.3 : 1;
     if (f.state !== 'attack' && f.hitstun <= 0 && f.blockstun <= 0) {
-      const speed = f.speed * slow * cold * gmul;
+      const speed = f.speed * slow * coldMul * gmul;
       const dir = f.inputHeld ? (f.inputDir || 0) : 0;
       const target = f.blockHeld || f.crouch ? 0 : dir * speed;
       f.vx += (target - f.vx) * 0.4;
@@ -981,11 +1647,11 @@
     }
     f.x = clamp(f.x, WALL, STAGE_W - WALL - f.w);
 
-    // 状态机
+    /* 状态机 */
     if (f.hitstun > 0) { f.state = 'hitstun'; f.action = null; }
-    else if (f.blockstun > 0) { f.state = 'block'; }
+    else if (f.blockstun > 0) { f.state = 'blockstun'; }
     else if (f.state === 'knockdown') {
-      f.stateT++;
+      f.stateT += 1;
       if (f.stateT >= 14) { f.state = 'idle'; f.stateT = 0; f.inv = Math.max(f.inv, 6); }
     } else if (f.action) {
       updateAction(m, f);
@@ -1002,62 +1668,80 @@
     }
   }
 
-  /* ─────────────────────────── 每帧：生成物 ─────────────────────────── */
+  /* 连段窗口：对手回到中立（hitstun<=0 && blockstun<=0 && state==='idle'）时清零 */
+  function updateComboWindow(m) {
+    const both = [m.p, m.e];
+    for (let i = 0; i < both.length; i += 1) {
+      const f = both[i];
+      if (f.combo <= 0) continue;
+      const o = f.opp;
+      const oppNeutral = o.hitstun <= 0 && o.blockstun <= 0 && o.state === 'idle';
+      const timeout = m.frame - f.lastHitFrame > COMBO_WINDOW;
+      if (oppNeutral || timeout) f.combo = 0;
+    }
+    if (isNeutral(m.p) && isNeutral(m.e)) m.comboOwner = null;
+  }
+
+  /* ══════════════════════════ 每帧：生成物 ══════════════════════════ */
   function updateProjectiles(m) {
     for (const p of m.projectiles) {
-      p.x += p.vx; p.life--;
+      p.x += p.vx;
+      p.life -= 1;
       const foe = p.owner.opp;
       const box = { x: p.x - p.r, y: p.y - p.r, w: p.r * 2, h: p.r * 2 };
       if (!p.hitSet.has(foe) && rectsOverlap(box, hurtbox(foe))) {
         p.hitSet.add(foe);
-        const dealt = damage(m, foe, p.owner, p.dmg, Object.assign({ guard: 'mid', hitstun: 16, blockstun: 10, hitstop: 4, kb: { x: 3 }, meterGain: 8 }, p.opt));
+        const tags = moveTags(m, p.owner, { spawn: { type: 'proj', proj: p.kind } }, 's2');
+        const dealt = damage(m, foe, p.owner, p.dmg, Object.assign({
+          guard: 'mid', hitstun: 16, blockstun: 10, hitstop: 4,
+          kb: { x: 3 }, meterGain: 8, source: 'proj', tags
+        }, p.opt));
         if (dealt > 0) {
           if (p.opt.oxidation) addStatus(foe, 'oxidation', 180, 1);
-          if (p.chain) p.life = Math.max(p.life, 20); // 导电：还能再传导一次
+          if (p.chain) p.life = Math.max(p.life, 20);   // 导电：还能再传导一次
           else p.life = 0;
         }
       }
     }
-    m.projectiles = m.projectiles.filter(p => p.life > 0 && p.x > -80 && p.x < STAGE_W + 80);
+    m.projectiles = m.projectiles.filter((p) => p.life > 0 && p.x > -80 && p.x < STAGE_W + 80);
   }
 
   function updateZones(m) {
     for (const z of m.zones) {
-      z.dur--; z.t++;
+      z.dur -= 1;
+      z.t += 1;
+      if (!(z.dmg > 0)) continue;          // 水区等纯功能区域不结算伤害
       const foe = z.owner.opp;
       const inside = rectsOverlap(hurtbox(foe), z);
-      if (inside && foe.inv <= 0) {
-        if (z.continuous) {
-          if (z.t >= 18) {
-            z.t = 0;
-            damage(m, foe, z.owner, z.dmg, Object.assign({ guard: 'mid', hitstun: 0, blockstun: 6, hitstop: 2, kb: { x: 0 }, dot: true, meterGain: 3 }, z.opt));
-            if (z.onEnter) applyOnHit(m, foe, z.owner, z.onEnter);
-          }
-        } else if (!z.struck) {
-          z.struck = true;
-          damage(m, foe, z.owner, z.dmg, Object.assign({ guard: 'mid', hitstun: 18, blockstun: 12, hitstop: 5, kb: { x: 4 }, meterGain: 8 }, z.opt));
+      if (!inside || foe.inv > 0) continue;
+      if (z.continuous) {
+        if (z.t >= 18) {
+          z.t = 0;
+          damage(m, foe, z.owner, z.dmg, Object.assign({
+            guard: 'mid', hitstun: 0, blockstun: 6, hitstop: 2,
+            kb: { x: 0 }, dot: true, meterGain: 3, source: 'zone', zone: true
+          }, z.opt));
           if (z.onEnter) applyOnHit(m, foe, z.owner, z.onEnter);
         }
+      } else if (!z.struck) {
+        z.struck = true;
+        damage(m, foe, z.owner, z.dmg, Object.assign({
+          guard: 'mid', hitstun: 18, blockstun: 12, hitstop: 5,
+          kb: { x: 4 }, meterGain: 8, source: 'zone', zone: true
+        }, z.opt));
+        if (z.onEnter) applyOnHit(m, foe, z.owner, z.onEnter);
       }
     }
-    m.zones = m.zones.filter(z => z.dur > 0);
+    m.zones = m.zones.filter((z) => z.dur > 0);
   }
 
-  /* ─────────────────────────── 输入应用 ─────────────────────────── */
-  function doubleTap(f, dir) {
-    const now = f.aiMemory ? f.aiMemory : (f.aiMemory = { taps: [] });
-    now.taps = now.taps.filter(t => t.dir === dir && now.frameStamp - t.at < 16);
-    now.taps.push({ dir, at: now.frameStamp });
-    if (now.taps.length >= 2) { now.taps = []; return true; }
-    return false;
-  }
-
+  /* ══════════════════════════ 输入应用 ══════════════════════════ */
   function applyInput(m, f, inp) {
     const prev = m.prevIn[f === m.p ? 'p' : 'e'] || emptyInput();
     f.inputHeld = true;
     const dir = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
     f.inputDir = dir;
-    // 朝向：始终面向对手（出招中锁定朝向，避免判定翻转）
+    /* 朝向：始终面向对手（出招中锁定朝向，避免判定翻转） */
     const wantFace = sign(f.opp.x - f.x);
     if (wantFace !== 0 && !f.action) f.face = wantFace;
 
@@ -1065,44 +1749,50 @@
     f.blockHeld = !!inp.block && f.onGround && f.hitstun <= 0 && f.blockstun <= 0 && !f.action;
     if (f.blockHeld && !prev.block) f.justGuarded = 3;      // 起防后 3 帧内命中 → 完美防御
 
-    // 跳跃
+    /* 跳跃 */
     if (inp.up && !prev.up && f.onGround && !f.action && f.hitstun <= 0 && f.blockstun <= 0) {
-      f.vy = -f.jump; f.onGround = false; f.state = 'jump';
+      f.vy = -f.jump;
+      f.onGround = false;
+      f.state = 'jump';
       if (dir !== 0) f.vx = dir * f.speed * 0.9;
     }
 
-    // 双击前冲/后撤
-    if (dir !== 0 && prev.__dir !== dir) {
-      if (!f.tapTrack) f.tapTrack = { dir: 0, at: -99 };
-      if (f.tapTrack.dir === dir && m.frame - f.tapTrack.at < 15) {
-        f.vx = dir * 14; f.inv = Math.max(f.inv, 10); f.dashT = 10;
-        // 位移不再弹「前冲/后撤」文字（那是调试字样），改为残影 + 气流线特效
-        m.dashes.push({ x: f.x + f.w / 2, y: f.y, face: f.face, dir, life: 20, max: 20, side: f === m.p ? 'p' : 'e' });
-        f.tapTrack.at = -99;
-      } else f.tapTrack = { dir, at: m.frame };
+    /* 双击前冲 / 后撤 */
+    if (dir !== 0 && prev.inputDir !== dir) {
+      if (f.lastTapDir === dir && m.frame - f.lastTapFrame < 15) {
+        f.vx = dir * 14;
+        f.inv = Math.max(f.inv, 10);
+        f.dashT = 10;
+        m.dashes.push({
+          x: f.x + f.w / 2, y: f.y, face: f.face, dir,
+          life: 20, max: 20, side: f === m.p ? 'p' : 'e'
+        });
+        f.lastTapFrame = -99;
+      } else {
+        f.lastTapDir = dir;
+        f.lastTapFrame = m.frame;
+      }
     }
-    f.tapTrack && (prev.__dir = dir);
 
     if (f.hitstun > 0 || f.blockstun > 0 || f.state === 'knockdown') return;
 
-    // 取消窗口内允许出必杀
-    const canActNow = !f.action || (f.canCancelUntil && m.frame <= f.canCancelUntil);
+    /* 取消窗口内允许出必杀 */
+    const canActNow = !f.action || (f.canCancelUntil >= 0 && m.frame <= f.canCancelUntil);
 
-    // 轻攻击：按环境自动分派（地面连段 / 下蹲低段 / 空中中段 / 冲刺突进）
-    // 投技：防御 + 轻攻击同按（近身）—— 必须优先于普通轻攻击，否则永远进不到这个分支。
-    // 兼容两种来源：game.js 会把 block+light 归一成 inp.throw（保留 light 不清零），逻辑层也能直接判 block+light。
+    /* 投技：防御 + 轻攻击同按（近身），必须优先于普通轻击 */
     const wantThrow = !!inp.throw || (inp.light && !prev.light && canActNow && inp.block && f.onGround);
-    if (wantThrow && canActNow && f.onGround && f.hitstun <= 0 && f.blockstun <= 0) {
+    if (wantThrow && canActNow && f.onGround) {
       const td = Math.abs((f.opp.x + f.opp.w / 2) - (f.x + f.w / 2));
       if (td < 70 && doThrow(m, f)) return;
     }
+    /* 轻攻击：按环境自动分派（地面连段 / 下蹲低段 / 空中中段 / 冲刺突进） */
     if (inp.light && !prev.light && canActNow) {
       if (!f.onGround) startAction(m, f, 'air');
       else if (f.crouch) startAction(m, f, 'cr');
       else if ((f.dashT || 0) > 0) startAction(m, f, 'dash');
       else startAction(m, f, 'l');
     }
-    // 上挑：下 + 技能Ⅰ；其余情况仍是技能Ⅰ
+    /* 上挑：下 + 技能Ⅰ；其余情况仍是技能Ⅰ */
     if (inp.s1 && !prev.s1 && canActNow) {
       if (inp.down && f.onGround) startAction(m, f, 'launch');
       else startAction(m, f, 's1');
@@ -1110,11 +1800,17 @@
     if (inp.s2 && !prev.s2 && canActNow) startAction(m, f, 's2');
     if (inp.ult && !prev.ult && canActNow) startAction(m, f, 'ult');
 
-    // guard cancel：防御中按必杀消耗 50 气
-    if (f.blockHeld && inp.s2 && !prev.s2 && f.meter >= 50 && !f.action) {
-      f.meter -= 50; f.blockHeld = false; f.guardMeter = GUARD_MAX;
+    /* guard cancel：防御中按必杀消耗 50 气 */
+    if (f.blockHeld && inp.s2 && !prev.s2 && f.meter >= METER_TABLE.guardCancel && !f.action) {
+      f.meter -= METER_TABLE.guardCancel;
+      f.blockHeld = false;
+      f.guardMeter = GUARD_MAX;
+      f.guardBroken = 0;
       startAction(m, f, 's1');
-      m.numbers.push({ x: f.x + f.w / 2, y: f.y - 8, text: 'GUARD COUNTER', life: 44, color: '#8fd6c2' });
+      m.numbers.push({
+        x: f.x + f.w / 2, y: f.y - 8,
+        text: 'GUARD COUNTER', life: 44, color: '#8fd6c2', minor: true
+      });
     }
   }
 
@@ -1123,14 +1819,24 @@
     const dist = Math.abs((foe.x + foe.w / 2) - (f.x + f.w / 2));
     if (dist >= 70) return false;
     if (foe.inv > 0) return false;
-    f.meter = clamp(f.meter - 25, 0, METER_MAX);
-    damage(m, foe, f, 18, { guard: 'unblockable', hitstun: 34, blockstun: 0, hitstop: 8, kb: { x: 7, y: -5 }, meterGain: 0 });
-    logLine(m, '投技命中：近身不可防御（受方 8 帧内按轻攻击可拆）');
-    m.numbers.push({ x: foe.x + foe.w / 2, y: foe.y - 12, text: '投技', life: 50, color: '#e79a6a' });
+    f.meter = clamp(f.meter - METER_TABLE.throwCost, 0, METER_MAX);
+    const pack = buildPack(m, foe, f, {
+      direct: 18, height: 'unblockable', moveKey: 'throw', source: 'throw',
+      tags: [], hitstun: 34, blockstun: 0, hitstop: 8,
+      kb: { x: 7, y: -5 }, meterGain: 0
+    });
+    const res = resolveHit(m, foe, f, pack);
+    if (res.total > 0) {
+      logLine(m, '投技命中：近身不可防御（受方 8 帧内按轻攻击可拆）');
+      m.numbers.push({
+        x: foe.x + foe.w / 2, y: foe.y - 12,
+        text: '投技', life: 50, color: '#e79a6a', minor: true
+      });
+    }
     return true;
   }
 
-  /* ─────────────────────────── AI ─────────────────────────── */
+  /* ══════════════════════════ AI（唯一允许随机的地方，走 mulberry） ══════════════════════════ */
   const AI_LEVELS = {
     easy: { react: 24, quality: 0.45, combo: 1, guardChance: 0.35, jumpChance: 0.02 },
     normal: { react: 13, quality: 0.72, combo: 2, guardChance: 0.6, jumpChance: 0.035 },
@@ -1149,127 +1855,150 @@
     const dist = Math.abs(dx);
     const dir = sign(dx);
 
-    // 反应延迟：每隔 react 帧才重新决策
-    if (--mem.think > 0) return mem.cached || inp;
+    /* 反应延迟：每隔 react 帧才重新决策 */
+    mem.think -= 1;
+    if (mem.think > 0) return mem.cached || inp;
     mem.think = Math.max(1, Math.round(lvl.react * (0.8 + m.rng() * 0.4)));
 
-    // 防御：对手在出招且距离近
+    /* 防御：对手在出招且距离近 */
     if (foe.action && dist < 170 && m.rng() < lvl.guardChance) {
       inp.block = true;
       inp.down = m.rng() < 0.3;
-      mem.cached = inp; return inp;
+      mem.cached = inp;
+      return inp;
     }
-    // 对手远距离大招 → 尝试跳或退
+    /* 对手远距离大招 → 尝试跳或退 */
     if (foe.action && dist > 200 && m.rng() < lvl.quality * 0.5) {
-      inp.right = dir > 0; inp.left = dir < 0;
-      mem.cached = inp; return inp;
+      inp.right = dir > 0;
+      inp.left = dir < 0;
+      mem.cached = inp;
+      return inp;
     }
-
-    // 进攻：贴脸打连段
+    /* 进攻：贴脸打连段 */
     if (dist < 96 && m.rng() < lvl.quality) {
       if (f.action === null && f.meter >= 50 && m.rng() < 0.35 * lvl.quality) inp.ult = true;
       else if (f.action === null && m.rng() < 0.6) inp.light = true;
       else if (f.cd.s2 <= 0 && m.rng() < 0.3) inp.s2 = true;
       else if (f.cd.s1 <= 0 && m.rng() < 0.35) inp.s1 = true;
-      // 轻攻击连段：连打
       if (f.action && f.action.key === 'l' && f.action.phase !== 'startup' && m.rng() < lvl.quality) inp.light = true;
-      mem.cached = inp; return inp;
+      mem.cached = inp;
+      return inp;
     }
-
-    // 中距离：逼近 / 用投射
+    /* 中距离：逼近 / 用投射 */
     if (dist > 96 && dist < 340) {
       if (f.cd.s1 <= 0 && m.rng() < 0.28 * lvl.quality && !moveAllowed(m, f, 's1', FIGHTERS[f.id].moves.s1)) inp.s1 = true;
       else if (f.cd.s2 <= 0 && m.rng() < 0.2 * lvl.quality && !moveAllowed(m, f, 's2', FIGHTERS[f.id].moves.s2)) inp.s2 = true;
       else { inp.right = dir > 0; inp.left = dir < 0; }
-      mem.cached = inp; return inp;
+      mem.cached = inp;
+      return inp;
     }
-
-    // 远距离：靠近，偶尔跳
-    if (m.rng() < lvl.jumpChance && f.onGround) { inp.up = true; inp.right = dir > 0; inp.left = dir < 0; mem.cached = inp; return inp; }
-    inp.right = dir > 0; inp.left = dir < 0;
-
-    // 惩罚空振：对手收招且在自己射程内
+    /* 远距离：靠近，偶尔跳 */
+    if (m.rng() < lvl.jumpChance && f.onGround) {
+      inp.up = true;
+      inp.right = dir > 0;
+      inp.left = dir < 0;
+      mem.cached = inp;
+      return inp;
+    }
+    inp.right = dir > 0;
+    inp.left = dir < 0;
+    /* 惩罚空振：对手收招且在自己射程内 */
     if (foe.action && foe.action.phase === 'recovery' && dist < 140 && m.rng() < lvl.quality) {
-      inp.light = true; inp.s1 = f.cd.s1 <= 0;
+      inp.light = true;
+      inp.s1 = f.cd.s1 <= 0;
     }
     mem.cached = inp;
     return inp;
   }
 
-  /* ─────────────────────────── 主步进 ─────────────────────────── */
+  /* ══════════════════════════ 主步进 ══════════════════════════ */
+  /* 重要（既有修复，别改回去）：hitstop / intro 冻结帧必须直接 return，
+   * 不消费输入边沿 —— 渲染层 game.js:215 的 simStep() 依赖这个行为，
+   * 否则命中瞬间按下的键会被静默吃掉。 */
   function step(m, inputPlayer, inputEnemy) {
     if (m.over || m.paused) return m;
-    m.frame++;
-    if (m.hitstop > 0) { m.hitstop--; return m; }
-
-    if (m.intro > 0) { m.intro--; return m; }
+    m.frame += 1;
+    if (m.hitstop > 0) { m.hitstop -= 1; return m; }
+    if (m.intro > 0) { m.intro -= 1; return m; }
 
     if (m.mode !== 'training') m.timer = Math.max(0, m.timer - 1);
-    if (m.water > 0) m.water--;
+    if (m.water > 0) m.water -= 1;
+    m.waterT += 1;
 
-    // 场景特殊：电解池每 15 秒全体麻痹
+    /* 场景特殊：电解池每 15 秒通电，全体麻痹 + 少量真伤 */
     if (m.stage === 'electro') {
-      m.zapT++;
+      m.zapT += 1;
       if (m.zapT >= (STAGES.electro.zap || 900)) {
         m.zapT = 0;
-        for (const f of [m.p, m.e]) { f.hitstun = Math.max(f.hitstun, 8); f.action = null; }
-        m.numbers.push({ x: STAGE_W / 2, y: 120, text: '⚡ 通电', life: 60, color: '#8ec9c7' });
-        logLine(m, '电解池通电：双方短暂麻痹 8 帧');
+        for (const f of [m.p, m.e]) {
+          f.hitstun = Math.max(f.hitstun, 8);
+          f.action = null;
+          trueDamage(m, f, 4, 'electro-zap');
+        }
+        m.numbers.push({
+          x: STAGE_W / 2, y: 120,
+          text: '⚡ 通电', life: 60, color: '#8ec9c7'
+        });
+        logLine(m, '电解池通电：双方麻痹 8 帧，真伤 4（无视防御值）');
       }
     }
 
-    // 输入
-    const inP = m.mode === 'pvp' ? (inputPlayer || emptyInput()) : (inputPlayer || emptyInput());
+    /* 输入 */
+    const inP = inputPlayer || emptyInput();
     const inE = m.e.isAI ? aiInput(m, m.e) : (inputEnemy || emptyInput());
     if (m.p.ko === false) applyInput(m, m.p, inP);
     if (m.e.ko === false) applyInput(m, m.e, inE);
 
-    // 双方推进
+    /* 双方推进 */
     updateFighter(m, m.p, m.e);
     updateFighter(m, m.e, m.p);
 
-    // 推挤分离
-    const pb = pushbox(m.p), eb = pushbox(m.e);
+    /* 推挤分离 */
+    const pb = pushbox(m.p);
+    const eb = pushbox(m.e);
     if (rectsOverlap(pb, eb) && Math.abs(m.p.y - m.e.y) < 105) {
       const overlapW = Math.min(pb.x + pb.w, eb.x + eb.w) - Math.max(pb.x, eb.x);
-      const dir = sign((m.p.x + m.p.w / 2) - (m.e.x + m.e.w / 2)) || 1;
-      m.p.x = clamp(m.p.x + dir * overlapW / 2, WALL, STAGE_W - WALL - m.p.w);
-      m.e.x = clamp(m.e.x - dir * overlapW / 2, WALL, STAGE_W - WALL - m.e.w);
+      const pdir = sign((m.p.x + m.p.w / 2) - (m.e.x + m.e.w / 2)) || 1;
+      m.p.x = clamp(m.p.x + (pdir * overlapW) / 2, WALL, STAGE_W - WALL - m.p.w);
+      m.e.x = clamp(m.e.x - (pdir * overlapW) / 2, WALL, STAGE_W - WALL - m.e.w);
     }
 
     updateProjectiles(m);
     updateZones(m);
+    updateComboWindow(m);
 
-    // 特效
-    for (const f of m.fx) { f.x += f.vx; f.y += f.vy; f.vy += 0.14; f.life--; }
-    m.fx = m.fx.filter(f => f.life > 0);
-    for (const n of m.numbers) { n.y -= 0.65; n.life--; }
-    m.numbers = m.numbers.filter(n => n.life > 0);
-    for (const d of m.dashes) d.life--;
-    m.dashes = m.dashes.filter(d => d.life > 0);
+    /* 特效 */
+    for (const f of m.fx) { f.x += f.vx; f.y += f.vy; f.vy += 0.14; f.life -= 1; }
+    m.fx = m.fx.filter((f) => f.life > 0);
+    for (const n of m.numbers) { n.y -= 0.65; n.life -= 1; }
+    m.numbers = m.numbers.filter((n) => n.life > 0);
+    for (const d of m.dashes) d.life -= 1;
+    m.dashes = m.dashes.filter((d) => d.life > 0);
     m.shake *= 0.8;
-    if (m.callout > 0) m.callout--;
+    if (m.callout > 0) m.callout -= 1;
 
-    // 记录上帧输入 + 清掉边缘标记
-    m.prevIn.p = Object.assign(emptyInput(), inP);
-    m.prevIn.e = Object.assign(emptyInput(), inE);
+    /* 记录上帧输入（冻结帧不写，保证边沿不被吃掉） */
+    m.prevIn.p = Object.assign(emptyInput(), inP, { inputDir: m.p.inputDir });
+    m.prevIn.e = Object.assign(emptyInput(), inE, { inputDir: m.e.inputDir });
 
-    // 胜负
+    /* 胜负 */
     if (m.p.stable <= 0 || m.e.stable <= 0) {
-      const pw = m.p.stable <= 0, ew = m.e.stable <= 0;
+      const pw = m.p.stable <= 0;
+      const ew = m.e.stable <= 0;
       if (pw && ew) finishRound(m, 'draw', 'ko');
       else finishRound(m, pw ? 'e' : 'p', 'ko');
       return m;
     }
     if (m.mode !== 'training' && m.timer <= 0) {
-      const pr = m.p.stable / m.p.max, er = m.e.stable / m.e.max;
+      const pr = m.p.stable / m.p.max;
+      const er = m.e.stable / m.e.max;
       const diff = pr - er;
       finishRound(m, Math.abs(diff) < 1e-6 ? 'draw' : diff > 0 ? 'p' : 'e', 'time');
     }
     return m;
   }
 
-  /* ─────────────────────────── 查询辅助（渲染/UI 用） ─────────────────────────── */
+  /* ══════════════════════════ 查询辅助（渲染 / UI 用） ══════════════════════════ */
   function activeHitboxes(f) {
     if (!f.action || f.action.phase !== 'active' || !f.action.move.hitbox) return [];
     return [hitboxWorld(f, f.action.move.hitbox)];
@@ -1283,7 +2012,7 @@
     };
   }
 
-  /* ─────────────────────────── 导出 ─────────────────────────── */
+  /* ══════════════════════════ 导出 ══════════════════════════ */
   const API = {
     FPS, GROUND, STAGE_W, WALL, GRAVITY, ROUND_SECONDS, ROUNDS_TO_WIN, METER_MAX, GUARD_MAX, JUGGLE_MAX,
     FIGHTERS, STAGES, LIGHT_SETS, AI_LEVELS, COMBO_SCALE,
@@ -1292,7 +2021,12 @@
     rectsOverlap, addStatus, hasStatus, mulberry, clamp, roundRatio,
     moveAllowed, pickMove,
     fighterIds: () => Object.keys(FIGHTERS),
-    stageIds: () => Object.keys(STAGES)
+    stageIds: () => Object.keys(STAGES),
+    /* —— 战斗 2.0 新增（只增不减，老键全部保留） —— */
+    CHANNELS, PIPELINE, HEIGHT_TABLE, STAGE_MODS, METER_TABLE,
+    buildPack, resolveHit, applyOnHit, guardCostFor, canBlockHeight, stanceOf, heightOf,
+    moveCost, moveTags, comboScaleFor, trueDamage, selfDamage, isNeutral,
+    COMBO_WINDOW, BREAK_WINDOW, GUARD_BREAK_STUN, CHIP_RATIO, BREAK_BONUS, JUGGLE_CHIP
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = API;

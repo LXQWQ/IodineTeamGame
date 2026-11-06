@@ -644,7 +644,8 @@ function svgMolecule(mol, opt) {
       const n = (CUR[ch.no] || []).length;
       if (n) ch.total = n;
       totalQ += ch.total;
-      if (chapRec(bk.id, ch.no).best >= BOOK_API.PASS_SCORE) passedN++;
+      const _r = chapRec(bk.id, ch.no);
+      if (_r.best >= BOOK_API.PASS_SCORE && !_r.auto) passedN++;
     });
     const unlocked = BOOK_API.unlockedUpTo(bk.id);
     $('#bookSub').textContent =
@@ -655,13 +656,15 @@ function svgMolecule(mol, opt) {
     bk.chapters.forEach(ch => {
       const rec = chapRec(bk.id, ch.no);
       const open = BOOK_API.chapterUnlocked(bk.id, ch.no);
-      const passed = rec.best >= BOOK_API.PASS_SCORE;
+      const passed = rec.best >= BOOK_API.PASS_SCORE && !rec.auto;
+      const metaTxt = rec.auto ? '已解锁 · 演示'
+        : (passed ? '最佳 ' + rec.best + ' 分' : (rec.best ? '最佳 ' + rec.best + ' 分' : '未挑战'));
       const b = el('button', 'chap' + (open ? '' : ' locked') + (passed ? ' passed' : ''));
       b.type = 'button';
       b.innerHTML = `<span class="chap-no">第 ${ch.no} 章</span>` +
         `<span class="chap-cn">${escapeHtml(ch.cn)}</span>` +
         `<span class="chap-en">${escapeHtml(ch.en)}</span>` +
-        `<span class="chap-meta">${ch.total} 题 · ${rec.best ? '最佳 ' + rec.best + ' 分' : '未挑战'}` +
+        `<span class="chap-meta">${ch.total} 题 · ${metaTxt}` +
         `${passed ? ' ✓' : ''}${open ? '' : ' 🔒'}</span>`;
       b.addEventListener('click', () => {
         if (!open) {
@@ -676,6 +679,21 @@ function svgMolecule(mol, opt) {
       });
       grid.appendChild(b);
     });
+  }
+
+  /* 一键解锁 / 还原进度（演示用，不做隐藏） */
+  function bookOf() { return BOOK_API && BOOK_API.BOOK_MAP.get('clayden2e'); }
+  function unlockAllChapters() {
+    const bk = bookOf(); if (!bk) return;
+    const n = BOOK_API.BookProgress.unlockAll(bk.id, bk.chapters.map(c => c.no));
+    renderBook();
+    pushLog('🔓 已一键解锁全部 ' + n + ' 章（演示模式，可随时还原）', 'win');
+  }
+  function resetBookProgress() {
+    const bk = bookOf(); if (!bk) return;
+    BOOK_API.BookProgress.clear(bk.id);
+    renderBook();
+    pushLog('↺ 已还原为真实进度：章节按上一章均分 ≥ ' + BOOK_API.PASS_SCORE + ' 分逐章解锁', 'ok');
   }
 
   /* ---------------- 弹窗 ---------------- */
@@ -744,6 +762,8 @@ function svgMolecule(mol, opt) {
       startLevel(G.levelIdx + 1);
     });
     $('#btnBook').addEventListener('click', () => { renderBook(); openModal('#bookModal'); });
+    const _bu = $('#btnUnlockAll'); if (_bu) _bu.addEventListener('click', unlockAllChapters);
+    const _br = $('#btnResetBook'); if (_br) _br.addEventListener('click', resetBookProgress);
     $('#btnClearLog').addEventListener('click', () => { G.log = []; renderLog(); });
     $('#btnHelp').addEventListener('click', () => openModal('#helpModal'));
     $('#btnSound').addEventListener('click', e => {

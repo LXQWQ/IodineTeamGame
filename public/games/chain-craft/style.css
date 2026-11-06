@@ -259,6 +259,20 @@ body{
   padding:10px 12px;border-radius:11px;
   background:rgba(167,139,250,.07);border:1px solid var(--line);
 }
+.book-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px}
+.book-act{
+  font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+  padding:7px 13px;border-radius:10px;color:#1a1327;
+  background:linear-gradient(135deg,#ffd479,#f0a04b);border:1px solid rgba(255,212,121,.65);
+  transition:transform .13s,filter .13s;
+}
+.book-act:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.book-act.ghost{
+  color:var(--txt2);background:rgba(255,255,255,.05);
+  border-color:var(--line);font-weight:600;
+}
+.book-act.ghost:hover{color:var(--txt);border-color:var(--line2);background:rgba(255,255,255,.09)}
+.book-act-hint{font-size:10.5px;color:var(--dim);line-height:1.5}
 .chapter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:9px;max-height:min(58vh,520px);overflow:auto;padding-right:2px}
 .chap{
   text-align:left;cursor:pointer;display:grid;gap:3px;

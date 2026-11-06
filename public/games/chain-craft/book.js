@@ -508,6 +508,20 @@
     clear(bookId) {
       if (bookId) delete this.data[bookId]; else this.data = {};
       this.save();
+    },
+    /* 一键解锁：把每一章都标成「已解锁」（演示/查看用）。
+       只写 best=PASS_SCORE 并打上 auto 标记，真实成绩不会被伪造。 */
+    unlockAll(bookId, chapterNos) {
+      const b = this.data[bookId] || (this.data[bookId] = {});
+      const list = Array.isArray(chapterNos) ? chapterNos : [];
+      list.forEach(no => {
+        const cur = b[no] || { best: 0, done: 0 };
+        cur.best = Math.max(cur.best || 0, PASS_SCORE);
+        cur.auto = true;
+        b[no] = cur;
+      });
+      this.save();
+      return list.length;
     }
   };
 
