@@ -187,7 +187,8 @@
             { id:6, name:"元素跃迁", emoji:"🎲", tag:"周期表飞行棋", desc:"把元素周期律做成飞行棋！52 格环形赛道，四大家族各 4 枚棋子，掷出 6 才能激发上路；踩到反应格抽化学事件卡（放热前进、催化剂加速、惰性气体冻结……），绕场一周归位，连出三个 6 会被电离回巢，集齐 4 枚触发胜利。", link:"games/element-leap/", newWindow:false },
             { id:8, name:"离子竞技场", emoji:"⚛️", tag:"动作 RPG", desc:"florr.io 的化学版！操控原子核在水溶液/酸性/碱性/有机/等离子五大区域求生，化学物质化作电子绕核旋转、碰撞伤敌；击杀化合物怪物掉落稀有电子与物质，9 级稀有度、合成台、技能树与自动装备备战一应俱全。", link:"games/ion-arena/", newWindow:false },
             { id:14, name:"键能对决 PLUS", emoji:"⚔️", tag:"格斗对战", desc:"基于氢队《键能对决》改编：12 位元素角色 × 6 座反应舱，帧精确的连段、取消、投技与防御分级；气槽超必、三局两胜、稳定度判定，三档 AI 与同屏双人。", link:"games/bond-duel-plus/", newWindow:false },
-            { id:15, name:"元素自走棋", emoji:"♟️", tag:"策略自走棋", desc:"6×8 棋盘上的元素军团！招募 12 种元素、三层羁绊（族 / 周期 / 区块）自动生效，电负性差 ≥1.8 的相邻单位触发离子键合击；商店刷新、合成升星、人口上限随等级成长，逐回合对抗越来越强的对手。", link:"games/element-autochess/", newWindow:false }
+            { id:15, name:"元素自走棋", emoji:"♟️", tag:"策略自走棋", desc:"6×8 棋盘上的元素军团！招募 12 种元素、三层羁绊（族 / 周期 / 区块）自动生效，电负性差 ≥1.8 的相邻单位触发离子键合击；商店刷新、合成升星、人口上限随等级成长，逐回合对抗越来越强的对手。", link:"games/element-autochess/", newWindow:false },
+            { id:16, name:"Phigros Web", emoji:"🎵", tag:"音乐节奏", desc:"碘队自制的下落式音游！四条会平移、旋转、隐现的判定线，TAP / DRAG / HOLD / FLICK 四种音符全支持；判定窗口 80ms，Perfect / Good / Bad / Miss 与 Phi 评级齐备，自动演奏可当观赏模式。三首原创曲全部由 WebAudio 实时合成——零素材、零版权，画面与音乐严格同源同步。", link:"games/phigros-web/", newWindow:false }
         ];
         /* 四款「开发中」游戏已全部重构完成并迁入 iodineGames，此数组留空 */
         const iodineDevGames = [
@@ -556,6 +557,35 @@
 </g>
 <path d="M60 43 L60 55" stroke="#f0c04a" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".8" stroke-dasharray="2 3"/>
 <g stroke="#22d3ee" stroke-opacity=".55" stroke-width="1.7" fill="none" stroke-linecap="round"><path d="M17 27 L26 27 M17 27 L17 36"/><path d="M103 97 L94 97 M103 97 L103 88"/></g>
+</svg></div>`,
+            16: `<div class="gi gi-phigros"><svg viewBox="0 0 120 120" aria-hidden="true">
+<defs>
+<radialGradient id="pgGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#22d3ee" stop-opacity=".26"/><stop offset="72%" stop-color="#6366f1" stop-opacity=".10"/><stop offset="100%" stop-color="#6366f1" stop-opacity="0"/></radialGradient>
+<linearGradient id="pgLineA" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#22d3ee" stop-opacity="0"/><stop offset="30%" stop-color="#22d3ee" stop-opacity=".95"/><stop offset="70%" stop-color="#a78bfa" stop-opacity=".95"/><stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/></linearGradient>
+<linearGradient id="pgLineB" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f472b6" stop-opacity="0"/><stop offset="45%" stop-color="#f472b6" stop-opacity=".85"/><stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/></linearGradient>
+<radialGradient id="pgTap" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#eafcff"/><stop offset="46%" stop-color="#5eead4"/><stop offset="100%" stop-color="#0e7490"/></radialGradient>
+<radialGradient id="pgFlick" cx="34%" cy="28%" r="78%"><stop offset="0%" stop-color="#fff7e0"/><stop offset="50%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#b45309"/></radialGradient>
+</defs>
+<circle cx="60" cy="60" r="52" fill="url(#pgGlow)"/>
+<!-- 四条判定线：两条水平、一条旋转、一条淡出，示意判定线会动 -->
+<g stroke-linecap="round">
+<path d="M10 74 H110" stroke="url(#pgLineA)" stroke-width="3"/>
+<path d="M14 94 H106" stroke="url(#pgLineB)" stroke-width="2.4" stroke-opacity=".75"/>
+<g transform="rotate(-13 60 58)"><path d="M20 58 H100" stroke="#a78bfa" stroke-opacity=".55" stroke-width="2" stroke-dasharray="5 4"/></g>
+<g transform="rotate(17 60 44)"><path d="M26 44 H94" stroke="#22d3ee" stroke-opacity=".35" stroke-width="1.8" stroke-dasharray="3 5"/></g>
+</g>
+<!-- 下落中的音符：TAP、DRAG、HOLD、FLICK -->
+<g><animateTransform attributeName="transform" type="translate" values="0 -7;0 5;0 -7" dur="2.6s" repeatCount="indefinite"/>
+<circle cx="42" cy="40" r="8" fill="url(#pgTap)" stroke="#d9feff" stroke-width="1.3"/>
+<path d="M68 33 L74 40 L68 47 L62 40 Z" fill="#a78bfa" stroke="#e9d5ff" stroke-width="1.2"/>
+</g>
+<g><animateTransform attributeName="transform" type="translate" values="0 6;0 -6;0 6" dur="2.2s" repeatCount="indefinite"/>
+<rect x="84" y="26" width="3" height="20" rx="1.5" fill="#f472b6" fill-opacity=".85"/>
+<circle cx="85.5" cy="46" r="7" fill="#f472b6" stroke="#ffe4f3" stroke-width="1.2"/>
+<path d="M24 34 q6 -7 12 0" fill="none" stroke="url(#pgFlick)" stroke-width="3" stroke-linecap="round"/>
+<path d="M30 27 l6 7 l-6 7" fill="none" stroke="#fde68a" stroke-width="2" stroke-linecap="round" stroke-opacity=".9"/>
+</g>
+<g stroke="#67e8f9" stroke-opacity=".5" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M96 20 L104 20 M104 20 L104 28"/><path d="M24 104 L16 104 M16 104 L16 96"/></g>
 </svg></div>`,
         };
 
@@ -1877,9 +1907,9 @@
        并在同一次提交里一起送出（版本号必须反映"本次推送之后"的累计次数）。 */
     const SITE_VERSION = {
         year: 2026,        // 年份（显示取后两位：26）
-        updateIndex: 3,    // 本年度中型及以上更新次数（2月#1 / 5月#2 / 10月#3 / 12月#4）
-        pushCount: 212,    // 本年度 GitHub 推送次数（每次提交推送都要 +1）
-        date: '1031',      // 最近一次更新日期 MMDD
+        updateIndex: 4,    // 本年度中型及以上更新次数（2月#1 / 5月#2 / 10月#3 / 11月#4）
+        pushCount: 213,    // 本年度 GitHub 推送次数（每次提交推送都要 +1）
+        date: '1107',      // 最近一次更新日期 MMDD
         snapshot: true     // true = 快照版本（带 w 段与日期）；false = 正式版本
     };
 

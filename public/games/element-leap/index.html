@@ -882,7 +882,7 @@ function drawReactionCard(fi, pi){
   $('cTargets').innerHTML = '';
   $('cTip').textContent = '反应的抽卡 · 效果立即生效';
   $('cardModal').classList.add('show');
-  $('cOk').onclick = ()=>applyCard(c);
+  $('cOk').onclick = ()=>applyCard(G.card);
   log(`⚗️ 落在反应格，抽到「${c.title}」`, 'hl');
   renderAll();
 }
@@ -891,8 +891,11 @@ function needTarget(act){
   return ['pushBack2','sendHome','ionBond','pullBack'].includes(act);
 }
 function applyCard(c){
-  const f = G.families[c.fi];
+  if(!c || c.fi == null || c.pi == null) return;
+  const f = G.families && G.families[c.fi];
+  if(!f || !f.pieces){ $('cardModal').classList.remove('show'); log('⚠️ 反应卡目标已失效，本张跳过', 'bad'); renderAll(); endPhase(); return; }
   const p = f.pieces[c.pi];
+  if(!p){ $('cardModal').classList.remove('show'); log('⚠️ 反应卡目标棋子已不存在，本张跳过', 'bad'); renderAll(); endPhase(); return; }
   const opp = () => {
     const list = [];
     G.families.forEach((of,ofi)=>{
@@ -973,6 +976,7 @@ function applyCard(c){
       break;
     }
   }
+  G.card = null;
   $('cardModal').classList.remove('show');
   renderAll();
   if(!checkWin()) endPhase();

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Phigros Web · 碘队游戏</title>
+<meta name="description" content="碘队自制 Phigros 风格网页音游：四条判定线、Tap/Drag/Hold/Flick 四种音符、程序生成的音乐与谱面，零版权素材。">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== 选曲 ===== -->
+  <section class="screen on" id="screen-menu">
+    <div class="menu-wrap">
+      <header class="menu-head">
+        <div class="brand">
+          <span class="brand-ring"></span>
+          <div class="brand-txt">
+            <h1>PHIGROS<span>WEB</span></h1>
+            <p>碘队自制 · 程序化音乐 × 四条判定线</p>
+          </div>
+        </div>
+        <div class="menu-tags">
+          <span class="tag">触屏多点</span>
+          <span class="tag">空格暂停</span>
+          <span class="tag">零版权素材</span>
+        </div>
+      </header>
+
+      <div class="track-grid" id="trackGrid"></div>
+
+      <footer class="menu-foot">
+        <p><b>玩法</b>：音符从判定线两侧向判定线移动，重合瞬间触碰。Tap 点一下 · Drag 按住滑行 · Hold 长按不撒手 · Flick 向任意方向甩。</p>
+        <p class="dim">三首曲子与全部谱面均由本页程序实时生成，不含任何第三方音频、图片或官方谱面资源。</p>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ===== 游戏 ===== -->
+  <section class="screen" id="screen-game">
+    <canvas id="game"></canvas>
+
+    <div class="hud">
+      <div class="hud-left">
+        <div class="hud-title" id="hudTitle">—</div>
+        <div class="hud-diff" id="hudDiff">—</div>
+      </div>
+      <div class="hud-right">
+        <button type="button" class="hud-btn" id="btnAuto">自动演奏：关</button>
+        <button type="button" class="hud-btn" id="btnQuit">退出</button>
+      </div>
+    </div>
+
+    <div class="pause-mask" id="pauseMask">
+      <div class="pause-box">
+        <h2>已暂停</h2>
+        <p>空格 / Esc 继续 · R 重新开始</p>
+        <div class="pause-actions">
+          <button type="button" class="btn primary" id="btnResume">继续</button>
+          <button type="button" class="btn ghost" id="btnRestart">重新开始</button>
+          <button type="button" class="btn ghost" id="btnMenu">返回选曲</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 结算 ===== -->
+  <section class="screen" id="screen-result">
+    <div class="result-box" id="resultBox"></div>
+  </section>
+
+</div>
+
+<script src="./engine.js"></script>
+<script src="./audio.js"></script>
+<script src="./charts.js"></script>
+<script src="./render.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
